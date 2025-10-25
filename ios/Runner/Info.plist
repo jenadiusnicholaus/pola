@@ -45,5 +45,46 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	
+	<!-- Network Security Configuration for API calls -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- Allow arbitrary loads for development -->
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<!-- Exception domains for specific servers -->
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>192.168.1.181</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.0</string>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+			<key>localhost</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.0</string>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+			<key>127.0.0.1</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.0</string>
+			</dict>
+		</dict>
+	</dict>
+	
+	<!-- Internet usage description (if needed for App Store) -->
+	<key>NSAppTransportSecurityUsageDescription</key>
+	<string>This app requires network access to communicate with the API server for legal assistance services.</string>
 </dict>
 </plist>
