@@ -199,3 +199,39 @@ class Chapter {
     };
   }
 }
+
+class Advocate {
+  final int id;
+  final String fullName;
+  final String email;
+  final String rollNumber;
+  final String? regionalChapterName;
+
+  Advocate({
+    required this.id,
+    required this.fullName,
+    required this.email,
+    required this.rollNumber,
+    this.regionalChapterName,
+  });
+
+  factory Advocate.fromJson(Map<String, dynamic> json) {
+    return Advocate(
+      id: json['id'] as int,
+      fullName: json['full_name'] as String,
+      email: json['email'] as String,
+      rollNumber: json['roll_number'] as String,
+      regionalChapterName: json['regional_chapter_name'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'full_name': fullName,
+      'email': email,
+      'roll_number': rollNumber,
+      'regional_chapter_name': regionalChapterName,
+    };
+  }
+}

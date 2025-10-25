@@ -13,6 +13,7 @@ class LookupService extends GetxService {
   final RxList<Specialization> _specializations = <Specialization>[].obs;
   final RxList<Workplace> _workplaces = <Workplace>[].obs;
   final RxList<Chapter> _chapters = <Chapter>[].obs;
+  final RxList<Advocate> _advocates = <Advocate>[].obs;
 
   // Loading states
   final RxBool _isLoadingRoles = false.obs;
@@ -21,6 +22,7 @@ class LookupService extends GetxService {
   final RxBool _isLoadingSpecializations = false.obs;
   final RxBool _isLoadingWorkplaces = false.obs;
   final RxBool _isLoadingChapters = false.obs;
+  final RxBool _isLoadingAdvocates = false.obs;
 
   // Getters
   List<UserRole> get userRoles => _userRoles;
@@ -29,6 +31,7 @@ class LookupService extends GetxService {
   List<Specialization> get specializations => _specializations;
   List<Workplace> get workplaces => _workplaces;
   List<Chapter> get chapters => _chapters;
+  List<Advocate> get advocates => _advocates;
 
   bool get isLoadingRoles => _isLoadingRoles.value;
   bool get isLoadingRegions => _isLoadingRegions.value;
@@ -36,6 +39,7 @@ class LookupService extends GetxService {
   bool get isLoadingSpecializations => _isLoadingSpecializations.value;
   bool get isLoadingWorkplaces => _isLoadingWorkplaces.value;
   bool get isLoadingChapters => _isLoadingChapters.value;
+  bool get isLoadingAdvocates => _isLoadingAdvocates.value;
 
   // Fetch user roles
   Future<List<UserRole>> fetchUserRoles() async {
@@ -261,6 +265,39 @@ class LookupService extends GetxService {
         .toList();
   }
 
+  // Fetch advocates
+  Future<List<Advocate>> fetchAdvocates() async {
+    if (_advocates.isNotEmpty) return _advocates;
+
+    try {
+      _isLoadingAdvocates.value = true;
+      final response = await _apiService.get(EnvironmentConfig.advocatesUrl);
+
+      if (response.data != null) {
+        List<dynamic> data;
+        // Check if the response is a paginated response with 'results' array
+        if (response.data is Map && response.data['results'] != null) {
+          data = response.data['results'] as List<dynamic>;
+        }
+        // Check if the response is directly a list (for backwards compatibility)
+        else if (response.data is List) {
+          data = response.data as List<dynamic>;
+        } else {
+          throw Exception('Invalid API response format for advocates');
+        }
+        _advocates.value =
+            data.map((json) => Advocate.fromJson(json)).toList();
+      }
+
+      return _advocates;
+    } catch (e) {
+      print('Error fetching advocates: $e');
+      throw Exception('Failed to fetch advocates from API: $e');
+    } finally {
+      _isLoadingAdvocates.value = false;
+    }
+  }
+
   // Clear cache (useful for refresh)
   void clearCache() {
     _userRoles.clear();
@@ -269,5 +306,6 @@ class LookupService extends GetxService {
     _specializations.clear();
     _workplaces.clear();
     _chapters.clear();
+    _advocates.clear();
   }
 }

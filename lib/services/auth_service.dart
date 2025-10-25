@@ -80,7 +80,7 @@ class AuthService extends GetxController {
       debugPrint('🔄 Refreshing access token...');
 
       final response = await _apiService.post(
-        EnvironmentConfig.refreshTokenEndpoint,
+        EnvironmentConfig.refreshTokenUrl,
         data: {
           'refresh': _tokenStorage.refreshToken,
         },
@@ -144,7 +144,7 @@ class AuthService extends GetxController {
       debugPrint('🔑 Attempting login for: $email');
 
       final response = await _apiService.post(
-        EnvironmentConfig.loginEndpoint,
+        EnvironmentConfig.loginUrl,
         data: {
           'email': email,
           'password': password,

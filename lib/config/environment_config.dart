@@ -41,6 +41,13 @@ class EnvironmentConfig {
   static String get logoutEndpoint =>
       dotenv.env['LOGOUT_ENDPOINT'] ?? '/auth/logout';
 
+  // Complete authentication URLs
+  static String get loginUrl => '$baseUrl$loginEndpoint';
+  static String get registerUrl => '$baseUrl$registerEndpoint';
+  static String get refreshTokenUrl => '$baseUrl$refreshTokenEndpoint';
+  static String get logoutUrl => '$baseUrl$logoutEndpoint';
+  static String get profileUrl => '$baseUrl/api/v1/authentication/profile/';
+
   // Lookup endpoints
   static String get lookupsBaseUrl =>
       dotenv.env['LOOKUPS_BASE_URL'] ?? '/api/v1/lookups';
@@ -55,6 +62,8 @@ class EnvironmentConfig {
       dotenv.env['WORKPLACES_ENDPOINT'] ?? '/workplaces';
   static String get chaptersEndpoint =>
       dotenv.env['CHAPTERS_ENDPOINT'] ?? '/chapters';
+  static String get advocatesEndpoint =>
+      dotenv.env['ADVOCATES_ENDPOINT'] ?? '/advocates';
 
   // Complete lookup URLs
   static String get rolesUrl => '$baseUrl$lookupsBaseUrl$rolesEndpoint';
@@ -65,4 +74,5 @@ class EnvironmentConfig {
   static String get workplacesUrl =>
       '$baseUrl$lookupsBaseUrl$workplacesEndpoint';
   static String get chaptersUrl => '$baseUrl$lookupsBaseUrl$chaptersEndpoint';
+  static String get advocatesUrl => '$baseUrl$lookupsBaseUrl$advocatesEndpoint';
 }

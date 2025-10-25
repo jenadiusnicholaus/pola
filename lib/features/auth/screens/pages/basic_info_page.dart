@@ -39,13 +39,18 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
   }
 
   bool _validateForm() {
-    if (_firstNameController.text.trim().isEmpty) {
-      debugPrint('❌ Validation failed: First name is empty');
-      return false;
-    }
-    if (_lastNameController.text.trim().isEmpty) {
-      debugPrint('❌ Validation failed: Last name is empty');
-      return false;
+    // Law firms (role 5) don't need personal details
+    final isLawFirm = controller.registrationData.userRole == 5;
+
+    if (!isLawFirm) {
+      if (_firstNameController.text.trim().isEmpty) {
+        debugPrint('❌ Validation failed: First name is empty');
+        return false;
+      }
+      if (_lastNameController.text.trim().isEmpty) {
+        debugPrint('❌ Validation failed: Last name is empty');
+        return false;
+      }
     }
     if (_emailController.text.trim().isEmpty) {
       debugPrint('❌ Validation failed: Email is empty');
@@ -67,13 +72,15 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
       debugPrint('❌ Validation failed: Passwords do not match');
       return false;
     }
-    if (_selectedDate == null) {
-      debugPrint('❌ Validation failed: Date of birth not selected');
-      return false;
-    }
-    if (_selectedGender == null) {
-      debugPrint('❌ Validation failed: Gender not selected');
-      return false;
+    if (!isLawFirm) {
+      if (_selectedDate == null) {
+        debugPrint('❌ Validation failed: Date of birth not selected');
+        return false;
+      }
+      if (_selectedGender == null) {
+        debugPrint('❌ Validation failed: Gender not selected');
+        return false;
+      }
     }
     if (!controller.registrationData.agreedToTerms) {
       debugPrint('❌ Validation failed: Terms not agreed to');
@@ -86,15 +93,23 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
   void _handleNext() {
     if (_validateForm()) {
       final data = controller.registrationData;
-      data.firstName = _firstNameController.text.trim();
-      data.lastName = _lastNameController.text.trim();
+      final isLawFirm = controller.registrationData.userRole == 5;
+
+      // Only set personal details for non-law firms
+      if (!isLawFirm) {
+        data.firstName = _firstNameController.text.trim();
+        data.lastName = _lastNameController.text.trim();
+        data.dateOfBirth = _selectedDate;
+        if (_selectedGender != null) {
+          data.gender = _selectedGender!;
+        }
+      }
+
+      // Email and password are required for all roles
       data.email = _emailController.text.trim();
       data.password = _passwordController.text;
       data.passwordConfirm = _confirmPasswordController.text;
-      data.dateOfBirth = _selectedDate;
-      if (_selectedGender != null) {
-        data.gender = _selectedGender!;
-      }
+
       controller.updateRegistrationData(data);
       controller.nextPage();
     }
@@ -102,15 +117,22 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
 
   void _saveData() {
     final data = controller.registrationData;
-    data.firstName = _firstNameController.text;
-    data.lastName = _lastNameController.text;
+    final isLawFirm = controller.registrationData.userRole == 5;
+
+    // Only save personal details for non-law firms
+    if (!isLawFirm) {
+      data.firstName = _firstNameController.text;
+      data.lastName = _lastNameController.text;
+      data.dateOfBirth = _selectedDate;
+      if (_selectedGender != null) {
+        data.gender = _selectedGender!;
+      }
+    }
+
+    // Email and password are required for all roles
     data.email = _emailController.text;
     data.password = _passwordController.text;
     data.passwordConfirm = _confirmPasswordController.text;
-    data.dateOfBirth = _selectedDate;
-    if (_selectedGender != null) {
-      data.gender = _selectedGender!;
-    }
     controller.updateRegistrationData(data);
   }
 
@@ -223,143 +245,146 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
               ),
               const SizedBox(height: 28),
 
-              // Name Section
-              Text(
-                'Personal Details',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF1F2937),
-                  letterSpacing: -0.3,
+              // Personal Details Section - Only for non-law firms
+              if (controller.registrationData.userRole != 5) ...[
+                // Name Section
+                Text(
+                  'Personal Details',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1F2937),
+                    letterSpacing: -0.3,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              // First Name
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'First Name',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF374151),
-                      letterSpacing: 0.1,
+                // First Name
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'First Name',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF374151),
+                        letterSpacing: 0.1,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  TextFormField(
-                    controller: _firstNameController,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: const Color(0xFF1F2937),
-                      letterSpacing: -0.1,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Enter your first name',
-                      hintStyle: TextStyle(
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      controller: _firstNameController,
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w400,
-                        color: const Color(0xFF9CA3AF),
+                        color: const Color(0xFF1F2937),
+                        letterSpacing: -0.1,
                       ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: const Color(0xFFD1D5DB)),
+                      decoration: InputDecoration(
+                        hintText: 'Enter your first name',
+                        hintStyle: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          color: const Color(0xFF9CA3AF),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: const Color(0xFFD1D5DB)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: const Color(0xFFD1D5DB)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                              color: const Color(0xFF3B82F6), width: 2),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: const Color(0xFFEF4444)),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        filled: true,
+                        fillColor: const Color(0xFFFAFAFA),
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: const Color(0xFFD1D5DB)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                            color: const Color(0xFF3B82F6), width: 2),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: const Color(0xFFEF4444)),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
-                      filled: true,
-                      fillColor: const Color(0xFFFAFAFA),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'First name is required';
+                        }
+                        return null;
+                      },
+                      onChanged: (value) => _saveData(),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'First name is required';
-                      }
-                      return null;
-                    },
-                    onChanged: (value) => _saveData(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
+                  ],
+                ),
+                const SizedBox(height: 20),
 
-              // Last Name
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Last Name',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF374151),
-                      letterSpacing: 0.1,
+                // Last Name
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Last Name',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF374151),
+                        letterSpacing: 0.1,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  TextFormField(
-                    controller: _lastNameController,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: const Color(0xFF1F2937),
-                      letterSpacing: -0.1,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Enter your last name',
-                      hintStyle: TextStyle(
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      controller: _lastNameController,
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w400,
-                        color: const Color(0xFF9CA3AF),
+                        color: const Color(0xFF1F2937),
+                        letterSpacing: -0.1,
                       ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: const Color(0xFFD1D5DB)),
+                      decoration: InputDecoration(
+                        hintText: 'Enter your last name',
+                        hintStyle: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          color: const Color(0xFF9CA3AF),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: const Color(0xFFD1D5DB)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: const Color(0xFFD1D5DB)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                              color: const Color(0xFF3B82F6), width: 2),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: const Color(0xFFEF4444)),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        filled: true,
+                        fillColor: const Color(0xFFFAFAFA),
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: const Color(0xFFD1D5DB)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                            color: const Color(0xFF3B82F6), width: 2),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: const Color(0xFFEF4444)),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
-                      filled: true,
-                      fillColor: const Color(0xFFFAFAFA),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Last name is required';
+                        }
+                        return null;
+                      },
+                      onChanged: (value) => _saveData(),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Last name is required';
-                      }
-                      return null;
-                    },
-                    onChanged: (value) => _saveData(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+                  ],
+                ),
+                const SizedBox(height: 24),
+              ],
 
               // Contact Information Section
               Text(
@@ -445,40 +470,93 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
               ),
               const SizedBox(height: 20),
 
-              // Date of Birth
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Date of Birth',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF374151),
-                      letterSpacing: 0.1,
+              // Date of Birth and Gender - Only for non-law firms
+              if (controller.registrationData.userRole != 5) ...[
+                // Date of Birth
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Date of Birth',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF374151),
+                        letterSpacing: 0.1,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  InkWell(
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: _selectedDate ??
-                            DateTime.now().subtract(
-                                const Duration(days: 6570)), // 18 years ago
-                        firstDate: DateTime(1900),
-                        lastDate: DateTime.now(),
-                      );
-                      if (date != null) {
-                        setState(() {
-                          _selectedDate = date;
-                        });
-                        _saveData();
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
+                    const SizedBox(height: 6),
+                    InkWell(
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: _selectedDate ??
+                              DateTime.now().subtract(
+                                  const Duration(days: 6570)), // 18 years ago
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime.now(),
+                        );
+                        if (date != null) {
+                          setState(() {
+                            _selectedDate = date;
+                          });
+                          _saveData();
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: const Color(0xFFD1D5DB)),
+                          borderRadius: BorderRadius.circular(8),
+                          color: const Color(0xFFFAFAFA),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              color: const Color(0xFF6B7280),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                _selectedDate != null
+                                    ? '${_selectedDate!.day.toString().padLeft(2, '0')}/${_selectedDate!.month.toString().padLeft(2, '0')}/${_selectedDate!.year}'
+                                    : 'Select your date of birth',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w400,
+                                  color: _selectedDate != null
+                                      ? const Color(0xFF1F2937)
+                                      : const Color(0xFF9CA3AF),
+                                  letterSpacing: -0.1,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Gender
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Gender',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF374151),
+                        letterSpacing: 0.1,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
                       decoration: BoxDecoration(
                         border: Border.all(color: const Color(0xFFD1D5DB)),
                         borderRadius: BorderRadius.circular(8),
@@ -486,204 +564,154 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                       ),
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.calendar_today_outlined,
-                            color: const Color(0xFF6B7280),
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
                           Expanded(
-                            child: Text(
-                              _selectedDate != null
-                                  ? '${_selectedDate!.day.toString().padLeft(2, '0')}/${_selectedDate!.month.toString().padLeft(2, '0')}/${_selectedDate!.year}'
-                                  : 'Select your date of birth',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w400,
-                                color: _selectedDate != null
-                                    ? const Color(0xFF1F2937)
-                                    : const Color(0xFF9CA3AF),
-                                letterSpacing: -0.1,
+                            child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _selectedGender = 'M';
+                                });
+                                _saveData();
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: _selectedGender == 'M'
+                                      ? const Color(0xFF3B82F6)
+                                      : Colors.transparent,
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(7),
+                                    bottomLeft: Radius.circular(7),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.male,
+                                      color: _selectedGender == 'M'
+                                          ? Colors.white
+                                          : const Color(0xFF6B7280),
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Male',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: _selectedGender == 'M'
+                                            ? Colors.white
+                                            : const Color(0xFF374151),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: 1,
+                            height: 42,
+                            color: const Color(0xFFD1D5DB),
+                          ),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _selectedGender = 'F';
+                                });
+                                _saveData();
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: _selectedGender == 'F'
+                                      ? const Color(0xFF3B82F6)
+                                      : Colors.transparent,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.female,
+                                      color: _selectedGender == 'F'
+                                          ? Colors.white
+                                          : const Color(0xFF6B7280),
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Female',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: _selectedGender == 'F'
+                                            ? Colors.white
+                                            : const Color(0xFF374151),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: 1,
+                            height: 42,
+                            color: const Color(0xFFD1D5DB),
+                          ),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _selectedGender = 'O';
+                                });
+                                _saveData();
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: _selectedGender == 'O'
+                                      ? const Color(0xFF3B82F6)
+                                      : Colors.transparent,
+                                  borderRadius: const BorderRadius.only(
+                                    topRight: Radius.circular(7),
+                                    bottomRight: Radius.circular(7),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.person_outline,
+                                      color: _selectedGender == 'O'
+                                          ? Colors.white
+                                          : const Color(0xFF6B7280),
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Other',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: _selectedGender == 'O'
+                                            ? Colors.white
+                                            : const Color(0xFF374151),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // Gender
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Gender',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF374151),
-                      letterSpacing: 0.1,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFFD1D5DB)),
-                      borderRadius: BorderRadius.circular(8),
-                      color: const Color(0xFFFAFAFA),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: InkWell(
-                            onTap: () {
-                              setState(() {
-                                _selectedGender = 'M';
-                              });
-                              _saveData();
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              decoration: BoxDecoration(
-                                color: _selectedGender == 'M'
-                                    ? const Color(0xFF3B82F6)
-                                    : Colors.transparent,
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(7),
-                                  bottomLeft: Radius.circular(7),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.male,
-                                    color: _selectedGender == 'M'
-                                        ? Colors.white
-                                        : const Color(0xFF6B7280),
-                                    size: 18,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    'Male',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: _selectedGender == 'M'
-                                          ? Colors.white
-                                          : const Color(0xFF374151),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        Container(
-                          width: 1,
-                          height: 42,
-                          color: const Color(0xFFD1D5DB),
-                        ),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () {
-                              setState(() {
-                                _selectedGender = 'F';
-                              });
-                              _saveData();
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              decoration: BoxDecoration(
-                                color: _selectedGender == 'F'
-                                    ? const Color(0xFF3B82F6)
-                                    : Colors.transparent,
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.female,
-                                    color: _selectedGender == 'F'
-                                        ? Colors.white
-                                        : const Color(0xFF6B7280),
-                                    size: 18,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    'Female',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: _selectedGender == 'F'
-                                          ? Colors.white
-                                          : const Color(0xFF374151),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        Container(
-                          width: 1,
-                          height: 42,
-                          color: const Color(0xFFD1D5DB),
-                        ),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () {
-                              setState(() {
-                                _selectedGender = 'O';
-                              });
-                              _saveData();
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              decoration: BoxDecoration(
-                                color: _selectedGender == 'O'
-                                    ? const Color(0xFF3B82F6)
-                                    : Colors.transparent,
-                                borderRadius: const BorderRadius.only(
-                                  topRight: Radius.circular(7),
-                                  bottomRight: Radius.circular(7),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.person_outline,
-                                    color: _selectedGender == 'O'
-                                        ? Colors.white
-                                        : const Color(0xFF6B7280),
-                                    size: 18,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    'Other',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: _selectedGender == 'O'
-                                          ? Colors.white
-                                          : const Color(0xFF374151),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+                  ],
+                ),
+                const SizedBox(height: 24),
+              ],
 
               // Security Section
               Text(

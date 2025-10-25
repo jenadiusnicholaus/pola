@@ -87,13 +87,17 @@ class RegistrationData {
       'email': email,
       'password': password,
       'password_confirm': passwordConfirm,
-      'first_name': firstName,
-      'last_name': lastName,
       'agreed_to_Terms': agreedToTerms,
       'user_role': userRole,
-      'gender': gender,
-      'phone_number': phoneNumber,
     };
+
+    // Personal details - only for non-law firms (role != 5)
+    if (userRole != 5) {
+      data['first_name'] = firstName;
+      data['last_name'] = lastName;
+      data['gender'] = gender;
+      data['phone_number'] = phoneNumber;
+    }
 
     // Add optional fields only if they have values
     if (dateOfBirth != null) {
@@ -153,14 +157,18 @@ class RegistrationData {
     if (email.isEmpty) errors.add('Email is required');
     if (password.isEmpty) errors.add('Password is required');
     if (password != passwordConfirm) errors.add('Passwords do not match');
-    if (firstName.isEmpty) errors.add('First name is required');
-    if (lastName.isEmpty) errors.add('Last name is required');
-    if (dateOfBirth == null) errors.add('Date of birth is required');
     if (!agreedToTerms) errors.add('You must agree to terms and conditions');
-    if (gender.isEmpty) errors.add('Gender is required');
-    if (phoneNumber.isEmpty) errors.add('Phone number is required');
-    if (region == null) errors.add('Region is required');
-    if (district == null) errors.add('District is required');
+
+    // Personal details validation - NOT required for law firms (role 5)
+    if (userRole != 5) {
+      if (firstName.isEmpty) errors.add('First name is required');
+      if (lastName.isEmpty) errors.add('Last name is required');
+      if (dateOfBirth == null) errors.add('Date of birth is required');
+      if (gender.isEmpty) errors.add('Gender is required');
+      if (phoneNumber.isEmpty) errors.add('Phone number is required');
+      if (region == null) errors.add('Region is required');
+      if (district == null) errors.add('District is required');
+    }
 
     // Role-specific validation
     switch (userRole) {

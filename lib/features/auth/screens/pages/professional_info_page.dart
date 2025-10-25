@@ -31,6 +31,7 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
   int? _selectedYearsOfExperience;
   int? _selectedNumberOfLawyers;
   int? _selectedYearEstablished;
+  int? _selectedManagingPartner;
   String? _selectedPracticeStatus;
   List<int> _selectedSpecializations = [];
 
@@ -45,6 +46,7 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
     final data = controller.registrationData;
     _rollNumberController.text = data.rollNumber ?? '';
     _firmNameController.text = data.firmName ?? '';
+    _selectedManagingPartner = data.managingPartner;
     _websiteController.text = data.website ?? '';
     _institutionController.text = data.institution ?? '';
     _currentYearController.text = data.currentYearOfStudy ?? '';
@@ -68,6 +70,10 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
       await controller.lookupService.fetchSpecializations();
       await controller.lookupService.fetchWorkplaces();
       await controller.lookupService.fetchChapters();
+      // Load advocates for law firm managing partner selection
+      if (controller.registrationData.userRole == 5) {
+        await controller.lookupService.fetchAdvocates();
+      }
     } catch (e) {
       print('Error loading lookup data: $e');
       if (mounted) {
@@ -92,6 +98,7 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
         _rollNumberController.text.isEmpty ? null : _rollNumberController.text;
     data.firmName =
         _firmNameController.text.isEmpty ? null : _firmNameController.text;
+    data.managingPartner = _selectedManagingPartner;
     data.website =
         _websiteController.text.isEmpty ? null : _websiteController.text;
     data.institution = _institutionController.text.isEmpty
@@ -396,6 +403,73 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
         },
         onChanged: (value) => _saveData(),
       ),
+      const SizedBox(height: 16),
+
+      // Managing Partner - Dropdown from Advocates API
+      Obx(() {
+        final advocates = controller.lookupService.advocates;
+        final isLoadingAdvocates = controller.lookupService.isLoadingAdvocates;
+
+        return DropdownButtonFormField<int>(
+          value: _selectedManagingPartner,
+          decoration: InputDecoration(
+            labelText: 'Managing Partner *',
+            border: const OutlineInputBorder(),
+            helperText: isLoadingAdvocates
+                ? 'Loading advocates...'
+                : advocates.isEmpty
+                    ? 'No advocates available'
+                    : 'Select the managing partner advocate',
+            suffixIcon: isLoadingAdvocates
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: Padding(
+                      padding: EdgeInsets.all(12.0),
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : null,
+          ),
+          validator: (value) =>
+              value == null ? 'Managing partner is required' : null,
+          items: advocates.isEmpty
+              ? []
+              : advocates.map((Advocate advocate) {
+                  return DropdownMenuItem<int>(
+                    value: advocate.id,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          advocate.fullName,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          'Roll No: ${advocate.rollNumber}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+          onChanged: isLoadingAdvocates
+              ? null
+              : (value) {
+                  setState(() {
+                    _selectedManagingPartner = value;
+                  });
+                  _saveData();
+                },
+        );
+      }),
       const SizedBox(height: 16),
 
       // Number of Lawyers

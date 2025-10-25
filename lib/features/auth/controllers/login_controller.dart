@@ -6,6 +6,7 @@ import '../../../services/api_service.dart';
 import '../../../services/auth_service.dart';
 import '../../../config/environment_config.dart';
 import '../models/login_data.dart';
+import '../../profile/services/profile_service.dart';
 
 class LoginController extends GetxController {
   final ApiService _apiService = Get.find<ApiService>();
@@ -50,9 +51,37 @@ class LoginController extends GetxController {
     debugPrint('👁️ Password visibility toggled: ${_isPasswordVisible.value}');
   }
 
-  void toggleRememberMe() {
-    _rememberMe.value = !_rememberMe.value;
-    debugPrint('💾 Remember me toggled: ${_rememberMe.value}');
+  void toggleRememberMe(bool? value) {
+    _rememberMe.value = value ?? false;
+    debugPrint('💭 Remember me toggled: ${_rememberMe.value}');
+  }
+
+  /// Fetch user profile after successful login
+  Future<void> _fetchUserProfile() async {
+    try {
+      debugPrint('� Fetching user profile after login...');
+
+      // Initialize profile service if not already done
+      if (!Get.isRegistered<ProfileService>()) {
+        Get.put(ProfileService());
+      }
+
+      final profileService = Get.find<ProfileService>();
+
+      // Fetch profile from API
+      final profile = await profileService.fetchProfile();
+
+      if (profile != null) {
+        debugPrint(
+            '✅ User profile fetched successfully: ${profile.fullName} (${profile.userRole.roleName})');
+      } else {
+        debugPrint('⚠️ Profile fetch returned null');
+      }
+    } catch (e) {
+      debugPrint('⚠️ Non-critical error fetching profile after login: $e');
+      // Don't throw here - profile fetch failure shouldn't prevent login success
+      // User can manually refresh profile from the app later
+    }
   }
 
   void _loadSavedCredentials() {
@@ -92,11 +121,11 @@ class LoginController extends GetxController {
       );
 
       debugPrint('📤 Sending login request for: ${loginData.email}');
-      debugPrint('🌐 Login endpoint: ${EnvironmentConfig.loginEndpoint}');
+      debugPrint('🌐 Login endpoint: ${EnvironmentConfig.loginUrl}');
 
       // Make API call
       final response = await _apiService.post(
-        EnvironmentConfig.loginEndpoint,
+        EnvironmentConfig.loginUrl,
         data: loginData.toJson(),
       );
 
@@ -154,6 +183,9 @@ class LoginController extends GetxController {
         if (_rememberMe.value) {
           await _saveCredentials();
         }
+
+        // Fetch user profile immediately after successful login
+        await _fetchUserProfile();
 
         // Show success message
         Get.snackbar(

@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:flutter/foundation.dart';
+import 'package:get/get.dart' as getx;
+import '../services/token_storage_service.dart';
+import '../services/auth_service.dart';
 
 class ApiInterceptors {
-  static final GetStorage _storage = GetStorage();
-
   // Add comprehensive interceptors to Dio instance
   static void addInterceptors(Dio dio) {
     // Request/Response logging interceptor (only in debug mode)
@@ -16,8 +16,8 @@ class ApiInterceptors {
     // Auth interceptor
     dio.interceptors.add(createAuthInterceptor());
 
-    // Error handling interceptor
-    dio.interceptors.add(createErrorInterceptor());
+    // Error handling interceptor with retry capability
+    dio.interceptors.add(createErrorInterceptor(dio));
   }
 
   // Comprehensive logging interceptor
@@ -41,27 +41,77 @@ class ApiInterceptors {
   // Auth interceptor
   static Interceptor createAuthInterceptor() {
     return InterceptorsWrapper(
-      onRequest: (options, handler) {
-        // Add auth token to requests
-        final token = _storage.read('auth_token');
-        if (token != null) {
-          options.headers['Authorization'] = 'Bearer $token';
+      onRequest: (options, handler) async {
+        // Get TokenStorageService instance
+        try {
+          final tokenStorage = getx.Get.find<TokenStorageService>();
+          final token = tokenStorage.accessToken;
+
+          if (token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+            debugPrint('🔑 Added auth token to request: ${options.uri}');
+          } else {
+            debugPrint('⚠️ No access token found for request: ${options.uri}');
+          }
+        } catch (e) {
+          debugPrint('❌ Error getting token: $e');
         }
+
         handler.next(options);
       },
     );
   }
 
-  // Error handling interceptor
-  static Interceptor createErrorInterceptor() {
+  // Error handling interceptor with token refresh
+  static Interceptor createErrorInterceptor(Dio dio) {
     return InterceptorsWrapper(
-      onError: (error, handler) {
+      onError: (error, handler) async {
         // Handle specific error cases
         if (error.response != null) {
           switch (error.response!.statusCode) {
             case 401:
-              debugPrint('🔒 Authentication failed - Token may be expired');
-              // Could trigger auto logout here
+              debugPrint(
+                  '🔒 Authentication failed - Attempting token refresh...');
+
+              // Don't try to refresh if this IS the refresh token request (prevents infinite loop)
+              final isRefreshRequest = error.requestOptions.path
+                  .contains('/authentication/refresh/');
+
+              if (isRefreshRequest) {
+                debugPrint(
+                    '❌ Refresh token request failed - User needs to login again');
+                break;
+              }
+
+              // Try to refresh the token
+              try {
+                final authService = getx.Get.find<AuthService>();
+                final tokenRefreshed = await authService.refreshAccessToken();
+
+                if (tokenRefreshed) {
+                  debugPrint(
+                      '✅ Token refreshed successfully, retrying request...');
+
+                  // Get the new token
+                  final tokenStorage = getx.Get.find<TokenStorageService>();
+                  final newToken = tokenStorage.accessToken;
+
+                  // Update the failed request with new token
+                  error.requestOptions.headers['Authorization'] =
+                      'Bearer $newToken';
+
+                  // Retry the request with the same Dio instance
+                  final response = await dio.fetch(error.requestOptions);
+
+                  // Return the successful response
+                  return handler.resolve(response);
+                } else {
+                  debugPrint(
+                      '❌ Token refresh failed - User needs to login again');
+                }
+              } catch (e) {
+                debugPrint('❌ Error during token refresh: $e');
+              }
               break;
             case 403:
               debugPrint('🚫 Access forbidden - Insufficient permissions');
@@ -179,13 +229,24 @@ class ApiInterceptors {
     return data;
   }
 
-  // Update auth token
-  static void updateAuthToken(String token) {
-    _storage.write('auth_token', token);
+  // Update auth token - now handled by TokenStorageService
+  static Future<void> updateAuthToken(String token) async {
+    try {
+      // Token is already stored by TokenStorageService.storeTokens()
+      debugPrint('✅ Auth token updated in TokenStorageService');
+    } catch (e) {
+      debugPrint('❌ Error updating auth token: $e');
+    }
   }
 
-  // Clear auth token
-  static void clearAuthToken() {
-    _storage.remove('auth_token');
+  // Clear auth token - now handled by TokenStorageService
+  static Future<void> clearAuthToken() async {
+    try {
+      final tokenStorage = getx.Get.find<TokenStorageService>();
+      await tokenStorage.clearTokens();
+      debugPrint('✅ Auth token cleared from TokenStorageService');
+    } catch (e) {
+      debugPrint('❌ Error clearing auth token: $e');
+    }
   }
 }

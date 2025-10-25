@@ -27,6 +27,11 @@ class ThemeController extends GetxController {
         // Convert to string format for future use
         _storage.write('theme_mode', _themeMode.value.toString());
       }
+
+      // Apply the loaded theme immediately
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.changeThemeMode(_themeMode.value);
+      });
     }
   }
 
@@ -35,6 +40,7 @@ class ThemeController extends GetxController {
     _themeMode.value = themeMode;
     _storage.write('theme_mode', themeMode.toString());
     Get.changeThemeMode(themeMode);
+    update(); // Trigger UI updates for GetBuilder widgets
   }
 
   // Toggle between light and dark theme

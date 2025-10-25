@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'constants/app_theme.dart';
+import 'constants/app_colors.dart';
 import 'constants/app_strings.dart';
 import 'routes/app_routes.dart';
 import 'features/settings/controllers/theme_controller.dart';
@@ -11,6 +12,7 @@ import 'config/dio_config.dart';
 import 'services/api_service.dart';
 import 'services/token_storage_service.dart';
 import 'services/auth_service.dart';
+import 'features/profile/services/profile_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,10 +37,10 @@ RECEIVE_TIMEOUT=30000
 SEND_TIMEOUT=30000
 API_KEY=your_api_key_here
 ENABLE_LOGGING=true
-LOGIN_ENDPOINT=/authentication/login/
-REGISTER_ENDPOINT=/authentication/register/
-REFRESH_TOKEN_ENDPOINT=/authentication/refresh/
-LOGOUT_ENDPOINT=/authentication/logout/
+LOGIN_ENDPOINT=/api/v1/authentication/login/
+REGISTER_ENDPOINT=/api/v1/authentication/register/
+REFRESH_TOKEN_ENDPOINT=/api/v1/authentication/refresh/
+LOGOUT_ENDPOINT=/api/v1/authentication/logout/
 ''');
     }
   }
@@ -53,6 +55,9 @@ LOGOUT_ENDPOINT=/authentication/logout/
   Get.put(TokenStorageService());
   Get.put(AuthService());
 
+  // Initialize profile service
+  Get.put(ProfileService());
+
   // Initialize controllers
   Get.put(ThemeController());
 
@@ -64,16 +69,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: AppStrings.appName,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system, // Follows system theme
-      initialRoute: AppRoutes.splash, // Start with auth check
-      getPages: AppRoutes.routes,
-      unknownRoute: AppRoutes.unknownRoute,
-    );
+    // Get the ThemeController to use persisted theme
+    final themeController = Get.find<ThemeController>();
+
+    return Obx(() => GetMaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: AppStrings.appName,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: themeController.themeMode, // Use persisted theme mode
+          initialRoute: AppRoutes.splash, // Start with auth check
+          getPages: AppRoutes.routes,
+          unknownRoute: AppRoutes.unknownRoute,
+        ));
   }
 }
 
@@ -86,8 +94,6 @@ class AuthCheckScreen extends StatefulWidget {
 }
 
 class _AuthCheckScreenState extends State<AuthCheckScreen> {
-  String _statusMessage = 'Initializing...';
-
   @override
   void initState() {
     super.initState();
@@ -97,9 +103,6 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
   Future<void> _checkAuthStatus() async {
     try {
       debugPrint('🚀 Starting authentication check...');
-      setState(() {
-        _statusMessage = 'Checking your session...';
-      });
 
       // Ensure services are initialized
       final tokenStorage = Get.find<TokenStorageService>();
@@ -121,11 +124,6 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
 
         // Check refresh token expiration first (most critical)
         if (tokenStorage.isRefreshTokenExpired()) {
-          setState(() {
-            _statusMessage =
-                'Your session has expired completely. Please sign in again.';
-          });
-
           debugPrint('❌ Refresh token expired - redirecting to login');
           await Future.delayed(const Duration(milliseconds: 1500));
 
@@ -133,18 +131,10 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
           return;
         }
 
-        setState(() {
-          _statusMessage = 'Validating your session...';
-        });
-
         // Verify the session validity with potential token refresh
         final isValidSession = await authService.verifySession();
 
         if (isValidSession) {
-          setState(() {
-            _statusMessage = 'Welcome back! Redirecting to home...';
-          });
-
           debugPrint('✅ Valid session confirmed - redirecting to home page');
 
           // Show token info for debugging
@@ -156,10 +146,6 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
           Get.offAllNamed(AppRoutes.home);
           return;
         } else {
-          setState(() {
-            _statusMessage = 'Session validation failed. Please sign in again.';
-          });
-
           debugPrint('❌ Session validation failed - redirecting to login');
           await Future.delayed(const Duration(seconds: 1));
 
@@ -167,10 +153,6 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
           return;
         }
       } else {
-        setState(() {
-          _statusMessage = 'No active session found.';
-        });
-
         debugPrint('❌ No stored session - redirecting to landing');
         await Future.delayed(const Duration(milliseconds: 800));
 
@@ -178,10 +160,6 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
       }
     } catch (e) {
       debugPrint('❌ Error checking auth status: $e');
-
-      setState(() {
-        _statusMessage = 'Error checking session. Redirecting...';
-      });
 
       await Future.delayed(const Duration(seconds: 1));
       // Default to landing screen on error
@@ -192,24 +170,21 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDarkMode = theme.brightness == Brightness.dark;
 
-    // Set adaptive system UI overlay style
+    // Set system UI overlay style for amber background
     SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
+      const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness:
-            isDarkMode ? Brightness.light : Brightness.dark,
-        statusBarBrightness: isDarkMode ? Brightness.dark : Brightness.light,
-        systemNavigationBarColor: colorScheme.surface,
-        systemNavigationBarIconBrightness:
-            isDarkMode ? Brightness.light : Brightness.dark,
+            Brightness.dark, // Dark icons on amber background
+        statusBarBrightness: Brightness.light, // Light status bar
+        systemNavigationBarColor: AppColors.primaryAmber,
+        systemNavigationBarIconBrightness: Brightness.dark, // Dark nav icons
       ),
     );
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: AppColors.primaryAmber,
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -217,142 +192,67 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: isDarkMode
-                ? [
-                    colorScheme.surface,
-                    colorScheme.surface.withOpacity(0.8),
-                  ]
-                : [
-                    colorScheme.surface,
-                    colorScheme.primaryContainer.withOpacity(0.1),
-                  ],
+            colors: [
+              AppColors.primaryAmber,
+              AppColors.primaryAmber.withOpacity(0.9),
+              AppColors.primaryAmberLight,
+            ],
           ),
         ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+        child: SafeArea(
+          child: Stack(
             children: [
-              // App logo with consistent structure (like app bar and landing page)
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: isDarkMode
-                      ? colorScheme.primaryContainer.withOpacity(0.15)
-                      : colorScheme.primaryContainer.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: colorScheme.primary.withOpacity(0.3),
-                    width: 2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: colorScheme.primary
-                          .withOpacity(isDarkMode ? 0.1 : 0.15),
-                      blurRadius: 16,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
+              // Centered logo only
+              Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Justice scale icon (consistent with app bar/landing)
+                    // Justice scale icon
                     Text(
                       '⚖️',
                       style: TextStyle(
-                        fontSize: 48,
-                        color: colorScheme.onSurface,
+                        fontSize: 80,
+                        color: AppColors.black,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 24),
 
-                    // App name (consistent with app bar/landing)
+                    // App name
                     Text(
                       'POLA',
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                        letterSpacing: 2.0,
+                      style: theme.textTheme.headlineLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.black,
+                        letterSpacing: 5.0,
+                        fontSize: 48,
                       ),
                     ),
 
-                    // Separator line (consistent with app bar/landing)
+                    const SizedBox(height: 16),
+
+                    // Separator line
                     Container(
-                      width: 60,
-                      height: 2,
-                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      width: 120,
+                      height: 4,
                       decoration: BoxDecoration(
-                        color: colorScheme.primary,
-                        borderRadius: BorderRadius.circular(1),
-                      ),
-                    ),
-
-                    // Tagline (consistent with app bar/landing)
-                    Text(
-                      'The lawyer you carry',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        fontStyle: FontStyle.italic,
-                        letterSpacing: 0.5,
+                        color: AppColors.black,
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 40),
-
-              // Loading indicator with adaptive colors
-              CircularProgressIndicator(
-                color: colorScheme.primary,
-                strokeWidth: 3,
-              ),
-
-              const SizedBox(height: 24),
-
-              // Status message with improved readability
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Text(
-                  _statusMessage,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // Platform title (consistent branding)
-              Text(
-                'Pola Legal Platform',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                  letterSpacing: 0.5,
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Subtle branding element
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  'Legal Solutions Platform',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.8,
+              // Simple loader at bottom
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 80,
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.black,
+                    strokeWidth: 3,
+                    backgroundColor: AppColors.black.withOpacity(0.2),
                   ),
                 ),
               ),

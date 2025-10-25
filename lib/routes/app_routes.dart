@@ -4,8 +4,9 @@ import '../main.dart';
 import '../features/onboarding/screens/landing_screen.dart';
 import '../features/auth/screens/registration_screen.dart';
 import '../features/auth/screens/login_screen.dart';
-import '../features/home/screens/home_screen.dart';
+import '../features/navigation/screens/main_navigation_screen.dart';
 import '../features/settings/screens/settings_screen.dart';
+import '../features/profile/screens/profile_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -35,7 +36,11 @@ class AppRoutes {
     ),
     GetPage(
       name: home,
-      page: () => const HomeScreen(),
+      page: () => const MainNavigationScreen(),
+    ),
+    GetPage(
+      name: profile,
+      page: () => const ProfileScreen(),
     ),
     GetPage(
       name: settings,

@@ -263,7 +263,7 @@ class LoginScreen extends StatelessWidget {
             Expanded(
               child: Obx(() => CheckboxListTile(
                     value: controller.rememberMe,
-                    onChanged: (_) => controller.toggleRememberMe(),
+                    onChanged: (value) => controller.toggleRememberMe(value),
                     title: Text(
                       'Remember me',
                       style: TextStyle(

@@ -285,6 +285,48 @@ class TokenStorageService extends GetxController {
     return _userData.value?['profile_picture'] as String?;
   }
 
+  /// Store user profile data (separate from login user data)
+  Future<void> storeUserProfile(Map<String, dynamic> profileData) async {
+    try {
+      const String profileKey = 'user_profile';
+      await _secureStorage.write(
+        key: profileKey,
+        value: jsonEncode(profileData),
+      );
+      debugPrint('✅ User profile stored successfully');
+    } catch (e) {
+      debugPrint('❌ Error storing user profile: $e');
+      throw Exception('Failed to store user profile');
+    }
+  }
+
+  /// Get stored user profile data
+  Future<Map<String, dynamic>?> getUserProfile() async {
+    try {
+      const String profileKey = 'user_profile';
+      final profileString = await _secureStorage.read(key: profileKey);
+
+      if (profileString != null) {
+        return jsonDecode(profileString) as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('❌ Error getting user profile: $e');
+      return null;
+    }
+  }
+
+  /// Clear user profile data
+  Future<void> clearUserProfile() async {
+    try {
+      const String profileKey = 'user_profile';
+      await _secureStorage.delete(key: profileKey);
+      debugPrint('🧹 User profile cleared');
+    } catch (e) {
+      debugPrint('❌ Error clearing user profile: $e');
+    }
+  }
+
   /// Clear stored tokens from secure storage (internal method)
   Future<void> _clearStoredTokens() async {
     try {
@@ -293,13 +335,16 @@ class TokenStorageService extends GetxController {
       await _secureStorage.delete(key: _userDataKey);
       await _secureStorage.delete(key: _tokenExpirationKey);
 
+      // Clear user profile as well
+      await clearUserProfile();
+
       // Reset reactive variables
       _currentAccessToken.value = '';
       _currentRefreshToken.value = '';
       _userData.value = null;
       _isLoggedIn.value = false;
 
-      debugPrint('🧹 Stored tokens cleared from secure storage');
+      debugPrint('🧹 Stored tokens and profile cleared from secure storage');
     } catch (e) {
       debugPrint('❌ Error clearing stored tokens: $e');
     }

@@ -399,25 +399,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showUserProfile(BuildContext context, HomeController controller) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('User Profile'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Name: ${controller.userDisplayName}'),
-            Text('Email: ${controller.userEmail}'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
+    // Navigate to profile page
+    Get.toNamed('/profile');
   }
 
   void _showNotifications(BuildContext context, HomeController controller) {

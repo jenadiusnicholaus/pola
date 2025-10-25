@@ -16,8 +16,9 @@ class SettingsScreen extends StatelessWidget {
         showLogo: false,
         showTagline: false,
       ),
-      body: GetBuilder<ThemeController>(
-        builder: (themeController) {
+      body: Obx(
+        () {
+          final themeController = Get.find<ThemeController>();
           return ListView(
             padding: const EdgeInsets.all(16.0),
             children: [
@@ -118,21 +119,21 @@ class SettingsScreen extends StatelessWidget {
                             ),
                       ),
                       const SizedBox(height: 16),
-                      ListTile(
-                        leading: const Icon(
+                      const ListTile(
+                        leading: Icon(
                           Icons.info_outline,
                           color: AppColors.primaryAmber,
                         ),
                         title: Text('${AppStrings.appName} App'),
-                        subtitle: const Text('Version 1.0.0'),
+                        subtitle: Text('Version 1.0.0'),
                       ),
-                      ListTile(
-                        leading: const Icon(
+                      const ListTile(
+                        leading: Icon(
                           Icons.gavel,
                           color: AppColors.primaryAmber,
                         ),
-                        title: const Text('Legal Assistant'),
-                        subtitle: const Text('Your portable lawyer companion'),
+                        title: Text('Legal Assistant'),
+                        subtitle: Text('Your portable lawyer companion'),
                       ),
                       const Divider(),
                       ListTile(

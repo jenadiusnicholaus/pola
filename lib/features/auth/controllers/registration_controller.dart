@@ -163,12 +163,11 @@ class RegistrationController extends GetxController {
       debugPrint(
           '📝 User Role: ${_getRoleDisplayName(_registrationData.value.userRole)}');
       debugPrint('📧 Email: ${_registrationData.value.email}');
-      debugPrint(
-          '🌐 Endpoint: ${EnvironmentConfig.baseUrl}${EnvironmentConfig.registerEndpoint}');
+      debugPrint('🌐 Endpoint: ${EnvironmentConfig.registerUrl}');
 
       // Submit to API
       final response = await _apiService.post(
-        '${EnvironmentConfig.baseUrl}${EnvironmentConfig.registerEndpoint}',
+        EnvironmentConfig.registerUrl,
         data: _registrationData.value.toJson(),
       );
 

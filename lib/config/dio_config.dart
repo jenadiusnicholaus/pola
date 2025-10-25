@@ -14,7 +14,7 @@ class DioConfig {
 
     // Base configuration
     _dio.options = BaseOptions(
-      baseUrl: EnvironmentConfig.completeApiUrl,
+      baseUrl: EnvironmentConfig.baseUrl,
       connectTimeout:
           Duration(milliseconds: EnvironmentConfig.connectionTimeout),
       receiveTimeout: Duration(milliseconds: EnvironmentConfig.receiveTimeout),
@@ -56,15 +56,16 @@ class DioConfig {
     return customDio;
   }
 
-  // Update auth token
-  static void updateAuthToken(String token) {
-    ApiInterceptors.updateAuthToken(token);
-    _dio.options.headers['Authorization'] = 'Bearer $token';
+  // Update auth token (deprecated - now handled by interceptor automatically)
+  @deprecated
+  static Future<void> updateAuthToken(String token) async {
+    await ApiInterceptors.updateAuthToken(token);
+    // Headers are now set automatically by the auth interceptor
   }
 
   // Clear auth token
-  static void clearAuthToken() {
-    ApiInterceptors.clearAuthToken();
+  static Future<void> clearAuthToken() async {
+    await ApiInterceptors.clearAuthToken();
     _dio.options.headers.remove('Authorization');
   }
 }
