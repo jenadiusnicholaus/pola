@@ -285,8 +285,7 @@ class LookupService extends GetxService {
         } else {
           throw Exception('Invalid API response format for advocates');
         }
-        _advocates.value =
-            data.map((json) => Advocate.fromJson(json)).toList();
+        _advocates.value = data.map((json) => Advocate.fromJson(json)).toList();
       }
 
       return _advocates;

@@ -290,11 +290,13 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: const Color(0xFFD1D5DB)),
+                          borderSide:
+                              BorderSide(color: const Color(0xFFD1D5DB)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: const Color(0xFFD1D5DB)),
+                          borderSide:
+                              BorderSide(color: const Color(0xFFD1D5DB)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -303,7 +305,8 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                         ),
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: const Color(0xFFEF4444)),
+                          borderSide:
+                              BorderSide(color: const Color(0xFFEF4444)),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 14),
@@ -353,11 +356,13 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: const Color(0xFFD1D5DB)),
+                          borderSide:
+                              BorderSide(color: const Color(0xFFD1D5DB)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: const Color(0xFFD1D5DB)),
+                          borderSide:
+                              BorderSide(color: const Color(0xFFD1D5DB)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -366,7 +371,8 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                         ),
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: const Color(0xFFEF4444)),
+                          borderSide:
+                              BorderSide(color: const Color(0xFFEF4444)),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 14),
@@ -573,7 +579,8 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                                 _saveData();
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
                                 decoration: BoxDecoration(
                                   color: _selectedGender == 'M'
                                       ? const Color(0xFF3B82F6)
@@ -623,7 +630,8 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                                 _saveData();
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
                                 decoration: BoxDecoration(
                                   color: _selectedGender == 'F'
                                       ? const Color(0xFF3B82F6)
@@ -669,7 +677,8 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                                 _saveData();
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
                                 decoration: BoxDecoration(
                                   color: _selectedGender == 'O'
                                       ? const Color(0xFF3B82F6)

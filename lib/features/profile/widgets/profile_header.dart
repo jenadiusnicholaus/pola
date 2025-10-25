@@ -164,7 +164,8 @@ class ProfileHeader extends StatelessWidget {
                       : Colors.green.shade50,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isDark ? Colors.green.shade400 : Colors.green.shade600,
+                    color:
+                        isDark ? Colors.green.shade400 : Colors.green.shade600,
                     width: 1.5,
                   ),
                   boxShadow: isDark
@@ -182,7 +183,9 @@ class ProfileHeader extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.verified,
-                      color: isDark ? Colors.green.shade400 : Colors.green.shade700,
+                      color: isDark
+                          ? Colors.green.shade400
+                          : Colors.green.shade700,
                       size: 18,
                     ),
                     const SizedBox(width: 6),
@@ -211,7 +214,9 @@ class ProfileHeader extends StatelessWidget {
                       : Colors.orange.shade50,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isDark ? Colors.orange.shade400 : Colors.orange.shade600,
+                    color: isDark
+                        ? Colors.orange.shade400
+                        : Colors.orange.shade600,
                     width: 1.5,
                   ),
                   boxShadow: isDark
@@ -229,7 +234,9 @@ class ProfileHeader extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.pending,
-                      color: isDark ? Colors.orange.shade400 : Colors.orange.shade700,
+                      color: isDark
+                          ? Colors.orange.shade400
+                          : Colors.orange.shade700,
                       size: 18,
                     ),
                     const SizedBox(width: 6),
@@ -255,7 +262,7 @@ class ProfileHeader extends StatelessWidget {
   String _getInitials(String fullName) {
     final trimmed = fullName.trim();
     if (trimmed.isEmpty) return 'U';
-    
+
     final parts = trimmed.split(' ').where((part) => part.isNotEmpty).toList();
     if (parts.isEmpty) return 'U';
     if (parts.length == 1) {
