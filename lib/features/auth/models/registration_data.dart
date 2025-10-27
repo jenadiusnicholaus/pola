@@ -82,17 +82,43 @@ class RegistrationData {
     this.areaOfLaw,
   });
 
+  // Helper method to convert role name to role ID
+  int _getRoleId(dynamic role) {
+    if (role is int) return role;
+
+    final roleString = role.toString().toLowerCase();
+    switch (roleString) {
+      case 'lawyer':
+        return 1;
+      case 'advocate':
+        return 2;
+      case 'paralegal':
+        return 3;
+      case 'law_student':
+        return 4;
+      case 'law_firm':
+        return 5;
+      case 'citizen':
+        return 6;
+      case 'lecturer':
+        return 7;
+      default:
+        return 6; // Default to citizen if unknown
+    }
+  }
+
   Map<String, dynamic> toJson() {
     Map<String, dynamic> data = {
       'email': email,
       'password': password,
       'password_confirm': passwordConfirm,
       'agreed_to_Terms': agreedToTerms,
-      'user_role': userRole,
+      'user_role': _getRoleId(userRole), // Convert to ID
     };
 
     // Personal details - only for non-law firms (role != 5)
-    if (userRole != 5) {
+    final roleId = _getRoleId(userRole);
+    if (roleId != 5) {
       data['first_name'] = firstName;
       data['last_name'] = lastName;
       data['gender'] = gender;
@@ -153,7 +179,8 @@ class RegistrationData {
     if (!agreedToTerms) errors.add('You must agree to terms and conditions');
 
     // Personal details validation - NOT required for law firms (role 5)
-    if (userRole != 5) {
+    final roleId = _getRoleId(userRole);
+    if (roleId != 5) {
       if (firstName.isEmpty) errors.add('First name is required');
       if (lastName.isEmpty) errors.add('Last name is required');
       if (dateOfBirth == null) errors.add('Date of birth is required');

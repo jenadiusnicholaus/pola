@@ -440,23 +440,66 @@ class VerificationController extends GetxController {
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 85,
+        imageQuality: 90, // Higher quality for camera captures
         maxWidth: 1920,
         maxHeight: 1080,
+        preferredCameraDevice:
+            CameraDevice.rear, // Use rear camera for documents
       );
 
       if (image != null) {
         final file = File(image.path);
+
+        // Additional validation before upload
+        if (!await file.exists()) {
+          throw Exception('Captured image file is not accessible');
+        }
+
+        // Check file size (limit to 15MB for camera captures)
+        final fileSize = await file.length();
+        if (fileSize > 15 * 1024 * 1024) {
+          Get.snackbar(
+            '⚠️ Image Too Large',
+            'Captured image is too large. Please try again with lower quality.',
+            snackPosition: SnackPosition.TOP,
+            backgroundColor: Colors.orange,
+            colorText: Colors.white,
+          );
+          return;
+        }
+
         await _uploadFile(file, documentType, 'Camera Capture');
+      } else {
+        Get.snackbar(
+          'ℹ️ No Photo Taken',
+          'Please take a photo to upload',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.blue.withOpacity(0.8),
+          colorText: Colors.white,
+        );
       }
     } catch (e) {
       debugPrint('❌ Camera upload error: $e');
+
+      String errorMessage = 'Failed to capture image';
+
+      // Provide specific error messages for common camera issues
+      if (e.toString().contains('Camera access denied')) {
+        errorMessage =
+            'Camera access denied. Please enable camera permission in Settings.';
+      } else if (e.toString().contains('Camera not available')) {
+        errorMessage = 'Camera not available on this device.';
+      } else if (e.toString().contains('No camera found')) {
+        errorMessage = 'No camera found. Please try using gallery instead.';
+      }
+
       Get.snackbar(
-        'Error',
-        'Failed to capture image: $e',
+        '📷 Camera Error',
+        errorMessage,
         backgroundColor: Colors.red,
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 4),
       );
     } finally {
       _isUploading.value = false;
@@ -486,15 +529,72 @@ class VerificationController extends GetxController {
       }
 
       final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 85,
-        maxWidth: 1920,
-        maxHeight: 1080,
-      );
+
+      // Try with different image picker configurations for better iOS compatibility
+      XFile? image;
+
+      try {
+        // First attempt with standard settings
+        image = await picker.pickImage(
+          source: ImageSource.gallery,
+          imageQuality: 85,
+          maxWidth: 1920,
+          maxHeight: 1080,
+        );
+      } catch (iosError) {
+        debugPrint('⚠️ First attempt failed: $iosError');
+
+        // Second attempt with more conservative settings for iOS compatibility
+        try {
+          image = await picker.pickImage(
+            source: ImageSource.gallery,
+            imageQuality: 70,
+            maxWidth: 1024,
+            maxHeight: 1024,
+          );
+        } catch (fallbackError) {
+          debugPrint('⚠️ Fallback attempt failed: $fallbackError');
+
+          // Check if it's the specific iOS JPEG error
+          if (fallbackError
+                  .toString()
+                  .contains('Cannot load representation of type public.jpeg') ||
+              fallbackError.toString().contains('invalid_image')) {
+            // Show alternative upload options
+            Future.delayed(const Duration(milliseconds: 300), () {
+              showAlternativeUploadOptions(documentType);
+            });
+
+            return;
+          }
+
+          // Re-throw other errors
+          throw fallbackError;
+        }
+      }
 
       if (image != null) {
+        // Additional validation before upload
         final file = File(image.path);
+
+        // Check if file exists and is accessible
+        if (!await file.exists()) {
+          throw Exception('Selected image file is not accessible');
+        }
+
+        // Check file size (limit to 10MB)
+        final fileSize = await file.length();
+        if (fileSize > 10 * 1024 * 1024) {
+          Get.snackbar(
+            '⚠️ File Too Large',
+            'Image size must be less than 10MB. Please select a smaller image or reduce quality.',
+            snackPosition: SnackPosition.TOP,
+            backgroundColor: Colors.orange,
+            colorText: Colors.white,
+          );
+          return;
+        }
+
         await _uploadFile(file, documentType, 'Gallery Selection');
       } else {
         Get.snackbar(
@@ -507,12 +607,28 @@ class VerificationController extends GetxController {
       }
     } catch (e) {
       debugPrint('❌ Gallery upload error: $e');
+
+      String errorMessage = 'Failed to select image';
+
+      // Provide specific error messages for common issues
+      if (e.toString().contains('Cannot load representation')) {
+        errorMessage =
+            'Image format not supported. Please try a different image or take a new photo.';
+      } else if (e.toString().contains('invalid_image')) {
+        errorMessage =
+            'Invalid image file. Please select a valid image from your gallery.';
+      } else if (e.toString().contains('Permission denied')) {
+        errorMessage =
+            'Gallery access permission denied. Please enable photo library access in Settings.';
+      }
+
       Get.snackbar(
-        'Error',
-        'Failed to select image: $e',
+        '📱 Gallery Error',
+        errorMessage,
         backgroundColor: Colors.red,
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 4),
       );
     } finally {
       _isUploading.value = false;
@@ -582,17 +698,67 @@ class VerificationController extends GetxController {
 
         await Future.delayed(const Duration(milliseconds: 500));
 
-        // Fallback to gallery picker
+        // Fallback to gallery picker with improved error handling
         final ImagePicker picker = ImagePicker();
-        final XFile? image = await picker.pickImage(
-          source: ImageSource.gallery,
-          imageQuality: 85,
-          maxWidth: 1920,
-          maxHeight: 1080,
-        );
+        XFile? image;
+
+        try {
+          // First attempt with standard settings
+          image = await picker.pickImage(
+            source: ImageSource.gallery,
+            imageQuality: 85,
+            maxWidth: 1920,
+            maxHeight: 1080,
+          );
+        } catch (galleryError) {
+          debugPrint('⚠️ Gallery fallback failed: $galleryError');
+
+          // Try with conservative settings for iOS compatibility
+          try {
+            image = await picker.pickImage(
+              source: ImageSource.gallery,
+              imageQuality: 70,
+              maxWidth: 1024,
+              maxHeight: 1024,
+            );
+          } catch (finalError) {
+            if (finalError.toString().contains(
+                    'Cannot load representation of type public.jpeg') ||
+                finalError.toString().contains('invalid_image')) {
+              Get.snackbar(
+                '📱 Image Format Issue',
+                'Unable to load this image format. Please try taking a new photo with the camera instead.',
+                snackPosition: SnackPosition.TOP,
+                backgroundColor: Colors.orange,
+                colorText: Colors.white,
+                duration: const Duration(seconds: 5),
+              );
+              return;
+            }
+            throw finalError;
+          }
+        }
 
         if (image != null) {
           final file = File(image.path);
+
+          // Check file accessibility and size
+          if (!await file.exists()) {
+            throw Exception('Selected image file is not accessible');
+          }
+
+          final fileSize = await file.length();
+          if (fileSize > 10 * 1024 * 1024) {
+            Get.snackbar(
+              '⚠️ File Too Large',
+              'Image size must be less than 10MB. Please select a smaller image.',
+              snackPosition: SnackPosition.TOP,
+              backgroundColor: Colors.orange,
+              colorText: Colors.white,
+            );
+            return;
+          }
+
           await _uploadFile(file, documentType, image.name);
         } else {
           Get.snackbar(
@@ -743,5 +909,82 @@ class VerificationController extends GetxController {
         snackPosition: SnackPosition.TOP,
       );
     }
+  }
+
+  /// Show alternative upload options when gallery fails
+  void showAlternativeUploadOptions(String documentType) {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '📱 Alternative Upload Options',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Gallery selection failed. Try these alternatives:',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+            const SizedBox(height: 20),
+
+            // Camera option
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Colors.blue),
+              title: const Text('Take Photo'),
+              subtitle: const Text('Use camera to capture document'),
+              onTap: () {
+                Get.back();
+                uploadDocumentFromCamera(documentType);
+              },
+            ),
+
+            // File browser option
+            ListTile(
+              leading: const Icon(Icons.file_present, color: Colors.green),
+              title: const Text('Browse Files'),
+              subtitle: const Text('Select from file manager'),
+              onTap: () {
+                Get.back();
+                uploadDocumentFromFiles(documentType);
+              },
+            ),
+
+            // Tips section
+            const Divider(),
+            const ListTile(
+              leading: Icon(Icons.lightbulb_outline, color: Colors.orange),
+              title: Text('💡 Tips for iOS Users'),
+              subtitle: Text(
+                '• Convert images to JPEG format before selecting\n'
+                '• Use camera for better compatibility\n'
+                '• Ensure images are not corrupted or too large',
+              ),
+            ),
+
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Get.back(),
+                child: const Text('Cancel'),
+              ),
+            ),
+          ],
+        ),
+      ),
+      isDismissible: true,
+      enableDrag: true,
+    );
   }
 }

@@ -391,54 +391,73 @@ class DetailedVerificationStep extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: _getDocumentStatusColor(doc.status, context)
-                      .withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  _getDocumentIcon(doc.status),
-                  size: 20,
-                  color: _getDocumentStatusColor(doc.status, context),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      doc.documentTypeDisplay,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+              // Header row with icon, title and action button
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _getDocumentStatusColor(doc.status, context)
+                          .withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    const SizedBox(height: 2),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: _getDocumentStatusColor(doc.status, context)
-                            .withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        doc.statusDisplay,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: _getDocumentStatusColor(doc.status, context),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 11,
+                    child: Icon(
+                      _getDocumentIcon(doc.status),
+                      size: 20,
+                      color: _getDocumentStatusColor(doc.status, context),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          doc.documentTypeDisplay,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _buildDocumentActionButton(context, doc),
+                ],
+              ),
+
+              // Status badge row
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const SizedBox(
+                      width:
+                          44), // Align with text above (icon width + spacing)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: _getDocumentStatusColor(doc.status, context)
+                          .withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      doc.statusDisplay,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: _getDocumentStatusColor(doc.status, context),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              _buildDocumentActionButton(context, doc),
             ],
           ),
 
@@ -447,35 +466,52 @@ class DetailedVerificationStep extends StatelessWidget {
             const SizedBox(height: 12),
             Divider(color: theme.dividerColor.withOpacity(0.5)),
             const SizedBox(height: 8),
-            Row(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (doc.createdAt.isNotEmpty) ...[
-                  Icon(
-                    Icons.access_time,
-                    size: 14,
-                    color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Uploaded: ${_formatDate(doc.createdAt)}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
-                    ),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time,
+                        size: 14,
+                        color:
+                            theme.textTheme.bodySmall?.color?.withOpacity(0.6),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          'Uploaded: ${_formatDate(doc.createdAt)}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.textTheme.bodySmall?.color
+                                ?.withOpacity(0.6),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
                 if (doc.verificationDate != null) ...[
-                  if (doc.createdAt.isNotEmpty) const SizedBox(width: 16),
-                  Icon(
-                    Icons.verified_user,
-                    size: 14,
-                    color: Colors.green[600],
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Verified: ${_formatDate(doc.verificationDate!)}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.green[600],
-                    ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.verified_user,
+                        size: 14,
+                        color: Colors.green[600],
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          'Verified: ${_formatDate(doc.verificationDate!)}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.green[600],
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ],
@@ -612,39 +648,68 @@ class DetailedVerificationStep extends StatelessWidget {
           ),
         );
       case 'pending':
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.orange.withOpacity(0.1),
+        return Tooltip(
+          message: 'Tap to refresh verification status',
+          child: InkWell(
+            onTap: () => _refreshDocumentStatus(context, doc),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: Colors.orange.withOpacity(0.3),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Colors.orange.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: Colors.orange[600],
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Under Review',
+                        style: TextStyle(
+                          color: Colors.orange[700],
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                      if (doc.createdAt.isNotEmpty) ...[
+                        Text(
+                          'Submitted ${_getTimeAgo(doc.createdAt)}',
+                          style: TextStyle(
+                            color: Colors.orange[600],
+                            fontSize: 10,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(
+                    Icons.schedule,
+                    size: 14,
+                    color: Colors.orange[600],
+                  ),
+                ],
+              ),
             ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 12,
-                height: 12,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(Colors.orange[700]!),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'Reviewing',
-                style: TextStyle(
-                  color: Colors.orange[700],
-                  fontWeight: FontWeight.w500,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
         );
+
       default:
         return IconButton(
           onPressed: () => _showDocumentPreview(context, doc),
@@ -660,6 +725,26 @@ class DetailedVerificationStep extends StatelessWidget {
       return '${date.day}/${date.month}/${date.year}';
     } catch (e) {
       return dateString;
+    }
+  }
+
+  String _getTimeAgo(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      final now = DateTime.now();
+      final difference = now.difference(date);
+
+      if (difference.inDays > 0) {
+        return '${difference.inDays}d ago';
+      } else if (difference.inHours > 0) {
+        return '${difference.inHours}h ago';
+      } else if (difference.inMinutes > 0) {
+        return '${difference.inMinutes}m ago';
+      } else {
+        return 'Just now';
+      }
+    } catch (e) {
+      return '';
     }
   }
 
@@ -1274,6 +1359,34 @@ class DetailedVerificationStep extends StatelessWidget {
   void _uploadFromFiles(BuildContext context, RequiredDocument reqDoc) {
     Get.find<VerificationController>(tag: 'verification_screen')
         .uploadDocumentFromFiles(reqDoc.documentType);
+  }
+
+  void _refreshDocumentStatus(BuildContext context, VerificationDocument doc) {
+    // Show a snackbar to inform user
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text('Refreshing verification status...'),
+          ],
+        ),
+        backgroundColor: Colors.blue[600],
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    // Refresh the verification status
+    Get.find<VerificationController>(tag: 'verification_screen')
+        .refreshVerificationStatus();
   }
 
   void _showEditInfoDialog(BuildContext context, String field) {

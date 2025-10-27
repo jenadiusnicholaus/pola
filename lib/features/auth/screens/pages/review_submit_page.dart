@@ -471,169 +471,217 @@ class ReviewSubmitPage extends StatelessWidget {
     }
   }
 
-  String _getRoleDisplay(int roleId) {
-    switch (roleId) {
-      case 1:
+  String _getRoleDisplay(dynamic userRole) {
+    // Handle both int and String types
+    final roleString = userRole.toString().toLowerCase();
+
+    if (userRole is int) {
+      switch (userRole) {
+        case 1:
+          return 'Lawyer';
+        case 2:
+          return 'Advocate';
+        case 3:
+          return 'Paralegal';
+        case 4:
+          return 'Law Student';
+        case 5:
+          return 'Law Firm';
+        default:
+          return 'Unknown Role';
+      }
+    }
+
+    // Handle string values
+    switch (roleString) {
+      case 'lawyer':
         return 'Lawyer';
-      case 2:
+      case 'advocate':
         return 'Advocate';
-      case 3:
+      case 'paralegal':
         return 'Paralegal';
-      case 4:
+      case 'law_student':
         return 'Law Student';
-      case 5:
+      case 'law_firm':
         return 'Law Firm';
-      case 6:
+      case 'citizen':
         return 'Citizen';
-      case 7:
+      case 'lecturer':
         return 'Lecturer';
       default:
-        return 'Unknown';
+        return 'Unknown Role';
     }
   }
 
-  String _getRoleDescription(int roleId) {
-    switch (roleId) {
-      case 1:
+  String _getRoleDescription(dynamic userRole) {
+    // Handle both int and String types
+    final roleString = userRole.toString().toLowerCase();
+
+    if (userRole is int) {
+      switch (userRole) {
+        case 1:
+          return 'Legal practitioner providing legal services';
+        case 2:
+          return 'Licensed advocate registered with the Tanganyika Law Society';
+        case 3:
+          return 'Legal professional supporting lawyers and advocates';
+        case 4:
+          return 'Student pursuing legal education';
+        case 5:
+          return 'Law firm organization providing legal services';
+        case 6:
+          return 'General citizen accessing legal information';
+        case 7:
+          return 'Legal educator and academic';
+        default:
+          return 'Role description not available';
+      }
+    }
+
+    // Handle string values
+    switch (roleString) {
+      case 'lawyer':
         return 'Legal practitioner providing legal services';
-      case 2:
+      case 'advocate':
         return 'Licensed advocate registered with the Tanganyika Law Society';
-      case 3:
+      case 'paralegal':
         return 'Legal professional supporting lawyers and advocates';
-      case 4:
+      case 'law_student':
         return 'Student pursuing legal education';
-      case 5:
+      case 'law_firm':
         return 'Law firm organization providing legal services';
-      case 6:
+      case 'citizen':
         return 'General citizen accessing legal information';
-      case 7:
+      case 'lecturer':
         return 'Legal educator and academic';
       default:
         return 'Role description not available';
     }
   }
 
-  bool _shouldShowProfessionalInfo(int userRole) {
-    // Show professional info for all roles except citizen (role 6)
-    return userRole != 6;
+  bool _shouldShowProfessionalInfo(dynamic userRole) {
+    // Handle both int and String types
+    if (userRole is int) {
+      // Show professional info for all roles except citizen (role 6)
+      return userRole != 6;
+    }
+
+    // Handle string values - show professional info for all roles except citizen
+    final roleString = userRole.toString().toLowerCase();
+    return roleString != 'citizen';
   }
 
   List<Widget> _buildProfessionalInfo(data) {
     List<Widget> info = [];
 
-    // Show role-specific information based on what's available
-    switch (data.userRole) {
-      case 1: // Lawyer
-        info.add(_buildInfoRow('Professional Type', 'Lawyer'));
-        if (data.placeOfWork != null) {
-          info.add(
-              _buildInfoRow('Place of Work ID', data.placeOfWork.toString()));
-        }
-        if (data.yearsOfExperience != null) {
-          info.add(_buildInfoRow(
-              'Years of Experience', data.yearsOfExperience.toString()));
-        }
-        if (data.specializations?.isNotEmpty == true) {
-          info.add(_buildInfoRow(
-              'Specializations', data.specializations!.join(', ')));
-        }
-        break;
+    // Handle both int and String types for userRole
+    final roleValue = data.userRole;
+    final roleString = roleValue.toString().toLowerCase();
 
-      case 2: // Advocate
-        info.add(_buildInfoRow('Professional Type', 'Advocate'));
-        if (data.rollNumber?.isNotEmpty == true) {
-          info.add(_buildInfoRow('TLS Roll Number', data.rollNumber!));
-        }
-        if (data.regionalChapter != null) {
-          info.add(_buildInfoRow(
-              'Regional Chapter ID', data.regionalChapter.toString()));
-        }
-        if (data.yearOfAdmissionToBar != null) {
-          info.add(_buildInfoRow(
-              'Year of Admission', data.yearOfAdmissionToBar.toString()));
-        }
-        if (data.practiceStatus?.isNotEmpty == true) {
-          info.add(_buildInfoRow('Practice Status', data.practiceStatus!));
-        }
-        if (data.specializations?.isNotEmpty == true) {
-          info.add(_buildInfoRow(
-              'Specializations', data.specializations!.join(', ')));
-        }
-        break;
+    // Use pattern matching for both numeric and string values
+    bool isLawyer = (roleValue == 1) || (roleString == 'lawyer');
+    bool isAdvocate = (roleValue == 2) || (roleString == 'advocate');
+    bool isParalegal = (roleValue == 3) || (roleString == 'paralegal');
+    bool isLawStudent = (roleValue == 4) || (roleString == 'law_student');
+    bool isLawFirm = (roleValue == 5) || (roleString == 'law_firm');
+    bool isLecturer = (roleValue == 7) || (roleString == 'lecturer');
 
-      case 3: // Paralegal
-        info.add(_buildInfoRow('Professional Type', 'Paralegal'));
-        if (data.placeOfWork != null) {
-          info.add(
-              _buildInfoRow('Place of Work ID', data.placeOfWork.toString()));
-        }
-        if (data.yearsOfExperience != null) {
-          info.add(_buildInfoRow(
-              'Years of Experience', data.yearsOfExperience.toString()));
-        }
-        break;
-
-      case 4: // Law Student
-        info.add(_buildInfoRow('Professional Type', 'Law Student'));
-        if (data.institution?.isNotEmpty == true) {
-          info.add(_buildInfoRow('Institution', data.institution!));
-        }
-        if (data.currentYearOfStudy?.isNotEmpty == true) {
-          info.add(_buildInfoRow('Current Year', data.currentYearOfStudy!));
-        }
-        if (data.expectedGraduationYear?.isNotEmpty == true) {
-          info.add(_buildInfoRow(
-              'Expected Graduation', data.expectedGraduationYear!));
-        }
-        break;
-
-      case 5: // Law Firm
-        info.add(_buildInfoRow('Organization Type', 'Law Firm'));
-        if (data.firmName?.isNotEmpty == true) {
-          info.add(_buildInfoRow('Firm Name', data.firmName!));
-        }
-        if (data.managingPartner != null) {
-          info.add(_buildInfoRow(
-              'Managing Partner ID', data.managingPartner.toString()));
-        }
-        if (data.numberOfLawyers != null) {
-          info.add(_buildInfoRow(
-              'Number of Lawyers', data.numberOfLawyers.toString()));
-        }
-        if (data.yearEstablished != null) {
-          info.add(_buildInfoRow(
-              'Year Established', data.yearEstablished.toString()));
-        }
-        if (data.website?.isNotEmpty == true) {
-          info.add(_buildInfoRow('Website', data.website!));
-        }
-        break;
-
-      case 7: // Lecturer
-        info.add(_buildInfoRow('Professional Type', 'Lecturer'));
-        if (data.institution?.isNotEmpty == true) {
-          info.add(_buildInfoRow('Institution', data.institution!));
-        }
-        if (data.qualification?.isNotEmpty == true) {
-          info.add(_buildInfoRow('Qualification', data.qualification!));
-        }
-        if (data.areaOfLaw?.isNotEmpty == true) {
-          info.add(_buildInfoRow('Area of Law', data.areaOfLaw!));
-        }
-        if (data.employerInstitution?.isNotEmpty == true) {
-          info.add(
-              _buildInfoRow('Employer Institution', data.employerInstitution!));
-        }
-        break;
-
-      default:
-        info.add(_buildInfoRow('Professional Type', 'Not specified'));
+    if (isLawyer) {
+      info.add(_buildInfoRow('Professional Type', 'Lawyer'));
+      if (data.placeOfWork != null) {
+        info.add(
+            _buildInfoRow('Place of Work ID', data.placeOfWork.toString()));
+      }
+      if (data.yearsOfExperience != null) {
+        info.add(_buildInfoRow(
+            'Years of Experience', data.yearsOfExperience.toString()));
+      }
+      if (data.specializations?.isNotEmpty == true) {
+        info.add(
+            _buildInfoRow('Specializations', data.specializations!.join(', ')));
+      }
+    } else if (isAdvocate) {
+      info.add(_buildInfoRow('Professional Type', 'Advocate'));
+      if (data.rollNumber?.isNotEmpty == true) {
+        info.add(_buildInfoRow('TLS Roll Number', data.rollNumber!));
+      }
+      if (data.regionalChapter != null) {
+        info.add(_buildInfoRow(
+            'Regional Chapter ID', data.regionalChapter.toString()));
+      }
+      if (data.yearOfAdmissionToBar != null) {
+        info.add(_buildInfoRow(
+            'Year of Admission', data.yearOfAdmissionToBar.toString()));
+      }
+      if (data.practiceStatus?.isNotEmpty == true) {
+        info.add(_buildInfoRow('Practice Status', data.practiceStatus!));
+      }
+      if (data.specializations?.isNotEmpty == true) {
+        info.add(
+            _buildInfoRow('Specializations', data.specializations!.join(', ')));
+      }
+    } else if (isParalegal) {
+      info.add(_buildInfoRow('Professional Type', 'Paralegal'));
+      if (data.placeOfWork != null) {
+        info.add(
+            _buildInfoRow('Place of Work ID', data.placeOfWork.toString()));
+      }
+      if (data.yearsOfExperience != null) {
+        info.add(_buildInfoRow(
+            'Years of Experience', data.yearsOfExperience.toString()));
+      }
+    } else if (isLawStudent) {
+      info.add(_buildInfoRow('Professional Type', 'Law Student'));
+      if (data.institution?.isNotEmpty == true) {
+        info.add(_buildInfoRow('Institution', data.institution!));
+      }
+      if (data.currentYearOfStudy?.isNotEmpty == true) {
+        info.add(_buildInfoRow('Current Year', data.currentYearOfStudy!));
+      }
+      if (data.expectedGraduationYear?.isNotEmpty == true) {
+        info.add(
+            _buildInfoRow('Expected Graduation', data.expectedGraduationYear!));
+      }
+    } else if (isLawFirm) {
+      info.add(_buildInfoRow('Organization Type', 'Law Firm'));
+      if (data.firmName?.isNotEmpty == true) {
+        info.add(_buildInfoRow('Firm Name', data.firmName!));
+      }
+      if (data.managingPartner != null) {
+        info.add(_buildInfoRow(
+            'Managing Partner ID', data.managingPartner.toString()));
+      }
+      if (data.numberOfLawyers != null) {
+        info.add(_buildInfoRow(
+            'Number of Lawyers', data.numberOfLawyers.toString()));
+      }
+      if (data.yearEstablished != null) {
+        info.add(
+            _buildInfoRow('Year Established', data.yearEstablished.toString()));
+      }
+      if (data.website?.isNotEmpty == true) {
+        info.add(_buildInfoRow('Website', data.website!));
+      }
+    } else if (isLecturer) {
+      info.add(_buildInfoRow('Professional Type', 'Lecturer'));
+      if (data.institution?.isNotEmpty == true) {
+        info.add(_buildInfoRow('Institution', data.institution!));
+      }
+      if (data.qualification?.isNotEmpty == true) {
+        info.add(_buildInfoRow('Qualification', data.qualification!));
+      }
+      if (data.areaOfLaw?.isNotEmpty == true) {
+        info.add(_buildInfoRow('Area of Law', data.areaOfLaw!));
+      }
+      if (data.employerInstitution?.isNotEmpty == true) {
+        info.add(
+            _buildInfoRow('Employer Institution', data.employerInstitution!));
+      }
     }
 
-    // If no professional information is available, show a placeholder
-    if (info.length == 1) {
-      info.add(
-          _buildInfoRow('Status', 'Professional details to be updated later'));
+    // If no professional information was added, show a placeholder
+    if (info.isEmpty) {
+      info.add(_buildInfoRow('Professional Type', 'Not specified'));
     }
 
     return info;

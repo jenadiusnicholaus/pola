@@ -59,11 +59,12 @@ class VerificationProgressCard extends StatelessWidget {
                 height: 8,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(4),
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                  color: _getProgressBackgroundColor(
+                      context, progress, status.isVerified),
                   border: Border.all(
                     color:
-                        Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                        _getProgressColor(context, progress, status.isVerified)
+                            .withOpacity(0.2),
                   ),
                 ),
                 child: FractionallySizedBox(
@@ -72,8 +73,19 @@ class VerificationProgressCard extends StatelessWidget {
                   child: Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(4),
-                      color: _getProgressColor(
+                      gradient: _getProgressGradient(
                           context, progress, status.isVerified),
+                      boxShadow: progress > 0
+                          ? [
+                              BoxShadow(
+                                color: _getProgressColor(
+                                        context, progress, status.isVerified)
+                                    .withOpacity(0.3),
+                                offset: const Offset(0, 1),
+                                blurRadius: 2,
+                              ),
+                            ]
+                          : null,
                     ),
                   ),
                 ),
@@ -238,20 +250,65 @@ class VerificationProgressCard extends StatelessWidget {
 
   Color _getProgressColor(
       BuildContext context, double progress, bool isVerified) {
+    // If fully verified, always show bright green
     if (progress >= 100 && isVerified) {
-      return Colors.green; // Complete and verified - Green success color
-    } else if (progress >= 100) {
-      return Theme.of(context)
-          .colorScheme
-          .primary; // Complete but not verified - Primary theme color
+      return Colors.green[600]!; // Bright green for verified completion
+    }
+    // If 100% but not verified (waiting for review), show amber
+    else if (progress >= 100) {
+      return Colors.amber[600]!; // Amber for complete but pending verification
+    }
+    // Progressive color changes based on percentage
+    else if (progress >= 80) {
+      return Colors.lightGreen[600]!; // Light green for near completion
+    } else if (progress >= 60) {
+      return Colors.lime[600]!; // Lime for good progress
+    } else if (progress >= 40) {
+      return Colors.amber[600]!; // Amber for moderate progress
+    } else if (progress >= 20) {
+      return Colors.orange[600]!; // Orange for early progress
     } else if (progress > 0) {
-      return Theme.of(context)
-          .colorScheme
-          .secondary; // In progress - Secondary theme color
+      return Colors.deepOrange[600]!; // Deep orange for minimal progress
+    } else {
+      return Colors.red[600]!; // Red for no progress
+    }
+  }
+
+  LinearGradient _getProgressGradient(
+      BuildContext context, double progress, bool isVerified) {
+    final baseColor = _getProgressColor(context, progress, isVerified);
+
+    // Create a subtle gradient for visual enhancement
+    return LinearGradient(
+      colors: [
+        baseColor.withOpacity(0.8),
+        baseColor,
+        baseColor.withOpacity(0.9),
+      ],
+      stops: const [0.0, 0.5, 1.0],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+  }
+
+  Color _getProgressBackgroundColor(
+      BuildContext context, double progress, bool isVerified) {
+    // Subtle tinted background based on progress status
+    if (progress >= 100 && isVerified) {
+      return Colors.green
+          .withOpacity(0.08); // Light green background for verified
+    } else if (progress >= 100) {
+      return Colors.amber
+          .withOpacity(0.08); // Light amber for complete but unverified
+    } else if (progress >= 50) {
+      return Colors.blue.withOpacity(0.05); // Light blue for good progress
+    } else if (progress > 0) {
+      return Colors.orange.withOpacity(0.05); // Light orange for some progress
     } else {
       return Theme.of(context)
           .colorScheme
-          .error; // Not started - Error theme color
+          .onSurface
+          .withOpacity(0.05); // Neutral for no progress
     }
   }
 }
