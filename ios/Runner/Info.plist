@@ -86,5 +86,13 @@
 	<!-- Internet usage description (if needed for App Store) -->
 	<key>NSAppTransportSecurityUsageDescription</key>
 	<string>This app requires network access to communicate with the API server for legal assistance services.</string>
+	
+	<!-- Camera and Photo Library permissions for document upload -->
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access to capture verification documents.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs photo library access to select verification documents.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>This app needs photo library access to save verification documents.</string>
 </dict>
 </plist>

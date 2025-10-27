@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
+import '../../user_verification/screens/verification_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -348,6 +349,30 @@ class _HomeScreenState extends State<HomeScreen> {
               Get.back();
             },
           ),
+
+          // Show verification item only for professional roles
+          Obx(() {
+            final userRole = controller.userRole;
+            final requiresVerification = [
+              'advocate',
+              'lawyer',
+              'law_firm',
+              'paralegal'
+            ].contains(userRole);
+
+            if (!requiresVerification) {
+              return const SizedBox.shrink();
+            }
+
+            return ListTile(
+              leading: const Icon(Icons.verified_user),
+              title: const Text('Account Verification'),
+              onTap: () {
+                Get.back();
+                Get.to(() => const VerificationScreen());
+              },
+            );
+          }),
 
           const Divider(),
 

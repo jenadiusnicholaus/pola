@@ -5,7 +5,7 @@ import '../widgets/profile_header.dart';
 import '../widgets/profile_info_card.dart';
 import '../widgets/role_specific_info.dart';
 import '../widgets/subscription_card.dart';
-import '../widgets/verification_status_card.dart';
+import '../../user_verification/widgets/profile_verification_card.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -135,13 +135,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Verification Status
-                      if (!profile.isVerified)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
-                          child: VerificationStatusCard(
-                            status: profile.verificationStatus,
-                          ),
-                        ),
+                      const ProfileVerificationCard(),
+                      const SizedBox(height: 16),
 
                       // Subscription Info
                       SubscriptionCard(subscription: profile.subscription),
