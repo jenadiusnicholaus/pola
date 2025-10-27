@@ -7,7 +7,7 @@ class RegistrationData {
   String lastName;
   DateTime? dateOfBirth;
   bool agreedToTerms;
-  int userRole;
+  String userRole;
   String gender;
   String phoneNumber;
 
@@ -52,7 +52,7 @@ class RegistrationData {
     this.lastName = '',
     this.dateOfBirth,
     this.agreedToTerms = false,
-    this.userRole = 0, // No role selected initially
+    this.userRole = '', // No role selected initially
     this.gender = '',
     this.phoneNumber = '',
     this.idNumber,
@@ -96,19 +96,18 @@ class RegistrationData {
       data['first_name'] = firstName;
       data['last_name'] = lastName;
       data['gender'] = gender;
-      data['phone_number'] = phoneNumber;
+      if (dateOfBirth != null) {
+        data['date_of_birth'] = dateOfBirth!.toIso8601String().split('T')[0];
+      }
     }
 
-    // Add optional fields only if they have values
-    if (dateOfBirth != null) {
-      data['date_of_birth'] = dateOfBirth!.toIso8601String().split('T')[0];
-    }
-    if (idNumber?.isNotEmpty == true) data['id_number'] = idNumber;
+    // Contact information for all roles
+    data['phone_number'] = phoneNumber;
     if (region != null) data['region'] = region;
     if (district != null) data['district'] = district;
     if (ward?.isNotEmpty == true) data['ward'] = ward;
 
-    // Professional fields
+    // Professional fields (only include if they have values)
     if (rollNumber?.isNotEmpty == true) data['roll_number'] = rollNumber;
     if (regionalChapter != null) data['regional_chapter'] = regionalChapter;
     if (yearOfAdmissionToBar != null)
@@ -120,12 +119,6 @@ class RegistrationData {
       data['practice_status'] = practiceStatus;
     if (specializations?.isNotEmpty == true)
       data['specializations'] = specializations;
-    if (officeAddress?.isNotEmpty == true)
-      data['office_address'] = officeAddress;
-    if (operatingRegions?.isNotEmpty == true)
-      data['operating_regions'] = operatingRegions;
-    if (operatingDistricts?.isNotEmpty == true)
-      data['operating_districts'] = operatingDistricts;
 
     // Law firm fields
     if (firmName?.isNotEmpty == true) data['firm_name'] = firmName;
@@ -149,7 +142,7 @@ class RegistrationData {
     return data;
   }
 
-  // Validation methods for different roles
+  // Simplified validation - only basic information required
   List<String> validateForRole() {
     List<String> errors = [];
 
@@ -165,38 +158,23 @@ class RegistrationData {
       if (lastName.isEmpty) errors.add('Last name is required');
       if (dateOfBirth == null) errors.add('Date of birth is required');
       if (gender.isEmpty) errors.add('Gender is required');
-      if (phoneNumber.isEmpty) errors.add('Phone number is required');
-      if (region == null) errors.add('Region is required');
-      if (district == null) errors.add('District is required');
     }
 
-    // Role-specific validation
+    // Contact info validation for all roles
+    if (phoneNumber.isEmpty) errors.add('Phone number is required');
+    if (region == null) errors.add('Region is required');
+    if (district == null) errors.add('District is required');
+
+    // Professional validation based on role
     switch (userRole) {
-      case 2: // Advocate
+      case 'advocate':
         if (rollNumber?.isEmpty != false)
           errors.add('Roll number is required for advocates');
-        if (regionalChapter == null)
-          errors.add('Regional chapter is required for advocates');
-        if (yearOfAdmissionToBar == null)
-          errors.add('Year of admission to bar is required for advocates');
-        if (practiceStatus?.isEmpty != false)
-          errors.add('Practice status is required for advocates');
         break;
-      case 1: // Lawyer
-      case 3: // Paralegal
-        if (placeOfWork == null) errors.add('Place of work is required');
-        if (yearsOfExperience == null)
-          errors.add('Years of experience is required');
-        break;
-      case 5: // Law Firm
+      case 'law_firm':
         if (firmName?.isEmpty != false) errors.add('Firm name is required');
-        if (managingPartner == null) errors.add('Managing partner is required');
-        if (numberOfLawyers == null)
-          errors.add('Number of lawyers is required');
-        if (yearEstablished == null) errors.add('Year established is required');
-        if (practiceStatus?.isEmpty != false)
-          errors.add('Practice status is required');
         break;
+      // Other professional roles can have optional professional fields
     }
 
     return errors;

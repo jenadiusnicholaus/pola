@@ -71,7 +71,7 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
       await controller.lookupService.fetchWorkplaces();
       await controller.lookupService.fetchChapters();
       // Load advocates for law firm managing partner selection
-      if (controller.registrationData.userRole == 5) {
+      if (controller.registrationData.userRole == 'law_firm') {
         await controller.lookupService.fetchAdvocates();
       }
     } catch (e) {
@@ -149,31 +149,31 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
             const SizedBox(height: 24),
 
             // Build different forms based on user role
-            if (userRole == 2) ..._buildAdvocateFields(),
-            if (userRole == 1 || userRole == 3)
+            if (userRole == 'advocate') ..._buildAdvocateFields(),
+            if (userRole == 'lawyer' || userRole == 'paralegal')
               ..._buildLawyerParalegalFields(),
-            if (userRole == 5) ..._buildLawFirmFields(),
-            if (userRole == 4) ..._buildLawStudentFields(),
-            if (userRole == 7) ..._buildLecturerFields(),
+            if (userRole == 'law_firm') ..._buildLawFirmFields(),
+            if (userRole == 'law_student') ..._buildLawStudentFields(),
+            if (userRole == 'lecturer') ..._buildLecturerFields(),
           ],
         ),
       ),
     );
   }
 
-  String _getPageTitle(int userRole) {
+  String _getPageTitle(String userRole) {
     switch (userRole) {
-      case 1:
+      case 'lawyer':
         return 'Lawyer Information';
-      case 2:
+      case 'advocate':
         return 'Advocate Information';
-      case 3:
+      case 'paralegal':
         return 'Paralegal Information';
-      case 4:
+      case 'law_student':
         return 'Law Student Information';
-      case 5:
+      case 'law_firm':
         return 'Law Firm Information';
-      case 7:
+      case 'lecturer':
         return 'Lecturer Information';
       default:
         return 'Professional Information';
@@ -438,25 +438,12 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
               : advocates.map((Advocate advocate) {
                   return DropdownMenuItem<int>(
                     value: advocate.id,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          advocate.fullName,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          'Roll No: ${advocate.rollNumber}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      '${advocate.fullName} (${advocate.rollNumber})',
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   );
                 }).toList(),

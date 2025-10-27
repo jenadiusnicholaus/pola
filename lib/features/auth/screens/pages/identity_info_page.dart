@@ -11,7 +11,7 @@ class IdentityInfoPage extends StatefulWidget {
 
 class _IdentityInfoPageState extends State<IdentityInfoPage> {
   final controller = Get.find<RegistrationController>();
-
+  final _formKey = GlobalKey<FormState>();
   final _idNumberController = TextEditingController();
 
   @override
@@ -37,7 +37,7 @@ class _IdentityInfoPageState extends State<IdentityInfoPage> {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Form(
-        key: controller.identityFormKey,
+        key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

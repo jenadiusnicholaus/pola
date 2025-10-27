@@ -5,7 +5,6 @@ import '../services/lookup_service.dart';
 import 'pages/role_selection_page.dart';
 import 'pages/basic_info_page.dart';
 import 'pages/contact_info_page.dart';
-import 'pages/identity_info_page.dart';
 import 'pages/professional_info_page.dart';
 import 'pages/review_submit_page.dart';
 
@@ -69,9 +68,18 @@ class RegistrationScreen extends StatelessWidget {
                 const RoleSelectionPage(),
                 const BasicInfoPage(),
                 const ContactInfoPage(),
-                const IdentityInfoPage(),
-                const ProfessionalInfoPage(),
-                if (controller.totalPages > 5) const ReviewSubmitPage(),
+                // Professional Info Page (for professional roles only)
+                Obx(() {
+                  if (controller.registrationData.userRole == 'citizen') {
+                    // For citizens, skip professional page
+                    return const ReviewSubmitPage();
+                  } else {
+                    // For professional roles, show professional info page
+                    return const ProfessionalInfoPage();
+                  }
+                }),
+                // Review page (always last for professional roles)
+                const ReviewSubmitPage(),
               ],
             ),
           ),

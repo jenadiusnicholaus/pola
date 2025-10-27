@@ -39,18 +39,14 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
   }
 
   bool _validateForm() {
-    // Law firms (role 5) don't need personal details
-    final isLawFirm = controller.registrationData.userRole == 5;
-
-    if (!isLawFirm) {
-      if (_firstNameController.text.trim().isEmpty) {
-        debugPrint('❌ Validation failed: First name is empty');
-        return false;
-      }
-      if (_lastNameController.text.trim().isEmpty) {
-        debugPrint('❌ Validation failed: Last name is empty');
-        return false;
-      }
+    // All roles need personal details (including law firms)
+    if (_firstNameController.text.trim().isEmpty) {
+      debugPrint('❌ Validation failed: First name is empty');
+      return false;
+    }
+    if (_lastNameController.text.trim().isEmpty) {
+      debugPrint('❌ Validation failed: Last name is empty');
+      return false;
     }
     if (_emailController.text.trim().isEmpty) {
       debugPrint('❌ Validation failed: Email is empty');
@@ -72,15 +68,14 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
       debugPrint('❌ Validation failed: Passwords do not match');
       return false;
     }
-    if (!isLawFirm) {
-      if (_selectedDate == null) {
-        debugPrint('❌ Validation failed: Date of birth not selected');
-        return false;
-      }
-      if (_selectedGender == null) {
-        debugPrint('❌ Validation failed: Gender not selected');
-        return false;
-      }
+    // All roles need date of birth and gender (including law firms)
+    if (_selectedDate == null) {
+      debugPrint('❌ Validation failed: Date of birth not selected');
+      return false;
+    }
+    if (_selectedGender == null) {
+      debugPrint('❌ Validation failed: Gender not selected');
+      return false;
     }
     if (!controller.registrationData.agreedToTerms) {
       debugPrint('❌ Validation failed: Terms not agreed to');
@@ -90,43 +85,15 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
     return true;
   }
 
-  void _handleNext() {
-    if (_validateForm()) {
-      final data = controller.registrationData;
-      final isLawFirm = controller.registrationData.userRole == 5;
-
-      // Only set personal details for non-law firms
-      if (!isLawFirm) {
-        data.firstName = _firstNameController.text.trim();
-        data.lastName = _lastNameController.text.trim();
-        data.dateOfBirth = _selectedDate;
-        if (_selectedGender != null) {
-          data.gender = _selectedGender!;
-        }
-      }
-
-      // Email and password are required for all roles
-      data.email = _emailController.text.trim();
-      data.password = _passwordController.text;
-      data.passwordConfirm = _confirmPasswordController.text;
-
-      controller.updateRegistrationData(data);
-      controller.nextPage();
-    }
-  }
-
   void _saveData() {
     final data = controller.registrationData;
-    final isLawFirm = controller.registrationData.userRole == 5;
 
-    // Only save personal details for non-law firms
-    if (!isLawFirm) {
-      data.firstName = _firstNameController.text;
-      data.lastName = _lastNameController.text;
-      data.dateOfBirth = _selectedDate;
-      if (_selectedGender != null) {
-        data.gender = _selectedGender!;
-      }
+    // Save personal details for all roles (including law firms)
+    data.firstName = _firstNameController.text;
+    data.lastName = _lastNameController.text;
+    data.dateOfBirth = _selectedDate;
+    if (_selectedGender != null) {
+      data.gender = _selectedGender!;
     }
 
     // Email and password are required for all roles
@@ -140,14 +107,17 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
   Widget build(BuildContext context) {
     debugPrint(
         '🏗️ Building BasicInfoPage - Terms agreed: ${controller.registrationData.agreedToTerms}');
+
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            const Color(0xFFFCFCFD),
-            const Color(0xFFF8FAFC),
+            colorScheme.surface,
+            colorScheme.surface,
           ],
         ),
       ),
@@ -161,22 +131,12 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
               // Header Section
               Text(
                 'Basic Information',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF1A1A1A),
-                      letterSpacing: -0.5,
-                    ),
+                style: Theme.of(context).textTheme.headlineMedium,
               ),
               const SizedBox(height: 8),
               Text(
                 'Please provide your personal details to continue',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: const Color(0xFF6B7280),
-                      height: 1.4,
-                    ),
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 32),
 
@@ -186,14 +146,14 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      const Color(0xFF3B82F6).withOpacity(0.08),
-                      const Color(0xFF1D4ED8).withOpacity(0.05),
+                      colorScheme.primary.withOpacity(0.08),
+                      colorScheme.primary.withOpacity(0.05),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   border: Border.all(
-                    color: const Color(0xFF3B82F6).withOpacity(0.2),
+                    color: colorScheme.primary.withOpacity(0.2),
                     width: 1.5,
                   ),
                   borderRadius: BorderRadius.circular(12),
@@ -203,12 +163,12 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF3B82F6).withOpacity(0.1),
+                        color: colorScheme.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
                         Icons.verified_user,
-                        color: const Color(0xFF1D4ED8),
+                        color: colorScheme.primary,
                         size: 20,
                       ),
                     ),
@@ -222,7 +182,7 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
-                              color: const Color(0xFF6B7280),
+                              color: colorScheme.onSurface.withOpacity(0.6),
                               letterSpacing: 0.5,
                             ),
                           ),
@@ -233,7 +193,7 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF1D4ED8),
+                              color: colorScheme.primary,
                               letterSpacing: -0.2,
                             ),
                           ),
@@ -245,17 +205,12 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
               ),
               const SizedBox(height: 28),
 
-              // Personal Details Section - Only for non-law firms
-              if (controller.registrationData.userRole != 5) ...[
+              // Personal Details Section - Required for all roles
+              ...[
                 // Name Section
                 Text(
                   'Personal Details',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1F2937),
-                    letterSpacing: -0.3,
-                  ),
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 16),
 
@@ -265,53 +220,14 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                   children: [
                     Text(
                       'First Name',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF374151),
-                        letterSpacing: 0.1,
-                      ),
+                      style: Theme.of(context).textTheme.labelLarge,
                     ),
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _firstNameController,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: const Color(0xFF1F2937),
-                        letterSpacing: -0.1,
-                      ),
-                      decoration: InputDecoration(
+                      style: Theme.of(context).textTheme.bodyLarge,
+                      decoration: const InputDecoration(
                         hintText: 'Enter your first name',
-                        hintStyle: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                          color: const Color(0xFF9CA3AF),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide:
-                              BorderSide(color: const Color(0xFFD1D5DB)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide:
-                              BorderSide(color: const Color(0xFFD1D5DB)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                              color: const Color(0xFF3B82F6), width: 2),
-                        ),
-                        errorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide:
-                              BorderSide(color: const Color(0xFFEF4444)),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 14),
-                        filled: true,
-                        fillColor: const Color(0xFFFAFAFA),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -331,53 +247,14 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                   children: [
                     Text(
                       'Last Name',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF374151),
-                        letterSpacing: 0.1,
-                      ),
+                      style: Theme.of(context).textTheme.labelLarge,
                     ),
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _lastNameController,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: const Color(0xFF1F2937),
-                        letterSpacing: -0.1,
-                      ),
-                      decoration: InputDecoration(
+                      style: Theme.of(context).textTheme.bodyLarge,
+                      decoration: const InputDecoration(
                         hintText: 'Enter your last name',
-                        hintStyle: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                          color: const Color(0xFF9CA3AF),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide:
-                              BorderSide(color: const Color(0xFFD1D5DB)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide:
-                              BorderSide(color: const Color(0xFFD1D5DB)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                              color: const Color(0xFF3B82F6), width: 2),
-                        ),
-                        errorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide:
-                              BorderSide(color: const Color(0xFFEF4444)),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 14),
-                        filled: true,
-                        fillColor: const Color(0xFFFAFAFA),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -395,12 +272,7 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
               // Contact Information Section
               Text(
                 'Contact Information',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF1F2937),
-                  letterSpacing: -0.3,
-                ),
+                style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 16),
 
@@ -410,56 +282,19 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                 children: [
                   Text(
                     'Email Address',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF374151),
-                      letterSpacing: 0.1,
-                    ),
+                    style: Theme.of(context).textTheme.labelLarge,
                   ),
                   const SizedBox(height: 6),
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: const Color(0xFF1F2937),
-                      letterSpacing: -0.1,
-                    ),
+                    style: Theme.of(context).textTheme.bodyLarge,
                     decoration: InputDecoration(
                       hintText: 'Enter your email address',
-                      hintStyle: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: const Color(0xFF9CA3AF),
-                      ),
                       prefixIcon: Icon(
                         Icons.email_outlined,
-                        color: const Color(0xFF6B7280),
                         size: 20,
                       ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: const Color(0xFFD1D5DB)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: const Color(0xFFD1D5DB)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                            color: const Color(0xFF3B82F6), width: 2),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: const Color(0xFFEF4444)),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
-                      filled: true,
-                      fillColor: const Color(0xFFFAFAFA),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -476,20 +311,15 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
               ),
               const SizedBox(height: 20),
 
-              // Date of Birth and Gender - Only for non-law firms
-              if (controller.registrationData.userRole != 5) ...[
+              // Date of Birth and Gender - Required for all roles
+              ...[
                 // Date of Birth
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Date of Birth',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF374151),
-                        letterSpacing: 0.1,
-                      ),
+                      style: Theme.of(context).textTheme.labelLarge,
                     ),
                     const SizedBox(height: 6),
                     InkWell(
@@ -513,15 +343,15 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 14),
                         decoration: BoxDecoration(
-                          border: Border.all(color: const Color(0xFFD1D5DB)),
+                          border: Border.all(color: colorScheme.outline),
                           borderRadius: BorderRadius.circular(8),
-                          color: const Color(0xFFFAFAFA),
+                          color: colorScheme.surfaceContainer,
                         ),
                         child: Row(
                           children: [
                             Icon(
                               Icons.calendar_today_outlined,
-                              color: const Color(0xFF6B7280),
+                              color: colorScheme.onSurfaceVariant,
                               size: 20,
                             ),
                             const SizedBox(width: 12),
@@ -530,14 +360,14 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                                 _selectedDate != null
                                     ? '${_selectedDate!.day.toString().padLeft(2, '0')}/${_selectedDate!.month.toString().padLeft(2, '0')}/${_selectedDate!.year}'
                                     : 'Select your date of birth',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w400,
-                                  color: _selectedDate != null
-                                      ? const Color(0xFF1F2937)
-                                      : const Color(0xFF9CA3AF),
-                                  letterSpacing: -0.1,
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyLarge
+                                    ?.copyWith(
+                                      color: _selectedDate != null
+                                          ? colorScheme.onSurface
+                                          : colorScheme.onSurfaceVariant,
+                                    ),
                               ),
                             ),
                           ],
@@ -554,19 +384,14 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                   children: [
                     Text(
                       'Gender',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF374151),
-                        letterSpacing: 0.1,
-                      ),
+                      style: Theme.of(context).textTheme.labelLarge,
                     ),
                     const SizedBox(height: 12),
                     Container(
                       decoration: BoxDecoration(
-                        border: Border.all(color: const Color(0xFFD1D5DB)),
+                        border: Border.all(color: colorScheme.outline),
                         borderRadius: BorderRadius.circular(8),
-                        color: const Color(0xFFFAFAFA),
+                        color: colorScheme.surfaceContainer,
                       ),
                       child: Row(
                         children: [
@@ -583,7 +408,7 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                                     const EdgeInsets.symmetric(vertical: 12),
                                 decoration: BoxDecoration(
                                   color: _selectedGender == 'M'
-                                      ? const Color(0xFF3B82F6)
+                                      ? colorScheme.primary
                                       : Colors.transparent,
                                   borderRadius: const BorderRadius.only(
                                     topLeft: Radius.circular(7),
@@ -596,20 +421,21 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                                     Icon(
                                       Icons.male,
                                       color: _selectedGender == 'M'
-                                          ? Colors.white
-                                          : const Color(0xFF6B7280),
+                                          ? colorScheme.onPrimary
+                                          : colorScheme.onSurfaceVariant,
                                       size: 18,
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
                                       'Male',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: _selectedGender == 'M'
-                                            ? Colors.white
-                                            : const Color(0xFF374151),
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge
+                                          ?.copyWith(
+                                            color: _selectedGender == 'M'
+                                                ? colorScheme.onPrimary
+                                                : colorScheme.onSurface,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -619,7 +445,7 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                           Container(
                             width: 1,
                             height: 42,
-                            color: const Color(0xFFD1D5DB),
+                            color: colorScheme.outline,
                           ),
                           Expanded(
                             child: InkWell(
@@ -634,7 +460,7 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                                     const EdgeInsets.symmetric(vertical: 12),
                                 decoration: BoxDecoration(
                                   color: _selectedGender == 'F'
-                                      ? const Color(0xFF3B82F6)
+                                      ? colorScheme.primary
                                       : Colors.transparent,
                                 ),
                                 child: Row(
@@ -643,20 +469,21 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                                     Icon(
                                       Icons.female,
                                       color: _selectedGender == 'F'
-                                          ? Colors.white
-                                          : const Color(0xFF6B7280),
+                                          ? colorScheme.onPrimary
+                                          : colorScheme.onSurfaceVariant,
                                       size: 18,
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
                                       'Female',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: _selectedGender == 'F'
-                                            ? Colors.white
-                                            : const Color(0xFF374151),
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge
+                                          ?.copyWith(
+                                            color: _selectedGender == 'F'
+                                                ? colorScheme.onPrimary
+                                                : colorScheme.onSurface,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -666,7 +493,7 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                           Container(
                             width: 1,
                             height: 42,
-                            color: const Color(0xFFD1D5DB),
+                            color: colorScheme.outline,
                           ),
                           Expanded(
                             child: InkWell(
@@ -681,7 +508,7 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                                     const EdgeInsets.symmetric(vertical: 12),
                                 decoration: BoxDecoration(
                                   color: _selectedGender == 'O'
-                                      ? const Color(0xFF3B82F6)
+                                      ? colorScheme.primary
                                       : Colors.transparent,
                                   borderRadius: const BorderRadius.only(
                                     topRight: Radius.circular(7),
@@ -694,20 +521,21 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                                     Icon(
                                       Icons.person_outline,
                                       color: _selectedGender == 'O'
-                                          ? Colors.white
-                                          : const Color(0xFF6B7280),
+                                          ? colorScheme.onPrimary
+                                          : colorScheme.onSurfaceVariant,
                                       size: 18,
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
                                       'Other',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: _selectedGender == 'O'
-                                            ? Colors.white
-                                            : const Color(0xFF374151),
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge
+                                          ?.copyWith(
+                                            color: _selectedGender == 'O'
+                                                ? colorScheme.onPrimary
+                                                : colorScheme.onSurface,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -725,12 +553,7 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
               // Security Section
               Text(
                 'Security',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF1F2937),
-                  letterSpacing: -0.3,
-                ),
+                style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 16),
 
@@ -740,56 +563,16 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                 children: [
                   Text(
                     'Password',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF374151),
-                      letterSpacing: 0.1,
-                    ),
+                    style: Theme.of(context).textTheme.labelLarge,
                   ),
                   const SizedBox(height: 6),
                   TextFormField(
                     controller: _passwordController,
                     obscureText: true,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: const Color(0xFF1F2937),
-                      letterSpacing: -0.1,
-                    ),
-                    decoration: InputDecoration(
+                    style: Theme.of(context).textTheme.bodyLarge,
+                    decoration: const InputDecoration(
                       hintText: 'Create a strong password',
-                      hintStyle: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: const Color(0xFF9CA3AF),
-                      ),
-                      prefixIcon: Icon(
-                        Icons.lock_outline,
-                        color: const Color(0xFF6B7280),
-                        size: 20,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: const Color(0xFFD1D5DB)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: const Color(0xFFD1D5DB)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                            color: const Color(0xFF3B82F6), width: 2),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: const Color(0xFFEF4444)),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
-                      filled: true,
-                      fillColor: const Color(0xFFFAFAFA),
+                      prefixIcon: Icon(Icons.lock_outline),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -805,11 +588,7 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                   const SizedBox(height: 4),
                   Text(
                     'Minimum 8 characters',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: const Color(0xFF6B7280),
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
               ),
@@ -821,56 +600,16 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                 children: [
                   Text(
                     'Confirm Password',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF374151),
-                      letterSpacing: 0.1,
-                    ),
+                    style: Theme.of(context).textTheme.labelLarge,
                   ),
                   const SizedBox(height: 6),
                   TextFormField(
                     controller: _confirmPasswordController,
                     obscureText: true,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: const Color(0xFF1F2937),
-                      letterSpacing: -0.1,
-                    ),
-                    decoration: InputDecoration(
+                    style: Theme.of(context).textTheme.bodyLarge,
+                    decoration: const InputDecoration(
                       hintText: 'Confirm your password',
-                      hintStyle: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: const Color(0xFF9CA3AF),
-                      ),
-                      prefixIcon: Icon(
-                        Icons.lock_outline,
-                        color: const Color(0xFF6B7280),
-                        size: 20,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: const Color(0xFFD1D5DB)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: const Color(0xFFD1D5DB)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                            color: const Color(0xFF3B82F6), width: 2),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: const Color(0xFFEF4444)),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
-                      filled: true,
-                      fillColor: const Color(0xFFFAFAFA),
+                      prefixIcon: Icon(Icons.lock_outline),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -895,9 +634,9 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Colors.grey.shade200,
-                      Colors.grey.shade400,
-                      Colors.grey.shade200
+                      colorScheme.outline.withOpacity(0.3),
+                      colorScheme.outline,
+                      colorScheme.outline.withOpacity(0.3)
                     ],
                   ),
                 ),
@@ -914,18 +653,18 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: controller.registrationData.agreedToTerms
-                          ? Colors.blue.shade50
-                          : Colors.red.shade100,
+                          ? colorScheme.primaryContainer.withOpacity(0.3)
+                          : colorScheme.errorContainer.withOpacity(0.3),
                       border: Border.all(
                         color: controller.registrationData.agreedToTerms
-                            ? Colors.blue.shade300
-                            : Colors.red.shade400,
+                            ? colorScheme.primary.withOpacity(0.5)
+                            : colorScheme.error.withOpacity(0.5),
                         width: 2,
                       ),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: colorScheme.shadow.withOpacity(0.1),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -937,13 +676,15 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                         // Header for terms section
                         Text(
                           '📋 Terms & Conditions Agreement',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: controller.registrationData.agreedToTerms
-                                ? Colors.blue.shade800
-                                : Colors.red.shade800,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: controller.registrationData.agreedToTerms
+                                    ? colorScheme.primary
+                                    : colorScheme.error,
+                              ),
                         ),
                         const SizedBox(height: 12),
 
@@ -961,7 +702,7 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                                   controller.updateRegistrationData(data);
                                   setState(() {});
                                 },
-                                activeColor: const Color(0xFF3B82F6),
+                                activeColor: colorScheme.primary,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(4),
                                 ),
@@ -977,43 +718,45 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                                       children: [
                                         TextSpan(
                                           text: 'I agree to the ',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w400,
-                                            color: const Color(0xFF374151),
-                                            height: 1.4,
-                                          ),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                color: colorScheme.onSurface,
+                                              ),
                                         ),
                                         TextSpan(
                                           text: 'Terms and Conditions',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF3B82F6),
-                                            height: 1.4,
-                                            decoration:
-                                                TextDecoration.underline,
-                                          ),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                color: colorScheme.primary,
+                                                fontWeight: FontWeight.w600,
+                                                decoration:
+                                                    TextDecoration.underline,
+                                              ),
                                         ),
                                         TextSpan(
                                           text: ' and ',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w400,
-                                            color: const Color(0xFF374151),
-                                            height: 1.4,
-                                          ),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                color: colorScheme.onSurface,
+                                              ),
                                         ),
                                         TextSpan(
                                           text: 'Privacy Policy',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF3B82F6),
-                                            height: 1.4,
-                                            decoration:
-                                                TextDecoration.underline,
-                                          ),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                color: colorScheme.primary,
+                                                fontWeight: FontWeight.w600,
+                                                decoration:
+                                                    TextDecoration.underline,
+                                              ),
                                         ),
                                       ],
                                     ),
@@ -1023,14 +766,15 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                                     controller.registrationData.agreedToTerms
                                         ? 'Required to continue with registration'
                                         : '⚠️ You must agree to continue',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w400,
-                                      color: controller
-                                              .registrationData.agreedToTerms
-                                          ? const Color(0xFF6B7280)
-                                          : Colors.red.shade700,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color: controller.registrationData
+                                                  .agreedToTerms
+                                              ? colorScheme.onSurfaceVariant
+                                              : colorScheme.error,
+                                        ),
                                   ),
                                 ],
                               ),
@@ -1052,59 +796,15 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
     );
   }
 
-  String _getRoleDisplay(int roleId) {
+  String _getRoleDisplay(String roleName) {
     final roles = controller.lookupService.userRoles;
     try {
-      final role = roles.firstWhere((role) => role.id == roleId);
+      final role = roles.firstWhere((role) => role.roleName == roleName);
       return role.getRoleDisplay;
     } catch (e) {
-      print('Role not found for ID: $roleId');
+      print('Role not found for name: $roleName');
       return 'Role Not Found';
     }
-  }
-
-  InputDecoration _buildInputDecoration({
-    required String hintText,
-    Widget? prefixIcon,
-  }) {
-    return InputDecoration(
-      hintText: hintText,
-      hintStyle: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w400,
-        color: const Color(0xFF9CA3AF),
-      ),
-      prefixIcon: prefixIcon,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: const Color(0xFFD1D5DB)),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: const Color(0xFFD1D5DB)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: const Color(0xFF3B82F6), width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: const Color(0xFFEF4444)),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: const Color(0xFFEF4444), width: 2),
-      ),
-      errorStyle: TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        color: const Color(0xFFEF4444),
-        height: 1.3,
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      filled: true,
-      fillColor: const Color(0xFFFAFAFA),
-    );
   }
 
   @override

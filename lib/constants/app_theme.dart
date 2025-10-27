@@ -126,6 +126,52 @@ class AppTheme {
       color: AppColors.lightDivider,
       thickness: 1,
     ),
+
+    // Text Theme
+    textTheme: const TextTheme(
+      headlineLarge: TextStyle(
+        fontSize: 32,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimary,
+        letterSpacing: -0.5,
+      ),
+      headlineMedium: TextStyle(
+        fontSize: 28,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textPrimary,
+        letterSpacing: -0.5,
+      ),
+      headlineSmall: TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary,
+        letterSpacing: -0.3,
+      ),
+      titleLarge: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary,
+        letterSpacing: -0.3,
+      ),
+      bodyLarge: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textPrimary,
+        letterSpacing: -0.1,
+      ),
+      bodyMedium: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textSecondary,
+        height: 1.4,
+      ),
+      labelLarge: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textPrimary,
+        letterSpacing: 0.1,
+      ),
+    ),
   );
 
   // Dark Theme
@@ -250,6 +296,52 @@ class AppTheme {
     dividerTheme: const DividerThemeData(
       color: AppColors.darkDivider,
       thickness: 1,
+    ),
+
+    // Text Theme
+    textTheme: const TextTheme(
+      headlineLarge: TextStyle(
+        fontSize: 32,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimaryDark,
+        letterSpacing: -0.5,
+      ),
+      headlineMedium: TextStyle(
+        fontSize: 28,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textPrimaryDark,
+        letterSpacing: -0.5,
+      ),
+      headlineSmall: TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimaryDark,
+        letterSpacing: -0.3,
+      ),
+      titleLarge: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimaryDark,
+        letterSpacing: -0.3,
+      ),
+      bodyLarge: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textPrimaryDark,
+        letterSpacing: -0.1,
+      ),
+      bodyMedium: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textSecondaryDark,
+        height: 1.4,
+      ),
+      labelLarge: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textPrimaryDark,
+        letterSpacing: 0.1,
+      ),
     ),
   );
 }

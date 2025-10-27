@@ -152,11 +152,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         title: 'Personal Information',
                         icon: Icons.person,
                         children: [
-                          _buildInfoRow('Full Name', profile.fullName),
-                          _buildInfoRow('Email', profile.email),
-                          _buildInfoRow('Date of Birth', profile.dateOfBirth),
                           _buildInfoRow(
-                              'Gender', _getGenderDisplay(profile.gender)),
+                            profile.userRole.roleName == 'law_firm'
+                                ? 'Name'
+                                : 'Full Name',
+                            profile.fullName,
+                          ),
+                          _buildInfoRow('Email', profile.email),
+                          // Hide personal details for law firms
+                          if (profile.userRole.roleName != 'law_firm') ...[
+                            _buildInfoRow('Date of Birth', profile.dateOfBirth),
+                            _buildInfoRow(
+                                'Gender', _getGenderDisplay(profile.gender)),
+                          ],
                           if (profile.idNumber != null)
                             _buildInfoRow('ID Number', profile.idNumber!),
                         ],

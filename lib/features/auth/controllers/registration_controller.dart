@@ -30,24 +30,15 @@ class RegistrationController extends GetxController {
   // Form keys for validation
   final GlobalKey<FormState> basicInfoFormKey = GlobalKey<FormState>();
   final GlobalKey<FormState> contactFormKey = GlobalKey<FormState>();
-  final GlobalKey<FormState> identityFormKey = GlobalKey<FormState>();
   final GlobalKey<FormState> professionalFormKey = GlobalKey<FormState>();
 
-  // Total pages based on user role (including role selection)
+  // Total pages based on user role
   int get totalPages {
     switch (_registrationData.value.userRole) {
-      case 2: // Advocate - most complex
-        return 6; // Role + Basic + Contact + Identity + Professional + Review
-      case 1: // Lawyer
-      case 3: // Paralegal
-      case 5: // Law Firm
-        return 5; // Role + Basic + Contact + Identity + Professional
-      case 4: // Law Student
-      case 7: // Lecturer
-        return 5; // Role + Basic + Contact + Identity + Academic
-      case 6: // Citizen
-      default:
+      case 'citizen': // Citizen - no professional info needed
         return 4; // Role + Basic + Contact + Review
+      default: // All professional roles
+        return 5; // Role + Basic + Contact + Professional + Review
     }
   }
 
@@ -111,15 +102,16 @@ class RegistrationController extends GetxController {
   bool _validateCurrentPage() {
     switch (_currentPage.value) {
       case 0: // Role Selection
-        return _registrationData.value.userRole !=
-            0; // Must have selected a role
+        return _registrationData
+            .value.userRole.isNotEmpty; // Must have selected a role
       case 1: // Basic Info
         return basicInfoFormKey.currentState?.validate() ?? false;
       case 2: // Contact
         return contactFormKey.currentState?.validate() ?? false;
-      case 3: // Identity
-        return identityFormKey.currentState?.validate() ?? false;
-      case 4: // Professional/Academic
+      case 3: // Professional (for professional roles) or Review (for citizens)
+        if (_registrationData.value.userRole == 'citizen') {
+          return true; // Citizen goes to review
+        }
         return professionalFormKey.currentState?.validate() ?? false;
       default:
         return true;
@@ -209,7 +201,7 @@ class RegistrationController extends GetxController {
   }
 
   // Update user role and reset role-specific data
-  void updateUserRole(int roleId) {
+  void updateUserRole(String roleName) {
     final currentData = _registrationData.value;
 
     // Reset role-specific fields when role changes
@@ -221,7 +213,7 @@ class RegistrationController extends GetxController {
       lastName: currentData.lastName,
       dateOfBirth: currentData.dateOfBirth,
       agreedToTerms: currentData.agreedToTerms,
-      userRole: roleId,
+      userRole: roleName,
       gender: currentData.gender,
       phoneNumber: currentData.phoneNumber,
       idNumber: currentData.idNumber,
@@ -235,7 +227,7 @@ class RegistrationController extends GetxController {
     update();
   }
 
-  // Get page title based on current page and role
+  // Get page title based on current page and user role
   String getPageTitle() {
     switch (_currentPage.value) {
       case 0:
@@ -245,17 +237,34 @@ class RegistrationController extends GetxController {
       case 2:
         return 'Contact Information';
       case 3:
-        return 'Identity Information';
-      case 4:
-        if (_registrationData.value.userRole == 4 ||
-            _registrationData.value.userRole == 7) {
-          return 'Academic Information';
+        // For citizens, page 3 is review; for professionals, it's professional info
+        if (_registrationData.value.userRole == 'citizen') {
+          return 'Review & Submit';
         }
-        return 'Professional Information';
-      case 5:
+        return _getProfessionalPageTitle();
+      case 4:
         return 'Review & Submit';
       default:
         return 'Registration';
+    }
+  }
+
+  String _getProfessionalPageTitle() {
+    switch (_registrationData.value.userRole) {
+      case 'lawyer':
+        return 'Lawyer Information';
+      case 'advocate':
+        return 'Advocate Information';
+      case 'paralegal':
+        return 'Paralegal Information';
+      case 'law_student':
+        return 'Law Student Information';
+      case 'law_firm':
+        return 'Law Firm Information';
+      case 'lecturer':
+        return 'Lecturer Information';
+      default:
+        return 'Professional Information';
     }
   }
 
@@ -311,21 +320,21 @@ class RegistrationController extends GetxController {
   }
 
   // Get role display name for confirmation dialog
-  String _getRoleDisplayName(int roleId) {
-    switch (roleId) {
-      case 1:
+  String _getRoleDisplayName(String roleName) {
+    switch (roleName) {
+      case 'lawyer':
         return 'Lawyer';
-      case 2:
+      case 'advocate':
         return 'Advocate';
-      case 3:
+      case 'paralegal':
         return 'Paralegal';
-      case 4:
+      case 'law_student':
         return 'Law Student';
-      case 5:
+      case 'law_firm':
         return 'Law Firm';
-      case 6:
+      case 'citizen':
         return 'Citizen';
-      case 7:
+      case 'lecturer':
         return 'Lecturer';
       default:
         return 'Unknown';
@@ -441,7 +450,9 @@ class RegistrationController extends GetxController {
           children: [
             Icon(Icons.check_circle, color: Colors.green, size: 32),
             SizedBox(width: 12),
-            Text('Registration Successful!'),
+            Expanded(
+              child: Text('Registration Successful!'),
+            ),
           ],
         ),
         content: const Text(

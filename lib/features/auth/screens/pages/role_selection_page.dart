@@ -12,12 +12,12 @@ class RoleSelectionPage extends StatefulWidget {
 
 class _RoleSelectionPageState extends State<RoleSelectionPage> {
   final controller = Get.find<RegistrationController>();
-  int? _selectedRole;
+  String? _selectedRole;
 
   @override
   void initState() {
     super.initState();
-    _selectedRole = controller.registrationData.userRole == 0
+    _selectedRole = controller.registrationData.userRole.isEmpty
         ? null
         : controller.registrationData.userRole;
     // Use addPostFrameCallback to avoid setState during build
@@ -32,11 +32,11 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
     }
   }
 
-  void _selectRole(int roleId) {
+  void _selectRole(String roleName) {
     setState(() {
-      _selectedRole = roleId;
+      _selectedRole = roleName;
     });
-    controller.updateUserRole(roleId);
+    controller.updateUserRole(roleName);
   }
 
   @override
@@ -56,7 +56,8 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
           Text(
             'Please select which category best describes you. This will determine what information we need to collect.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
           ),
           const SizedBox(height: 24),
@@ -146,15 +147,21 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
 
             return Column(
               children: roles.map((UserRole role) {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                final isSelected = _selectedRole == role.roleName;
+                final primaryColor = Theme.of(context).colorScheme.primary;
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   child: Card(
-                    elevation: _selectedRole == role.id ? 4 : 1,
-                    color: _selectedRole == role.id
-                        ? Theme.of(context).primaryColor.withOpacity(0.1)
+                    elevation: isSelected ? 4 : 1,
+                    color: isSelected
+                        ? (isDark
+                            ? primaryColor.withOpacity(0.15)
+                            : primaryColor.withOpacity(0.08))
                         : null,
                     child: InkWell(
-                      onTap: () => _selectRole(role.id),
+                      onTap: () => _selectRole(role.roleName),
                       borderRadius: BorderRadius.circular(12),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
@@ -165,16 +172,32 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                               width: 48,
                               height: 48,
                               decoration: BoxDecoration(
-                                color: _selectedRole == role.id
-                                    ? Theme.of(context).primaryColor
-                                    : Colors.grey.shade300,
+                                color: isSelected
+                                    ? primaryColor
+                                    : (isDark
+                                        ? Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withOpacity(0.12)
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withOpacity(0.08)),
                                 borderRadius: BorderRadius.circular(24),
                               ),
                               child: Icon(
-                                _getRoleIcon(role.id),
-                                color: _selectedRole == role.id
-                                    ? Colors.white
-                                    : Colors.grey.shade600,
+                                _getRoleIcon(role.roleName),
+                                color: isSelected
+                                    ? (isDark ? Colors.white : Colors.white)
+                                    : (isDark
+                                        ? Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withOpacity(0.7)
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withOpacity(0.6)),
                                 size: 24,
                               ),
                             ),
@@ -190,35 +213,64 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
-                                      color: _selectedRole == role.id
-                                          ? Theme.of(context).primaryColor
-                                          : null,
+                                      color: isSelected
+                                          ? primaryColor
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    _getRoleDescription(role.id),
+                                    _getRoleDescription(role.roleName),
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: Colors.grey[600],
+                                      color: isDark
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withOpacity(0.7)
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withOpacity(0.6),
                                     ),
                                   ),
                                   const SizedBox(height: 8),
-                                  _buildRoleRequirements(role.id),
+                                  _buildRoleRequirements(role.roleName),
                                 ],
                               ),
                             ),
 
                             // Selection Indicator
-                            Radio<int>(
-                              value: role.id,
+                            Radio<String>(
+                              value: role.roleName,
                               groupValue: _selectedRole,
                               onChanged: (value) {
                                 if (value != null) {
                                   _selectRole(value);
                                 }
                               },
-                              activeColor: Theme.of(context).primaryColor,
+                              activeColor: primaryColor,
+                              fillColor: WidgetStateProperty.resolveWith<Color>(
+                                (Set<WidgetState> states) {
+                                  if (states.contains(WidgetState.selected)) {
+                                    return primaryColor;
+                                  }
+                                  return isDark
+                                      ? Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.6)
+                                      : Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.4);
+                                },
+                              ),
+                              overlayColor: WidgetStateProperty.all(
+                                primaryColor.withOpacity(0.1),
+                              ),
                             ),
                           ],
                         ),
@@ -237,21 +289,28 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                border: Border.all(color: Colors.blue.shade200),
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                    : Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                ),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.info, color: Colors.blue.shade700),
+                      Icon(
+                        Icons.info,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Next Steps',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade700,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ],
@@ -259,7 +318,9 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                   const SizedBox(height: 8),
                   Text(
                     _getNextStepsInfo(_selectedRole!),
-                    style: TextStyle(color: Colors.blue.shade700),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
                 ],
               ),
@@ -269,40 +330,40 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
     );
   }
 
-  IconData _getRoleIcon(int roleId) {
-    switch (roleId) {
-      case 1:
+  IconData _getRoleIcon(String roleName) {
+    switch (roleName) {
+      case 'lawyer':
         return Icons.gavel; // Lawyer
-      case 2:
+      case 'advocate':
         return Icons.balance; // Advocate
-      case 3:
+      case 'paralegal':
         return Icons.support_agent; // Paralegal
-      case 4:
+      case 'law_student':
         return Icons.school; // Law Student
-      case 5:
+      case 'law_firm':
         return Icons.business; // Law Firm
-      case 6:
+      case 'citizen':
         return Icons.person; // Citizen
-      case 7:
+      case 'lecturer':
         return Icons.cast_for_education; // Lecturer
       default:
         return Icons.person;
     }
   }
 
-  String _getRoleDescription(int roleId) {
+  String _getRoleDescription(String roleName) {
     final roles = controller.lookupService.userRoles;
     try {
-      final role = roles.firstWhere((role) => role.id == roleId);
+      final role = roles.firstWhere((role) => role.roleName == roleName);
       return role.description ?? 'No description available';
     } catch (e) {
-      print('Role not found for ID: $roleId');
+      print('Role not found for name: $roleName');
       return 'Role description not available';
     }
   }
 
-  Widget _buildRoleRequirements(int roleId) {
-    List<String> requirements = _getRoleRequirements(roleId);
+  Widget _buildRoleRequirements(String roleName) {
+    List<String> requirements = _getRoleRequirements(roleName);
 
     return Column(
       children: requirements
@@ -311,13 +372,22 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                 padding: const EdgeInsets.only(top: 2),
                 child: Row(
                   children: [
-                    Icon(Icons.check, size: 14, color: Colors.green),
+                    Icon(
+                      Icons.check,
+                      size: 14,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         req,
-                        style:
-                            const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6),
+                        ),
                       ),
                     ),
                   ],
@@ -327,29 +397,29 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
     );
   }
 
-  List<String> _getRoleRequirements(int roleId) {
+  List<String> _getRoleRequirements(String roleName) {
     // TODO: This should come from the API when role requirements endpoint is available
     // For now, return a generic message based on role complexity
     final roles = controller.lookupService.userRoles;
     try {
-      roles.firstWhere((role) => role.id == roleId);
+      roles.firstWhere((role) => role.roleName == roleName);
       // Return generic requirements based on role type
       // This will be replaced with API data when available
       return [
-        'Complete your profile information',
-        'Provide role-specific details',
-        'Verify your identity if required'
+        // 'Complete your profile information',
+        // 'Provide role-specific details',
+        // 'Verify your identity if required'
       ];
     } catch (e) {
       return ['Complete registration process'];
     }
   }
 
-  String _getNextStepsInfo(int roleId) {
+  String _getNextStepsInfo(String roleName) {
     // TODO: This should come from the API when role next steps endpoint is available
     final roles = controller.lookupService.userRoles;
     try {
-      final role = roles.firstWhere((role) => role.id == roleId);
+      final role = roles.firstWhere((role) => role.roleName == roleName);
       // Return generic next steps message
       // This will be replaced with API data when available
       return 'You will need to complete additional information specific to your ${role.getRoleDisplay} role in the next steps.';
