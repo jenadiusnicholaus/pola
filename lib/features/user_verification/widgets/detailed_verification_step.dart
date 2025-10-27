@@ -39,13 +39,20 @@ class DetailedVerificationStep extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
+          color: _getStepBackgroundColor(theme),
           border: Border.all(
             color: _getStepBorderColor(theme),
             width: isCurrent ? 2 : 1,
           ),
         ),
         child: Theme(
-          data: theme.copyWith(dividerColor: Colors.transparent),
+          data: theme.copyWith(
+            dividerColor: Colors.transparent,
+            expansionTileTheme: theme.expansionTileTheme.copyWith(
+              iconColor: _getStepIconColor(theme),
+              collapsedIconColor: _getStepIconColor(theme),
+            ),
+          ),
           child: ExpansionTile(
             initiallyExpanded: isCurrent || !isCompleted,
             leading: Container(
@@ -67,9 +74,7 @@ class DetailedVerificationStep extends StatelessWidget {
                     title,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: isCurrent
-                          ? Colors.amber[700]
-                          : theme.colorScheme.onSurface,
+                      color: _getStepTitleColor(theme),
                     ),
                   ),
                 ),
@@ -83,7 +88,7 @@ class DetailedVerificationStep extends StatelessWidget {
                 Text(
                   description,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.textTheme.bodySmall?.color,
+                    color: _getStepDescriptionColor(theme),
                   ),
                 ),
                 if (isCurrent && missingInfo.isNotEmpty) ...[
@@ -147,13 +152,13 @@ class DetailedVerificationStep extends StatelessWidget {
             Icon(
               Icons.check_circle,
               size: 16,
-              color: Colors.green[700],
+              color: Colors.green[700]!,
             ),
             const SizedBox(width: 4),
             Text(
               'Complete',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.green[700],
+                color: Colors.green[700]!,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -173,13 +178,13 @@ class DetailedVerificationStep extends StatelessWidget {
             Icon(
               Icons.radio_button_checked,
               size: 16,
-              color: Colors.amber[700],
+              color: Colors.amber[700]!,
             ),
             const SizedBox(width: 4),
             Text(
               'Current',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.amber[700],
+                color: Colors.amber[700]!,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -199,13 +204,13 @@ class DetailedVerificationStep extends StatelessWidget {
             Icon(
               Icons.radio_button_unchecked,
               size: 16,
-              color: Colors.red[700],
+              color: Colors.red[700]!,
             ),
             const SizedBox(width: 4),
             Text(
               'Pending',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.red[700],
+                color: Colors.red[700]!,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -299,7 +304,7 @@ class DetailedVerificationStep extends StatelessWidget {
             theme,
             'This step has been completed successfully.',
             Icons.check_circle,
-            Colors.green,
+            Colors.green[700]!,
           ),
         ] else if (isCurrent) ...[
           _buildInfoCard(
@@ -315,7 +320,7 @@ class DetailedVerificationStep extends StatelessWidget {
             theme,
             'Complete previous steps to unlock this step.',
             Icons.lock_outline,
-            Colors.red[700]!,
+            theme.colorScheme.error,
           ),
         ],
       ],
@@ -330,7 +335,8 @@ class DetailedVerificationStep extends StatelessWidget {
     bool isWarning = false,
   }) {
     final theme = Theme.of(context);
-    final color = isWarning ? Colors.red[700]! : Colors.green[700]!;
+    final color =
+        isWarning ? theme.colorScheme.error : _getStepIconColor(theme);
 
     return Row(
       children: [
@@ -350,7 +356,9 @@ class DetailedVerificationStep extends StatelessWidget {
               Text(
                 subtitle,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                  color: isWarning
+                      ? theme.colorScheme.error.withOpacity(0.7)
+                      : _getStepIconColor(theme).withOpacity(0.7),
                 ),
               ),
             ],
@@ -917,6 +925,25 @@ class DetailedVerificationStep extends StatelessWidget {
     if (isCompleted) return Colors.green[700]!;
     if (isCurrent) return Colors.amber[700]!;
     return Colors.red[700]!;
+  }
+
+  Color _getStepTitleColor(ThemeData theme) {
+    if (isCompleted) return Colors.green[700]!;
+    if (isCurrent) return Colors.amber[700]!;
+    return theme.colorScheme.onSurface;
+  }
+
+  Color _getStepBackgroundColor(ThemeData theme) {
+    if (isCompleted) return Colors.green.withOpacity(0.02);
+    if (isCurrent) return Colors.amber.withOpacity(0.02);
+    return theme.colorScheme.surface;
+  }
+
+  Color _getStepDescriptionColor(ThemeData theme) {
+    if (isCompleted) return Colors.green[600]!.withOpacity(0.8);
+    if (isCurrent) return Colors.amber[600]!.withOpacity(0.8);
+    return theme.textTheme.bodySmall?.color ??
+        theme.colorScheme.onSurface.withOpacity(0.7);
   }
 
   Color _getDocumentStatusColor(String status, [BuildContext? context]) {

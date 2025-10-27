@@ -27,8 +27,10 @@ class VerificationProgressCard extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    Icons.timeline,
-                    color: Theme.of(context).colorScheme.primary,
+                    status.isVerified ? Icons.verified : Icons.timeline,
+                    color: status.isVerified
+                        ? Colors.green
+                        : Theme.of(context).colorScheme.primary,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
@@ -42,7 +44,9 @@ class VerificationProgressCard extends StatelessWidget {
                   Text(
                     '${progress.toInt()}%',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
+                          color: status.isVerified
+                              ? Colors.green
+                              : Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.bold,
                         ),
                   ),
@@ -68,7 +72,8 @@ class VerificationProgressCard extends StatelessWidget {
                   child: Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(4),
-                      color: _getProgressColor(context, progress),
+                      color: _getProgressColor(
+                          context, progress, status.isVerified),
                     ),
                   ),
                 ),
@@ -84,36 +89,46 @@ class VerificationProgressCard extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withOpacity(0.1),
+                      color: status.isVerified
+                          ? Colors.green.withOpacity(0.1)
+                          : Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.1),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withOpacity(0.3),
+                        color: status.isVerified
+                            ? Colors.green.withOpacity(0.3)
+                            : Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.3),
                       ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          Icons.radio_button_checked,
+                          status.isVerified
+                              ? Icons.check_circle
+                              : Icons.radio_button_checked,
                           size: 12,
-                          color: Theme.of(context).colorScheme.primary,
+                          color: status.isVerified
+                              ? Colors.green
+                              : Theme.of(context).colorScheme.primary,
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          'Current Step: ${status.currentStepDisplay}',
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelMedium
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w500,
-                              ),
+                          status.isVerified
+                              ? 'Verification Complete'
+                              : 'Current Step: ${status.currentStepDisplay}',
+                          style:
+                              Theme.of(context).textTheme.labelMedium?.copyWith(
+                                    color: status.isVerified
+                                        ? Colors.green
+                                        : Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                         ),
                       ],
                     ),
@@ -154,7 +169,9 @@ class VerificationProgressCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.green.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.green.withOpacity(0.3)),
+                    border: Border.all(
+                      color: Colors.green.withOpacity(0.5),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,7 +181,7 @@ class VerificationProgressCard extends StatelessWidget {
                           Icon(
                             Icons.check_circle,
                             size: 16,
-                            color: Colors.green[700],
+                            color: Colors.green,
                           ),
                           const SizedBox(width: 6),
                           Text(
@@ -173,7 +190,7 @@ class VerificationProgressCard extends StatelessWidget {
                                 .textTheme
                                 .labelMedium
                                 ?.copyWith(
-                                  color: Colors.green[700],
+                                  color: Colors.green,
                                   fontWeight: FontWeight.w600,
                                 ),
                           ),
@@ -185,7 +202,7 @@ class VerificationProgressCard extends StatelessWidget {
                           'Verified by: ${status.verifiedByName}',
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.green[700],
+                                    color: Colors.green.shade700,
                                   ),
                         ),
                       ],
@@ -195,7 +212,7 @@ class VerificationProgressCard extends StatelessWidget {
                           'Date: ${_formatDate(status.verificationDate!)}',
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.green,
+                                    color: Colors.green.shade700,
                                   ),
                         ),
                       ],
@@ -219,13 +236,22 @@ class VerificationProgressCard extends StatelessWidget {
     }
   }
 
-  Color _getProgressColor(BuildContext context, double progress) {
-    if (progress >= 100) {
-      return Colors.green; // Complete - Green
+  Color _getProgressColor(
+      BuildContext context, double progress, bool isVerified) {
+    if (progress >= 100 && isVerified) {
+      return Colors.green; // Complete and verified - Green success color
+    } else if (progress >= 100) {
+      return Theme.of(context)
+          .colorScheme
+          .primary; // Complete but not verified - Primary theme color
     } else if (progress > 0) {
-      return Colors.amber; // In progress - Amber
+      return Theme.of(context)
+          .colorScheme
+          .secondary; // In progress - Secondary theme color
     } else {
-      return Colors.red; // Not started - Red
+      return Theme.of(context)
+          .colorScheme
+          .error; // Not started - Error theme color
     }
   }
 }

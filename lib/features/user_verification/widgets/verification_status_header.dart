@@ -126,9 +126,12 @@ class VerificationStatusHeader extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
+                    color: theme.colorScheme.surfaceContainerHighest
+                        .withOpacity(0.5),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[300]!),
+                    border: Border.all(
+                      color: theme.colorScheme.outline.withOpacity(0.5),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,7 +141,7 @@ class VerificationStatusHeader extends StatelessWidget {
                           Icon(
                             Icons.note_alt_outlined,
                             size: 16,
-                            color: Colors.grey[600],
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 6),
                           Text(
@@ -147,7 +150,7 @@ class VerificationStatusHeader extends StatelessWidget {
                                 .textTheme
                                 .labelSmall
                                 ?.copyWith(
-                                  color: Colors.grey[600],
+                                  color: theme.colorScheme.onSurfaceVariant,
                                   fontWeight: FontWeight.w500,
                                 ),
                           ),
@@ -167,9 +170,11 @@ class VerificationStatusHeader extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red[50],
+                    color: theme.colorScheme.errorContainer.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red[200]!),
+                    border: Border.all(
+                      color: theme.colorScheme.error.withOpacity(0.5),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,7 +184,7 @@ class VerificationStatusHeader extends StatelessWidget {
                           Icon(
                             Icons.error_outline,
                             size: 16,
-                            color: Colors.red[600],
+                            color: theme.colorScheme.error,
                           ),
                           const SizedBox(width: 6),
                           Text(
@@ -188,7 +193,7 @@ class VerificationStatusHeader extends StatelessWidget {
                                 .textTheme
                                 .labelSmall
                                 ?.copyWith(
-                                  color: Colors.red[600],
+                                  color: theme.colorScheme.error,
                                   fontWeight: FontWeight.w500,
                                 ),
                           ),
@@ -198,7 +203,7 @@ class VerificationStatusHeader extends StatelessWidget {
                       Text(
                         status.rejectionReason!,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.red[800],
+                              color: theme.colorScheme.onErrorContainer,
                             ),
                       ),
                     ],

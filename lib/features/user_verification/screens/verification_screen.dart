@@ -163,13 +163,14 @@ class _VerificationScreenState extends State<VerificationScreen> {
       // 1. Documents (first step)
       () {
         final documentsStep = status.missingInformation.byStep['documents'];
+        final isCompleted = documentsStep?.status == 'complete';
         return {
           'id': 'documents',
           'title': 'Documents Verification',
           'description': 'Upload required identification documents',
           'icon': Icons.description,
-          'isCompleted': documentsStep?.status == 'complete',
-          'isCurrent': documentsStep?.isCurrent == true,
+          'isCompleted': isCompleted,
+          'isCurrent': isCompleted ? false : (documentsStep?.isCurrent == true),
           'userInfo': _getDocumentsInfo(status),
           'missingInfo': _getMissingDocumentsInfo(status),
         };
@@ -177,13 +178,14 @@ class _VerificationScreenState extends State<VerificationScreen> {
       // 2. Identity (personal information)
       () {
         final identityStep = status.missingInformation.byStep['identity'];
+        final isCompleted = identityStep?.status == 'complete';
         return {
           'id': 'identity',
           'title': 'Identity Information',
           'description': 'Verify identity information',
           'icon': Icons.person,
-          'isCompleted': identityStep?.status == 'complete',
-          'isCurrent': identityStep?.isCurrent == true,
+          'isCompleted': isCompleted,
+          'isCurrent': isCompleted ? false : (identityStep?.isCurrent == true),
           'userInfo': _getPersonalInfo(status),
           'missingInfo': _getMissingPersonalInfo(status),
         };
@@ -191,13 +193,14 @@ class _VerificationScreenState extends State<VerificationScreen> {
       // 3. Contact Information
       () {
         final contactStep = status.missingInformation.byStep['contact'];
+        final isCompleted = contactStep?.status == 'complete';
         return {
           'id': 'contact',
           'title': 'Contact Information',
           'description': 'Verify your contact details',
           'icon': Icons.contact_phone,
-          'isCompleted': contactStep?.status == 'complete',
-          'isCurrent': contactStep?.isCurrent == true,
+          'isCompleted': isCompleted,
+          'isCurrent': isCompleted ? false : (contactStep?.isCurrent == true),
           'userInfo': _getContactInfo(status),
           'missingInfo': _getMissingContactInfo(status),
         };
@@ -206,13 +209,14 @@ class _VerificationScreenState extends State<VerificationScreen> {
       if (_isLegalProfessional(userRole)) ...[
         () {
           final roleStep = status.missingInformation.byStep['role_specific'];
+          final isCompleted = roleStep?.status == 'complete';
           return {
             'id': 'role_specific',
             'title': _getRoleSpecificTitle(userRole),
             'description': _getRoleSpecificDescription(userRole),
             'icon': _getRoleSpecificIcon(userRole),
-            'isCompleted': roleStep?.status == 'complete',
-            'isCurrent': roleStep?.isCurrent == true,
+            'isCompleted': isCompleted,
+            'isCurrent': isCompleted ? false : (roleStep?.isCurrent == true),
             'userInfo': _getRoleSpecificInfo(status, userRole),
             'missingInfo': _getMissingRoleSpecificInfo(status, userRole),
           };
@@ -221,13 +225,16 @@ class _VerificationScreenState extends State<VerificationScreen> {
       // 5. Final (admin review)
       () {
         final finalStep = status.missingInformation.byStep['final'];
+        final isComplete = finalStep?.status == 'complete' || status.isVerified;
         return {
           'id': 'final',
-          'title': 'Admin Review',
-          'description': 'Wait for administrator to review your information',
-          'icon': Icons.admin_panel_settings,
-          'isCompleted': finalStep?.status == 'complete',
-          'isCurrent': finalStep?.isCurrent == true,
+          'title': isComplete ? 'Verification Complete' : 'Admin Review',
+          'description': isComplete
+              ? 'Your verification has been completed successfully'
+              : 'Wait for administrator to review your information',
+          'icon': isComplete ? Icons.verified : Icons.admin_panel_settings,
+          'isCompleted': isComplete,
+          'isCurrent': isComplete ? false : finalStep?.isCurrent == true,
           'userInfo': _getFinalInfo(status),
           'missingInfo': _getMissingFinalInfo(status),
         };
@@ -786,8 +793,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
       }
     }
 
-    // If submitted but not verified, show pending status
-    if (status.isSubmittedForReview && !status.isVerified) {
+    // If submitted but not verified, show pending status (unless already complete)
+    final isComplete = finalStep?.status == 'complete' || status.isVerified;
+    if (status.isSubmittedForReview && !status.isVerified && !isComplete) {
       missing.add('Waiting for admin review');
     }
 
