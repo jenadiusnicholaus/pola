@@ -423,7 +423,7 @@ class VerificationController extends GetxController {
   Future<void> uploadDocumentFromCamera(String documentType) async {
     try {
       _isUploading.value = true;
-      
+
       // Check camera permission
       final cameraStatus = await Permission.camera.request();
       if (cameraStatus != PermissionStatus.granted) {
@@ -436,7 +436,7 @@ class VerificationController extends GetxController {
         );
         return;
       }
-      
+
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(
         source: ImageSource.camera,
@@ -444,12 +444,11 @@ class VerificationController extends GetxController {
         maxWidth: 1920,
         maxHeight: 1080,
       );
-      
+
       if (image != null) {
         final file = File(image.path);
         await _uploadFile(file, documentType, 'Camera Capture');
       }
-      
     } catch (e) {
       debugPrint('❌ Camera upload error: $e');
       Get.snackbar(
@@ -468,7 +467,7 @@ class VerificationController extends GetxController {
   Future<void> uploadDocumentFromGallery(String documentType) async {
     try {
       _isUploading.value = true;
-      
+
       // Check photo library permission
       final photoStatus = await Permission.photos.request();
       if (photoStatus != PermissionStatus.granted) {
@@ -485,7 +484,7 @@ class VerificationController extends GetxController {
           return;
         }
       }
-      
+
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(
         source: ImageSource.gallery,
@@ -493,7 +492,7 @@ class VerificationController extends GetxController {
         maxWidth: 1920,
         maxHeight: 1080,
       );
-      
+
       if (image != null) {
         final file = File(image.path);
         await _uploadFile(file, documentType, 'Gallery Selection');
@@ -506,7 +505,6 @@ class VerificationController extends GetxController {
           colorText: Colors.white,
         );
       }
-      
     } catch (e) {
       debugPrint('❌ Gallery upload error: $e');
       Get.snackbar(
@@ -525,13 +523,14 @@ class VerificationController extends GetxController {
   Future<void> uploadDocumentFromFiles(String documentType) async {
     try {
       _isUploading.value = true;
-      
+
       // Check storage permission for Android
       if (Platform.isAndroid) {
         final storageStatus = await Permission.storage.request();
         if (storageStatus != PermissionStatus.granted) {
           // Try manage external storage for Android 11+
-          final manageStorageStatus = await Permission.manageExternalStorage.request();
+          final manageStorageStatus =
+              await Permission.manageExternalStorage.request();
           if (manageStorageStatus != PermissionStatus.granted) {
             Get.snackbar(
               '⚠️ Permission Required',
@@ -544,7 +543,7 @@ class VerificationController extends GetxController {
           }
         }
       }
-      
+
       // Try file picker first, fallback to gallery if it fails
       try {
         FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -552,7 +551,7 @@ class VerificationController extends GetxController {
           allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
           allowMultiple: false,
         );
-        
+
         if (result != null && result.files.single.path != null) {
           final file = File(result.files.single.path!);
           await _uploadFile(file, documentType, result.files.single.name);
@@ -568,8 +567,9 @@ class VerificationController extends GetxController {
           return;
         }
       } catch (filePickerError) {
-        debugPrint('⚠️ File picker failed, trying gallery fallback: $filePickerError');
-        
+        debugPrint(
+            '⚠️ File picker failed, trying gallery fallback: $filePickerError');
+
         // Show fallback message
         Get.snackbar(
           '📱 Using Gallery Instead',
@@ -579,9 +579,9 @@ class VerificationController extends GetxController {
           colorText: Colors.white,
           duration: const Duration(seconds: 2),
         );
-        
+
         await Future.delayed(const Duration(milliseconds: 500));
-        
+
         // Fallback to gallery picker
         final ImagePicker picker = ImagePicker();
         final XFile? image = await picker.pickImage(
@@ -590,7 +590,7 @@ class VerificationController extends GetxController {
           maxWidth: 1920,
           maxHeight: 1080,
         );
-        
+
         if (image != null) {
           final file = File(image.path);
           await _uploadFile(file, documentType, image.name);
@@ -604,7 +604,6 @@ class VerificationController extends GetxController {
           );
         }
       }
-      
     } catch (e) {
       debugPrint('❌ File upload error: $e');
       Get.snackbar(
@@ -620,12 +619,13 @@ class VerificationController extends GetxController {
   }
 
   /// Helper method to upload file to server
-  Future<void> _uploadFile(File file, String documentType, String fileName) async {
+  Future<void> _uploadFile(
+      File file, String documentType, String fileName) async {
     try {
       // Validate file size (10MB limit)
       final fileSize = await file.length();
       const maxSize = 10 * 1024 * 1024; // 10MB
-      
+
       if (fileSize > maxSize) {
         Get.snackbar(
           '⚠️ File Too Large',
@@ -636,7 +636,7 @@ class VerificationController extends GetxController {
         );
         return;
       }
-      
+
       // Show uploading progress
       Get.snackbar(
         '📤 Uploading...',
@@ -647,11 +647,11 @@ class VerificationController extends GetxController {
         icon: const Icon(Icons.cloud_upload, color: Colors.white),
         duration: const Duration(seconds: 2),
       );
-      
+
       // Convert file to base64
       final bytes = await file.readAsBytes();
       final base64File = base64Encode(bytes);
-      
+
       // Determine file type
       String mimeType = 'application/octet-stream';
       final extension = fileName.split('.').last.toLowerCase();
@@ -667,7 +667,7 @@ class VerificationController extends GetxController {
           mimeType = 'image/png';
           break;
       }
-      
+
       // Upload to server
       final success = await _verificationService.uploadDocumentBase64(
         documentType: documentType,
@@ -675,11 +675,11 @@ class VerificationController extends GetxController {
         description: 'Uploaded via mobile app',
         fileData: 'data:$mimeType;base64,$base64File',
       );
-      
+
       if (!success) {
         throw Exception('Server rejected the upload');
       }
-      
+
       // Show success message
       Get.snackbar(
         '✅ Upload Successful',
@@ -689,10 +689,9 @@ class VerificationController extends GetxController {
         colorText: Colors.white,
         icon: const Icon(Icons.check_circle, color: Colors.white),
       );
-      
+
       // Refresh verification status
       await loadVerificationStatus();
-      
     } catch (e) {
       debugPrint('❌ Upload to server error: $e');
       Get.snackbar(
@@ -709,7 +708,8 @@ class VerificationController extends GetxController {
   String _getDocumentDisplayName(String documentType) {
     final requiredDoc = _verificationStatus.value?.requiredDocuments
         .firstWhereOrNull((doc) => doc.documentType == documentType);
-    return requiredDoc?.documentTypeDisplay ?? documentType.replaceAll('_', ' ').toUpperCase();
+    return requiredDoc?.documentTypeDisplay ??
+        documentType.replaceAll('_', ' ').toUpperCase();
   }
 
   /// Upload document wrapper for detailed verification step

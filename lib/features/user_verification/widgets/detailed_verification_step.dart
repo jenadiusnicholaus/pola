@@ -388,7 +388,8 @@ class DetailedVerificationStep extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _getDocumentStatusColor(doc.status, context).withOpacity(0.1),
+                  color: _getDocumentStatusColor(doc.status, context)
+                      .withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -410,9 +411,11 @@ class DetailedVerificationStep extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: _getDocumentStatusColor(doc.status, context).withOpacity(0.1),
+                        color: _getDocumentStatusColor(doc.status, context)
+                            .withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -430,7 +433,7 @@ class DetailedVerificationStep extends StatelessWidget {
               _buildDocumentActionButton(context, doc),
             ],
           ),
-          
+
           // Additional information
           if (doc.createdAt.isNotEmpty || doc.verificationDate != null) ...[
             const SizedBox(height: 12),
@@ -470,9 +473,10 @@ class DetailedVerificationStep extends StatelessWidget {
               ],
             ),
           ],
-          
+
           // Rejection reason
-          if (doc.status == 'rejected' && doc.rejectionReason?.isNotEmpty == true) ...[
+          if (doc.status == 'rejected' &&
+              doc.rejectionReason?.isNotEmpty == true) ...[
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
@@ -517,9 +521,10 @@ class DetailedVerificationStep extends StatelessWidget {
               ),
             ),
           ],
-          
+
           // Verification notes
-          if (doc.status == 'verified' && doc.verificationNotes?.isNotEmpty == true) ...[
+          if (doc.status == 'verified' &&
+              doc.verificationNotes?.isNotEmpty == true) ...[
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
@@ -569,7 +574,8 @@ class DetailedVerificationStep extends StatelessWidget {
     );
   }
 
-  Widget _buildDocumentActionButton(BuildContext context, VerificationDocument doc) {
+  Widget _buildDocumentActionButton(
+      BuildContext context, VerificationDocument doc) {
     switch (doc.status) {
       case 'verified':
         return Container(
@@ -615,7 +621,8 @@ class DetailedVerificationStep extends StatelessWidget {
                 height: 12,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.orange[700]!),
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(Colors.orange[700]!),
                 ),
               ),
               const SizedBox(width: 6),
@@ -668,7 +675,7 @@ class DetailedVerificationStep extends StatelessWidget {
                     ? Image.network(
                         doc.fileUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => 
+                        errorBuilder: (context, error, stackTrace) =>
                             const Center(child: Icon(Icons.error, size: 50)),
                       )
                     : const Center(child: Icon(Icons.image, size: 50)),
@@ -940,7 +947,7 @@ class DetailedVerificationStep extends StatelessWidget {
 
   void _showUploadDialog(BuildContext context, RequiredDocument reqDoc) {
     final theme = Theme.of(context);
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -976,7 +983,8 @@ class DetailedVerificationStep extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      reqDoc.description ?? 'Document required for verification',
+                      reqDoc.description ??
+                          'Document required for verification',
                       style: TextStyle(
                         color: theme.primaryColor,
                         fontWeight: FontWeight.w500,
@@ -1267,7 +1275,7 @@ class DetailedVerificationStep extends StatelessWidget {
 
   void _showReuploadDialog(BuildContext context, VerificationDocument doc) {
     final theme = Theme.of(context);
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1494,7 +1502,8 @@ class DetailedVerificationStep extends StatelessWidget {
                       child: Text(
                         guideline,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: (isReupload ? Colors.orange : Colors.blue)[600],
+                          color:
+                              (isReupload ? Colors.orange : Colors.blue)[600],
                         ),
                       ),
                     ),

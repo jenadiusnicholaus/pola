@@ -61,7 +61,8 @@ class VerificationService {
           debugPrint('ℹ️ No verification record found for user');
           return null;
         }
-        debugPrint('❌ dio.DioException in getMyVerificationStatus: ${e.message}');
+        debugPrint(
+            '❌ dio.DioException in getMyVerificationStatus: ${e.message}');
       } else {
         debugPrint('❌ Exception in getMyVerificationStatus: $e');
       }
