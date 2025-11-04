@@ -48,6 +48,20 @@ class EnvironmentConfig {
   static String get logoutUrl => '$baseUrl$logoutEndpoint';
   static String get profileUrl => '$baseUrl/api/v1/authentication/profile/';
 
+  // Legal Education endpoints
+  static String get legalEducationTopicsEndpoint =>
+      dotenv.env['LEGAL_EDUCATION_TOPICS_ENDPOINT'] ??
+      '/api/v1/hubs/legal-education/topics/';
+  static String get legalEducationSubtopicsEndpoint =>
+      dotenv.env['LEGAL_EDUCATION_SUBTOPICS_ENDPOINT'] ??
+      '/api/v1/hubs/legal-education/subtopics/';
+
+  // Complete Legal Education URLs
+  static String get legalEducationTopicsUrl =>
+      '$baseUrl$legalEducationTopicsEndpoint';
+  static String get legalEducationSubtopicsUrl =>
+      '$baseUrl$legalEducationSubtopicsEndpoint';
+
   // Lookup endpoints
   static String get lookupsBaseUrl =>
       dotenv.env['LOOKUPS_BASE_URL'] ?? '/api/v1/lookups';

@@ -1,0 +1,96 @@
+import 'package:flutter/material.dart';
+import '../models/legal_education_models.dart';
+
+class TopicCard extends StatelessWidget {
+  final Topic topic;
+  final Function(String language) onLanguageTap; // Changed to pass language
+
+  const TopicCard({
+    super.key,
+    required this.topic,
+    required this.onLanguageTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Row(
+      children: [
+        // Left Button (English)
+        if (topic.name.isNotEmpty)
+          Flexible(
+            child: _buildCompactButton(
+              theme: theme,
+              label: topic.name,
+              onTap: () => onLanguageTap('english'),
+              color: Colors.blue,
+              isAvailable: true,
+            ),
+          ),
+
+        if (topic.name.isNotEmpty && topic.nameSw.isNotEmpty)
+          const SizedBox(width: 8),
+
+        // Right Button (Swahili)
+        if (topic.nameSw.isNotEmpty)
+          Flexible(
+            child: _buildCompactButton(
+              theme: theme,
+              label: topic.nameSw,
+              onTap: () => onLanguageTap('swahili'),
+              color: Colors.amber.shade700,
+              isAvailable: true,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildCompactButton({
+    required ThemeData theme,
+    required String label,
+    required VoidCallback onTap,
+    required Color color,
+    required bool isAvailable,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: isAvailable ? onTap : null,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          height: 32,
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: isAvailable
+                  ? color.withOpacity(0.4)
+                  : Colors.grey.withOpacity(0.3),
+              width: 1,
+            ),
+            borderRadius: BorderRadius.circular(6),
+            color: isAvailable
+                ? color.withOpacity(0.08)
+                : Colors.grey.withOpacity(0.05),
+          ),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isAvailable ? color : Colors.grey,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

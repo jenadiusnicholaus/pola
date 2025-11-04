@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
+import '../widgets/hubs_and_services_list.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
 import '../../user_verification/screens/verification_screen.dart';
@@ -65,21 +66,9 @@ class _HomeScreenState extends State<HomeScreen> {
             // Dynamic Sliver App Bar
             _buildDynamicSliverAppBar(context, controller),
 
-            // Empty Body Content
-            const SliverFillRemaining(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Home Content Coming Soon',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
+            // Hubs and Services Content
+            const SliverToBoxAdapter(
+              child: HubsAndServicesList(),
             ),
           ],
         ),
@@ -114,7 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SizedBox(width: 8),
             Text(
               AppStrings.appName,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
                 letterSpacing: 1.0,

@@ -13,6 +13,8 @@ import 'services/api_service.dart';
 import 'services/token_storage_service.dart';
 import 'services/auth_service.dart';
 import 'features/profile/services/profile_service.dart';
+import 'features/hubs_and_services/legal_education/services/legal_education_service.dart';
+import 'features/hubs_and_services/legal_education/controllers/legal_education_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,6 +59,10 @@ LOGOUT_ENDPOINT=/api/v1/authentication/logout/
 
   // Initialize profile service
   Get.put(ProfileService());
+
+  // Initialize legal education service
+  Get.put(LegalEducationService());
+  Get.put(LegalEducationController());
 
   // Initialize controllers
   Get.put(ThemeController());

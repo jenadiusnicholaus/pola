@@ -7,6 +7,9 @@ import '../features/auth/screens/login_screen.dart';
 import '../features/navigation/screens/main_navigation_screen.dart';
 import '../features/settings/screens/settings_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
+import '../features/hubs_and_services/legal_education/screens/legal_education_screen.dart';
+import '../features/hubs_and_services/legal_education/screens/topic_materials_screen.dart';
+import '../features/hubs_and_services/legal_education/screens/material_viewer_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -16,6 +19,9 @@ class AppRoutes {
   static const String home = '/home';
   static const String profile = '/profile';
   static const String settings = '/settings';
+  static const String legalEducation = '/legal-education';
+  static const String topicMaterials = '/topic-materials';
+  static const String materialViewer = '/material-viewer';
 
   static List<GetPage> routes = [
     GetPage(
@@ -45,6 +51,18 @@ class AppRoutes {
     GetPage(
       name: settings,
       page: () => const SettingsScreen(),
+    ),
+    GetPage(
+      name: legalEducation,
+      page: () => const LegalEducationScreen(),
+    ),
+    GetPage(
+      name: topicMaterials,
+      page: () => const TopicMaterialsScreen(),
+    ),
+    GetPage(
+      name: materialViewer,
+      page: () => const MaterialViewerScreen(),
     ),
   ];
 
