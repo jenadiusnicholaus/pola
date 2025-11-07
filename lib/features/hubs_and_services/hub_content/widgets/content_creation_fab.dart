@@ -140,9 +140,17 @@ class _ContentCreationMenuState extends State<ContentCreationMenu>
     final contentTypes = _getContentTypes();
 
     // Check if user can create content in this hub
-    if (!UserRoleManager.canCreateContentInHub(widget.hubType)) {
+    final canCreate = UserRoleManager.canCreateContentInHub(widget.hubType);
+    print(
+        '🔍 ContentCreationMenu: Hub "${widget.hubType}" - Can create content: $canCreate');
+
+    if (!canCreate) {
+      print(
+          '🔍 ContentCreationMenu: Hiding FAB for hub "${widget.hubType}" - insufficient permissions');
       return const SizedBox.shrink();
     }
+
+    print('🔍 ContentCreationMenu: Showing FAB for hub "${widget.hubType}"');
 
     return ConstrainedBox(
       constraints: BoxConstraints(
@@ -238,9 +246,13 @@ class _ContentCreationMenuState extends State<ContentCreationMenu>
     // If content was successfully created, trigger refresh
     if (result == true && widget.onContentCreated != null) {
       print('🔄 ContentCreationMenu: Triggering refresh callback');
-      // Small delay to ensure navigation is complete
-      await Future.delayed(const Duration(milliseconds: 100));
+      print('🔄 Hub type: ${widget.hubType}');
+      // Small delay to ensure navigation is complete and backend processing is done
+      await Future.delayed(const Duration(milliseconds: 500));
       widget.onContentCreated!();
+    } else {
+      print(
+          '🔄 ContentCreationMenu: No refresh needed - result: $result, hasCallback: ${widget.onContentCreated != null}');
     }
   }
 

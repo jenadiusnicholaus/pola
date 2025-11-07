@@ -528,6 +528,20 @@ class TokenStorageService extends GetxController {
         permissions['can_access_student_hub'] == true;
   }
 
+  /// Check if user has specific subscription permission
+  bool hasSubscriptionPermission(String permissionName) {
+    final profile = _userData.value;
+    if (profile == null) return false;
+
+    final subscription = profile['subscription'] as Map<String, dynamic>?;
+    if (subscription == null) return false;
+
+    final permissions = subscription['permissions'] as Map<String, dynamic>?;
+    if (permissions == null) return false;
+
+    return permissions[permissionName] == true;
+  }
+
   /// Get user display name for UI
   String getUserDisplayName() {
     final profile = _userData.value;

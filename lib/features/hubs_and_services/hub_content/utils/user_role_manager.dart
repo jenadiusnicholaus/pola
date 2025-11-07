@@ -67,13 +67,98 @@ class UserRoleManager {
     return _tokenStorage.getUserPermissions();
   }
 
+  /// Debug method to print all user data and permissions
+  static void debugUserPermissions() {
+    print('🔍 === USER PERMISSIONS DEBUG ===');
+    print('🔍 Is Admin: ${isAdmin()}');
+    print('🔍 Is Logged In: ${_tokenStorage.isLoggedIn}');
+    print('🔍 User Role: ${_tokenStorage.getUserRole() ?? "None"}');
+    print('🔍 User Email: ${_tokenStorage.getUserEmail() ?? "None"}');
+    print('🔍 User Display Name: ${getUserDisplayName()}');
+    print('🔍 User Permissions: ${getUserPermissions()}');
+
+    // Check subscription permissions
+    final userData = _tokenStorage.userData;
+    if (userData != null) {
+      print('🔍 User Data Keys: ${userData.keys.toList()}');
+
+      final subscription = userData['subscription'] as Map<String, dynamic>?;
+      if (subscription != null) {
+        print('🔍 Subscription Keys: ${subscription.keys.toList()}');
+
+        final permissions =
+            subscription['permissions'] as Map<String, dynamic>?;
+        if (permissions != null) {
+          print('🔍 Subscription Permissions: $permissions');
+        } else {
+          print('🔍 No subscription permissions found');
+        }
+      } else {
+        print('🔍 No subscription data found');
+      }
+    } else {
+      print('🔍 No user data found');
+    }
+
+    // Test hub access
+    for (final hubType in ['advocates', 'students', 'forum', 'legal_ed']) {
+      print('🔍 Can access $hubType hub: ${canAccessHub(hubType)}');
+      print(
+          '🔍 Can create content in $hubType hub: ${canCreateContentInHub(hubType)}');
+    }
+    print('🔍 === END DEBUG ===');
+  }
+
   /// Check if user can access specific hub based on subscription and admin status
   static bool canAccessHub(String hubType) {
     // Admins can access all hubs
     if (isAdmin()) return true;
 
-    // Check subscription permissions for regular users
-    return _tokenStorage.canCreateContent();
+    // TEMPORARY: More permissive approach for testing
+    // TODO: Fine-tune based on actual user data structure
+
+    // Check hub-specific access permissions
+    switch (hubType) {
+      case 'advocates':
+        // Advocates hub - check if user has advocate role/permissions
+        final userRole = _tokenStorage.getUserRole()?.toLowerCase() ?? '';
+        final hasDocPerm = hasPermission('can_generate_documents');
+        final isAdvocate = userRole.contains('advocate');
+        final isLawyer = userRole.contains('lawyer');
+
+        // TEMPORARY: Also allow any logged-in user for testing
+        final isLoggedIn = _tokenStorage.isLoggedIn;
+
+        final result = hasDocPerm || isAdvocate || isLawyer || isLoggedIn;
+        print(
+            '🔍 canAccessHub: Advocates - userRole: "$userRole", hasDocPerm: $hasDocPerm, isAdvocate: $isAdvocate, isLawyer: $isLawyer, isLoggedIn: $isLoggedIn, result: $result');
+        return result;
+      case 'students':
+        // Students hub - check subscription permissions
+        final hasStudentPerm =
+            _tokenStorage.hasSubscriptionPermission('can_access_student_hub');
+
+        // TEMPORARY: Also allow any logged-in user for testing
+        final isLoggedIn = _tokenStorage.isLoggedIn;
+
+        final result = hasStudentPerm || isLoggedIn;
+        print(
+            '🔍 canAccessHub: Students - hasStudentPerm: $hasStudentPerm, isLoggedIn: $isLoggedIn, result: $result');
+        return result;
+      case 'forum':
+        // Forum - open to ALL logged-in users (community hub)
+        final result = _tokenStorage.isLoggedIn;
+        print(
+            '🔍 canAccessHub: Forum - open to all logged-in users, result: $result');
+        return result;
+      case 'legal_ed':
+        // Legal education - all logged in users can access (but only admins create)
+        print('🔍 canAccessHub: Legal Ed - allowing all logged in users');
+        return true;
+      default:
+        print('🔍 canAccessHub: Unknown hub "$hubType" - denying');
+        return false;
+    }
   }
 
   /// Check if user can create premium content (pricing)
@@ -98,21 +183,42 @@ class UserRoleManager {
 
   /// Check if user has content creation permissions for specific hub
   static bool canCreateContentInHub(String hubType) {
+    print(
+        '🔍 UserRoleManager: Checking content creation permissions for hub "$hubType"');
+    print('🔍 UserRoleManager: User is admin: ${isAdmin()}');
+    print(
+        '🔍 UserRoleManager: User role: ${_tokenStorage.getUserRole() ?? "Unknown"}');
+
     // Check hub-specific permissions
     switch (hubType) {
       case 'advocates':
         // Advocates hub - admins OR verified advocates
-        return isAdmin() || canAccessHub(hubType);
+        final canAccess = canAccessHub(hubType);
+        final result = isAdmin() || canAccess;
+        print(
+            '🔍 UserRoleManager: Advocates hub - canAccess: $canAccess, final result: $result');
+        return result;
       case 'students':
         // Students hub - admins OR users with subscription
-        return isAdmin() || canAccessHub(hubType);
+        final canAccess = canAccessHub(hubType);
+        final result = isAdmin() || canAccess;
+        print(
+            '🔍 UserRoleManager: Students hub - canAccess: $canAccess, final result: $result');
+        return result;
       case 'forum':
-        // Forum - admins OR all active users (community access)
-        return isAdmin() || canAccessHub(hubType);
+        // Forum - ALL logged-in users can create posts (community hub)
+        final result = _tokenStorage.isLoggedIn;
+        print(
+            '🔍 UserRoleManager: Forum hub - all logged-in users can post, result: $result');
+        return result;
       case 'legal_ed':
         // Legal education - ONLY admins can create content
-        return isAdmin();
+        final result = isAdmin();
+        print('🔍 UserRoleManager: Legal Ed hub - admin only, result: $result');
+        return result;
       default:
+        print(
+            '🔍 UserRoleManager: Unknown hub type "$hubType" - denying access');
         return false;
     }
   }

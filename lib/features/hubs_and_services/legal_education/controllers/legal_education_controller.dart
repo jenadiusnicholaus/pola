@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/legal_education_models.dart';
 import '../services/legal_education_service.dart';
+import '../../../../services/token_storage_service.dart';
 
 enum LanguageFilter { both, english, swahili }
 
@@ -51,7 +52,22 @@ class LegalEducationController extends GetxController {
   void onInit() {
     super.onInit();
     _initializeScrollControllers();
+    _debugAuthStatus();
     fetchTopics();
+  }
+
+  void _debugAuthStatus() {
+    try {
+      final tokenService = Get.find<TokenStorageService>();
+      print('🔍 DEBUG AUTH STATUS:');
+      print('  - Is logged in: ${tokenService.isLoggedIn}');
+      print('  - User email: ${tokenService.getUserEmail()}');
+      print('  - User role: ${tokenService.getUserRole()}');
+      print('  - Is verified: ${tokenService.isUserVerified()}');
+      print('  - Access token length: ${tokenService.accessToken.length}');
+    } catch (e) {
+      print('❌ ERROR checking auth status: $e');
+    }
   }
 
   @override
@@ -97,12 +113,20 @@ class LegalEducationController extends GetxController {
       _isLoadingTopics.value = true;
       _error.value = '';
 
+      print('📚 LEGAL EDU: Fetching topics...');
+      print('📚 LEGAL EDU: Search query: ${_searchQuery.value}');
+      print('📚 LEGAL EDU: Language: ${_getLanguageCode()}');
+      print('📚 LEGAL EDU: Page: ${_currentTopicsPage.value}');
+
       final response = await _service.getTopics(
         search: _searchQuery.value.isEmpty ? null : _searchQuery.value,
         language: _getLanguageCode(),
         page: _currentTopicsPage.value,
         pageSize: pageSize,
       );
+
+      print(
+          '📚 LEGAL EDU: Response received with ${response.results.length} topics');
 
       if (refresh) {
         _topics.assignAll(response.results);
@@ -112,8 +136,23 @@ class LegalEducationController extends GetxController {
 
       _hasMoreTopics.value = response.results.length == pageSize;
       _currentTopicsPage.value++;
+
+      print('📚 LEGAL EDU: Total topics now: ${_topics.length}');
     } catch (e) {
       _error.value = e.toString();
+      print('❌ LEGAL EDU ERROR: $e');
+
+      // Show user-friendly error message
+      Get.snackbar(
+        'Error Loading Topics',
+        e.toString().contains('Authentication')
+            ? 'Please log in to access legal education content'
+            : 'Failed to load topics. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
     } finally {
       _isLoadingTopics.value = false;
     }

@@ -17,6 +17,22 @@ class ContentCreationController extends GetxController {
 
   ContentCreationController({required this.hubType});
 
+  /// Get display name for hub type
+  String _getHubDisplayName(String hubType) {
+    switch (hubType) {
+      case 'advocates':
+        return 'Advocates';
+      case 'students':
+        return 'Students';
+      case 'forum':
+        return 'Forum';
+      case 'legal_ed':
+        return 'Legal Education';
+      default:
+        return 'Content';
+    }
+  }
+
   // Observable variables
   final RxString selectedContentType = ''.obs;
   final RxString selectedLanguage = 'en'.obs;
@@ -45,21 +61,11 @@ class ContentCreationController extends GetxController {
 
   /// Get available content types based on hub type
   List<String> getAvailableContentTypes() {
-    print('🔍 GET CONTENT TYPES: Hub Type: "$hubType"');
-
     switch (hubType) {
       case 'advocates':
-        final types = [
-          'discussion',
-          'article',
-          'news',
-          'case_study',
-          'legal_update'
-        ];
-        print('🔍 GET CONTENT TYPES: Advocates types: $types');
-        return types;
+        return ['discussion', 'article', 'news', 'case_study', 'legal_update'];
       case 'students':
-        final types = [
+        return [
           'notes',
           'past_papers',
           'assignment',
@@ -67,21 +73,12 @@ class ContentCreationController extends GetxController {
           'question',
           'tutorial'
         ];
-        print('🔍 GET CONTENT TYPES: Students types: $types');
-        return types;
       case 'forum':
-        final types = ['discussion', 'question', 'news', 'general'];
-        print('🔍 GET CONTENT TYPES: Forum types: $types');
-        return types;
+        return ['discussion', 'question', 'news', 'general'];
       case 'legal_ed':
-        final types = ['lecture', 'article', 'tutorial', 'case_study'];
-        print('🔍 GET CONTENT TYPES: Legal Ed types: $types');
-        return types;
+        return ['lecture', 'article', 'tutorial', 'case_study'];
       default:
-        final types = ['discussion'];
-        print(
-            '🔍 GET CONTENT TYPES: Default types: $types (hubType was: "$hubType")');
-        return types;
+        return ['discussion'];
     }
   }
 
@@ -112,8 +109,6 @@ class ContentCreationController extends GetxController {
 
         if (matchingTopic != null) {
           selectedTopic.value = matchingTopic;
-          print(
-              '🎯 PRESET TOPIC: Successfully set to "${matchingTopic.name}" (ID: ${matchingTopic.id})');
         } else {
           // If not found in loaded topics, create a Topic object from the data
           try {
@@ -132,15 +127,13 @@ class ContentCreationController extends GetxController {
               lastUpdated: DateTime.now(),
             );
             selectedTopic.value = presetTopic;
-            print(
-                '🎯 PRESET TOPIC: Created and set to "${presetTopic.name}" (ID: ${presetTopic.id})');
           } catch (e) {
-            print('❌ PRESET TOPIC: Failed to create topic from data: $e');
+            // Handle error silently
           }
         }
       }
     } catch (e) {
-      print('❌ PRESET TOPIC: Error setting preset topic: $e');
+      // Handle error silently
     }
   }
 
@@ -156,14 +149,8 @@ class ContentCreationController extends GetxController {
 
   /// Set file
   void setFile(PlatformFile file) {
-    print('🔍 SET FILE: Name: ${file.name}');
-    print('🔍 SET FILE: Size: ${file.size} bytes');
-    print('🔍 SET FILE: Has Bytes: ${file.bytes != null}');
-    print('🔍 SET FILE: Bytes Length: ${file.bytes?.length}');
-
     // Validate file size (50MB limit)
     if (file.size > 50 * 1024 * 1024) {
-      print('❌ SET FILE: File too large: ${file.size} bytes');
       Get.snackbar(
         'File Too Large',
         'Please select a file smaller than 50MB',
@@ -176,7 +163,6 @@ class ContentCreationController extends GetxController {
 
     // Validate file type
     if (!_isValidFileType(file.name)) {
-      print('❌ SET FILE: Invalid file type: ${file.name}');
       Get.snackbar(
         'Invalid File Type',
         'Please select a supported file type',
@@ -187,7 +173,6 @@ class ContentCreationController extends GetxController {
       return;
     }
 
-    print('✅ SET FILE: File set successfully');
     selectedFile.value = file;
   }
 
@@ -195,13 +180,9 @@ class ContentCreationController extends GetxController {
   void setImageFile(String path, List<int> bytes) {
     try {
       final fileName = path.split('/').last;
-      print('🔍 SET IMAGE FILE: Path: $path');
-      print('🔍 SET IMAGE FILE: File Name: $fileName');
-      print('🔍 SET IMAGE FILE: Bytes Length: ${bytes.length}');
 
       // Validate image data is not corrupted
       if (bytes.isEmpty) {
-        print('❌ SET IMAGE FILE: Empty bytes detected!');
         Get.snackbar(
           'Invalid Image',
           'The selected image appears to be corrupted. Please try a different image.',
@@ -229,8 +210,6 @@ class ContentCreationController extends GetxController {
         path: path,
       );
 
-      print(
-          '🔍 SET IMAGE FILE: Created PlatformFile with ${file.bytes?.length} bytes');
       setFile(file);
     } catch (e) {
       Get.snackbar(
@@ -277,36 +256,43 @@ class ContentCreationController extends GetxController {
         final fileData = jsonData['file'] as String;
         print(
             '🔍 CREATE CONTENT: File data starts with: ${fileData.substring(0, 50)}...');
-      }
-
-      final result = await _service.createHubContent(jsonData);
-
-      if (result != null) {
-        print('🔄 ContentCreationController: Content created successfully');
-        Get.snackbar(
-          'Success! 🎉',
-          'Your content has been published successfully',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 3),
-        );
-        return true;
-      } else {
+        print('🔍 CREATE CONTENT: File data length: ${fileData.length}');
         print(
-            '🔄 ContentCreationController: Content creation failed - result is null');
+            '🔍 CREATE CONTENT: Is data URL: ${fileData.startsWith('data:')}');
       }
 
-      return false;
+      // Create a safe version for logging (without file data)
+      final logData = Map<String, dynamic>.from(jsonData);
+      if (logData.containsKey('file')) {
+        logData['file'] = '[BASE64_DATA_${logData['file'].length}_CHARS]';
+      }
+      print('🔍 CREATE CONTENT: Request data: $logData');
+
+      final createdContent = await _service.createHubContent(jsonData);
+
+      Get.snackbar(
+        'Success',
+        'Your content "${createdContent.title}" has been published successfully',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+      return true;
     } catch (e) {
       error.value = e.toString();
       Get.snackbar(
-        'Error',
+        'Error ❌',
         'Failed to create content: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         duration: const Duration(seconds: 5),
+        margin: const EdgeInsets.all(16),
+        borderRadius: 8,
+        isDismissible: true,
+        dismissDirection: DismissDirection.horizontal,
+        icon: const Icon(Icons.error_outline, color: Colors.white, size: 28),
       );
       return false;
     } finally {
@@ -577,10 +563,17 @@ class HubContentCreateRequest {
     }
 
     if (fileBytes != null && fileName != null) {
-      // Convert file to base64 data URL
+      // Convert file to base64 data URL format (as per documentation)
       final base64String = base64Encode(fileBytes!);
       final mimeType = _getMimeType(fileName!);
+
+      // Create data URL format as specified in documentation
       data['file'] = 'data:$mimeType;base64,$base64String';
+
+      print(
+          '🔍 toJson: Added file data - name: $fileName, type: $mimeType, size: ${base64String.length} chars');
+      print(
+          '🔍 toJson: Data URL format: data:$mimeType;base64,[${base64String.length} chars]');
     }
 
     return data;

@@ -5,12 +5,54 @@ import '../widgets/common_sliver_widgets.dart';
 import '../widgets/professional_search_bar.dart';
 import '../widgets/topic_card.dart';
 import 'topic_materials_screen.dart';
+import '../../../../services/token_storage_service.dart';
 
 class LegalEducationScreen extends StatelessWidget {
   const LegalEducationScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Check authentication status
+    final tokenService = Get.find<TokenStorageService>();
+    if (!tokenService.isLoggedIn) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.lock_outline,
+                size: 64,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Please Log In',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'You need to be logged in to access legal education content',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => Get.toNamed('/login'),
+                child: const Text('Go to Login'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     // Ensure controller is available
     final controller = Get.put(LegalEducationController());
 

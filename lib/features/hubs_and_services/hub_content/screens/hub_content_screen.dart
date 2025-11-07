@@ -107,13 +107,23 @@ class _HubContentScreenState extends State<HubContentScreen> {
             stretch: true,
             actions: [
               IconButton(
+                onPressed: _showSearch,
                 icon: const Icon(Icons.search),
-                onPressed: () => _showSearch(),
+                tooltip: 'Search Content',
               ),
               IconButton(
+                onPressed: _showFilters,
                 icon: const Icon(Icons.filter_list),
-                onPressed: () => _showFilters(),
+                tooltip: 'Filter Content',
               ),
+              // TEMPORARY: Debug permissions button
+              // IconButton(
+              //   onPressed: () {
+              //     UserRoleManager.debugUserPermissions();
+              //   },
+              //   icon: const Icon(Icons.bug_report),
+              //   tooltip: 'Debug Permissions',
+              // ),
             ],
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
@@ -259,7 +269,7 @@ class _HubContentScreenState extends State<HubContentScreen> {
       case 'students':
         return 'Join the student community for study materials, discussions, and academic support.';
       case 'forum':
-        return 'Open discussions on legal topics, current affairs, and community matters.';
+        return 'Open discussions on legal topics, current affairs, and community matters. All members can participate.';
       default:
         return 'Explore content and connect with the community.';
     }

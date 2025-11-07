@@ -4,7 +4,6 @@ import '../models/legal_education_models.dart';
 import '../../../../services/api_service.dart';
 import '../../../../services/token_storage_service.dart';
 import '../../../../config/environment_config.dart';
-import '../../../hubs_and_services/hub_content/utils/user_role_manager.dart';
 
 class LegalEducationService extends GetxService {
   late final ApiService _apiService;
@@ -32,15 +31,9 @@ class LegalEducationService extends GetxService {
       if (page != null) queryParams['page'] = page;
       if (pageSize != null) queryParams['page_size'] = pageSize;
 
-      // Use admin endpoint if user is admin, otherwise use public endpoint
-      String endpoint;
-      if (UserRoleManager.isAdmin()) {
-        endpoint = EnvironmentConfig.legalEducationAdminTopicsUrl;
-        print('🔍 TOPICS API: Using ADMIN endpoint');
-      } else {
-        endpoint = EnvironmentConfig.legalEducationTopicsUrl;
-        print('🔍 TOPICS API: Using PUBLIC endpoint');
-      }
+      // Always use public endpoint - it should handle both admin and regular users
+      String endpoint = EnvironmentConfig.legalEducationTopicsUrl;
+      print('🔍 TOPICS API: Using PUBLIC endpoint for all users');
 
       print('🔍 TOPICS API: Making request to $endpoint');
       print('🔍 TOPICS API: Query params: $queryParams');
@@ -73,6 +66,11 @@ class LegalEducationService extends GetxService {
 
       print('🔍 TOPICS API: Response status: ${response.statusCode}');
       print('🔍 TOPICS API: Response data type: ${response.data.runtimeType}');
+
+      // Check if we received valid data
+      if (response.data == null) {
+        throw Exception('No data received from server');
+      }
 
       return TopicsResponse.fromJson(response.data);
     } catch (e) {

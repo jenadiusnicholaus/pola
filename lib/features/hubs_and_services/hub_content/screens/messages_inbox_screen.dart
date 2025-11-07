@@ -45,66 +45,73 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
             backgroundColor: theme.colorScheme.surface,
             foregroundColor: theme.colorScheme.onSurface,
             elevation: 0,
-            expandedHeight: _isSearching ? 120 : 70,
+            expandedHeight: _isSearching ? 130 : 70,
             flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                padding: const EdgeInsets.fromLTRB(20, 50, 20, 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Messages',
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.onSurface,
+              background: SafeArea(
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Messages',
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                            ),
                           ),
-                        ),
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: _toggleSearch,
-                              icon: Icon(
-                                  _isSearching ? Icons.close : Icons.search),
-                              style: IconButton.styleFrom(
-                                backgroundColor:
-                                    theme.colorScheme.surfaceContainerHighest,
+                          Row(
+                            children: [
+                              IconButton(
+                                onPressed: _toggleSearch,
+                                icon: Icon(
+                                    _isSearching ? Icons.close : Icons.search),
+                                style: IconButton.styleFrom(
+                                  backgroundColor:
+                                      theme.colorScheme.surfaceContainerHighest,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            IconButton(
-                              onPressed: _showComposeDialog,
-                              icon: const Icon(Icons.edit_outlined),
-                              style: IconButton.styleFrom(
-                                backgroundColor: theme.colorScheme.primary,
-                                foregroundColor: theme.colorScheme.onPrimary,
+                              const SizedBox(width: 8),
+                              IconButton(
+                                onPressed: _showComposeDialog,
+                                icon: const Icon(Icons.edit_outlined),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: theme.colorScheme.primary,
+                                  foregroundColor: theme.colorScheme.onPrimary,
+                                ),
                               ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      if (_isSearching) ...[
+                        const SizedBox(height: 12),
+                        Flexible(
+                          child: TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              hintText: 'Search conversations...',
+                              prefixIcon: const Icon(Icons.search),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(25),
+                                borderSide: BorderSide.none,
+                              ),
+                              fillColor:
+                                  theme.colorScheme.surfaceContainerHighest,
+                              contentPadding:
+                                  const EdgeInsets.symmetric(vertical: 0),
                             ),
-                          ],
+                          ),
                         ),
                       ],
-                    ),
-                    if (_isSearching) ...[
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'Search conversations...',
-                          prefixIcon: const Icon(Icons.search),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(25),
-                            borderSide: BorderSide.none,
-                          ),
-                          filled: true,
-                          fillColor: theme.colorScheme.surfaceContainerHighest,
-                          contentPadding:
-                              const EdgeInsets.symmetric(vertical: 0),
-                        ),
-                      ),
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),

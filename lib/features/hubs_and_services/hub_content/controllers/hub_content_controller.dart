@@ -107,18 +107,21 @@ class HubContentController extends GetxController {
       debugPrint(
           '📊 Content response for "$hubType": ${response.results.length} items, total: ${response.count}');
 
-      // Check for the specific test case
-      final testContent = response.results
-          .where((item) =>
-              item.title.contains('Legal News: Green Inc Case Update'))
-          .toList();
-      if (testContent.isNotEmpty) {
-        debugPrint(
-            '🎯 FOUND test content: "${testContent.first.title}" (ID: ${testContent.first.id})');
+      if (response.results.isEmpty) {
+        debugPrint('❌ NO CONTENT RETURNED for hub "$hubType"');
+        debugPrint('🔍 Response count: ${response.count}');
+        debugPrint('🔍 Response next: ${response.next}');
+        debugPrint('🔍 Response previous: ${response.previous}');
       } else {
-        debugPrint('❌ Test content not found in results');
-        debugPrint(
-            '📋 Available titles: ${response.results.map((e) => '"${e.title}"').join(', ')}');
+        debugPrint('✅ Content found for hub "$hubType":');
+        for (int i = 0; i < response.results.length && i < 5; i++) {
+          final item = response.results[i];
+          debugPrint(
+              '   ${i + 1}. "${item.title}" (ID: ${item.id}) - ${item.contentType}');
+        }
+        if (response.results.length > 5) {
+          debugPrint('   ... and ${response.results.length - 5} more items');
+        }
       }
 
       content.assignAll(response.results);
@@ -850,8 +853,20 @@ class HubContentController extends GetxController {
   /// Refresh content
   Future<void> refreshContent() async {
     print('🔄 HubContentController: refreshContent called for hub: $hubType');
+    print('🔄 Current content count before refresh: ${content.length}');
+
+    // Clear current state to force fresh data
+    content.clear();
+    trendingContent.clear();
+    recentContent.clear();
+    currentPage.value = 1;
+    hasMoreData.value = true;
+
     await fetchInitialContent();
+
     print('🔄 HubContentController: refreshContent completed');
+    print('🔄 Content count after refresh: ${content.length}');
+    print('🔄 Content titles: ${content.map((e) => e.title).join(", ")}');
   }
 
   /// Get content by ID

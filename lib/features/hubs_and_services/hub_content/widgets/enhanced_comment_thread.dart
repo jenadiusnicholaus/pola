@@ -47,10 +47,14 @@ class _EnhancedCommentThreadState extends State<EnhancedCommentThread> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildCommentCard(context, theme),
-        if (widget.showReplies &&
-            widget.comment.replies.isNotEmpty &&
-            _showReplies)
-          _buildRepliesSection(context, theme),
+        if (widget.showReplies && _showReplies) ...[
+          // Debug info
+          Builder(builder: (context) {
+            print(
+                '📋 Showing replies section for comment ${widget.comment.id}: showReplies=${widget.showReplies}, _showReplies=$_showReplies');
+            return _buildRepliesSection(context, theme);
+          })
+        ],
       ],
     );
   }
@@ -192,6 +196,11 @@ class _EnhancedCommentThreadState extends State<EnhancedCommentThread> {
                   _showReplies = !_showReplies;
                 });
 
+                // Debug output
+                print('🔽 Reply button pressed: _showReplies = $_showReplies');
+                print(
+                    '🔽 Comment ${widget.comment.id} - repliesCount: ${widget.comment.repliesCount}, replies.length: ${widget.comment.replies.length}');
+
                 // Load more replies if needed
                 if (_showReplies &&
                     widget.comment.replies.isEmpty &&
@@ -256,6 +265,7 @@ class _EnhancedCommentThreadState extends State<EnhancedCommentThread> {
   Widget _buildRepliesSection(BuildContext context, ThemeData theme) {
     return Column(
       children: [
+        // Show existing replies
         ...widget.comment.replies.map((reply) => EnhancedCommentThread(
               comment: reply,
               contentId: widget.contentId,
@@ -265,9 +275,51 @@ class _EnhancedCommentThreadState extends State<EnhancedCommentThread> {
               controller: widget.controller,
             )),
 
+        // Show loading indicator if currently loading replies
+        if (_isLoadingReplies && widget.comment.replies.isEmpty)
+          Container(
+            margin: EdgeInsets.only(left: (widget.depth + 1) * 16.0, top: 8.0),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Loading replies...',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
         // Show "Load more replies" if there are more
         if (widget.comment.repliesCount > widget.comment.replies.length)
           _buildLoadMoreReplies(context, theme),
+
+        // Show "No replies yet" message if showing replies but none exist
+        if (!_isLoadingReplies &&
+            widget.comment.replies.isEmpty &&
+            widget.comment.repliesCount == 0)
+          Container(
+            margin: EdgeInsets.only(left: (widget.depth + 1) * 16.0, top: 8.0),
+            child: Text(
+              'No replies yet',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.5),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
       ],
     );
   }

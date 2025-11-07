@@ -1,5 +1,6 @@
-import 'package:dio/dio.dart';
+import 'package:dio/dio.dart' as dio;
 import 'package:get/get.dart';
+import 'dart:convert';
 import '../../../../services/api_service.dart';
 import '../../../../config/environment_config.dart';
 import '../models/hub_content_models.dart';
@@ -7,7 +8,7 @@ import '../models/hub_content_models.dart';
 class HubContentService extends GetxService {
   final ApiService _apiService = ApiService();
 
-  Options get _defaultOptions => Options(
+  dio.Options get _defaultOptions => dio.Options(
         headers: {
           'Content-Type': 'application/json',
         },
@@ -28,8 +29,9 @@ class HubContentService extends GetxService {
         ...?filters?.map((k, v) => MapEntry(k, v.toString())),
       };
 
-      print('Fetching hub content for: $hubType');
-      print('Query params: $queryParams');
+      print('🌐 Fetching hub content for: $hubType');
+      print('🌐 Endpoint: ${EnvironmentConfig.hubContentUrl}');
+      print('🌐 Query params: $queryParams');
 
       final response = await _apiService.get<Map<String, dynamic>>(
         EnvironmentConfig.hubContentUrl,
@@ -37,8 +39,17 @@ class HubContentService extends GetxService {
         options: _defaultOptions,
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response data: ${response.data}');
+      print('🌐 Response status: ${response.statusCode}');
+      print('🌐 Response data keys: ${response.data?.keys ?? 'null'}');
+      print(
+          '🌐 Response results count: ${response.data?['results']?.length ?? 0}');
+
+      if (response.data?['results'] != null &&
+          response.data!['results'].isNotEmpty) {
+        final firstItem = response.data!['results'][0];
+        print('🌐 First item title: "${firstItem['title']}"');
+        print('🌐 First item ID: ${firstItem['id']}');
+      }
 
       if (response.statusCode == 200) {
         return HubContentResponse.fromJson(response.data!);
@@ -610,21 +621,83 @@ class HubContentService extends GetxService {
     return [];
   }
 
-  /// Create hub content (alias for createContent)
+  /// Create hub content (following documentation format)
   Future<HubContentItem> createHubContent(
       Map<String, dynamic> contentData) async {
-    final hubType = contentData.remove('hub_type') ?? 'forum';
-    final contentRequest = CreateContentRequest(
-      title: contentData['title'],
-      description: contentData['description'],
-      fileUrl: contentData['file_url'],
-      youtubeUrl: contentData['youtube_url'],
-      topics: contentData['topics']?.cast<String>(),
-      price: contentData['price']?.toDouble(),
-      contentType: contentData['content_type'],
-    );
+    try {
+      final hubType = contentData.remove('hub_type') ?? 'forum';
 
-    return createContent(hubType: hubType, contentRequest: contentRequest);
+      print('🔍 createHubContent: Processing content data per documentation');
+      print('🔍 contentData keys: ${contentData.keys.toList()}');
+
+      // Handle file data - keep data URL format as specified in docs
+      if (contentData.containsKey('file') && contentData['file'] != null) {
+        final fileData = contentData['file'] as String;
+        print(
+            '🔍 createHubContent: File data detected, format: ${fileData.substring(0, 30)}...');
+
+        // Validate data URL format (should be: data:mime/type;base64,...)
+        if (fileData.startsWith('data:')) {
+          final parts = fileData.split(',');
+          if (parts.length == 2) {
+            final mimeTypePart = parts[0];
+            final base64Data = parts[1];
+
+            print('🔍 createHubContent: Valid data URL detected');
+            print('🔍 MIME header: $mimeTypePart');
+            print('🔍 Base64 data length: ${base64Data.length}');
+
+            // Validate base64 data
+            try {
+              final testBytes = base64.decode(base64Data);
+              print(
+                  '🔍 createHubContent: Base64 validation successful, ${testBytes.length} bytes');
+            } catch (e) {
+              print('❌ createHubContent: Invalid base64 in data URL: $e');
+              throw Exception('Invalid file data format');
+            }
+          } else {
+            print('❌ createHubContent: Malformed data URL');
+            throw Exception('Invalid data URL format');
+          }
+        } else {
+          print('❌ createHubContent: File data must be in data URL format');
+          throw Exception(
+              'File must be in data URL format (data:mime/type;base64,...)');
+        }
+      }
+
+      // Add hub_type back to the data
+      contentData['hub_type'] = hubType;
+
+      print(
+          '🔍 createHubContent: Sending JSON with data URL file (as per docs)');
+      print('🔍 Final data keys: ${contentData.keys.toList()}');
+
+      // Send as JSON with data URL file (as specified in documentation)
+      final response = await _apiService.post<Map<String, dynamic>>(
+        EnvironmentConfig.hubContentUrl,
+        data: contentData,
+        options: dio.Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print('✅ createHubContent: Content created successfully');
+        return HubContentItem.fromJson(response.data!);
+      } else {
+        print('❌ createHubContent: Failed with status ${response.statusCode}');
+        print('❌ Response data: ${response.data}');
+        throw Exception('Failed to create content: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Error creating hub content: $e');
+      throw Exception('Content creation failed: $e');
+    }
   }
 
   /// Enhanced search with additional parameters

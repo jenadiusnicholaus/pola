@@ -22,7 +22,6 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _contentController = TextEditingController();
   final _priceController = TextEditingController();
   final _videoUrlController = TextEditingController();
 
@@ -70,18 +69,12 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
         });
       }
     });
-
-    // Add listener for character count
-    _contentController.addListener(() {
-      setState(() {}); // Rebuild to update character count
-    });
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
-    _contentController.dispose();
     _priceController.dispose();
     _videoUrlController.dispose();
     Get.delete<ContentCreationController>();
@@ -471,29 +464,6 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
           ),
           child: Column(
             children: [
-              // Main text input
-              TextFormField(
-                controller: _contentController,
-                decoration: const InputDecoration(
-                  labelText: 'Content *',
-                  hintText: 'Write your detailed content here...',
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.all(16),
-                  alignLabelWithHint: true,
-                ),
-                maxLines: 10,
-                minLines: 5,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Content is required';
-                  }
-                  if (value.trim().length < 20) {
-                    return 'Content must be at least 20 characters';
-                  }
-                  return null;
-                },
-              ),
-
               // Toolbar with attachments and emoji
               Container(
                 padding:
@@ -539,7 +509,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                     IconButton(
                       onPressed: _showEmojiPicker,
                       icon: const Icon(Icons.emoji_emotions),
-                      tooltip: 'Add emoji',
+                      tooltip: 'Add emoji to description',
                       style: IconButton.styleFrom(
                         backgroundColor:
                             Theme.of(context).colorScheme.tertiaryContainer,
@@ -549,19 +519,6 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                     ),
 
                     const Spacer(),
-
-                    // Character count
-                    Text(
-                      '${_contentController.text.length}/5000',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: _contentController.text.length > 4500
-                                ? Colors.orange
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withOpacity(0.6),
-                          ),
-                    ),
                   ],
                 ),
               ),
@@ -944,7 +901,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
       contentType: controller.selectedContentType.value,
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim(),
-      content: _contentController.text.trim(),
+      content: '', // Pass empty string instead of content field
       language: controller.selectedLanguage.value,
       price: _priceController.text.isNotEmpty ? _priceController.text : '0.00',
       videoUrl: _videoUrlController.text.trim().isNotEmpty
@@ -963,9 +920,14 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
     print('🔄 ContentCreationScreen: Content creation success = $success');
 
     if (success) {
+      print(
+          '🔄 ContentCreationScreen: Content created successfully, showing success message');
+
+      // Give users time to see the success message before navigating back
+      await Future.delayed(const Duration(seconds: 1));
+
       print('🔄 ContentCreationScreen: Navigating back with result=true');
       Get.back(result: true);
-      // Note: Snackbar is already shown in the controller
     } else {
       print(
           '🔄 ContentCreationScreen: Content creation failed, not navigating back');
@@ -1378,14 +1340,15 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
   }
 
   void _insertEmoji(String emoji) {
-    final currentPosition = _contentController.selection.base.offset;
-    final text = _contentController.text;
+    // Insert emoji into the description field instead
+    final currentPosition = _descriptionController.selection.base.offset;
+    final text = _descriptionController.text;
 
     final newText = text.substring(0, currentPosition) +
         emoji +
         text.substring(currentPosition);
 
-    _contentController.value = _contentController.value.copyWith(
+    _descriptionController.value = _descriptionController.value.copyWith(
       text: newText,
       selection: TextSelection.collapsed(
         offset: currentPosition + emoji.length,

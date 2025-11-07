@@ -66,6 +66,8 @@ dependencies:
   flutter_html: ^3.0.0-beta.2
   webview_flutter: ^4.9.0
   
+
+  
   # URL Launcher for external links
   url_launcher: ^6.3.1
 
