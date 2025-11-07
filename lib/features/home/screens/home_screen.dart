@@ -280,8 +280,6 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
   }
 
-
-
   Widget? _buildFloatingActionButton(
       BuildContext context, HomeController controller) {
     return null; // No floating action button for now
