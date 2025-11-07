@@ -14,4 +14,5 @@ class MainNavigationController extends GetxController {
   void navigateToPosts() => changePage(1);
   void navigateToHelp() => changePage(2);
   void navigateToBookmarks() => changePage(3);
+  void navigateToMessages() => changePage(4);
 }

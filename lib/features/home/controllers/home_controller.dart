@@ -152,6 +152,16 @@ class HomeController extends GetxController {
   /// Get current user role
   String? get userRole => _tokenStorage.getUserRole();
 
+  /// Get user role asynchronously and update UI when available
+  Future<String?> getUserRoleAsync() async {
+    final role = await _tokenStorage.getUserRoleAsync();
+    if (role != null) {
+      // Trigger UI update
+      update();
+    }
+    return role;
+  }
+
   /// Check if user is verified
   bool get isUserVerified => _tokenStorage.isUserVerified();
 

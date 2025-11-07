@@ -223,6 +223,8 @@ class LearningMaterial {
   final bool isLectureMaterial;
   final bool isVerified;
   final int downloadsCount;
+  final int likesCount;
+  final bool isLiked;
   final DateTime createdAt;
   final DateTime lastUpdated;
 
@@ -240,6 +242,8 @@ class LearningMaterial {
     required this.isLectureMaterial,
     required this.isVerified,
     required this.downloadsCount,
+    required this.likesCount,
+    required this.isLiked,
     required this.createdAt,
     required this.lastUpdated,
   });
@@ -272,10 +276,39 @@ class LearningMaterial {
       isLectureMaterial: json['is_lecture_material'] ?? false,
       isVerified: json['is_verified'] ?? false,
       downloadsCount: json['downloads_count'] ?? 0,
+      likesCount: json['likes_count'] ?? 0,
+      isLiked: json['is_liked'] ?? false,
       createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
       lastUpdated:
           DateTime.tryParse(json['last_updated'] ?? '') ?? DateTime.now(),
     );
+  }
+
+  // Check if file is an image
+  bool get isImage {
+    if (fileUrl.isEmpty) return false;
+
+    final contentTypeLower = contentType.toLowerCase();
+    final fileUrlLower = fileUrl.toLowerCase();
+
+    // Check content type first
+    if (contentTypeLower == 'image' ||
+        contentTypeLower == 'picture' ||
+        contentTypeLower == 'photo') {
+      return true;
+    }
+
+    // Check file extension
+    final imageExtensions = [
+      '.jpg',
+      '.jpeg',
+      '.png',
+      '.gif',
+      '.bmp',
+      '.webp',
+      '.svg'
+    ];
+    return imageExtensions.any((ext) => fileUrlLower.contains(ext));
   }
 
   Map<String, dynamic> toJson() {
@@ -293,6 +326,8 @@ class LearningMaterial {
       'is_lecture_material': isLectureMaterial,
       'is_verified': isVerified,
       'downloads_count': downloadsCount,
+      'likes_count': likesCount,
+      'is_liked': isLiked,
       'created_at': createdAt.toIso8601String(),
       'last_updated': lastUpdated.toIso8601String(),
     };
@@ -319,12 +354,12 @@ class UploaderInfo {
 
   factory UploaderInfo.fromJson(Map<String, dynamic> json) {
     return UploaderInfo(
-      id: json['id'],
-      email: json['email'] ?? '',
-      fullName: json['full_name'] ?? '',
-      userRole: json['user_role'] ?? '',
+      id: json['id'] ?? 0,
+      email: json['email']?.toString() ?? '',
+      fullName: json['full_name']?.toString() ?? '',
+      userRole: json['user_role']?.toString() ?? '',
       isVerified: json['is_verified'] ?? false,
-      avatarUrl: json['avatar_url'],
+      avatarUrl: json['avatar_url']?.toString(),
     );
   }
 

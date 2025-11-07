@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Primary Colors (Amber theme)
-  static const Color primaryAmber = Color(0xFFFFC107);
-  static const Color primaryAmberLight = Color(0xFFFFD54F);
-  static const Color primaryAmberDark = Color(0xFFFF8F00);
+  static const Color primaryAmber = Color(0xFFFF8F00);
+  static const Color primaryAmberLight = Color.fromARGB(255, 255, 187, 0);
+  static const Color primaryAmberDark = Color.fromARGB(255, 125, 94, 53);
 
   // Dark Theme Colors
   static const Color darkBackground = Color(0xFF121212);

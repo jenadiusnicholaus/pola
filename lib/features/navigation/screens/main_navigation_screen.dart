@@ -5,6 +5,7 @@ import '../../home/screens/home_screen.dart';
 import '../../posts/screens/posts_screen.dart';
 import '../../help/screens/help_support_screen.dart';
 import '../../bookmarks/screens/bookmark_screen.dart';
+import '../../hubs_and_services/hub_content/screens/messages_inbox_screen.dart';
 
 class MainNavigationScreen extends StatelessWidget {
   const MainNavigationScreen({super.key});
@@ -18,6 +19,7 @@ class MainNavigationScreen extends StatelessWidget {
       const PostsScreen(),
       const HelpSupportScreen(),
       const BookmarkScreen(),
+      const MessagesInboxScreen(),
     ];
 
     return Obx(
@@ -61,6 +63,11 @@ class MainNavigationScreen extends StatelessWidget {
                 icon: Icon(Icons.bookmark_outline),
                 activeIcon: Icon(Icons.bookmark),
                 label: 'Bookmarks',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.message_outlined),
+                activeIcon: Icon(Icons.message),
+                label: 'Messages',
               ),
             ],
           ),

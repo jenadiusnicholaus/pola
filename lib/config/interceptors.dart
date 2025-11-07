@@ -50,8 +50,22 @@ class ApiInterceptors {
           if (token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
             debugPrint('🔑 Added auth token to request: ${options.uri}');
+            debugPrint(
+                '🔑 Token length: ${token.length}, starts with: ${token.substring(0, 20)}...');
+
+            // Special logging for bookmarked endpoint
+            if (options.uri.toString().contains('bookmarked')) {
+              debugPrint('🔖 BOOKMARK REQUEST - Token added successfully');
+            }
           } else {
             debugPrint('⚠️ No access token found for request: ${options.uri}');
+            debugPrint(
+                '⚠️ TokenStorageService state - isLoggedIn: ${tokenStorage.isLoggedIn}');
+
+            // Special logging for bookmarked endpoint
+            if (options.uri.toString().contains('bookmarked')) {
+              debugPrint('🔖 BOOKMARK REQUEST - NO TOKEN AVAILABLE!');
+            }
           }
         } catch (e) {
           debugPrint('❌ Error getting token: $e');

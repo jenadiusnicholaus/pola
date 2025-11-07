@@ -5,7 +5,7 @@ import '../controllers/home_controller.dart';
 import '../widgets/hubs_and_services_list.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
-import '../../user_verification/screens/verification_screen.dart';
+import '../../../shared/widgets/app_drawer.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -59,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _showExitConfirmation(context, controller);
       },
       child: Scaffold(
-        drawer: _buildDrawer(context, controller),
+        drawer: const AppDrawer(),
         body: CustomScrollView(
           controller: _scrollController,
           slivers: [
@@ -280,112 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
   }
 
-  Widget _buildDrawer(BuildContext context, HomeController controller) {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          // User info header
-          Obx(() => UserAccountsDrawerHeader(
-                accountName: Text(controller.userDisplayName),
-                accountEmail: Text(controller.userEmail),
-                currentAccountPicture: CircleAvatar(
-                  backgroundColor:
-                      Theme.of(context).primaryColor.withOpacity(0.2),
-                  child: Text(
-                    controller.userInitials,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
-                    ),
-                  ),
-                ),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
-                ),
-              )),
 
-          // Navigation items
-          ListTile(
-            leading: const Icon(Icons.home),
-            title: const Text('Home'),
-            onTap: () {
-              Get.back();
-            },
-          ),
-
-          ListTile(
-            leading: const Icon(Icons.gavel),
-            title: const Text('Legal Services'),
-            onTap: () {
-              Get.back();
-            },
-          ),
-
-          ListTile(
-            leading: const Icon(Icons.history),
-            title: const Text('Case History'),
-            onTap: () {
-              Get.back();
-            },
-          ),
-
-          ListTile(
-            leading: const Icon(Icons.folder),
-            title: const Text('Documents'),
-            onTap: () {
-              Get.back();
-            },
-          ),
-
-          // Show verification item only for professional roles
-          Obx(() {
-            final userRole = controller.userRole;
-            final requiresVerification = [
-              'advocate',
-              'lawyer',
-              'law_firm',
-              'paralegal'
-            ].contains(userRole);
-
-            if (!requiresVerification) {
-              return const SizedBox.shrink();
-            }
-
-            return ListTile(
-              leading: const Icon(Icons.verified_user),
-              title: const Text('Account Verification'),
-              onTap: () {
-                Get.back();
-                Get.to(() => const VerificationScreen());
-              },
-            );
-          }),
-
-          const Divider(),
-
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('Settings'),
-            onTap: () {
-              Get.back();
-              Get.toNamed('/settings');
-            },
-          ),
-
-          ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('Logout', style: TextStyle(color: Colors.red)),
-            onTap: () {
-              Get.back(); // Close drawer first
-              _showLogoutConfirmation(context, controller);
-            },
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget? _buildFloatingActionButton(
       BuildContext context, HomeController controller) {

@@ -4,11 +4,13 @@ import 'package:dio/dio.dart' as dio;
 import '../config/environment_config.dart';
 import 'api_service.dart';
 import 'token_storage_service.dart';
+import '../features/profile/services/profile_service.dart';
 import 'dart:async';
 
 class AuthService extends GetxController {
   final ApiService _apiService = Get.find<ApiService>();
   final TokenStorageService _tokenStorage = Get.find<TokenStorageService>();
+  ProfileService get _profileService => Get.find<ProfileService>();
 
   Timer? _tokenRefreshTimer;
   static const Duration _refreshInterval =
@@ -182,10 +184,28 @@ class AuthService extends GetxController {
         userData: userData,
       );
 
+      // Fetch and store complete user profile after login
+      try {
+        debugPrint('📥 Fetching complete user profile after login...');
+        // Check if ProfileService is available before using it
+        if (Get.isRegistered<ProfileService>()) {
+          await _profileService.fetchProfile();
+          debugPrint('✅ Complete profile stored securely');
+        } else {
+          debugPrint('⚠️ ProfileService not available, skipping profile fetch');
+        }
+      } catch (profileError) {
+        debugPrint(
+            '⚠️ Warning: Failed to fetch complete profile: $profileError');
+        // Don't fail login if profile fetch fails, we have basic user data
+      }
+
       // Start/restart the token refresh timer
       _startTokenRefreshTimer();
 
-      debugPrint('✅ Login successful for: ${userData?['email']}');
+      final userEmail = userData?['email'];
+      final isAdmin = _tokenStorage.isUserAdmin();
+      debugPrint('✅ Login successful for: $userEmail (Admin: $isAdmin)');
       return true;
     } catch (e) {
       debugPrint('❌ Error processing login response: $e');

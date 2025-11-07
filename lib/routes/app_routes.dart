@@ -10,6 +10,7 @@ import '../features/profile/screens/profile_screen.dart';
 import '../features/hubs_and_services/legal_education/screens/legal_education_screen.dart';
 import '../features/hubs_and_services/legal_education/screens/topic_materials_screen.dart';
 import '../features/hubs_and_services/legal_education/screens/material_viewer_screen.dart';
+import '../features/hubs_and_services/hub_content/screens/hub_content_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -22,6 +23,9 @@ class AppRoutes {
   static const String legalEducation = '/legal-education';
   static const String topicMaterials = '/topic-materials';
   static const String materialViewer = '/material-viewer';
+  static const String advocatesHub = '/advocates-hub';
+  static const String studentsHub = '/students-hub';
+  static const String forumHub = '/forum-hub';
 
   static List<GetPage> routes = [
     GetPage(
@@ -63,6 +67,18 @@ class AppRoutes {
     GetPage(
       name: materialViewer,
       page: () => const MaterialViewerScreen(),
+    ),
+    GetPage(
+      name: advocatesHub,
+      page: () => const HubContentScreen(),
+    ),
+    GetPage(
+      name: studentsHub,
+      page: () => const HubContentScreen(),
+    ),
+    GetPage(
+      name: forumHub,
+      page: () => const HubContentScreen(),
     ),
   ];
 

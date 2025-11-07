@@ -15,6 +15,7 @@ import 'services/auth_service.dart';
 import 'features/profile/services/profile_service.dart';
 import 'features/hubs_and_services/legal_education/services/legal_education_service.dart';
 import 'features/hubs_and_services/legal_education/controllers/legal_education_controller.dart';
+import 'features/hubs_and_services/hub_content/services/hub_content_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,19 +51,30 @@ LOGOUT_ENDPOINT=/api/v1/authentication/logout/
   // Initialize Dio configuration after environment is loaded
   DioConfig.initialize();
 
-  // Initialize services
+  // Initialize services in correct dependency order
+  debugPrint('🚀 Initializing core services...');
+
   Get.put(ApiService());
+  debugPrint('✅ ApiService initialized');
 
-  // Initialize token storage and auth services
+  // Initialize token storage service first
   Get.put(TokenStorageService());
-  Get.put(AuthService());
+  debugPrint('✅ TokenStorageService initialized');
 
-  // Initialize profile service
+  // Initialize profile service before auth service (dependency)
   Get.put(ProfileService());
+  debugPrint('✅ ProfileService initialized');
+
+  // Initialize auth service (depends on ProfileService)
+  Get.put(AuthService());
+  debugPrint('✅ AuthService initialized');
 
   // Initialize legal education service
   Get.put(LegalEducationService());
   Get.put(LegalEducationController());
+
+  // Initialize hub content service
+  Get.put(HubContentService());
 
   // Initialize controllers
   Get.put(ThemeController());

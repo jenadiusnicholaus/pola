@@ -5,6 +5,8 @@ import '../models/legal_education_models.dart';
 import '../widgets/common_sliver_widgets.dart';
 import '../widgets/material_card.dart';
 import 'material_viewer_screen.dart';
+import '../../hub_content/widgets/content_creation_fab.dart';
+import '../../hub_content/utils/user_role_manager.dart';
 
 class TopicMaterialsScreen extends StatefulWidget {
   final Topic? topic;
@@ -27,8 +29,12 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
   void initState() {
     super.initState();
 
-    // Ensure controller is available
-    controller = Get.put(LegalEducationController());
+    // Ensure controller is available - use existing instance if available
+    try {
+      controller = Get.find<LegalEducationController>();
+    } catch (e) {
+      controller = Get.put(LegalEducationController());
+    }
 
     // Get topic and language from arguments or use the provided topic
     if (widget.topic != null) {
@@ -97,6 +103,9 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
     return Scaffold(
       body: Obx(() => CustomScrollView(
             controller: controller.materialsScrollController,
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
             slivers: [
               // Topic-specific header
               SliverAppBar(
@@ -364,20 +373,51 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
                     ),
                   ),
                 ),
+
+                // Add bottom padding for better scrolling
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: 80),
+                ),
               ],
             ],
           )),
 
-      // Floating Action Button for refresh
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => controller.fetchMaterials(
-          currentTopic.slug,
-          language: selectedLanguage,
-          refresh: true,
-        ),
-        child: const Icon(Icons.refresh),
-        tooltip: 'Refresh Materials',
-      ),
+      // Floating Action Button - Content creation for admins, refresh for others
+      floatingActionButton: UserRoleManager.canCreateContentInHub('legal_ed')
+          ? ContentCreationMenu(
+              hubType: 'legal_ed',
+              heroTag: 'topic_materials_fab',
+              presetData: {
+                'currentTopic': {
+                  'id': currentTopic.id,
+                  'name': currentTopic.name,
+                  'name_sw': currentTopic.nameSw,
+                  'slug': currentTopic.slug,
+                  'description': currentTopic.description,
+                  'description_sw': currentTopic.descriptionSw,
+                  'display_order': currentTopic.displayOrder,
+                  'subtopics_count': currentTopic.subtopicsCount,
+                  'materials_count': currentTopic.materialsCount,
+                },
+                'selectedLanguage': selectedLanguage,
+              },
+              onContentCreated: () {
+                // Refresh materials after successful content creation
+                print(
+                    '🔄 TopicMaterialsScreen: onContentCreated callback triggered');
+                print('🔄 Controller instance: $controller');
+                controller.refreshMaterials();
+              },
+            )
+          : FloatingActionButton(
+              onPressed: () => controller.fetchMaterials(
+                currentTopic.slug,
+                language: selectedLanguage,
+                refresh: true,
+              ),
+              child: const Icon(Icons.refresh),
+              tooltip: 'Refresh Materials',
+            ),
     );
   }
 

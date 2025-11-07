@@ -818,28 +818,14 @@ class VerificationController extends GetxController {
       final bytes = await file.readAsBytes();
       final base64File = base64Encode(bytes);
 
-      // Determine file type
-      String mimeType = 'application/octet-stream';
-      final extension = fileName.split('.').last.toLowerCase();
-      switch (extension) {
-        case 'pdf':
-          mimeType = 'application/pdf';
-          break;
-        case 'jpg':
-        case 'jpeg':
-          mimeType = 'image/jpeg';
-          break;
-        case 'png':
-          mimeType = 'image/png';
-          break;
-      }
+      // File will be processed by the service
 
       // Upload to server
       final success = await _verificationService.uploadDocumentBase64(
         documentType: documentType,
-        title: _getDocumentDisplayName(documentType),
+        base64Data: base64File,
+        fileName: _getDocumentDisplayName(documentType),
         description: 'Uploaded via mobile app',
-        fileData: 'data:$mimeType;base64,$base64File',
       );
 
       if (!success) {

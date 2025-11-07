@@ -4,6 +4,7 @@ import 'package:flutter_cached_pdfview/flutter_cached_pdfview.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/legal_education_models.dart';
+import '../../controllers/hub_content_controller.dart';
 
 class MaterialViewerScreen extends StatefulWidget {
   const MaterialViewerScreen({super.key});
@@ -18,9 +19,15 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
   bool hasError = false;
   String errorMessage = '';
 
+  // Controllers
+  late final HubContentController _hubContentController;
+
   @override
   void initState() {
     super.initState();
+
+    // Initialize controllers
+    _hubContentController = Get.put(HubContentController(), permanent: false);
 
     // Get material from arguments
     final args = Get.arguments as Map<String, dynamic>;
@@ -54,6 +61,38 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
     });
   }
 
+  /// Handle like button toggle with real functionality
+  Future<void> _handleLikeToggle() async {
+    debugPrint('_handleLikeToggle called for material ID: ${material.id}');
+    final newLikeStatus = await _hubContentController.toggleLike(material);
+
+    // Update the material object with new like status
+    setState(() {
+      // Create a new material instance with updated like data
+      material = LearningMaterial(
+        id: material.id,
+        hubType: material.hubType,
+        contentType: material.contentType,
+        uploaderInfo: material.uploaderInfo,
+        title: material.title,
+        description: material.description,
+        fileUrl: material.fileUrl,
+        language: material.language,
+        price: material.price,
+        isDownloadable: material.isDownloadable,
+        isLectureMaterial: material.isLectureMaterial,
+        isVerified: material.isVerified,
+        downloadsCount: material.downloadsCount,
+        likesCount: newLikeStatus
+            ? material.likesCount + 1
+            : (material.likesCount > 0 ? material.likesCount - 1 : 0),
+        isLiked: newLikeStatus,
+        createdAt: material.createdAt,
+        lastUpdated: material.lastUpdated,
+      );
+    });
+  }
+
   bool get _isPaidMaterial {
     final priceValue = double.tryParse(material.price) ?? 0.0;
     return priceValue > 0.0;
@@ -69,22 +108,22 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Like button
-          _buildSideAction(
-            theme,
-            Icons.favorite_outline,
-            Icons.favorite,
-            false, // TODO: Connect to actual like state
-            '0', // TODO: Connect to actual like count
-            () {
-              // TODO: Implement like functionality
-              Get.snackbar(
-                'Coming Soon',
-                'Like feature will be available soon',
-                snackPosition: SnackPosition.BOTTOM,
-              );
-            },
-          ),
+          // Like button with loading state
+          Obx(() {
+            return _hubContentController.isLiking
+                ? _buildLoadingAction(theme, '${material.likesCount}')
+                : _buildSideAction(
+                    theme,
+                    Icons.favorite_outline,
+                    Icons.favorite,
+                    material.isLiked,
+                    '${material.likesCount}',
+                    () {
+                      debugPrint('Like button tapped!');
+                      _handleLikeToggle();
+                    },
+                  );
+          }),
           const SizedBox(height: 16),
           // Download action
           _buildSideAction(
@@ -108,13 +147,13 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.2),
+                color: Colors.green.withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.verified,
                 size: 18,
-                color: Colors.blue,
+                color: Colors.green,
               ),
             ),
           ],
@@ -173,6 +212,51 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  /// Build loading action button for like functionality
+  Widget _buildLoadingAction(ThemeData theme, String count) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.3),
+              shape: BoxShape.circle,
+            ),
+            child: const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Colors.white,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              count,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -432,25 +516,29 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
       );
     }
 
-    // Prioritize content based on availability: PDF first, then description
+    // Prioritize content based on availability: Image, PDF, then description
     try {
-      // 1. If file is available and is PDF, show PDF viewer
-      if (material.fileUrl.isNotEmpty && _isPdfFile()) {
+      // 1. If file is available and is an image, show image viewer
+      if (material.fileUrl.isNotEmpty && material.isImage) {
+        return _buildImageViewer();
+      }
+      // 2. If file is available and is PDF, show PDF viewer
+      else if (material.fileUrl.isNotEmpty && _isPdfFile()) {
         return _buildPdfViewer();
       }
-      // 2. For any other file type or web content, show description instead
+      // 3. For any other file type or web content, show description instead
       else if (material.description.isNotEmpty) {
         return _buildRichTextViewer();
       }
-      // 3. If content_type indicates rich text/article, show description
+      // 4. If content_type indicates rich text/article, show description
       else if (_isRichTextContent() && material.description.isNotEmpty) {
         return _buildRichTextViewer();
       }
-      // 4. No content available
+      // 5. No content available
       else {
         return _buildNoContentMessage(material.fileUrl.isEmpty
             ? 'No content available for this material'
-            : 'Only PDF files can be viewed in the app. Please use the description below or open in browser.');
+            : 'Unsupported file type. Please use the description below or open in browser.');
       }
     } catch (e) {
       // Fallback to text content if anything fails
@@ -694,6 +782,178 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
 
     // Free materials show full content
     return pdfWidget;
+  }
+
+  Widget _buildImageViewer() {
+    if (material.fileUrl.isEmpty) {
+      return _buildNoContentMessage('No image file available');
+    }
+
+    final isPaid = _isPaidMaterial;
+
+    return Container(
+      color: Theme.of(context).colorScheme.surface,
+      child: Column(
+        children: [
+          // Image container with Instagram-style aspect ratio
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              color: Colors.black,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Main image with zoom capability
+                  InteractiveViewer(
+                    minScale: 0.5,
+                    maxScale: 4.0,
+                    child: Image.network(
+                      material.fileUrl,
+                      fit: BoxFit.contain,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          color: Theme.of(context).colorScheme.surface,
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes !=
+                                          null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                                  strokeWidth: 3,
+                                  backgroundColor: Theme.of(context)
+                                      .colorScheme
+                                      .outline
+                                      .withOpacity(0.2),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Theme.of(context).colorScheme.primary,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Loading image...',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withOpacity(0.7),
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Theme.of(context).colorScheme.errorContainer,
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.broken_image,
+                                  size: 64,
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Failed to load image',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                        color:
+                                            Theme.of(context).colorScheme.error,
+                                      ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Tap to retry or try opening in browser',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withOpacity(0.7),
+                                      ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    ElevatedButton.icon(
+                                      onPressed: () => setState(
+                                          () {}), // Retry by rebuilding
+                                      icon: const Icon(Icons.refresh),
+                                      label: const Text('Retry'),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    OutlinedButton.icon(
+                                      onPressed: _openInBrowser,
+                                      icon: const Icon(Icons.open_in_browser),
+                                      label: const Text('Open in Browser'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  // Paywall overlay for paid content (if needed)
+                  if (isPaid)
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: _buildPaywallOverlay(Theme.of(context)),
+                    ),
+                ],
+              ),
+            ),
+          ),
+
+          // Description below image (if available)
+          if (material.description.isNotEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                border: Border(
+                  top: BorderSide(
+                    color:
+                        Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                  ),
+                ),
+              ),
+              child: SingleChildScrollView(
+                child: Text(
+                  material.description,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        height: 1.5,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   Widget _buildRichTextViewer() {

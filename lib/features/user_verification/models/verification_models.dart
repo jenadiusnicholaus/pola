@@ -637,3 +637,25 @@ class MissingInformationItem {
     required this.isProvided,
   });
 }
+
+class DocumentUploadResult {
+  final bool success;
+  final String message;
+  final VerificationDocument? document;
+
+  DocumentUploadResult({
+    required this.success,
+    required this.message,
+    this.document,
+  });
+
+  factory DocumentUploadResult.fromJson(Map<String, dynamic> json) {
+    return DocumentUploadResult(
+      success: json['success'] ?? true,
+      message: json['message'] ?? 'Document uploaded successfully',
+      document: json['document'] != null
+          ? VerificationDocument.fromJson(json['document'])
+          : null,
+    );
+  }
+}

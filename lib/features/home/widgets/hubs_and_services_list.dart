@@ -2,16 +2,63 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../hubs_and_services/data.dart';
 import '../../../constants/app_colors.dart';
+import '../controllers/home_controller.dart';
+import '../../../services/token_storage_service.dart';
+import '../../hubs_and_services/hub_content/utils/user_role_manager.dart';
 
 class HubsAndServicesList extends StatelessWidget {
   const HubsAndServicesList({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Separate hubs and services
-    final hubs = HubsAndServicesData.hubAndServices
+    return GetBuilder<HomeController>(
+      builder: (controller) => _buildContent(context, controller),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, HomeController controller) {
+    // Debug: Check user role and login status
+    debugPrint('🔍 HUB FILTER: User logged in: ${controller.isLoggedIn}');
+    debugPrint(
+        '🔍 HUB FILTER: Raw user role: "${controller.userRole}" (type: ${controller.userRole.runtimeType})');
+
+    // Let's also check the TokenStorageService directly
+    final tokenService = Get.find<TokenStorageService>();
+    final directRole = tokenService.getUserRole();
+    debugPrint('🔍 HUB FILTER: Direct from TokenService: "$directRole"');
+
+    // Check admin status using UserRoleManager
+    final isAdmin = UserRoleManager.isAdmin();
+    debugPrint('🔍 HUB FILTER: Admin status check: $isAdmin');
+
+    if (isAdmin) {
+      debugPrint('🔍 HUB FILTER: ✅ User is admin - should see ALL hubs');
+    } else {
+      debugPrint(
+          '🔍 HUB FILTER: ❌ User is not admin - role-based filtering applied');
+    }
+
+    // If role is null, try to fetch it asynchronously
+    if (controller.userRole == null && controller.isLoggedIn) {
+      debugPrint(
+          '🔍 HUB FILTER: Role is null but user is logged in, fetching async...');
+      controller.getUserRoleAsync().then((asyncRole) {
+        debugPrint('🔍 HUB FILTER: Async role result: "$asyncRole"');
+      });
+    }
+
+    // Filter hubs based on user role
+    final allHubs = HubsAndServicesData.hubAndServices
         .where((item) => item['type'] == 'hub')
         .toList();
+
+    debugPrint(
+        '🔍 HUB FILTER: All available hubs: ${allHubs.map((h) => h['key']).join(', ')}');
+
+    final hubs = _filterHubsByRole(allHubs, controller.userRole);
+
+    debugPrint(
+        '🔍 HUB FILTER: Filtered hubs: ${hubs.map((h) => h['key']).join(', ')}');
 
     final services = HubsAndServicesData.hubAndServices
         .where((item) => item['type'] == 'service')
@@ -31,8 +78,8 @@ class HubsAndServicesList extends StatelessWidget {
             _buildSubsectionTitle(
                 context, 'Legal Hubs', Icons.hub, Colors.blue, hubs.length),
             const SizedBox(height: 16),
-            _buildItemsList(
-                context, hubs, Colors.blue.withOpacity(0.1), Colors.blue),
+            _buildItemsList(context, hubs.cast<Map<String, String>>(),
+                Colors.blue.withOpacity(0.1), Colors.blue),
             const SizedBox(height: 32),
           ],
 
@@ -322,10 +369,34 @@ class HubsAndServicesList extends StatelessWidget {
   }
 
   void _onItemTap(String key, String type) {
+    final controller = Get.find<HomeController>();
+
+    // Check if user has access to this hub
+    if (type == 'hub' && !_hasAccessToHub(key, controller.userRole)) {
+      Get.snackbar(
+        'Access Denied',
+        'You don\'t have permission to access this hub',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+
     // Handle navigation based on key
     switch (key) {
       case 'legal_ed':
         Get.toNamed('/legal-education');
+        break;
+      case 'advocates':
+        Get.toNamed('/advocates-hub');
+        break;
+      case 'students':
+        Get.toNamed('/students-hub');
+        break;
+      case 'forum':
+        Get.toNamed('/forum-hub');
         break;
       default:
         // Show a snackbar for other items - will implement later
@@ -339,5 +410,118 @@ class HubsAndServicesList extends StatelessWidget {
         );
         break;
     }
+  }
+
+  /// Normalize role name to consistent string
+  String _normalizeRole(String? userRole) {
+    debugPrint(
+        '🔍 NORMALIZE ROLE: Input = "$userRole" (type: ${userRole.runtimeType})');
+
+    if (userRole == null || userRole.isEmpty) {
+      debugPrint(
+          '🔍 NORMALIZE ROLE: No user role provided, defaulting to citizen');
+      return 'citizen';
+    }
+
+    final normalized = userRole.toLowerCase().trim();
+    debugPrint('🔍 NORMALIZE ROLE: "$userRole" → "$normalized"');
+    return normalized;
+  }
+
+  /// Check if user has access to specific hub
+  bool _hasAccessToHub(String hubKey, String? userRole) {
+    debugPrint('🔍 ACCESS CHECK: Hub "$hubKey", Raw Role: "$userRole"');
+
+    // First check if user is admin using proper admin detection
+    if (UserRoleManager.isAdmin()) {
+      debugPrint(
+          '🔍 ACCESS CHECK: Admin user (is_staff/is_superuser) - access to ALL hubs');
+      return true;
+    }
+
+    if (userRole == null) {
+      debugPrint('🔍 ACCESS CHECK: No user role - only forum access');
+      // Only forum access for non-logged-in users
+      return hubKey == 'forum';
+    }
+
+    final role = _normalizeRole(userRole);
+    debugPrint('🔍 ACCESS CHECK: Normalized role: "$role"');
+
+    bool hasAccess = false;
+    switch (hubKey) {
+      case 'advocates':
+        hasAccess = ['advocate', 'lawyer', 'paralegal', 'admin'].contains(role);
+        debugPrint(
+            '🔍 ACCESS CHECK: Advocates hub - checking if role "$role" in [advocate, lawyer, paralegal, admin]: $hasAccess');
+        break;
+      case 'students':
+        hasAccess = ['law_student', 'lecturer', 'admin'].contains(role);
+        debugPrint(
+            '🔍 ACCESS CHECK: Students hub - checking if role "$role" in [law_student, lecturer, admin]: $hasAccess');
+        break;
+      case 'forum':
+        hasAccess = true; // Forum is accessible to all
+        debugPrint(
+            '🔍 ACCESS CHECK: Forum hub - accessible to all: $hasAccess');
+        break;
+      case 'legal_ed':
+        hasAccess = true; // Legal Education is now accessible to all users
+        debugPrint(
+            '🔍 ACCESS CHECK: Legal Ed hub - accessible to all users: $hasAccess');
+        break;
+      default:
+        hasAccess = false;
+        debugPrint('🔍 ACCESS CHECK: Unknown hub "$hubKey" - no access');
+        break;
+    }
+
+    debugPrint(
+        '🔍 ACCESS CHECK RESULT: Hub "$hubKey" for role "$role" = $hasAccess');
+    return hasAccess;
+  }
+
+  /// Filter hubs based on user role
+  List<Map<String, dynamic>> _filterHubsByRole(
+      List<Map<String, dynamic>> hubs, String? userRole) {
+    print(
+        'DEBUG FILTER: Input user role: "$userRole" (type: ${userRole.runtimeType})');
+
+    // Check admin status first - admins see all hubs regardless of role
+    if (UserRoleManager.isAdmin()) {
+      print('DEBUG FILTER: Admin user detected - showing ALL hubs');
+      return hubs; // Return all hubs for admin
+    }
+
+    // If user is not logged in, only show forum
+    if (userRole == null || userRole.isEmpty) {
+      print('DEBUG FILTER: No user role - showing only forum');
+      return hubs.where((hub) => hub['key'] == 'forum').toList();
+    }
+
+    // Convert role to normalized string for comparison
+    final normalizedRole = _normalizeRole(userRole);
+    print('DEBUG FILTER: Normalized role: "$normalizedRole"');
+
+    // If normalization failed, show only forum
+    if (normalizedRole.isEmpty) {
+      print('DEBUG FILTER: Role normalization failed - showing only forum');
+      return hubs.where((hub) => hub['key'] == 'forum').toList();
+    }
+
+    // Filter hubs based on role access
+    final filteredHubs = hubs.where((hub) {
+      final hubKey = hub['key'] as String?;
+      if (hubKey == null) return false;
+
+      final hasAccess = _hasAccessToHub(hubKey, userRole);
+      print(
+          'DEBUG FILTER: Hub "$hubKey" access for role "$normalizedRole": $hasAccess');
+      return hasAccess;
+    }).toList();
+
+    print(
+        'DEBUG FILTER: Final filtered hubs: ${filteredHubs.map((h) => h['key']).join(', ')}');
+    return filteredHubs;
   }
 }

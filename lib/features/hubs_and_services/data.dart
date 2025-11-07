@@ -56,8 +56,8 @@ class HubsAndServicesData {
     },
     {
       'key': 'students',
-      'label_eng': 'Students Hub',
-      'label_sw': 'Jukwaa la Wanafunzi wa Sheria',
+      'label_eng': 'Students and Lecturers Hub',
+      'label_sw': 'Jukwaa la Wanafunzi/Wakufunzi  wa Sheria',
       "type": "hub",
     },
     {

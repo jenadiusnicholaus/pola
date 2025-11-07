@@ -22,19 +22,61 @@ class ProfileService extends GetxService {
   final RxString _error = ''.obs;
   String get error => _error.value;
 
+  // Caching mechanism
+  DateTime? _lastFetchTime;
+  static const Duration _cacheValidDuration =
+      Duration(minutes: 5); // Cache for 5 minutes
+  bool _isFetching = false; // Prevent concurrent API calls
+
   @override
   void onInit() {
     super.onInit();
     debugPrint('👤 ProfileService initialized');
+
+    // Load cached profile on initialization to avoid unnecessary API calls
+    _loadCachedProfileOnInit();
   }
 
-  /// Fetch user profile from API
-  Future<UserProfile?> fetchProfile() async {
+  /// Load cached profile during initialization
+  void _loadCachedProfileOnInit() async {
+    try {
+      if (_tokenStorage.isLoggedIn) {
+        final cachedProfile = await loadCachedProfile();
+        if (cachedProfile != null) {
+          // Set cache time to a bit ago so it's valid but will refresh when needed
+          _lastFetchTime = DateTime.now().subtract(const Duration(minutes: 1));
+          debugPrint('📋 Initialized with cached profile');
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ Failed to load cached profile on init: $e');
+    }
+  }
+
+  /// Fetch user profile from API with caching
+  Future<UserProfile?> fetchProfile({bool forceRefresh = false}) async {
+    // Check if we have a valid cached profile
+    if (!forceRefresh && _currentProfile.value != null && _isCacheValid()) {
+      debugPrint(
+          '📋 Using cached profile data (${_getRemainingCacheTime()}s remaining)');
+      return _currentProfile.value;
+    }
+
+    // Prevent concurrent API calls
+    if (_isFetching) {
+      debugPrint('⏳ Profile fetch already in progress, waiting...');
+      while (_isFetching) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      return _currentProfile.value;
+    }
+
+    _isFetching = true;
     _isLoading.value = true;
     _error.value = '';
 
     try {
-      debugPrint('📤 Fetching user profile...');
+      debugPrint('📤 Fetching user profile from API...');
 
       // Check if user is authenticated
       if (!_tokenStorage.isLoggedIn) {
@@ -53,12 +95,16 @@ class ProfileService extends GetxService {
         final profile = ProfileFactory.createProfile(response.data);
 
         _currentProfile.value = profile;
+        _lastFetchTime = DateTime.now(); // Update cache timestamp
 
         // Store profile in local storage for caching
         await _tokenStorage.storeUserProfile(response.data);
 
+        // Update user data in token storage for admin role detection
+        await _tokenStorage.updateUserProfile(response.data);
+
         debugPrint(
-            '✅ Profile fetched successfully for: ${profile.fullName} (${profile.userRole.roleName})');
+            '✅ Profile fetched and cached: ${profile.fullName} (${profile.userRole.roleName})');
         return profile;
       } else {
         throw Exception('Failed to fetch profile: ${response.statusMessage}');
@@ -95,6 +141,7 @@ class ProfileService extends GetxService {
       throw Exception(_error.value);
     } finally {
       _isLoading.value = false;
+      _isFetching = false; // Reset fetch flag
     }
   }
 
@@ -113,6 +160,39 @@ class ProfileService extends GetxService {
       debugPrint('⚠️ Error loading cached profile: $e');
       return null;
     }
+  }
+
+  /// Check if cached profile is still valid
+  bool _isCacheValid() {
+    if (_lastFetchTime == null) return false;
+
+    final now = DateTime.now();
+    final difference = now.difference(_lastFetchTime!);
+
+    return difference < _cacheValidDuration;
+  }
+
+  /// Get remaining cache time in seconds
+  int _getRemainingCacheTime() {
+    if (_lastFetchTime == null) return 0;
+
+    final now = DateTime.now();
+    final elapsed = now.difference(_lastFetchTime!);
+    final remaining = _cacheValidDuration - elapsed;
+
+    return remaining.inSeconds > 0 ? remaining.inSeconds : 0;
+  }
+
+  /// Clear profile cache and force refresh on next fetch
+  void clearCache() {
+    _lastFetchTime = null;
+    _currentProfile.value = null;
+    debugPrint('🧹 Profile cache cleared');
+  }
+
+  /// Get profile with caching (public method)
+  Future<UserProfile?> getProfile({bool forceRefresh = false}) async {
+    return await fetchProfile(forceRefresh: forceRefresh);
   }
 
   /// Update user profile

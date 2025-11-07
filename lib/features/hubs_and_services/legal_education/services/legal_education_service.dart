@@ -2,7 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import '../models/legal_education_models.dart';
 import '../../../../services/api_service.dart';
+import '../../../../services/token_storage_service.dart';
 import '../../../../config/environment_config.dart';
+import '../../../hubs_and_services/hub_content/utils/user_role_manager.dart';
 
 class LegalEducationService extends GetxService {
   late final ApiService _apiService;
@@ -30,10 +32,47 @@ class LegalEducationService extends GetxService {
       if (page != null) queryParams['page'] = page;
       if (pageSize != null) queryParams['page_size'] = pageSize;
 
+      // Use admin endpoint if user is admin, otherwise use public endpoint
+      String endpoint;
+      if (UserRoleManager.isAdmin()) {
+        endpoint = EnvironmentConfig.legalEducationAdminTopicsUrl;
+        print('🔍 TOPICS API: Using ADMIN endpoint');
+      } else {
+        endpoint = EnvironmentConfig.legalEducationTopicsUrl;
+        print('🔍 TOPICS API: Using PUBLIC endpoint');
+      }
+
+      print('🔍 TOPICS API: Making request to $endpoint');
+      print('🔍 TOPICS API: Query params: $queryParams');
+
+      // Debug token status right before API call
+      try {
+        final tokenService = Get.find<TokenStorageService>();
+        await tokenService.waitForInitialization();
+
+        print(
+            '🔍 TOPICS API: Token service found: ${tokenService.runtimeType}');
+        print('🔍 TOPICS API: Is logged in: ${tokenService.isLoggedIn}');
+        print(
+            '🔍 TOPICS API: Access token length: ${tokenService.accessToken.length}');
+        if (tokenService.accessToken.isNotEmpty) {
+          print(
+              '🔍 TOPICS API: Token starts with: ${tokenService.accessToken.substring(0, 20)}...');
+        }
+
+        // Small delay to ensure token is properly set in interceptor
+        await Future.delayed(const Duration(milliseconds: 100));
+      } catch (e) {
+        print('❌ TOPICS API: Error getting token service: $e');
+      }
+
       final response = await _apiService.get(
-        EnvironmentConfig.legalEducationTopicsUrl,
+        endpoint,
         queryParameters: queryParams,
       );
+
+      print('🔍 TOPICS API: Response status: ${response.statusCode}');
+      print('🔍 TOPICS API: Response data type: ${response.data.runtimeType}');
 
       return TopicsResponse.fromJson(response.data);
     } catch (e) {
@@ -134,6 +173,45 @@ class LegalEducationService extends GetxService {
       return Subtopic.fromJson(response.data);
     } catch (e) {
       throw _handleError(e, 'Failed to fetch subtopic details');
+    }
+  }
+
+  // Quick create topic for admin (admin endpoints)
+  Future<Topic?> quickCreateTopic({
+    required String name,
+    String? description,
+    String? nameSw,
+    String? descriptionSw,
+    String? icon,
+    int displayOrder = 999,
+    bool isActive = true,
+  }) async {
+    try {
+      final requestData = {
+        'name': name,
+        'description': description ?? 'Created during content creation',
+        'is_active': isActive,
+        'display_order': displayOrder,
+      };
+
+      if (nameSw != null) requestData['name_sw'] = nameSw;
+      if (descriptionSw != null) requestData['description_sw'] = descriptionSw;
+      if (icon != null) requestData['icon'] = icon;
+
+      final response = await _apiService.post(
+        EnvironmentConfig.legalEducationAdminTopicsQuickCreateUrl,
+        data: requestData,
+      );
+
+      // Handle the response according to documentation
+      if (response.data['created'] == true) {
+        return Topic.fromJson(response.data['topic']);
+      } else {
+        // Topic already existed
+        return Topic.fromJson(response.data['topic']);
+      }
+    } catch (e) {
+      throw _handleError(e, 'Failed to create topic');
     }
   }
 

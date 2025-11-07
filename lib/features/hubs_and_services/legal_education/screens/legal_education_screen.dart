@@ -17,6 +17,9 @@ class LegalEducationScreen extends StatelessWidget {
     return Scaffold(
       body: Obx(() => CustomScrollView(
             controller: controller.topicsScrollController,
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
             slivers: [
               // Common SliverAppBar with clean design
               CommonSliverAppBar(
@@ -168,16 +171,14 @@ class LegalEducationScreen extends StatelessWidget {
                         (controller.hasMoreTopics ? 1 : 0),
                   ),
                 ),
+
+                // Add bottom padding for better scrolling
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: 80),
+                ),
               ],
             ],
           )),
-
-      // Floating Action Button for refresh
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => controller.fetchTopics(refresh: true),
-        child: const Icon(Icons.refresh),
-        tooltip: 'Refresh Topics',
-      ),
     );
   }
 }

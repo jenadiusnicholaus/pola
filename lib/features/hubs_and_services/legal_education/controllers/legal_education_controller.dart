@@ -200,12 +200,20 @@ class LegalEducationController extends GetxController {
   }
 
   void refreshMaterials() {
+    print('🔄 LegalEducationController: refreshMaterials called');
+    print('🔄 Current topic slug: $_currentMaterialsTopicSlug');
+    print('🔄 Current language: $_currentMaterialsLanguage');
+
     if (_currentMaterialsTopicSlug != null) {
+      print(
+          '🔄 LegalEducationController: Fetching materials with refresh=true');
       fetchMaterials(
         _currentMaterialsTopicSlug!,
         language: _currentMaterialsLanguage,
         refresh: true,
       );
+    } else {
+      print('🔄 LegalEducationController: No current topic slug available');
     }
   }
 
