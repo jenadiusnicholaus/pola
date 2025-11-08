@@ -1,20 +1,73 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+enum Environment {
+  development,
+  staging,
+  production,
+}
+
 class EnvironmentConfig {
   // Initialize environment
   static Future<void> initialize() async {
     await dotenv.load(fileName: '.env');
   }
 
+  // Get current environment
+  static Environment get currentEnvironment {
+    final envString = dotenv.env['APP_ENV']?.toLowerCase() ?? 'development';
+    switch (envString) {
+      case 'production':
+        return Environment.production;
+      case 'staging':
+        return Environment.staging;
+      case 'development':
+      default:
+        return Environment.development;
+    }
+  }
+
   // App Environment
   static String get appEnv => dotenv.env['APP_ENV'] ?? 'development';
 
-  // Base URLs
-  static String get baseUrl => dotenv.env['BASE_URL'] ?? '';
+  // Get base URL based on environment
+  static String get baseUrl {
+    switch (currentEnvironment) {
+      case Environment.development:
+        return dotenv.env['DEV_BASE_URL'] ?? 'http://192.168.1.181:8000';
+      case Environment.staging:
+        return dotenv.env['STAGING_BASE_URL'] ?? 'http://185.237.253.223:8086';
+      case Environment.production:
+        return dotenv.env['PROD_BASE_URL'] ?? 'https://api.production.com';
+    }
+  }
+
+  // API Version
   static String get apiVersion => dotenv.env['API_VERSION'] ?? 'v1';
 
   // Complete API URL
   static String get completeApiUrl => '$baseUrl/api/$apiVersion';
+
+  // Environment display name
+  static String get environmentName {
+    switch (currentEnvironment) {
+      case Environment.development:
+        return 'Development';
+      case Environment.staging:
+        return 'Staging (Test Server)';
+      case Environment.production:
+        return 'Production';
+    }
+  }
+
+  // Check if current environment is production
+  static bool get isProduction => currentEnvironment == Environment.production;
+
+  // Check if current environment is staging
+  static bool get isStaging => currentEnvironment == Environment.staging;
+
+  // Check if current environment is development
+  static bool get isDevelopment =>
+      currentEnvironment == Environment.development;
 
   // API Keys
   static String get apiKey => dotenv.env['API_KEY'] ?? '';
