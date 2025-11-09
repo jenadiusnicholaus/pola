@@ -525,12 +525,12 @@ class AppDrawer extends StatelessWidget {
               onPressed: () async {
                 Navigator.of(context).pop(); // Close dialog
                 Navigator.of(context).pop(); // Close drawer
-                
+
                 // Perform logout - clear all user data and tokens
                 try {
                   final authService = Get.find<AuthService>();
                   await authService.logout();
-                  
+
                   Get.snackbar(
                     'Signed Out',
                     'You have been signed out successfully',

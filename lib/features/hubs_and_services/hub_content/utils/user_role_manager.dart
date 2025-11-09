@@ -116,7 +116,7 @@ class UserRoleManager {
 
     // Get user role
     final userRole = _tokenStorage.getUserRole()?.toLowerCase() ?? '';
-    
+
     // Role checks based on ROLE_CHOICES
     final isAdvocate = userRole.contains('advocate');
     final isLawStudent = userRole.contains('law_student');
@@ -133,7 +133,7 @@ class UserRoleManager {
         print(
             '🔍 canAccessHub: Advocates - userRole: "$userRole", hasDocPerm: $hasDocPerm, isAdvocate: $isAdvocate, isLawFirm: $isLawFirm, result: $result');
         return result;
-        
+
       case 'students':
         // Students hub - only law students and lecturers can access
         final hasStudentPerm =
@@ -142,20 +142,21 @@ class UserRoleManager {
         print(
             '🔍 canAccessHub: Students - hasStudentPerm: $hasStudentPerm, isLawStudent: $isLawStudent, isLecturer: $isLecturer, result: $result');
         return result;
-        
+
       case 'forum':
         // Forum - open to ALL logged-in users (community hub)
         final result = _tokenStorage.isLoggedIn;
         print(
             '🔍 canAccessHub: Forum - open to all logged-in users, result: $result');
         return result;
-        
+
       case 'legal_ed':
         // Legal education - open to all logged-in users
         final result = _tokenStorage.isLoggedIn;
-        print('🔍 canAccessHub: Legal Ed - open to all logged-in users, result: $result');
+        print(
+            '🔍 canAccessHub: Legal Ed - open to all logged-in users, result: $result');
         return result;
-        
+
       default:
         print('🔍 canAccessHub: Unknown hub "$hubType" - denying');
         return false;
