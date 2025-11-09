@@ -165,10 +165,23 @@ class LegalEducationScreen extends StatelessWidget {
                   child: CommonLoadingWidget(message: 'Loading topics...'),
                 )
               else if (controller.topics.isEmpty)
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   child: CommonEmptyWidget(
                     title: 'No legal topics found',
                     message: 'Try adjusting your search or language filter',
+                    action: ElevatedButton.icon(
+                      onPressed: () => controller.fetchTopics(refresh: true),
+                      icon: const Icon(Icons.refresh, size: 18),
+                      label: const Text('Refresh'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                      ),
+                    ),
                   ),
                 )
               else ...[

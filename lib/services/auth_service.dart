@@ -221,15 +221,26 @@ class AuthService extends GetxController {
       // Cancel the refresh timer
       _tokenRefreshTimer?.cancel();
 
-      // Clear stored tokens
+      // Clear stored tokens and user data
       await _tokenStorage.clearTokens();
 
-      // Navigate to login screen
+      // Clear profile cache
+      try {
+        final profileService = Get.find<ProfileService>();
+        profileService.clearCache();
+        debugPrint('🧹 Profile cache cleared');
+      } catch (e) {
+        debugPrint('⚠️ ProfileService not found or error clearing cache: $e');
+      }
+
+      // Navigate to login screen and clear all previous routes
       Get.offAllNamed('/login');
 
-      debugPrint('✅ User logged out successfully');
+      debugPrint('✅ User logged out successfully - all data cleared');
     } catch (e) {
       debugPrint('❌ Error during logout: $e');
+      // Still try to navigate to login even if there's an error
+      Get.offAllNamed('/login');
     }
   }
 

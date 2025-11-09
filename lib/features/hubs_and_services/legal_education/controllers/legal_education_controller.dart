@@ -103,17 +103,23 @@ class LegalEducationController extends GetxController {
 
   // Load topics (initial load or refresh)
   Future<void> fetchTopics({bool refresh = false}) async {
+    // Store refresh state but don't clear list yet to prevent flickering
     if (refresh) {
       _currentTopicsPage.value = 1;
       _hasMoreTopics.value = true;
-      _topics.clear();
+      // Don't clear the list here - wait until we have new data
     }
 
     try {
       _isLoadingTopics.value = true;
       _error.value = '';
 
+      // Check if user is logged in
+      final tokenService = Get.find<TokenStorageService>();
+      await tokenService.waitForInitialization();
+
       print('📚 LEGAL EDU: Fetching topics...');
+      print('📚 LEGAL EDU: Is logged in: ${tokenService.isLoggedIn}');
       print('📚 LEGAL EDU: Search query: ${_searchQuery.value}');
       print('📚 LEGAL EDU: Language: ${_getLanguageCode()}');
       print('📚 LEGAL EDU: Page: ${_currentTopicsPage.value}');
@@ -128,6 +134,7 @@ class LegalEducationController extends GetxController {
       print(
           '📚 LEGAL EDU: Response received with ${response.results.length} topics');
 
+      // Now replace or add the data
       if (refresh) {
         _topics.assignAll(response.results);
       } else {
@@ -142,10 +149,21 @@ class LegalEducationController extends GetxController {
       _error.value = e.toString();
       print('❌ LEGAL EDU ERROR: $e');
 
+      // Check if it's an authentication error
+      final isAuthError = e.toString().contains('401') ||
+          e.toString().contains('Authentication') ||
+          e.toString().contains('credentials were not provided');
+
+      if (isAuthError) {
+        _error.value =
+            'Authentication required. Please log in to access legal education topics.';
+        print('🔒 LEGAL EDU: Authentication required - user not logged in');
+      }
+
       // Show user-friendly error message
       Get.snackbar(
         'Error Loading Topics',
-        e.toString().contains('Authentication')
+        isAuthError
             ? 'Please log in to access legal education content'
             : 'Failed to load topics. Please try again.',
         snackPosition: SnackPosition.BOTTOM,

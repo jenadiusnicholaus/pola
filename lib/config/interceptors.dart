@@ -45,6 +45,10 @@ class ApiInterceptors {
         // Get TokenStorageService instance
         try {
           final tokenStorage = getx.Get.find<TokenStorageService>();
+
+          // IMPORTANT: Wait for token service to fully initialize
+          await tokenStorage.waitForInitialization();
+
           final token = tokenStorage.accessToken;
 
           if (token.isNotEmpty) {

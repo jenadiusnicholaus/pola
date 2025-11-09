@@ -114,47 +114,48 @@ class UserRoleManager {
     // Admins can access all hubs
     if (isAdmin()) return true;
 
-    // TEMPORARY: More permissive approach for testing
-    // TODO: Fine-tune based on actual user data structure
+    // Get user role
+    final userRole = _tokenStorage.getUserRole()?.toLowerCase() ?? '';
+    
+    // Role checks based on ROLE_CHOICES
+    final isAdvocate = userRole.contains('advocate');
+    final isLawStudent = userRole.contains('law_student');
+    final isLecturer = userRole.contains('lecturer');
+    final isLawFirm = userRole.contains('law_firm');
 
     // Check hub-specific access permissions
     switch (hubType) {
       case 'advocates':
-        // Advocates hub - check if user has advocate role/permissions
-        final userRole = _tokenStorage.getUserRole()?.toLowerCase() ?? '';
+        // Advocates hub - only advocates and law firms can access
+        // NOT lawyers/paralegals (they only get legal_ed and forum)
         final hasDocPerm = hasPermission('can_generate_documents');
-        final isAdvocate = userRole.contains('advocate');
-        final isLawyer = userRole.contains('lawyer');
-
-        // TEMPORARY: Also allow any logged-in user for testing
-        final isLoggedIn = _tokenStorage.isLoggedIn;
-
-        final result = hasDocPerm || isAdvocate || isLawyer || isLoggedIn;
+        final result = hasDocPerm || isAdvocate || isLawFirm;
         print(
-            '🔍 canAccessHub: Advocates - userRole: "$userRole", hasDocPerm: $hasDocPerm, isAdvocate: $isAdvocate, isLawyer: $isLawyer, isLoggedIn: $isLoggedIn, result: $result');
+            '🔍 canAccessHub: Advocates - userRole: "$userRole", hasDocPerm: $hasDocPerm, isAdvocate: $isAdvocate, isLawFirm: $isLawFirm, result: $result');
         return result;
+        
       case 'students':
-        // Students hub - check subscription permissions
+        // Students hub - only law students and lecturers can access
         final hasStudentPerm =
             _tokenStorage.hasSubscriptionPermission('can_access_student_hub');
-
-        // TEMPORARY: Also allow any logged-in user for testing
-        final isLoggedIn = _tokenStorage.isLoggedIn;
-
-        final result = hasStudentPerm || isLoggedIn;
+        final result = hasStudentPerm || isLawStudent || isLecturer;
         print(
-            '🔍 canAccessHub: Students - hasStudentPerm: $hasStudentPerm, isLoggedIn: $isLoggedIn, result: $result');
+            '🔍 canAccessHub: Students - hasStudentPerm: $hasStudentPerm, isLawStudent: $isLawStudent, isLecturer: $isLecturer, result: $result');
         return result;
+        
       case 'forum':
         // Forum - open to ALL logged-in users (community hub)
         final result = _tokenStorage.isLoggedIn;
         print(
             '🔍 canAccessHub: Forum - open to all logged-in users, result: $result');
         return result;
+        
       case 'legal_ed':
-        // Legal education - all logged in users can access (but only admins create)
-        print('🔍 canAccessHub: Legal Ed - allowing all logged in users');
-        return true;
+        // Legal education - open to all logged-in users
+        final result = _tokenStorage.isLoggedIn;
+        print('🔍 canAccessHub: Legal Ed - open to all logged-in users, result: $result');
+        return result;
+        
       default:
         print('🔍 canAccessHub: Unknown hub "$hubType" - denying');
         return false;

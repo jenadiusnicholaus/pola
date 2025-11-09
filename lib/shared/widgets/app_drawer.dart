@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../constants/app_strings.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
+import '../../services/auth_service.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -521,18 +522,28 @@ class AppDrawer extends StatelessWidget {
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
+              onPressed: () async {
+                Navigator.of(context).pop(); // Close dialog
                 Navigator.of(context).pop(); // Close drawer
-                // Add actual logout logic here
-                Get.snackbar(
-                  'Signed Out',
-                  'You have been signed out successfully',
-                  icon: const Icon(Icons.logout, color: Colors.white),
-                  backgroundColor: Colors.green,
-                  colorText: Colors.white,
-                  duration: const Duration(seconds: 2),
-                );
+                
+                // Perform logout - clear all user data and tokens
+                try {
+                  final authService = Get.find<AuthService>();
+                  await authService.logout();
+                  
+                  Get.snackbar(
+                    'Signed Out',
+                    'You have been signed out successfully',
+                    icon: const Icon(Icons.logout, color: Colors.white),
+                    backgroundColor: Colors.green,
+                    colorText: Colors.white,
+                    duration: const Duration(seconds: 2),
+                  );
+                } catch (e) {
+                  debugPrint('❌ Logout error: $e');
+                  // Still navigate to login even if there's an error
+                  Get.offAllNamed('/login');
+                }
               },
               child: Text(
                 'Sign Out',
