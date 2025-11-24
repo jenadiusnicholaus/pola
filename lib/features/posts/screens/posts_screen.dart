@@ -192,40 +192,16 @@ class _PostsScreenState extends State<PostsScreen> {
     // Track view when user taps to view content
     controller.trackViewOnInteraction(content, 'view');
 
-    // Navigate to content detail/viewer screen
-    // For now, we'll show a simple dialog with content details
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(content.title),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Type: ${content.contentType}'),
-            const SizedBox(height: 8),
-            Text('Description: ${content.description}'),
-            const SizedBox(height: 8),
-            if (content.fileUrl.isNotEmpty) Text('File: ${content.fileUrl}'),
-            const SizedBox(height: 8),
-            Text('Created: ${content.createdAt.toString().split(' ')[0]}'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-          if (content.fileUrl.isNotEmpty)
-            ElevatedButton(
-              onPressed: () {
-                // TODO: Implement file viewing/downloading
-                Navigator.pop(context);
-              },
-              child: const Text('View File'),
-            ),
-        ],
-      ),
+    // Convert hub content to LearningMaterial format for viewer compatibility
+    final material = controller.convertToLearningMaterial(content);
+
+    // Navigate to material viewer screen
+    Get.toNamed(
+      '/material-viewer',
+      arguments: {
+        'material': material,
+        'source': hubType,
+      },
     );
   }
 

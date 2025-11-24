@@ -100,10 +100,14 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
 
   Widget _buildSocialSidePanel(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      // Fully transparent background like social media
-      decoration: const BoxDecoration(
-        color: Colors.transparent,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.02),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.08),
+          width: 1,
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -124,12 +128,12 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
                     },
                   );
           }),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           // Download action
           _buildSideAction(
             theme,
             Icons.download_outlined,
-            Icons.download,
+            Icons.download_rounded,
             false,
             '${material.downloadsCount}',
             () {
@@ -138,25 +142,13 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
                 'Download',
                 'Download feature will be available soon',
                 snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: theme.colorScheme.primaryContainer,
+                colorText: theme.colorScheme.onPrimaryContainer,
+                margin: const EdgeInsets.all(16),
+                borderRadius: 12,
               );
             },
           ),
-          if (material.isVerified) ...[
-            const SizedBox(height: 16),
-            // Verified badge
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.verified,
-                size: 18,
-                color: Colors.green,
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -172,40 +164,75 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
   ) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                // Semi-transparent background like social media
                 color: isActive
-                    ? theme.colorScheme.primary.withOpacity(0.2)
-                    : Colors.black.withOpacity(0.3),
+                    ? theme.colorScheme.primary.withOpacity(0.15)
+                    : theme.colorScheme.surface.withOpacity(0.95),
                 shape: BoxShape.circle,
+                border: Border.all(
+                  color: isActive
+                      ? theme.colorScheme.primary.withOpacity(0.3)
+                      : theme.colorScheme.outline.withOpacity(0.15),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.shadow.withOpacity(0.12),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                  BoxShadow(
+                    color: theme.colorScheme.shadow.withOpacity(0.08),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
               child: Icon(
                 isActive ? filledIcon : outlineIcon,
-                size: 22,
-                color: isActive ? theme.colorScheme.primary : Colors.white,
+                size: 24,
+                color: isActive
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurface.withOpacity(0.7),
               ),
             ),
             if (count.isNotEmpty) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(10),
+                  color: theme.colorScheme.surfaceContainerHighest
+                      .withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: theme.colorScheme.outline.withOpacity(0.15),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: theme.colorScheme.shadow.withOpacity(0.08),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Text(
                   count,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurface,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
                   ),
                 ),
               ),
@@ -268,34 +295,38 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // Professional Sliver App Bar
+          // Professional Sliver App Bar with enhanced styling
           SliverAppBar(
-            expandedHeight: 180,
+            expandedHeight: 200,
             floating: false,
             pinned: true,
             stretch: true,
             backgroundColor: theme.colorScheme.surface,
             foregroundColor: theme.colorScheme.onSurface,
             elevation: 0,
-            scrolledUnderElevation: 2,
-            shadowColor: theme.colorScheme.shadow.withOpacity(0.1),
+            scrolledUnderElevation: 4,
+            shadowColor: theme.colorScheme.shadow.withOpacity(0.15),
             leading: IconButton(
               icon: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surface.withOpacity(0.9),
+                  color: theme.colorScheme.surface.withOpacity(0.95),
                   shape: BoxShape.circle,
+                  border: Border.all(
+                    color: theme.colorScheme.outline.withOpacity(0.1),
+                    width: 1,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: theme.colorScheme.shadow.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      color: theme.colorScheme.shadow.withOpacity(0.15),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
                 child: Icon(
-                  Icons.arrow_back,
-                  size: 20,
+                  Icons.arrow_back_ios_new,
+                  size: 18,
                   color: theme.colorScheme.onSurface,
                 ),
               ),
@@ -307,40 +338,101 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
                   color: theme.colorScheme.onSurface,
-                  fontSize: 16,
+                  fontSize: 17,
+                  letterSpacing: -0.3,
+                  height: 1.3,
                   shadows: [
                     Shadow(
-                      color: theme.colorScheme.surface.withOpacity(0.8),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
+                      color: theme.colorScheme.surface.withOpacity(0.9),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
               ),
               titlePadding:
-                  const EdgeInsets.only(left: 16, bottom: 20, right: 16),
+                  const EdgeInsets.only(left: 20, bottom: 24, right: 20),
               background: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                     colors: [
-                      theme.colorScheme.primary.withOpacity(0.1),
+                      theme.colorScheme.primary.withOpacity(0.08),
+                      theme.colorScheme.primaryContainer.withOpacity(0.05),
                       theme.colorScheme.surface,
                     ],
-                    stops: const [0.0, 1.0],
+                    stops: const [0.0, 0.5, 1.0],
                   ),
                 ),
                 child: SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 60, 16, 20),
+                    padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Spacer(),
-                        // Clean space - no overlapping content
+                        // Metadata chips
+                        Row(
+                          children: [
+                            if (material.isVerified)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: Colors.green.withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.verified,
+                                      size: 14,
+                                      color: Colors.green[700],
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Verified',
+                                      style:
+                                          theme.textTheme.labelSmall?.copyWith(
+                                        color: Colors.green[700],
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primaryContainer
+                                    .withOpacity(0.5),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                material.contentType.toUpperCase(),
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onPrimaryContainer,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -349,63 +441,23 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
             ),
           ),
 
-          // Content Viewer as Sliver
-          SliverToBoxAdapter(
+          // Content Viewer as Sliver - fill remaining space
+          SliverFillRemaining(
+            hasScrollBody: true,
             child: Container(
-              margin: const EdgeInsets.only(top: 8),
-              height: MediaQuery.of(context).size.height -
-                  300, // Fixed height to avoid intrinsic issues
+              margin: EdgeInsets.zero,
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.colorScheme.shadow.withOpacity(0.08),
-                    blurRadius: 20,
-                    offset: const Offset(0, -4),
-                  ),
-                  BoxShadow(
-                    color: theme.colorScheme.shadow.withOpacity(0.04),
-                    blurRadius: 40,
-                    offset: const Offset(0, -8),
-                  ),
-                ],
               ),
-              child: Column(
+              child: Stack(
                 children: [
-                  // Content indicator bar
-                  Container(
-                    margin: const EdgeInsets.only(top: 12),
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.outline.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  // Main content with social media style side actions
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        // Main content area - FULL WIDTH, no padding
-                        ClipRRect(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(24),
-                            topRight: Radius.circular(24),
-                          ),
-                          child: _buildContentViewer(theme),
-                        ),
-                        // Social media style actions - floating at bottom right like TikTok/Instagram
-                        Positioned(
-                          right: 12,
-                          bottom: 20, // Position at bottom like social media
-                          child: _buildSocialSidePanel(theme),
-                        ),
-                      ],
-                    ),
+                  // Main content area - FULL WIDTH, no padding, no rounded corners
+                  _buildContentViewer(theme),
+                  // Social media style actions - floating at bottom right like TikTok/Instagram
+                  Positioned(
+                    right: 12,
+                    bottom: 20,
+                    child: _buildSocialSidePanel(theme),
                   ),
                 ],
               ),
@@ -795,122 +847,128 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
       color: Theme.of(context).colorScheme.surface,
       child: Column(
         children: [
-          // Image container with Instagram-style aspect ratio
+          // Image container with professional centered layout
           Expanded(
             child: Container(
               width: double.infinity,
-              color: Colors.black,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerLowest,
+              ),
               child: Stack(
-                fit: StackFit.expand,
                 children: [
-                  // Main image with zoom capability
-                  InteractiveViewer(
-                    minScale: 0.5,
-                    maxScale: 4.0,
-                    child: Image.network(
-                      material.fileUrl,
-                      fit: BoxFit.contain,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                          color: Theme.of(context).colorScheme.surface,
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes !=
-                                          null
-                                      ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
-                                      : null,
-                                  strokeWidth: 3,
-                                  backgroundColor: Theme.of(context)
-                                      .colorScheme
-                                      .outline
-                                      .withOpacity(0.2),
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Theme.of(context).colorScheme.primary,
+                  Center(
+                    child: InteractiveViewer(
+                      minScale: 0.5,
+                      maxScale: 4.0,
+                      child: Image.network(
+                        material.fileUrl,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: Theme.of(context).colorScheme.surface,
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes !=
+                                            null
+                                        ? loadingProgress
+                                                .cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                    strokeWidth: 3,
+                                    backgroundColor: Theme.of(context)
+                                        .colorScheme
+                                        .outline
+                                        .withOpacity(0.2),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Theme.of(context).colorScheme.primary,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'Loading image...',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withOpacity(0.7),
-                                      ),
-                                ),
-                              ],
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Loading image...',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withOpacity(0.7),
+                                        ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Theme.of(context).colorScheme.errorContainer,
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.broken_image,
-                                  size: 64,
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'Failed to load image',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        color:
-                                            Theme.of(context).colorScheme.error,
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Theme.of(context).colorScheme.errorContainer,
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.broken_image,
+                                    size: 64,
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Failed to load image',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .error,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Tap to retry or try opening in browser',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withOpacity(0.7),
+                                        ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      ElevatedButton.icon(
+                                        onPressed: () => setState(
+                                            () {}), // Retry by rebuilding
+                                        icon: const Icon(Icons.refresh),
+                                        label: const Text('Retry'),
                                       ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Tap to retry or try opening in browser',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withOpacity(0.7),
+                                      const SizedBox(width: 12),
+                                      OutlinedButton.icon(
+                                        onPressed: _openInBrowser,
+                                        icon: const Icon(Icons.open_in_browser),
+                                        label: const Text('Open in Browser'),
                                       ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    ElevatedButton.icon(
-                                      onPressed: () => setState(
-                                          () {}), // Retry by rebuilding
-                                      icon: const Icon(Icons.refresh),
-                                      label: const Text('Retry'),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    OutlinedButton.icon(
-                                      onPressed: _openInBrowser,
-                                      icon: const Icon(Icons.open_in_browser),
-                                      label: const Text('Open in Browser'),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
                   ),
 

@@ -53,8 +53,15 @@ class LegalEducationScreen extends StatelessWidget {
       );
     }
 
-    // Ensure controller is available
-    final controller = Get.put(LegalEducationController());
+    // Get or create controller and ensure topics are loaded
+    final controller = Get.put(LegalEducationController(), permanent: false);
+
+    // Reload topics when screen is accessed (in case user just logged in)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (controller.topics.isEmpty && !controller.isLoadingTopics) {
+        controller.fetchTopics(refresh: true);
+      }
+    });
 
     return Scaffold(
       body: Obx(() => CustomScrollView(
@@ -64,7 +71,7 @@ class LegalEducationScreen extends StatelessWidget {
             ),
             slivers: [
               // Common SliverAppBar with clean design
-              CommonSliverAppBar(
+              const CommonSliverAppBar(
                 title: 'Legal Education',
                 expandedHeight: 120,
               ),
