@@ -15,6 +15,7 @@ import 'services/auth_service.dart';
 import 'features/profile/services/profile_service.dart';
 import 'features/hubs_and_services/legal_education/services/legal_education_service.dart';
 import 'features/hubs_and_services/hub_content/services/hub_content_service.dart';
+import 'features/consultation/services/consultation_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -73,6 +74,10 @@ LOGOUT_ENDPOINT=/api/v1/authentication/logout/
 
   // Initialize hub content service
   Get.put(HubContentService());
+
+  // Initialize consultation service
+  Get.put(ConsultationService());
+  debugPrint('✅ ConsultationService initialized');
 
   // Initialize controllers
   Get.put(ThemeController());
