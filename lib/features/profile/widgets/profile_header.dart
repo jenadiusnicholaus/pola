@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/profile_models.dart';
+import '../services/profile_service.dart';
 
 class ProfileHeader extends StatelessWidget {
   final UserProfile profile;
+  final ProfileService _profileService = Get.find<ProfileService>();
+  final ImagePicker _imagePicker = ImagePicker();
 
-  const ProfileHeader({
+  ProfileHeader({
     super.key,
     required this.profile,
   });
@@ -51,39 +56,82 @@ class ProfileHeader extends StatelessWidget {
         padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
-            // Avatar with better contrast
-            Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: primaryColor.withOpacity(isDark ? 0.3 : 0.2),
-                    blurRadius: 20,
-                    spreadRadius: 2,
+            // Avatar with better contrast and edit button
+            Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: primaryColor.withOpacity(isDark ? 0.3 : 0.2),
+                        blurRadius: 20,
+                        spreadRadius: 2,
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: CircleAvatar(
-                radius: 55,
-                backgroundColor: isDark
-                    ? primaryColor.withOpacity(0.2)
-                    : primaryColor.withOpacity(0.1),
-                child: CircleAvatar(
-                  radius: 52,
-                  backgroundColor: isDark
-                      ? Theme.of(context).colorScheme.surface
-                      : Colors.white,
-                  child: Text(
-                    _getInitials(profile.fullName),
-                    style: TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
-                      letterSpacing: 1,
+                  child: CircleAvatar(
+                    radius: 55,
+                    backgroundColor: isDark
+                        ? primaryColor.withOpacity(0.2)
+                        : primaryColor.withOpacity(0.1),
+                    child: CircleAvatar(
+                      radius: 52,
+                      backgroundColor: isDark
+                          ? Theme.of(context).colorScheme.surface
+                          : Colors.white,
+                      backgroundImage: profile.profilePicture != null &&
+                              profile.profilePicture!.isNotEmpty
+                          ? NetworkImage(profile.profilePicture!)
+                          : null,
+                      child: profile.profilePicture == null ||
+                              profile.profilePicture!.isEmpty
+                          ? Text(
+                              _getInitials(profile.fullName),
+                              style: TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.bold,
+                                color: primaryColor,
+                                letterSpacing: 1,
+                              ),
+                            )
+                          : null,
                     ),
                   ),
                 ),
-              ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: () => _showImageSourceDialog(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: primaryColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isDark
+                              ? Theme.of(context).colorScheme.surface
+                              : Colors.white,
+                          width: 3,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 20),
 
@@ -269,5 +317,105 @@ class ProfileHeader extends StatelessWidget {
       return parts[0].isNotEmpty ? parts[0][0].toUpperCase() : 'U';
     }
     return '${parts[0][0]}${parts[parts.length - 1][0]}'.toUpperCase();
+  }
+
+  void _showImageSourceDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Update Profile Picture'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Take Photo'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Choose from Gallery'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        // Show loading indicator
+        Get.dialog(
+          const Center(
+            child: CircularProgressIndicator(),
+          ),
+          barrierDismissible: false,
+        );
+
+        // Upload the image
+        final success =
+            await _profileService.updateProfilePicture(pickedFile.path);
+
+        // Close loading dialog
+        Get.back();
+
+        if (success) {
+          Get.snackbar(
+            'Success',
+            'Profile picture updated successfully',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 2),
+          );
+        } else {
+          Get.snackbar(
+            'Error',
+            'Failed to update profile picture. Please try again.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 3),
+          );
+        }
+      }
+    } catch (e) {
+      // Close loading dialog if still open
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+
+      Get.snackbar(
+        'Error',
+        'Failed to select image: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+    }
   }
 }

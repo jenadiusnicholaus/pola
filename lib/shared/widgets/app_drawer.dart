@@ -3,9 +3,12 @@ import 'package:get/get.dart';
 import '../../constants/app_strings.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
+import '../../features/profile/services/profile_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/token_storage_service.dart';
 import '../../features/consultation/services/consultation_service.dart';
+import '../../features/consultation/screens/consultant_profile_screen.dart';
+import '../../features/subscription/screens/subscription_plans_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -208,7 +211,8 @@ class AppDrawer extends StatelessWidget {
 
     // Only show for verified advocates, lawyers, paralegals, and law firms
     final eligibleRoles = ['advocate', 'lawyer', 'paralegal', 'law_firm'];
-    final isEligible = isVerified && eligibleRoles.any((role) => userRole.contains(role));
+    final isEligible =
+        isVerified && eligibleRoles.any((role) => userRole.contains(role));
 
     if (!isEligible) {
       return const SizedBox.shrink();
@@ -221,8 +225,8 @@ class AppDrawer extends StatelessWidget {
           context: context,
           icon: Icons.psychology_outlined,
           activeIcon: Icons.psychology,
-          title: 'Become a Consultant',
-          subtitle: 'Provide consultations & earn',
+          title: 'Consultation',
+          subtitle: 'Manage or apply',
           badge: 'NEW',
           badgeColor: Colors.green,
           onTap: () => _handleConsultationTap(context),
@@ -270,6 +274,20 @@ class AppDrawer extends StatelessWidget {
   }
 
   Widget _buildAccountSection(BuildContext context, ThemeData theme) {
+    // Check if user needs to show upgrade option
+    final profileService = Get.find<ProfileService>();
+    final profile = profileService.currentProfile;
+    bool showUpgrade = true; // Default to showing upgrade option
+
+    if (profile != null) {
+      final subscription = profile.subscription;
+      // Only hide upgrade if user has an active paid subscription
+      // Show upgrade for: free trial, inactive subscriptions, or free plan
+      final isPaidPlan = subscription.planType != 'free_trial' &&
+          subscription.planType != 'free';
+      showUpgrade = !isPaidPlan || !subscription.isActive;
+    }
+
     return Column(
       children: [
         _buildSectionHeader('Account', theme),
@@ -295,15 +313,20 @@ class AppDrawer extends StatelessWidget {
             () => Get.to(() => const SettingsScreen()),
           ),
         ),
-        _buildDrawerItem(
-          context: context,
-          icon: Icons.star_outline,
-          title: 'Upgrade to Premium',
-          subtitle: 'Unlock all features',
-          badge: 'PRO',
-          badgeColor: Colors.amber,
-          onTap: () => _showComingSoon(context, 'Premium Upgrade'),
-        ),
+        if (showUpgrade)
+          _buildDrawerItem(
+            context: context,
+            icon: Icons.workspace_premium,
+            activeIcon: Icons.workspace_premium,
+            title: 'Upgrade to Premium',
+            subtitle: 'Unlock all features',
+            badge: 'PRO',
+            badgeColor: Colors.amber,
+            onTap: () => _navigateAndClose(
+              context,
+              () => Get.to(() => const SubscriptionPlansScreen()),
+            ),
+          ),
       ],
     );
   }
@@ -533,186 +556,13 @@ class AppDrawer extends StatelessWidget {
   Future<void> _handleConsultationTap(BuildContext context) async {
     Navigator.pop(context); // Close drawer
 
-    // Show loading dialog
-    Get.dialog(
-      const Center(
-        child: Card(
-          child: Padding(
-            padding: EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Checking eligibility...'),
-              ],
-            ),
-          ),
-        ),
-      ),
-      barrierDismissible: false,
-    );
-
-    try {
-      // Initialize service if not already done
-      if (!Get.isRegistered<ConsultationService>()) {
-        Get.put(ConsultationService());
-      }
-
-      final consultationService = Get.find<ConsultationService>();
-      final eligibility = await consultationService.checkEligibility();
-
-      // Debug logging
-      debugPrint('🔍 Consultation Eligibility Check:');
-      debugPrint('  - canApply: ${eligibility.canApply}');
-      debugPrint('  - isConsultant: ${eligibility.isConsultant}');
-      debugPrint('  - status: ${eligibility.status}');
-      debugPrint('  - message: ${eligibility.message}');
-
-      // Close loading dialog
-      Get.back();
-
-      if (eligibility.isConsultant) {
-        // User is already a consultant
-        _showConsultantStatus(context, 'approved');
-      } else if (eligibility.status == 'pending') {
-        // Application is pending
-        _showConsultantStatus(context, 'pending');
-      } else if (eligibility.status == 'rejected') {
-        // Application was rejected
-        _showConsultantStatus(context, 'rejected', 
-          message: eligibility.application?['admin_notes'] ?? 'Please contact support for more information');
-      } else if (eligibility.canApply) {
-        // Can apply - show application screen
-        _showConsultationApplicationDialog(context);
-      } else {
-        // Not eligible
-        Get.snackbar(
-          'Not Eligible',
-          eligibility.message ?? 'You are not eligible to become a consultant at this time',
-          icon: const Icon(Icons.info_outline, color: Colors.white),
-          backgroundColor: Colors.orange,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 4),
-        );
-      }
-    } catch (e) {
-      // Close loading dialog if still open
-      if (Get.isDialogOpen ?? false) {
-        Get.back();
-      }
-
-      debugPrint('❌ Error checking consultation eligibility: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to check consultation eligibility. Please try again.',
-        icon: const Icon(Icons.error_outline, color: Colors.white),
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 3),
-      );
-    }
-  }
-
-  void _showConsultantStatus(BuildContext context, String status, {String? message}) {
-    IconData icon;
-    Color color;
-    String title;
-    String content;
-
-    switch (status) {
-      case 'approved':
-        icon = Icons.verified;
-        color = Colors.green;
-        title = 'You\'re a Consultant!';
-        content = 'You are already a registered consultant. Start accepting consultation requests from clients.';
-        break;
-      case 'pending':
-        icon = Icons.schedule;
-        color = Colors.orange;
-        title = 'Application Pending';
-        content = 'Your consultant application is under review. We\'ll notify you once the admin reviews your application.';
-        break;
-      case 'rejected':
-        icon = Icons.cancel;
-        color = Colors.red;
-        title = 'Application Rejected';
-        content = message ?? 'Your application was not approved. Please contact support for more information.';
-        break;
-      default:
-        return;
+    // Initialize consultation service if not already done
+    if (!Get.isRegistered<ConsultationService>()) {
+      Get.put(ConsultationService());
     }
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        icon: Icon(icon, color: color, size: 48),
-        title: Text(title),
-        content: Text(content),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showConsultationApplicationDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        icon: const Icon(Icons.psychology, color: Colors.green, size: 48),
-        title: const Text('Become a Consultant'),
-        content: const SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Share your legal expertise and earn by helping others with their legal queries.',
-                style: TextStyle(fontSize: 15),
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Benefits:',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-              SizedBox(height: 8),
-              Text('• Earn money by providing consultations'),
-              Text('• Flexible schedule - work when you want'),
-              Text('• Help people with legal guidance'),
-              Text('• Build your professional reputation'),
-              SizedBox(height: 16),
-              Text(
-                'Requirements:',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-              SizedBox(height: 8),
-              Text('• Valid professional credentials'),
-              Text('• ID/Passport documentation'),
-              Text('• Admin approval required'),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Not Now'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _showComingSoon(context, 'Consultation Application');
-              // TODO: Navigate to consultation application form
-              // Get.toNamed('/consultation/apply');
-            },
-            child: const Text('Apply Now'),
-          ),
-        ],
-      ),
-    );
+    // Navigate to consultant profile screen
+    Get.to(() => const ConsultantProfileScreen());
   }
 
   void _showComingSoon(BuildContext context, String feature) {

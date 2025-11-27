@@ -297,8 +297,50 @@ class VerificationService {
     required String fileName,
     String? description,
   }) async {
-    // This would need to be implemented if base64 upload is supported
-    throw UnimplementedError('Base64 upload not implemented in current API');
+    try {
+      debugPrint('📤 Uploading document (Base64): $documentType');
+
+      // Determine file type from fileName extension
+      String fileType = 'application/pdf'; // default
+      if (fileName.toLowerCase().endsWith('.jpg') ||
+          fileName.toLowerCase().endsWith('.jpeg')) {
+        fileType = 'image/jpeg';
+      } else if (fileName.toLowerCase().endsWith('.png')) {
+        fileType = 'image/png';
+      }
+
+      // Format the file as a data URI: data:<mimetype>;base64,<data>
+      final fileDataUri = 'data:@file/$fileType;base64,$base64Data';
+
+      final requestData = {
+        'document_type': documentType,
+        'title': fileName,
+        if (description != null) 'description': description,
+        'file': fileDataUri,
+      };
+
+      debugPrint('📦 Request data keys: ${requestData.keys.join(", ")}');
+
+      final response = await _apiService.post<Map<String, dynamic>>(
+        EnvironmentConfig.verificationUploadDocumentUrl,
+        data: requestData,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('✅ Document uploaded successfully (Base64)');
+        return true;
+      } else {
+        debugPrint('⚠️ Unexpected status code: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('❌ Error uploading document (Base64): $e');
+      if (e is DioException) {
+        debugPrint('Response data: ${e.response?.data}');
+        debugPrint('Status code: ${e.response?.statusCode}');
+      }
+      return false;
+    }
   }
 
   /// Check if role needs verification (static method compatibility)

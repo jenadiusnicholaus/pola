@@ -4,6 +4,7 @@ import 'package:dio/dio.dart' as dio;
 import '../../../services/api_service.dart';
 import '../../../services/token_storage_service.dart';
 import '../../../config/environment_config.dart';
+import '../../../config/dio_config.dart';
 import '../models/profile_models.dart';
 
 class ProfileService extends GetxService {
@@ -50,6 +51,99 @@ class ProfileService extends GetxService {
       }
     } catch (e) {
       debugPrint('⚠️ Failed to load cached profile on init: $e');
+    }
+  }
+
+  /// Update profile picture
+  Future<bool> updateProfilePicture(String imagePath) async {
+    try {
+      debugPrint('📤 Updating profile picture...');
+
+      // Get the token for authorization
+      await _tokenStorage.waitForInitialization();
+      final token = _tokenStorage.accessToken;
+
+      if (token.isEmpty) {
+        debugPrint('❌ No access token available');
+        return false;
+      }
+
+      // Create multipart file
+      final file = await dio.MultipartFile.fromFile(
+        imagePath,
+        filename: imagePath.split('/').last,
+      );
+
+      final formData = dio.FormData.fromMap({
+        'profile_picture': file,
+      });
+
+      // Use Dio directly with proper configuration for multipart
+      final dioInstance = DioConfig.instance;
+      final response = await dioInstance.patch(
+        EnvironmentConfig.profilePictureUrl,
+        data: formData,
+        options: dio.Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'X-API-Key': EnvironmentConfig.apiKey,
+          },
+          contentType: 'multipart/form-data',
+          followRedirects: false,
+          validateStatus: (status) => status! < 500,
+        ),
+      );
+
+      debugPrint('📥 Profile picture update response: ${response.statusCode}');
+      debugPrint('📥 Response data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        debugPrint('✅ Profile picture updated successfully');
+
+        // Update the profile picture URL immediately from response
+        if (response.data != null && response.data is Map) {
+          final newProfilePictureUrl = response.data['profile_picture_url'] ??
+              response.data['profile_picture'];
+          if (newProfilePictureUrl != null && _currentProfile.value != null) {
+            // Create updated profile with new picture URL
+            final updatedProfile = UserProfile(
+              id: _currentProfile.value!.id,
+              email: _currentProfile.value!.email,
+              firstName: _currentProfile.value!.firstName,
+              lastName: _currentProfile.value!.lastName,
+              dateOfBirth: _currentProfile.value!.dateOfBirth,
+              userRole: _currentProfile.value!.userRole,
+              gender: _currentProfile.value!.gender,
+              isActive: _currentProfile.value!.isActive,
+              isVerified: _currentProfile.value!.isVerified,
+              contact: _currentProfile.value!.contact,
+              address: _currentProfile.value!.address,
+              verificationStatus: _currentProfile.value!.verificationStatus,
+              permissions: _currentProfile.value!.permissions,
+              subscription: _currentProfile.value!.subscription,
+              dateJoined: _currentProfile.value!.dateJoined,
+              lastLogin: _currentProfile.value!.lastLogin,
+              idNumber: _currentProfile.value!.idNumber,
+              profilePicture: newProfilePictureUrl,
+            );
+
+            // Update the observable immediately
+            _currentProfile.value = updatedProfile;
+            debugPrint('🖼️ Profile picture updated in local state');
+          }
+        }
+
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      debugPrint('❌ Error updating profile picture: $e');
+      if (e is dio.DioException) {
+        debugPrint('   Response: ${e.response?.data}');
+        debugPrint('   Status code: ${e.response?.statusCode}');
+      }
+      return false;
     }
   }
 

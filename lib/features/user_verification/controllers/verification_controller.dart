@@ -803,22 +803,49 @@ class VerificationController extends GetxController {
         return;
       }
 
-      // Show uploading progress
-      Get.snackbar(
-        '📤 Uploading...',
-        'Uploading ${_getDocumentDisplayName(documentType)}...',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.blue.withOpacity(0.8),
-        colorText: Colors.white,
-        icon: const Icon(Icons.cloud_upload, color: Colors.white),
-        duration: const Duration(seconds: 2),
+      // Show loading dialog with progress
+      Get.dialog(
+        WillPopScope(
+          onWillPop: () async => false,
+          child: Center(
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Uploading...',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _getDocumentDisplayName(documentType),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        barrierDismissible: false,
       );
 
       // Convert file to base64
       final bytes = await file.readAsBytes();
       final base64File = base64Encode(bytes);
-
-      // File will be processed by the service
 
       // Upload to server
       final success = await _verificationService.uploadDocumentBase64(
@@ -827,6 +854,9 @@ class VerificationController extends GetxController {
         fileName: _getDocumentDisplayName(documentType),
         description: 'Uploaded via mobile app',
       );
+
+      // Close loading dialog
+      Get.back();
 
       if (!success) {
         throw Exception('Server rejected the upload');
@@ -846,6 +876,12 @@ class VerificationController extends GetxController {
       await loadVerificationStatus();
     } catch (e) {
       debugPrint('❌ Upload to server error: $e');
+
+      // Close loading dialog if still open
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+
       Get.snackbar(
         'Upload Failed',
         'Failed to upload document: $e',

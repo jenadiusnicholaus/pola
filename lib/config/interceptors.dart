@@ -158,9 +158,14 @@ class ApiInterceptors {
     debugPrint('📤 Headers: ${options.headers}');
 
     if (options.data != null) {
-      // Mask sensitive data in logs
-      final data = _maskSensitiveData(options.data);
-      debugPrint('📦 Body: ${jsonEncode(data)}');
+      // Check if it's FormData (for file uploads)
+      if (options.data is FormData) {
+        debugPrint('📦 Body: [FormData - File Upload]');
+      } else {
+        // Mask sensitive data in logs
+        final data = _maskSensitiveData(options.data);
+        debugPrint('📦 Body: ${jsonEncode(data)}');
+      }
     }
 
     if (options.queryParameters.isNotEmpty) {

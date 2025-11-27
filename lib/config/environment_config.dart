@@ -95,6 +95,9 @@ class EnvironmentConfig {
       dotenv.env['LOGOUT_ENDPOINT'] ?? '/auth/logout';
   static String get profileEndpoint =>
       dotenv.env['PROFILE_ENDPOINT'] ?? '/api/v1/authentication/profile/';
+  static String get profilePictureEndpoint =>
+      dotenv.env['PROFILE_PICTURE_ENDPOINT'] ??
+      '/api/v1/authentication/profile-picture/';
 
   // Complete authentication URLs
   static String get loginUrl => '$baseUrl$loginEndpoint';
@@ -102,6 +105,7 @@ class EnvironmentConfig {
   static String get refreshTokenUrl => '$baseUrl$refreshTokenEndpoint';
   static String get logoutUrl => '$baseUrl$logoutEndpoint';
   static String get profileUrl => '$baseUrl$profileEndpoint';
+  static String get profilePictureUrl => '$baseUrl$profilePictureEndpoint';
 
   // Legal Education endpoints
   static String get legalEducationTopicsEndpoint =>
@@ -201,7 +205,7 @@ class EnvironmentConfig {
       '/api/v1/authentication/verifications/my_status/';
   static String get verificationUploadDocumentEndpoint =>
       dotenv.env['VERIFICATION_UPLOAD_DOCUMENT_ENDPOINT'] ??
-      '/api/v1/authentication/verifications/upload_document/';
+      '/api/v1/authentication/documents/';
   static String get verificationDocumentsEndpoint =>
       dotenv.env['VERIFICATION_DOCUMENTS_ENDPOINT'] ??
       '/api/v1/authentication/documents/';
@@ -247,4 +251,47 @@ class EnvironmentConfig {
       '$baseUrl$legalEducationAdminTopicsEndpoint';
   static String get legalEducationAdminTopicsQuickCreateUrl =>
       '$baseUrl$legalEducationAdminTopicsQuickCreateEndpoint';
+
+  // Consultation endpoints
+  static String get consultationApplicationStatusEndpoint =>
+      dotenv.env['CONSULTATION_APPLICATION_STATUS_ENDPOINT'] ??
+      '/api/v1/consultants/application-status/';
+  static String get consultationApplyEndpoint =>
+      dotenv.env['CONSULTATION_APPLY_ENDPOINT'] ??
+      '/api/v1/subscriptions/consultants/apply/';
+  static String get consultationMyProfileEndpoint =>
+      dotenv.env['CONSULTATION_MY_PROFILE_ENDPOINT'] ??
+      '/api/v1/consultants/my-profile/';
+  static String get consultationMyReviewsEndpoint =>
+      dotenv.env['CONSULTATION_MY_REVIEWS_ENDPOINT'] ??
+      '/api/v1/consultants/my-reviews/';
+
+  // Complete Consultation URLs
+  static String get consultationApplicationStatusUrl =>
+      '$baseUrl$consultationApplicationStatusEndpoint';
+  static String get consultationApplyUrl =>
+      '$baseUrl$consultationApplyEndpoint';
+  static String get consultationMyProfileUrl =>
+      '$baseUrl$consultationMyProfileEndpoint';
+  static String get consultationMyReviewsUrl =>
+      '$baseUrl$consultationMyReviewsEndpoint';
+
+  // Subscription endpoints
+  static String get subscriptionPlansEndpoint =>
+      dotenv.env['SUBSCRIPTION_PLANS_ENDPOINT'] ??
+      '/api/v1/subscriptions/plans/';
+  static String get subscriptionSubscribeEndpoint =>
+      dotenv.env['SUBSCRIPTION_SUBSCRIBE_ENDPOINT'] ??
+      '/api/v1/subscriptions/subscribe/';
+  static String get subscriptionPaymentStatusEndpoint =>
+      dotenv.env['SUBSCRIPTION_PAYMENT_STATUS_ENDPOINT'] ??
+      '/api/v1/subscriptions/payment-status/';
+
+  // Complete Subscription URLs
+  static String get subscriptionPlansUrl =>
+      '$baseUrl$subscriptionPlansEndpoint';
+  static String get subscriptionSubscribeUrl =>
+      '$baseUrl$subscriptionSubscribeEndpoint';
+  static String get subscriptionPaymentStatusUrl =>
+      '$baseUrl$subscriptionPaymentStatusEndpoint';
 }
