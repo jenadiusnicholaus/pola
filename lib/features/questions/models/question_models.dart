@@ -124,7 +124,7 @@ class QuestionUser {
     // Handle both formats: full_name or first_name/last_name
     String firstName = '';
     String lastName = '';
-    
+
     if (json['full_name'] != null) {
       final nameParts = (json['full_name'] as String).split(' ');
       firstName = nameParts.isNotEmpty ? nameParts[0] : '';
@@ -133,7 +133,7 @@ class QuestionUser {
       firstName = json['first_name'] ?? '';
       lastName = json['last_name'] ?? '';
     }
-    
+
     return QuestionUser(
       id: json['id'] ?? 0,
       firstName: firstName,
