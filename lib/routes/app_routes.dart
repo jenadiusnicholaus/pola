@@ -18,6 +18,8 @@ import '../features/common/screens/coming_soon_screen.dart';
 import '../features/questions/screens/my_questions_screen.dart';
 import '../features/questions/screens/ask_question_screen.dart';
 import '../features/questions/screens/question_detail_screen.dart';
+import '../features/calling_booking/screens/consultants_screen.dart';
+import '../features/calling_booking/screens/call_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -40,6 +42,8 @@ class AppRoutes {
   static const String myQuestions = '/my-questions';
   static const String askQuestion = '/ask-question';
   static const String questionDetail = '/question-detail';
+  static const String consultants = '/consultants';
+  static const String call = '/call';
 
   static List<GetPage> routes = [
     GetPage(
@@ -126,6 +130,14 @@ class AppRoutes {
       page: () => QuestionDetailScreen(
         questionId: Get.arguments['questionId'] ?? 0,
       ),
+    ),
+    GetPage(
+      name: consultants,
+      page: () => const ConsultantsScreen(),
+    ),
+    GetPage(
+      name: call,
+      page: () => const CallScreen(),
     ),
   ];
 

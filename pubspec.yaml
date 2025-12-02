@@ -62,6 +62,9 @@ dependencies:
   file_picker: ^8.0.0+1
   permission_handler: ^11.3.1
   
+  # Agora RTC for voice calls
+  agora_rtc_engine: ^6.3.0
+  
   # PDF & Document Viewing
   flutter_cached_pdfview: ^0.4.2
   

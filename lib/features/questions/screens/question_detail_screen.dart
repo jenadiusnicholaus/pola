@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../controllers/question_controller.dart';
-import '../models/question_models.dart';
 
 class QuestionDetailScreen extends StatelessWidget {
   final int questionId;
