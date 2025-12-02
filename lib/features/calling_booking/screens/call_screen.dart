@@ -19,7 +19,7 @@ class _CallScreenState extends State<CallScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     try {
       // Get consultant from arguments
       final args = Get.arguments;
@@ -28,12 +28,12 @@ class _CallScreenState extends State<CallScreen> {
         _errorMessage = 'No consultant data provided';
         return;
       }
-      
+
       consultant = args['consultant'] as Consultant;
-      
+
       // Initialize controller
       controller = Get.put(CallController());
-      
+
       // Start call
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (consultant != null && controller != null) {
@@ -70,7 +70,9 @@ class _CallScreenState extends State<CallScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  _errorMessage.isNotEmpty ? _errorMessage : 'Failed to load call',
+                  _errorMessage.isNotEmpty
+                      ? _errorMessage
+                      : 'Failed to load call',
                   style: const TextStyle(fontSize: 16),
                   textAlign: TextAlign.center,
                 ),
@@ -146,7 +148,7 @@ class _CallScreenState extends State<CallScreen> {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    
+
                     // Show available bundles if any
                     if (controller!.availableBundles.isNotEmpty) ...[
                       const SizedBox(height: 32),
@@ -174,7 +176,8 @@ class _CallScreenState extends State<CallScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     bundle.name,
@@ -198,7 +201,8 @@ class _CallScreenState extends State<CallScreen> {
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
-                                        color: theme.colorScheme.onPrimaryContainer,
+                                        color: theme
+                                            .colorScheme.onPrimaryContainer,
                                       ),
                                     ),
                                   ),
@@ -253,7 +257,7 @@ class _CallScreenState extends State<CallScreen> {
                         );
                       }).toList(),
                     ],
-                    
+
                     const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
@@ -303,7 +307,8 @@ class _CallScreenState extends State<CallScreen> {
                       // Avatar
                       CircleAvatar(
                         radius: 60,
-                        backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                        backgroundColor:
+                            theme.colorScheme.surfaceContainerHighest,
                         child: Text(
                           consultant!.userDetails.firstName[0].toUpperCase(),
                           style: TextStyle(
@@ -392,9 +397,11 @@ class _CallScreenState extends State<CallScreen> {
                             icon: controller!.isMuted.value
                                 ? Icons.mic_off
                                 : Icons.mic,
-                            label: controller!.isMuted.value ? 'Unmute' : 'Mute',
+                            label:
+                                controller!.isMuted.value ? 'Unmute' : 'Mute',
                             onPressed: () => controller!.toggleMute(),
-                            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                            backgroundColor:
+                                theme.colorScheme.surfaceContainerHighest,
                             iconColor: theme.colorScheme.onSurface,
                           ),
 
@@ -415,7 +422,8 @@ class _CallScreenState extends State<CallScreen> {
                                 : Icons.volume_down,
                             label: 'Speaker',
                             onPressed: () => controller!.toggleSpeaker(),
-                            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                            backgroundColor:
+                                theme.colorScheme.surfaceContainerHighest,
                             iconColor: theme.colorScheme.onSurface,
                           ),
                         ],

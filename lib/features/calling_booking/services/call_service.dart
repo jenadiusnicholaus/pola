@@ -25,7 +25,8 @@ class CallService {
       if (consultantType != null) {
         queryParams['consultant_type'] = consultantType;
       }
-      if (specialization != null) queryParams['specialization'] = specialization;
+      if (specialization != null)
+        queryParams['specialization'] = specialization;
       if (city != null) queryParams['city'] = city;
       if (minRating != null) queryParams['min_rating'] = minRating;
 
@@ -35,9 +36,7 @@ class CallService {
       );
 
       final consultantsList = response.data['consultants'] as List;
-      return consultantsList
-          .map((json) => Consultant.fromJson(json))
-          .toList();
+      return consultantsList.map((json) => Consultant.fromJson(json)).toList();
     } catch (e) {
       throw _handleError(e);
     }
@@ -67,9 +66,7 @@ class CallService {
       );
 
       final consultantsList = response.data['consultants'] as List;
-      return consultantsList
-          .map((json) => Consultant.fromJson(json))
-          .toList();
+      return consultantsList.map((json) => Consultant.fromJson(json)).toList();
     } catch (e) {
       throw _handleError(e);
     }

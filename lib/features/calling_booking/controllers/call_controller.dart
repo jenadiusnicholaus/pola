@@ -150,10 +150,10 @@ class CallController extends GetxController {
     try {
       // End call with recording
       await _agoraService.endCall(recordCall: true);
-      
+
       // Navigate back
       Get.back();
-      
+
       // Show completion message
       Get.snackbar(
         'Call Ended',
@@ -175,10 +175,10 @@ class CallController extends GetxController {
 
   void _handleCallEnded(int durationSeconds) {
     print('Call ended. Duration: $durationSeconds seconds');
-    
+
     // Navigate back
     Get.back();
-    
+
     // Show summary
     final minutes = (durationSeconds / 60).ceil();
     Get.snackbar(

@@ -165,7 +165,7 @@ class ConsultantsScreen extends StatelessWidget {
                   ),
               ],
             ),
-            
+
             // Specialization
             if (consultant.specialization.isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -179,7 +179,7 @@ class ConsultantsScreen extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ],
-            
+
             const SizedBox(height: 12),
 
             // Action Buttons based on what consultant offers
@@ -195,19 +195,22 @@ class ConsultantsScreen extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: theme.colorScheme.primary,
                         foregroundColor: theme.colorScheme.onPrimary,
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 8, horizontal: 12),
                         minimumSize: const Size(0, 36),
                       ),
                     ),
                   ),
-                
+
                 // Physical consultation button
                 if (consultant.offersPhysicalConsultations) ...[
-                  if (consultant.offersMobileConsultations) const SizedBox(width: 8),
+                  if (consultant.offersMobileConsultations)
+                    const SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _handleBookConsultation(consultant),
-                      icon: Icon(Icons.location_on, size: 14, color: theme.colorScheme.onSurface),
+                      icon: Icon(Icons.location_on,
+                          size: 14, color: theme.colorScheme.onSurface),
                       label: Text(
                         'Book',
                         style: TextStyle(
@@ -217,7 +220,8 @@ class ConsultantsScreen extends StatelessWidget {
                       ),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: theme.colorScheme.outline),
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 8, horizontal: 12),
                         minimumSize: const Size(0, 36),
                       ),
                     ),
@@ -261,7 +265,8 @@ class ConsultantsScreen extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+          Icon(icon,
+              size: 14, color: theme.colorScheme.onSurface.withOpacity(0.6)),
           const SizedBox(width: 4),
           Text(
             label,
