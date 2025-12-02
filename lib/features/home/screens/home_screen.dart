@@ -79,34 +79,39 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildDynamicSliverAppBar(
       BuildContext context, HomeController controller) {
+    final theme = Theme.of(context);
     return SliverAppBar(
-      backgroundColor: AppColors.primaryAmber,
-      foregroundColor: AppColors.black,
-      elevation: 4,
+      backgroundColor: theme.colorScheme.primary,
+      foregroundColor: theme.colorScheme.onPrimary,
+      iconTheme: IconThemeData(
+        color: theme.colorScheme.onPrimary,
+      ),
+      elevation: 2,
       pinned: true,
       floating: false,
       snap: false,
-      stretch: true,
-      expandedHeight: 200.0,
+      expandedHeight: 180.0,
 
-      // Dynamic title that appears when collapsed - with opacity based on scroll
+      // Dynamic title that appears when collapsed
+      centerTitle: true,
       title: AnimatedOpacity(
         opacity: _isCollapsed ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 200),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            const Text(
               '⚖️',
-              style: TextStyle(fontSize: 18),
+              style: TextStyle(fontSize: 20),
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Text(
               AppStrings.appName,
               style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-                letterSpacing: 1.0,
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+                letterSpacing: 0.5,
+                color: theme.colorScheme.onPrimary,
               ),
             ),
           ],
@@ -119,69 +124,40 @@ class _HomeScreenState extends State<HomeScreen> {
       // Flexible space with expanded content
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: true,
-        titlePadding: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
+        titlePadding: const EdgeInsets.only(bottom: 12),
         title: AnimatedOpacity(
           opacity: _isCollapsed ? 0.0 : 1.0,
           duration: const Duration(milliseconds: 200),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 120),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Justice scale icon (responsive size)
-                  Text(
-                    '⚖️',
-                    style: TextStyle(
-                      fontSize: _isCollapsed ? 20 : 28,
-                    ),
-                  ),
-
-                  SizedBox(height: _isCollapsed ? 4 : 6),
-
-                  // App name (responsive size)
-                  Text(
-                    AppStrings.appName,
-                    style: TextStyle(
-                      color: AppColors.black,
-                      fontSize: _isCollapsed ? 18 : 22,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: _isCollapsed ? 1.0 : 2.0,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-
-                  // Separator line (only show when not collapsed)
-                  if (!_isCollapsed) ...[
-                    Container(
-                      width: 60,
-                      height: 2,
-                      margin: const EdgeInsets.symmetric(vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.black,
-                        borderRadius: BorderRadius.circular(1),
-                      ),
-                    ),
-
-                    // Tagline (only show when not collapsed)
-                    Text(
-                      AppStrings.lawyerTagline,
-                      style: TextStyle(
-                        color: AppColors.black.withOpacity(0.8),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.8,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ],
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '⚖️',
+                style: TextStyle(fontSize: 28),
               ),
-            ),
+              const SizedBox(height: 6),
+              Text(
+                AppStrings.appName,
+                style: TextStyle(
+                  color: theme.colorScheme.onPrimary,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                AppStrings.lawyerTagline,
+                style: TextStyle(
+                  color: theme.colorScheme.onPrimary.withOpacity(0.8),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
           ),
         ),
 
@@ -192,9 +168,9 @@ class _HomeScreenState extends State<HomeScreen> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppColors.primaryAmber,
-                AppColors.primaryAmber.withOpacity(0.9),
-                AppColors.primaryAmber.withOpacity(0.8),
+                theme.colorScheme.primary,
+                theme.colorScheme.primary.withOpacity(0.9),
+                theme.colorScheme.primary.withOpacity(0.85),
               ],
             ),
           ),
@@ -227,7 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black87),
                 ),
               ),
             )
@@ -238,7 +214,10 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           IconButton(
             onPressed: () => _showNotifications(context, controller),
-            icon: const Icon(Icons.notifications_outlined),
+            icon: const Icon(
+              Icons.notifications_outlined,
+              color: Colors.black87,
+            ),
             tooltip: 'Notifications',
           ),
           // Notification badge
@@ -272,7 +251,10 @@ class _HomeScreenState extends State<HomeScreen> {
       // User profile button
       IconButton(
         onPressed: () => _showUserProfile(context, controller),
-        icon: const Icon(Icons.account_circle_outlined),
+        icon: const Icon(
+          Icons.account_circle_outlined,
+          color: Colors.black87,
+        ),
         tooltip: 'Profile',
       ),
 

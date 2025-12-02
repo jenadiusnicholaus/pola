@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../services/consultation_service.dart';
+import '../../../services/token_storage_service.dart';
 
 class ConsultantProfileScreen extends StatefulWidget {
   const ConsultantProfileScreen({super.key});
@@ -976,6 +977,11 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
     bool offersPhysical = false;
     bool termsAccepted = false;
 
+    // Get user role to determine if physical consultation is allowed
+    final tokenStorage = Get.find<TokenStorageService>();
+    final userRole = tokenStorage.getUserRole()?.toLowerCase() ?? '';
+    final canOfferPhysical = userRole.contains('law_firm');
+
     Get.dialog(
       StatefulBuilder(
         builder: (context, setState) {
@@ -991,18 +997,45 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
                     style: TextStyle(fontSize: 14),
                   ),
                   const SizedBox(height: 16),
-                  CheckboxListTile(
-                    title: const Text('Offer Physical Consultations'),
-                    subtitle: const Text(
-                      'In-person consultations at your office',
-                      style: TextStyle(fontSize: 12),
+                  // Only show physical consultation option for law firms
+                  if (canOfferPhysical)
+                    CheckboxListTile(
+                      title: const Text('Offer Physical Consultations'),
+                      subtitle: const Text(
+                        'In-person consultations at your office',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      value: offersPhysical,
+                      onChanged: (value) {
+                        setState(() => offersPhysical = value ?? false);
+                      },
+                      contentPadding: EdgeInsets.zero,
                     ),
-                    value: offersPhysical,
-                    onChanged: (value) {
-                      setState(() => offersPhysical = value ?? false);
-                    },
-                    contentPadding: EdgeInsets.zero,
-                  ),
+                  // Show info for non-law firms
+                  if (!canOfferPhysical)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.orange.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline,
+                              size: 20, color: Colors.orange.shade700),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Text(
+                              'Only mobile/video consultations available for your role. Law firms can offer physical consultations.',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (canOfferPhysical) const SizedBox(height: 8),
+                  if (canOfferPhysical) const Divider(),
                   const Divider(),
                   CheckboxListTile(
                     title: const Text('Accept Terms & Conditions'),
@@ -1038,11 +1071,15 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
                           ],
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          '• Mobile/video consultations are included by default\n'
-                          '• Physical consultations require law firm association\n'
-                          '• Admin approval required before receiving bookings',
-                          style: TextStyle(fontSize: 12),
+                        Text(
+                          canOfferPhysical
+                              ? '• Mobile/video consultations are included by default\n'
+                                  '• Physical consultations available for law firms\n'
+                                  '• Admin approval required before receiving bookings'
+                              : '• Mobile/video consultations only for your role\n'
+                                  '• Physical consultations reserved for law firms\n'
+                                  '• Admin approval required before receiving bookings',
+                          style: const TextStyle(fontSize: 12),
                         ),
                       ],
                     ),
@@ -1067,7 +1104,9 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
 
                         final result =
                             await _consultationService.submitApplication(
-                          offersPhysicalConsultations: offersPhysical,
+                          // Only pass physical consultations param for law firms
+                          offersPhysicalConsultations:
+                              canOfferPhysical ? offersPhysical : null,
                           termsAccepted: true,
                         );
 

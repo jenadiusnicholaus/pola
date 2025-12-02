@@ -5,7 +5,6 @@ import '../widgets/hub_content_list.dart';
 import '../widgets/hub_content_search.dart';
 import '../widgets/hub_content_filter.dart';
 import '../widgets/content_creation_fab.dart';
-import '../utils/user_role_manager.dart';
 
 class HubContentScreen extends StatefulWidget {
   const HubContentScreen({super.key});
@@ -82,29 +81,14 @@ class _HubContentScreenState extends State<HubContentScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // Custom App Bar
+          // Simple App Bar
           SliverAppBar(
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(hubTitle),
-                if (UserRoleManager.isAdmin())
-                  Text(
-                    '👑 Admin View',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.colorScheme.onPrimary.withOpacity(0.8),
-                    ),
-                  ),
-              ],
-            ),
-            expandedHeight: 200,
+            title: Text(hubTitle),
             backgroundColor: theme.colorScheme.primary,
             foregroundColor: theme.colorScheme.onPrimary,
-            floating: false,
+            floating: true,
             pinned: true,
-            stretch: true,
+            elevation: 0,
             actions: [
               IconButton(
                 onPressed: _showSearch,
@@ -116,84 +100,12 @@ class _HubContentScreenState extends State<HubContentScreen> {
                 icon: const Icon(Icons.filter_list),
                 tooltip: 'Filter Content',
               ),
-              // TEMPORARY: Debug permissions button
-              // IconButton(
-              //   onPressed: () {
-              //     UserRoleManager.debugUserPermissions();
-              //   },
-              //   icon: const Icon(Icons.bug_report),
-              //   tooltip: 'Debug Permissions',
-              // ),
             ],
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                "",
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      theme.colorScheme.primary,
-                      theme.colorScheme.primary.withOpacity(0.8),
-                    ],
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 80, 16, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Spacer(),
-                      Text(
-                        _getHubDescription(),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onPrimary.withOpacity(0.9),
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 16),
-                      // Hub Stats
-                      Obx(() => Row(
-                            children: [
-                              _buildStatChip(
-                                theme,
-                                Icons.article_outlined,
-                                '${controller.totalContent.value}',
-                                'Posts',
-                              ),
-                              const SizedBox(width: 12),
-                              _buildStatChip(
-                                theme,
-                                Icons.people_outline,
-                                '${controller.activeUsers.value}',
-                                'Active',
-                              ),
-                              const SizedBox(width: 12),
-                              _buildStatChip(
-                                theme,
-                                Icons.trending_up,
-                                '${controller.trendingContent.length}',
-                                'Trending',
-                              ),
-                            ],
-                          )),
-                    ],
-                  ),
-                ),
-              ),
-            ),
           ),
 
           // Content List with proper spacing
           SliverPadding(
-            padding: const EdgeInsets.only(top: 24, bottom: 16),
+            padding: const EdgeInsets.only(top: 16, bottom: 16),
             sliver: HubContentList(
               controller: controller,
               onContentTap: (content) => _navigateToMaterialViewer(content),

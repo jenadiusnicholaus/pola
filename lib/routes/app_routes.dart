@@ -11,6 +11,13 @@ import '../features/hubs_and_services/legal_education/screens/legal_education_sc
 import '../features/hubs_and_services/legal_education/screens/topic_materials_screen.dart';
 import '../features/hubs_and_services/legal_education/screens/material_viewer_screen.dart';
 import '../features/hubs_and_services/hub_content/screens/hub_content_screen.dart';
+import '../features/bookmarks/screens/bookmark_screen.dart';
+import '../features/hubs_and_services/hub_content/screens/messages_inbox_screen.dart';
+import '../features/help/screens/help_support_screen.dart';
+import '../features/common/screens/coming_soon_screen.dart';
+import '../features/questions/screens/my_questions_screen.dart';
+import '../features/questions/screens/ask_question_screen.dart';
+import '../features/questions/screens/question_detail_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -26,6 +33,13 @@ class AppRoutes {
   static const String advocatesHub = '/advocates-hub';
   static const String studentsHub = '/students-hub';
   static const String forumHub = '/forum-hub';
+  static const String bookmarks = '/bookmarks';
+  static const String messages = '/messages';
+  static const String helpSupport = '/help-support';
+  static const String comingSoon = '/coming-soon';
+  static const String myQuestions = '/my-questions';
+  static const String askQuestion = '/ask-question';
+  static const String questionDetail = '/question-detail';
 
   static List<GetPage> routes = [
     GetPage(
@@ -79,6 +93,39 @@ class AppRoutes {
     GetPage(
       name: forumHub,
       page: () => const HubContentScreen(),
+    ),
+    GetPage(
+      name: bookmarks,
+      page: () => const BookmarkScreen(),
+    ),
+    GetPage(
+      name: messages,
+      page: () => const MessagesInboxScreen(),
+    ),
+    GetPage(
+      name: helpSupport,
+      page: () => const HelpSupportScreen(),
+    ),
+    GetPage(
+      name: comingSoon,
+      page: () => const ComingSoonScreen(),
+    ),
+    GetPage(
+      name: myQuestions,
+      page: () => const MyQuestionsScreen(),
+    ),
+    GetPage(
+      name: askQuestion,
+      page: () => AskQuestionScreen(
+        materialId: Get.arguments?['materialId'],
+        materialTitle: Get.arguments?['materialTitle'],
+      ),
+    ),
+    GetPage(
+      name: questionDetail,
+      page: () => QuestionDetailScreen(
+        questionId: Get.arguments['questionId'] ?? 0,
+      ),
     ),
   ];
 

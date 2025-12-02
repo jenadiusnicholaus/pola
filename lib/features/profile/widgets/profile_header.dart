@@ -17,87 +17,45 @@ class ProfileHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).colorScheme.primary;
+    final theme = Theme.of(context);
 
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? [
-                  primaryColor.withOpacity(0.15),
-                  primaryColor.withOpacity(0.05),
-                ]
-              : [
-                  primaryColor.withOpacity(0.08),
-                  Colors.white,
-                ],
-        ),
-        borderRadius: BorderRadius.circular(20),
+        color: isDark
+            ? theme.colorScheme.surfaceContainerHighest
+            : theme.colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark
-              ? primaryColor.withOpacity(0.3)
-              : primaryColor.withOpacity(0.15),
+          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
           width: 1,
         ),
-        boxShadow: isDark
-            ? null
-            : [
-                BoxShadow(
-                  color: primaryColor.withOpacity(0.1),
-                  blurRadius: 15,
-                  offset: const Offset(0, 5),
-                ),
-              ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
-            // Avatar with better contrast and edit button
+            // Avatar with edit button
             Stack(
               children: [
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: primaryColor.withOpacity(isDark ? 0.3 : 0.2),
-                        blurRadius: 20,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: CircleAvatar(
-                    radius: 55,
-                    backgroundColor: isDark
-                        ? primaryColor.withOpacity(0.2)
-                        : primaryColor.withOpacity(0.1),
-                    child: CircleAvatar(
-                      radius: 52,
-                      backgroundColor: isDark
-                          ? Theme.of(context).colorScheme.surface
-                          : Colors.white,
-                      backgroundImage: profile.profilePicture != null &&
-                              profile.profilePicture!.isNotEmpty
-                          ? NetworkImage(profile.profilePicture!)
-                          : null,
-                      child: profile.profilePicture == null ||
-                              profile.profilePicture!.isEmpty
-                          ? Text(
-                              _getInitials(profile.fullName),
-                              style: TextStyle(
-                                fontSize: 36,
-                                fontWeight: FontWeight.bold,
-                                color: primaryColor,
-                                letterSpacing: 1,
-                              ),
-                            )
-                          : null,
-                    ),
-                  ),
+                CircleAvatar(
+                  radius: 50,
+                  backgroundColor: theme.colorScheme.primaryContainer,
+                  backgroundImage: profile.profilePicture != null &&
+                          profile.profilePicture!.isNotEmpty
+                      ? NetworkImage(profile.profilePicture!)
+                      : null,
+                  child: profile.profilePicture == null ||
+                          profile.profilePicture!.isEmpty
+                      ? Text(
+                          _getInitials(profile.fullName),
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onPrimaryContainer,
+                          ),
+                        )
+                      : null,
                 ),
                 Positioned(
                   bottom: 0,
@@ -105,146 +63,104 @@ class ProfileHeader extends StatelessWidget {
                   child: GestureDetector(
                     onTap: () => _showImageSourceDialog(context),
                     child: Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: primaryColor,
+                        color: theme.colorScheme.primary,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: isDark
-                              ? Theme.of(context).colorScheme.surface
-                              : Colors.white,
-                          width: 3,
+                          color: theme.colorScheme.surface,
+                          width: 2,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
                       ),
                       child: const Icon(
                         Icons.camera_alt,
                         color: Colors.white,
-                        size: 20,
+                        size: 16,
                       ),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
             // Name
             Text(
               profile.fullName,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
-                    color: isDark ? null : Colors.grey.shade900,
-                  ),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurface,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 4),
 
-            // Email with better visibility
+            // Email
             Text(
               profile.email,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: isDark
-                        ? Theme.of(context).textTheme.bodySmall?.color
-                        : Colors.grey.shade600,
-                    fontSize: 14,
-                  ),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+              ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-            // Role Badge with better contrast
+            // Role Badge - simple
             Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 10,
+                horizontal: 16,
+                vertical: 8,
               ),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: isDark
-                      ? [
-                          primaryColor,
-                          primaryColor.withOpacity(0.8),
-                        ]
-                      : [
-                          primaryColor.withOpacity(0.95),
-                          primaryColor.withOpacity(0.85),
-                        ],
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withOpacity(0.3),
+                  width: 1,
                 ),
-                borderRadius: BorderRadius.circular(25),
-                boxShadow: [
-                  BoxShadow(
-                    color: primaryColor.withOpacity(isDark ? 0.3 : 0.25),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               ),
               child: Text(
                 profile.displayRole,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  letterSpacing: 0.5,
+                style: TextStyle(
+                  color: theme.colorScheme.onPrimaryContainer,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  letterSpacing: 0.3,
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-            // Verification Badge with better visibility
+            // Verification Badge - simple
             if (profile.isVerified)
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+                  horizontal: 12,
+                  vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.green.withOpacity(0.2)
-                      : Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.green.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color:
-                        isDark ? Colors.green.shade400 : Colors.green.shade600,
-                    width: 1.5,
+                    color: Colors.green.withOpacity(0.3),
+                    width: 1,
                   ),
-                  boxShadow: isDark
-                      ? null
-                      : [
-                          BoxShadow(
-                            color: Colors.green.withOpacity(0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       Icons.verified,
-                      color: isDark
-                          ? Colors.green.shade400
-                          : Colors.green.shade700,
-                      size: 18,
+                      color: Colors.green,
+                      size: 16,
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Verified Account',
+                      'Verified',
                       style: TextStyle(
-                        color: isDark
-                            ? Colors.green.shade300
-                            : Colors.green.shade800,
+                        color: Colors.green.shade700,
                         fontWeight: FontWeight.w600,
-                        fontSize: 13,
+                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -253,49 +169,32 @@ class ProfileHeader extends StatelessWidget {
             else
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+                  horizontal: 12,
+                  vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.orange.withOpacity(0.2)
-                      : Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(20),
+                  color: theme.colorScheme.errorContainer.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isDark
-                        ? Colors.orange.shade400
-                        : Colors.orange.shade600,
-                    width: 1.5,
+                    color: theme.colorScheme.error.withOpacity(0.3),
+                    width: 1,
                   ),
-                  boxShadow: isDark
-                      ? null
-                      : [
-                          BoxShadow(
-                            color: Colors.orange.withOpacity(0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      Icons.pending,
-                      color: isDark
-                          ? Colors.orange.shade400
-                          : Colors.orange.shade700,
-                      size: 18,
+                      Icons.error_outline,
+                      color: theme.colorScheme.error,
+                      size: 16,
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Pending Verification',
+                      'Not Verified',
                       style: TextStyle(
-                        color: isDark
-                            ? Colors.orange.shade300
-                            : Colors.orange.shade800,
+                        color: theme.colorScheme.error,
                         fontWeight: FontWeight.w600,
-                        fontSize: 13,
+                        fontSize: 12,
                       ),
                     ),
                   ],

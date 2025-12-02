@@ -11,26 +11,17 @@ class SubscriptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final activeColor = Theme.of(context).colorScheme.primary;
     final inactiveColor =
         Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
 
     return Card(
-      elevation: isDark ? 3 : 2,
-      color: subscription.isActive
-          ? (isDark
-              ? activeColor.withOpacity(0.15)
-              : Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3))
-          : Theme.of(context).colorScheme.surfaceContainerHighest,
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surfaceContainer,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: subscription.isActive
-              ? activeColor.withOpacity(0.3)
-              : (isDark
-                  ? Colors.grey.withOpacity(0.2)
-                  : Colors.grey.withOpacity(0.3)),
+          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
           width: 1,
         ),
       ),

@@ -70,17 +70,23 @@ class LegalEducationScreen extends StatelessWidget {
               parent: BouncingScrollPhysics(),
             ),
             slivers: [
-              // Common SliverAppBar with clean design
-              const CommonSliverAppBar(
-                title: 'Legal Education',
-                expandedHeight: 120,
-              ),
-
-              // Professional Search Bar
-              SliverToBoxAdapter(
-                child: ProfessionalSearchBar(
-                  controller: controller,
-                  hintText: 'Search legal topics, laws, cases...',
+              // Simple compact SliverAppBar with search
+              SliverAppBar(
+                title: const Text('Legal Education'),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                floating: true,
+                pinned: true,
+                elevation: 0,
+                bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(60),
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: ProfessionalSearchBar(
+                      controller: controller,
+                      hintText: 'Search legal topics...',
+                    ),
+                  ),
                 ),
               ),
 

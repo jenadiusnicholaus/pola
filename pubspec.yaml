@@ -48,6 +48,9 @@ dependencies:
   # Pagination
   infinite_scroll_pagination: ^5.1.1
   
+  # Date Formatting & Internationalization
+  intl: ^0.19.0
+  
   # Secure Storage for JWT tokens
   flutter_secure_storage: ^9.0.0
   

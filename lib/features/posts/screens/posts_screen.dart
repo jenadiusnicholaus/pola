@@ -57,69 +57,6 @@ class _PostsScreenState extends State<PostsScreen> {
             foregroundColor: theme.colorScheme.onPrimary,
           ),
 
-          // Community Hub Description
-          SliverToBoxAdapter(
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.forum,
-                    color: theme.colorScheme.primary,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Community Forum',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Open discussions on legal topics, current affairs, and community matters.',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onPrimaryContainer,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Hub Stats
-                        Obx(() => Row(
-                              children: [
-                                _buildStatChip(
-                                  theme,
-                                  Icons.article_outlined,
-                                  '${controller.totalContent.value}',
-                                  'Posts',
-                                ),
-                                const SizedBox(width: 12),
-                                _buildStatChip(
-                                  theme,
-                                  Icons.people_outline,
-                                  '${controller.activeUsers.value}',
-                                  'Active',
-                                ),
-                              ],
-                            )),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
           // Content List
           SliverPadding(
             padding: const EdgeInsets.only(bottom: 80), // Space for FAB

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants/app_strings.dart';
-import '../../features/settings/screens/settings_screen.dart';
-import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/services/profile_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/token_storage_service.dart';
 import '../../features/consultation/services/consultation_service.dart';
 import '../../features/consultation/screens/consultant_profile_screen.dart';
 import '../../features/subscription/screens/subscription_plans_screen.dart';
+import '../../routes/app_routes.dart';
+import '../../features/navigation/controllers/main_navigation_controller.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -47,119 +47,168 @@ class AppDrawer extends StatelessWidget {
   }
 
   Widget _buildDrawerHeader(BuildContext context, ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    final profileService = Get.find<ProfileService>();
+
+    // Ensure profile is loaded
+    if (profileService.currentProfile == null) {
+      debugPrint('⚠️ Profile is null, fetching profile...');
+      profileService.fetchProfile();
+    }
+
+    final profile = profileService.currentProfile;
+
+    // Get user details
+    final firstName = profile?.firstName ?? '';
+    final lastName = profile?.lastName ?? '';
+    final userEmail = profile?.email ?? '';
+    final profilePicture = profile?.profilePicture;
+
+    // Build user name, fallback to email username if names are empty
+    String userName = 'User';
+    if (firstName.isNotEmpty || lastName.isNotEmpty) {
+      userName = '$firstName $lastName'.trim();
+    } else if (userEmail.isNotEmpty) {
+      // Use email username part as fallback
+      userName = userEmail.split('@').first;
+    }
+
+    // Get subscription status
+    final subscription = profile?.subscription;
+    String subscriptionBadge = 'Free';
+    Color badgeColor = theme.colorScheme.onSurfaceVariant;
+
+    if (subscription != null && subscription.isActive) {
+      if (subscription.isTrial) {
+        subscriptionBadge = 'Trial';
+        badgeColor = Colors.blue;
+      } else if (subscription.planType.toLowerCase().contains('premium')) {
+        subscriptionBadge = 'Premium';
+        badgeColor = Colors.amber;
+      } else if (subscription.planType.toLowerCase().contains('professional')) {
+        subscriptionBadge = 'Pro';
+        badgeColor = Colors.purple;
+      } else if (subscription.planType.toLowerCase() != 'free') {
+        subscriptionBadge = 'Plus';
+        badgeColor = theme.colorScheme.primary;
+      }
+    }
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            theme.colorScheme.primary,
-            theme.colorScheme.primary.withOpacity(0.8),
-          ],
+        color: isDark
+            ? theme.colorScheme.surfaceContainerHighest
+            : theme.colorScheme.surfaceContainer,
+        border: Border(
+          bottom: BorderSide(
+            color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+            width: 1,
+          ),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // User Profile Section
-          Row(
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: Row(
             children: [
+              // Profile Picture
               Container(
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.onPrimary.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(24),
+                  shape: BoxShape.circle,
+                  color: theme.colorScheme.primaryContainer,
                   border: Border.all(
-                    color: theme.colorScheme.onPrimary.withOpacity(0.3),
+                    color: theme.colorScheme.outline.withOpacity(0.2),
                     width: 2,
                   ),
                 ),
-                child: Icon(
-                  Icons.person_outline,
-                  size: 24,
-                  color: theme.colorScheme.onPrimary,
-                ),
+                child: profilePicture != null
+                    ? ClipOval(
+                        child: Image.network(
+                          profilePicture,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(
+                              Icons.person,
+                              size: 24,
+                              color: theme.colorScheme.onPrimaryContainer,
+                            );
+                          },
+                        ),
+                      )
+                    : Icon(
+                        Icons.person,
+                        size: 24,
+                        color: theme.colorScheme.onPrimaryContainer,
+                      ),
               ),
+
               const SizedBox(width: 12),
+
+              // User Info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
+                    // User Name
                     Text(
-                      'John Advocate',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: theme.colorScheme.onPrimary,
-                        fontWeight: FontWeight.bold,
+                      userName,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                        color: theme.colorScheme.onSurface,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
+
                     const SizedBox(height: 2),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
+
+                    // User Email
+                    Text(
+                      userEmail,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        fontSize: 11,
                       ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.onPrimary.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        'Premium Member',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onPrimary,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 10,
-                        ),
-                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
 
-          const SizedBox(height: 12),
-
-          // App Branding
-          Row(
-            children: [
+              // Subscription Badge (compact)
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.onPrimary.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  '⚖️',
-                  style: TextStyle(fontSize: 18),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppStrings.appName,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: theme.colorScheme.onPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  color: badgeColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: badgeColor.withOpacity(0.3),
+                    width: 1,
                   ),
-                  Text(
-                    'the lawyer you carry',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onPrimary.withOpacity(0.8),
-                      fontStyle: FontStyle.italic,
-                      fontSize: 11,
-                    ),
+                ),
+                child: Text(
+                  subscriptionBadge,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: badgeColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 10,
+                    letterSpacing: 0.5,
                   ),
-                ],
+                ),
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -174,7 +223,7 @@ class AppDrawer extends StatelessWidget {
           activeIcon: Icons.home,
           title: 'Home',
           subtitle: 'Dashboard & Overview',
-          onTap: () => _navigateAndClose(context, '/home'),
+          onTap: () => _navigateToTab(context, 0),
         ),
         _buildDrawerItem(
           context: context,
@@ -182,7 +231,7 @@ class AppDrawer extends StatelessWidget {
           activeIcon: Icons.forum,
           title: 'Community Posts',
           subtitle: 'Join discussions',
-          onTap: () => _navigateAndClose(context, '/'),
+          onTap: () => _navigateToTab(context, 1),
         ),
         _buildDrawerItem(
           context: context,
@@ -190,7 +239,7 @@ class AppDrawer extends StatelessWidget {
           activeIcon: Icons.bookmark,
           title: 'Bookmarks',
           subtitle: 'Saved content',
-          onTap: () => _navigateAndClose(context, '/bookmarks'),
+          onTap: () => _navigateToTab(context, 3),
         ),
         _buildDrawerItem(
           context: context,
@@ -198,7 +247,7 @@ class AppDrawer extends StatelessWidget {
           activeIcon: Icons.message,
           title: 'Messages',
           subtitle: 'Chat & conversations',
-          onTap: () => _navigateAndClose(context, '/messages'),
+          onTap: () => _navigateToTab(context, 4),
         ),
       ],
     );
@@ -209,28 +258,60 @@ class AppDrawer extends StatelessWidget {
     final userRole = tokenStorage.getUserRole()?.toLowerCase() ?? '';
     final isVerified = tokenStorage.isUserVerified();
 
-    // Only show for verified advocates, lawyers, paralegals, and law firms
-    final eligibleRoles = ['advocate', 'lawyer', 'paralegal', 'law_firm'];
-    final isEligible =
-        isVerified && eligibleRoles.any((role) => userRole.contains(role));
+    // Check role eligibility for different professional features
+    final isAdvocateOrLawyerOrFirm = isVerified &&
+        (userRole.contains('advocate') ||
+            userRole.contains('lawyer') ||
+            userRole.contains('law_firm'));
+    final isLegalProfessional = isVerified &&
+        ['advocate', 'lawyer', 'paralegal', 'law_firm']
+            .any((role) => userRole.contains(role));
+    final isStudent =
+        userRole.contains('law_student') || userRole.contains('lecturer');
 
-    if (!isEligible) {
+    // If no professional features available, don't show section
+    if (!isLegalProfessional && !isStudent) {
       return const SizedBox.shrink();
     }
 
     return Column(
       children: [
         _buildSectionHeader('Professional', theme),
-        _buildDrawerItem(
-          context: context,
-          icon: Icons.psychology_outlined,
-          activeIcon: Icons.psychology,
-          title: 'Consultation',
-          subtitle: 'Manage or apply',
-          badge: 'NEW',
-          badgeColor: Colors.green,
-          onTap: () => _handleConsultationTap(context),
-        ),
+
+        // Advocate Hub - for advocates, lawyers, and law firms
+        if (isAdvocateOrLawyerOrFirm)
+          _buildDrawerItem(
+            context: context,
+            icon: Icons.gavel_outlined,
+            activeIcon: Icons.gavel,
+            title: 'Advocate Hub',
+            subtitle: 'Professional resources',
+            onTap: () => _navigateAndClose(context, AppRoutes.advocatesHub),
+          ),
+
+        // Students Hub - for law students and lecturers
+        if (isStudent)
+          _buildDrawerItem(
+            context: context,
+            icon: Icons.school_outlined,
+            activeIcon: Icons.school,
+            title: 'Students Hub',
+            subtitle: 'Academic resources',
+            onTap: () => _navigateAndClose(context, AppRoutes.studentsHub),
+          ),
+
+        // Consultation - for all verified legal professionals
+        if (isLegalProfessional)
+          _buildDrawerItem(
+            context: context,
+            icon: Icons.psychology_outlined,
+            activeIcon: Icons.psychology,
+            title: 'Consultation',
+            subtitle: 'Manage or apply',
+            badge: 'NEW',
+            badgeColor: Colors.green,
+            onTap: () => _handleConsultationTap(context),
+          ),
       ],
     );
   }
@@ -245,14 +326,14 @@ class AppDrawer extends StatelessWidget {
           title: 'Document Scanner',
           subtitle: 'Scan & digitize documents',
           badge: 'NEW',
-          onTap: () => _showComingSoon(context, 'Document Scanner'),
+          onTap: () => _navigateToComingSoon(context, 'Document Scanner'),
         ),
         _buildDrawerItem(
           context: context,
           icon: Icons.search_outlined,
           title: 'Legal Research',
           subtitle: 'Search laws & cases',
-          onTap: () => _showComingSoon(context, 'Legal Research'),
+          onTap: () => _navigateToComingSoon(context, 'Legal Research'),
         ),
         _buildDrawerItem(
           context: context,
@@ -260,14 +341,14 @@ class AppDrawer extends StatelessWidget {
           title: 'AI Legal Assistant',
           subtitle: 'Get instant legal advice',
           badge: 'AI',
-          onTap: () => _showComingSoon(context, 'AI Legal Assistant'),
+          onTap: () => _navigateToComingSoon(context, 'AI Legal Assistant'),
         ),
         _buildDrawerItem(
           context: context,
           icon: Icons.library_books_outlined,
           title: 'Case Library',
           subtitle: 'Browse legal cases',
-          onTap: () => _showComingSoon(context, 'Case Library'),
+          onTap: () => _navigateToComingSoon(context, 'Case Library'),
         ),
       ],
     );
@@ -297,10 +378,7 @@ class AppDrawer extends StatelessWidget {
           activeIcon: Icons.person,
           title: 'Profile',
           subtitle: 'Manage your account',
-          onTap: () => _navigateAndClose(
-            context,
-            () => Get.to(() => const ProfileScreen()),
-          ),
+          onTap: () => _navigateAndClose(context, AppRoutes.profile),
         ),
         _buildDrawerItem(
           context: context,
@@ -308,10 +386,7 @@ class AppDrawer extends StatelessWidget {
           activeIcon: Icons.settings,
           title: 'Settings',
           subtitle: 'App preferences',
-          onTap: () => _navigateAndClose(
-            context,
-            () => Get.to(() => const SettingsScreen()),
-          ),
+          onTap: () => _navigateAndClose(context, AppRoutes.settings),
         ),
         if (showUpgrade)
           _buildDrawerItem(
@@ -322,10 +397,10 @@ class AppDrawer extends StatelessWidget {
             subtitle: 'Unlock all features',
             badge: 'PRO',
             badgeColor: Colors.amber,
-            onTap: () => _navigateAndClose(
-              context,
-              () => Get.to(() => const SubscriptionPlansScreen()),
-            ),
+            onTap: () {
+              Navigator.pop(context);
+              Get.to(() => const SubscriptionPlansScreen());
+            },
           ),
       ],
     );
@@ -340,14 +415,14 @@ class AppDrawer extends StatelessWidget {
           icon: Icons.help_outline,
           title: 'Help & Support',
           subtitle: 'Get assistance',
-          onTap: () => _navigateAndClose(context, '/help-support'),
+          onTap: () => _navigateAndClose(context, AppRoutes.helpSupport),
         ),
         _buildDrawerItem(
           context: context,
           icon: Icons.feedback_outlined,
           title: 'Send Feedback',
           subtitle: 'Share your thoughts',
-          onTap: () => _showComingSoon(context, 'Feedback'),
+          onTap: () => _navigateToComingSoon(context, 'Send Feedback'),
         ),
         _buildDrawerItem(
           context: context,
@@ -366,13 +441,13 @@ class AppDrawer extends StatelessWidget {
   Widget _buildSectionHeader(String title, ThemeData theme) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
       child: Text(
         title.toUpperCase(),
         style: theme.textTheme.labelSmall?.copyWith(
-          color: theme.colorScheme.primary,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.6,
+          color: theme.colorScheme.onSurface.withOpacity(0.6),
+          fontWeight: FontWeight.w600,
+          letterSpacing: 1.2,
           fontSize: 11,
         ),
       ),
@@ -392,7 +467,7 @@ class AppDrawer extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
       ),
@@ -402,24 +477,19 @@ class AppDrawer extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(10),
           onTap: onTap,
+          splashColor: theme.colorScheme.primary.withOpacity(0.1),
+          highlightColor: theme.colorScheme.primary.withOpacity(0.05),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: theme.colorScheme.primary,
-                    size: 16,
-                  ),
+                // Simple icon without background
+                Icon(
+                  icon,
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  size: 22,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -430,26 +500,36 @@ class AppDrawer extends StatelessWidget {
                             child: Text(
                               title,
                               style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 14.5,
+                                letterSpacing: 0.1,
+                                color: theme.colorScheme.onSurface,
                               ),
                             ),
                           ),
                           if (badge != null)
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 5,
-                                vertical: 1,
+                                horizontal: 6,
+                                vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: badgeColor ?? theme.colorScheme.primary,
-                                borderRadius: BorderRadius.circular(6),
+                                color: (badgeColor ?? theme.colorScheme.primary)
+                                    .withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color:
+                                      (badgeColor ?? theme.colorScheme.primary)
+                                          .withOpacity(0.3),
+                                  width: 1,
+                                ),
                               ),
                               child: Text(
                                 badge,
                                 style: theme.textTheme.labelSmall?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      badgeColor ?? theme.colorScheme.primary,
+                                  fontWeight: FontWeight.w600,
                                   fontSize: 9,
                                 ),
                               ),
@@ -484,57 +564,71 @@ class AppDrawer extends StatelessWidget {
 
   Widget _buildDrawerFooter(BuildContext context, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
+        color: theme.colorScheme.surface,
         border: Border(
           top: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.2),
+            color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+            width: 1,
           ),
         ),
       ),
       child: Column(
         children: [
-          InkWell(
-            onTap: () => _showLogoutConfirmation(context),
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.logout,
-                    size: 16,
-                    color: theme.colorScheme.error,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Sign Out',
-                    style: theme.textTheme.labelMedium?.copyWith(
+          // Logout button
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _showLogoutConfirmation(context),
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.logout_outlined,
+                      size: 18,
                       color: theme.colorScheme.error,
-                      fontWeight: FontWeight.w500,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 10),
+                    Text(
+                      'Sign Out',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: theme.colorScheme.error,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
+          // Version info
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 'Version 1.0.0',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.5),
-                  fontSize: 10,
+                  color: theme.colorScheme.onSurface.withOpacity(0.4),
+                  fontSize: 11,
+                ),
+              ),
+              Text(
+                ' • ',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withOpacity(0.4),
                 ),
               ),
               Text(
                 '© 2025 Pola',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.5),
-                  fontSize: 10,
+                  color: theme.colorScheme.onSurface.withOpacity(0.4),
+                  fontSize: 11,
                 ),
               ),
             ],
@@ -553,6 +647,13 @@ class AppDrawer extends StatelessWidget {
     }
   }
 
+  void _navigateToTab(BuildContext context, int tabIndex) {
+    Navigator.pop(context);
+    // Get the navigation controller and change to the specified tab
+    final navController = Get.find<MainNavigationController>();
+    navController.changePage(tabIndex);
+  }
+
   Future<void> _handleConsultationTap(BuildContext context) async {
     Navigator.pop(context); // Close drawer
 
@@ -565,15 +666,11 @@ class AppDrawer extends StatelessWidget {
     Get.to(() => const ConsultantProfileScreen());
   }
 
-  void _showComingSoon(BuildContext context, String feature) {
+  void _navigateToComingSoon(BuildContext context, String feature) {
     Navigator.pop(context);
-    Get.snackbar(
-      'Coming Soon',
-      '$feature will be available in future updates!',
-      icon: const Icon(Icons.schedule, color: Colors.white),
-      backgroundColor: Colors.blue,
-      colorText: Colors.white,
-      duration: const Duration(seconds: 3),
+    Get.toNamed(
+      AppRoutes.comingSoon,
+      parameters: {'feature': feature},
     );
   }
 

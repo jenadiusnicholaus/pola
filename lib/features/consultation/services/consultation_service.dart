@@ -49,17 +49,23 @@ class ConsultationService extends GetxService {
 
   /// Submit consultant application
   Future<ConsultationApplicationResult> submitApplication({
-    bool offersPhysicalConsultations = false,
+    bool? offersPhysicalConsultations,
     required bool termsAccepted,
   }) async {
     try {
       debugPrint('📤 Submitting consultant application...');
+      final data = {
+        'terms_accepted': termsAccepted,
+      };
+
+      // Only include physical consultations if explicitly provided (for law firms)
+      if (offersPhysicalConsultations != null) {
+        data['offers_physical_consultations'] = offersPhysicalConsultations;
+      }
+
       final response = await _apiService.post(
         EnvironmentConfig.consultationApplyUrl,
-        data: {
-          'offers_physical_consultations': offersPhysicalConsultations,
-          'terms_accepted': termsAccepted,
-        },
+        data: data,
       );
 
       debugPrint('📥 Application Response: ${response.statusCode}');
@@ -186,6 +192,41 @@ class ConsultationService extends GetxService {
     } catch (e) {
       debugPrint('❌ Error responding to review: $e');
       return false;
+    }
+  }
+
+  /// Get list of available consultants for booking
+  /// For advocates, lawyers, and paralegals: only mobile consultations
+  /// For other users: all consultation types
+  Future<List<ConsultantProfile>> getAvailableConsultants({
+    bool mobileOnly = false,
+    String? specialization,
+  }) async {
+    try {
+      debugPrint(
+          '🔍 Fetching available consultants (mobileOnly: $mobileOnly)...');
+      final queryParams = <String, dynamic>{};
+      if (mobileOnly) {
+        queryParams['offers_mobile'] = true;
+      }
+      if (specialization != null) {
+        queryParams['specialization'] = specialization;
+      }
+
+      final response = await _apiService.get(
+        '${EnvironmentConfig.baseUrl}/api/v1/consultants/',
+        queryParameters: queryParams,
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data['results'] ?? response.data;
+        return data.map((json) => ConsultantProfile.fromJson(json)).toList();
+      }
+
+      return [];
+    } catch (e) {
+      debugPrint('❌ Error fetching consultants: $e');
+      return [];
     }
   }
 }

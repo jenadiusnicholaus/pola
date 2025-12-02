@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../hubs_and_services/data.dart';
-import '../../../constants/app_colors.dart';
 import '../controllers/home_controller.dart';
 import '../../../services/token_storage_service.dart';
 import '../../hubs_and_services/hub_content/utils/user_role_manager.dart';
@@ -78,8 +77,7 @@ class HubsAndServicesList extends StatelessWidget {
             _buildSubsectionTitle(
                 context, 'Legal Hubs', Icons.hub, Colors.blue, hubs.length),
             const SizedBox(height: 16),
-            _buildItemsList(context, hubs.cast<Map<String, String>>(),
-                Colors.blue.withOpacity(0.1), Colors.blue),
+            _buildItemsList(context, hubs.cast<Map<String, String>>()),
             const SizedBox(height: 32),
           ],
 
@@ -88,8 +86,7 @@ class HubsAndServicesList extends StatelessWidget {
             _buildSubsectionTitle(context, 'Legal Services',
                 Icons.miscellaneous_services, Colors.green, services.length),
             const SizedBox(height: 16),
-            _buildItemsList(
-                context, services, Colors.green.withOpacity(0.1), Colors.green),
+            _buildItemsList(context, services),
           ],
         ],
       ),
@@ -101,49 +98,28 @@ class HubsAndServicesList extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: isDark
-              ? [
-                  AppColors.primaryAmber.withOpacity(0.2),
-                  AppColors.primaryAmber.withOpacity(0.08),
-                ]
-              : [
-                  AppColors.primaryAmber.withOpacity(0.12),
-                  AppColors.primaryAmber.withOpacity(0.04),
-                ],
-        ),
+        color: isDark
+            ? theme.colorScheme.surfaceContainerHighest
+            : theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark
-              ? AppColors.primaryAmber.withOpacity(0.4)
-              : AppColors.primaryAmber.withOpacity(0.25),
+          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? AppColors.primaryAmber.withOpacity(0.15)
-                : AppColors.primaryAmber.withOpacity(0.1),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.primaryAmber,
-              borderRadius: BorderRadius.circular(8),
+              color: theme.colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               Icons.account_balance,
-              color: isDark ? Colors.black87 : Colors.black,
+              color: theme.colorScheme.onPrimaryContainer,
               size: 24,
             ),
           ),
@@ -155,16 +131,19 @@ class HubsAndServicesList extends StatelessWidget {
                 Text(
                   'Legal Platform',
                   style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
                     color: theme.colorScheme.onSurface,
+                    letterSpacing: 0.2,
                   ),
                 ),
+                const SizedBox(height: 4),
                 Text(
                   'Access comprehensive legal resources and services',
                   style: TextStyle(
-                    fontSize: 14,
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    fontSize: 13,
+                    color: theme.colorScheme.onSurface.withOpacity(0.65),
+                    height: 1.3,
                   ),
                 ),
               ],
@@ -179,75 +158,55 @@ class HubsAndServicesList extends StatelessWidget {
       BuildContext context, String title, IconData icon, Color color,
       [int? count]) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Row(
       children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Icon(
-            icon,
-            color: color,
-            size: 18,
-          ),
+        Icon(
+          icon,
+          color: theme.colorScheme.primary,
+          size: 20,
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Text(
           title,
           style: TextStyle(
-            fontSize: 18,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: isDark
-                ? Color.lerp(color, Colors.white, 0.2)
-                : Color.lerp(color, Colors.black, 0.3),
+            color: theme.colorScheme.onSurface,
+            letterSpacing: 0.2,
           ),
         ),
         if (count != null) ...[
           const SizedBox(width: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(10),
+              color: theme.colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
               '$count',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: isDark
-                    ? Color.lerp(color, Colors.white, 0.3)
-                    : Color.lerp(color, Colors.black, 0.4),
+                color: theme.colorScheme.onPrimaryContainer,
               ),
             ),
           ),
         ],
-        const SizedBox(width: 8),
+        const SizedBox(width: 12),
         Expanded(
-          child: Container(
-            height: 1,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  color.withOpacity(0.3),
-                  color.withOpacity(0.05),
-                ],
-              ),
-            ),
+          child: Divider(
+            color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+            thickness: 1,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildItemsList(BuildContext context, List<Map<String, String>> items,
-      Color bgColor, Color accentColor) {
+  Widget _buildItemsList(
+      BuildContext context, List<Map<String, String>> items) {
     return Column(
       children: items.asMap().entries.map((entry) {
         final index = entry.key;
@@ -257,8 +216,6 @@ class HubsAndServicesList extends StatelessWidget {
         return _buildHubServiceItem(
           context,
           item,
-          bgColor,
-          accentColor,
           isLast,
         );
       }).toList(),
@@ -268,8 +225,6 @@ class HubsAndServicesList extends StatelessWidget {
   Widget _buildHubServiceItem(
     BuildContext context,
     Map<String, String> item,
-    Color bgColor,
-    Color accentColor,
     bool isLast,
   ) {
     final theme = Theme.of(context);
@@ -280,73 +235,58 @@ class HubsAndServicesList extends StatelessWidget {
     final type = item['type'] ?? '';
 
     return Container(
-      margin: EdgeInsets.only(bottom: isLast ? 0 : 12),
+      margin: EdgeInsets.only(bottom: isLast ? 0 : 10),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           onTap: () => _onItemTap(key, type),
-          splashColor: isDark
-              ? accentColor.withOpacity(0.2)
-              : accentColor.withOpacity(0.1),
-          highlightColor: isDark
-              ? accentColor.withOpacity(0.1)
-              : accentColor.withOpacity(0.05),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          splashColor: theme.colorScheme.primary.withOpacity(0.1),
+          highlightColor: theme.colorScheme.primary.withOpacity(0.05),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
-              color: isDark ? theme.colorScheme.surface : bgColor,
-              borderRadius: BorderRadius.circular(16),
+              color: isDark
+                  ? theme.colorScheme.surfaceContainerHighest
+                  : theme.colorScheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isDark
-                    ? theme.colorScheme.outline.withOpacity(0.3)
-                    : theme.colorScheme.outline.withOpacity(0.2),
-                width: 0.5,
+                color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+                width: 1,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: isDark
-                      ? Colors.black.withOpacity(0.3)
-                      : Colors.black.withOpacity(0.06),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
             ),
             child: Row(
               children: [
-                // Labels with separator
+                // Labels with separator - Swahili first, then English
                 Expanded(
                   child: RichText(
                     text: TextSpan(
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         height: 1.4,
                       ),
                       children: [
                         TextSpan(
-                          text: labelEng,
+                          text: labelSw,
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             color: theme.colorScheme.onSurface,
+                            letterSpacing: 0.1,
                           ),
                         ),
                         TextSpan(
                           text: ' | ',
                           style: TextStyle(
                             fontWeight: FontWeight.w400,
-                            color: isDark
-                                ? AppColors.primaryAmber.withOpacity(0.7)
-                                : Colors.red.withOpacity(0.7),
+                            color: theme.colorScheme.onSurface.withOpacity(0.4),
                           ),
                         ),
                         TextSpan(
-                          text: labelSw,
+                          text: labelEng,
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
-                            color: isDark ? AppColors.primaryAmber : Colors.red,
-                            fontStyle: FontStyle.italic,
+                            color:
+                                theme.colorScheme.onSurface.withOpacity(0.75),
                           ),
                         ),
                       ],
@@ -356,9 +296,9 @@ class HubsAndServicesList extends StatelessWidget {
 
                 // Subtle arrow icon
                 Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: theme.colorScheme.onSurface.withOpacity(0.4),
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: theme.colorScheme.onSurface.withOpacity(0.3),
                 ),
               ],
             ),
@@ -397,6 +337,9 @@ class HubsAndServicesList extends StatelessWidget {
         break;
       case 'forum':
         Get.toNamed('/forum-hub');
+        break;
+      case 'ask_a_legal_question':
+        Get.toNamed('/my-questions');
         break;
       default:
         // Show a snackbar for other items - will implement later
@@ -451,10 +394,10 @@ class HubsAndServicesList extends StatelessWidget {
     bool hasAccess = false;
     switch (hubKey) {
       case 'advocates':
-        // Only advocates and law firms can access (NOT lawyers/paralegals)
-        hasAccess = ['advocate', 'law_firm', 'admin'].contains(role);
+        // Advocates, lawyers, and law firms can access
+        hasAccess = ['advocate', 'lawyer', 'law_firm', 'admin'].contains(role);
         debugPrint(
-            '🔍 ACCESS CHECK: Advocates hub - checking if role "$role" in [advocate, law_firm, admin]: $hasAccess');
+            '🔍 ACCESS CHECK: Advocates hub - checking if role "$role" in [advocate, lawyer, law_firm, admin]: $hasAccess');
         break;
       case 'students':
         hasAccess = ['law_student', 'lecturer', 'admin'].contains(role);

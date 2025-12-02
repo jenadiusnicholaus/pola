@@ -100,6 +100,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       body: Obx(() => CustomScrollView(
             controller: controller.materialsScrollController,
@@ -107,133 +108,22 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
               parent: BouncingScrollPhysics(),
             ),
             slivers: [
-              // Topic-specific header
+              // Simple compact header
               SliverAppBar(
-                expandedHeight: 220,
-                pinned: true,
-                titleSpacing: 0,
-                backgroundColor:
-                    Theme.of(context).colorScheme.primary.withOpacity(0.95),
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                flexibleSpace: FlexibleSpaceBar(
-                  titlePadding:
-                      const EdgeInsets.only(left: 16, right: 140, bottom: 16),
-                  title: Text(
-                    _getTopicTitle(),
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onPrimary,
-                        ),
-                  ),
-                  background: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Theme.of(context).colorScheme.primary,
-                          Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withOpacity(0.8),
-                        ],
-                      ),
-                    ),
-                    child: SafeArea(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (_getTopicDescription().isNotEmpty) ...[
-                              const SizedBox(height: 60),
-                              Text(
-                                _getTopicDescription(),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onPrimary
-                                          .withOpacity(0.9),
-                                      fontSize: 14,
-                                      height: 1.4,
-                                    ),
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.library_books,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onPrimary
-                                      .withOpacity(0.9),
-                                  size: 16,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${controller.materials.length} materials',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelMedium
-                                      ?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onPrimary
-                                            .withOpacity(0.9),
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                ),
-                                if (selectedLanguage != null) ...[
-                                  const SizedBox(width: 16),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: selectedLanguage == 'en'
-                                          ? Colors.blue
-                                          : Colors.amber.shade700,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      selectedLanguage == 'en'
-                                          ? 'English'
-                                          : 'Kiswahili',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelSmall
-                                          ?.copyWith(
-                                            color: selectedLanguage == 'en'
-                                                ? Colors.white
-                                                : Colors.black,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                            const SizedBox(
-                                height: 48), // Space for pinned title
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+                title: Text(
+                  _getTopicTitle(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
+                floating: true,
+                pinned: true,
+                elevation: 0,
                 actions: [
-                  // Language toggle buttons as prominent action
+                  // Language toggle buttons
                   Container(
-                    margin: const EdgeInsets.only(right: 8, top: 8),
+                    margin: const EdgeInsets.only(right: 8),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

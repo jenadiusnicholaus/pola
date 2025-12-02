@@ -567,49 +567,45 @@ class HubContentCard extends StatelessWidget {
   /// Instagram-style image at the top of the post
   Widget _buildInstagramStyleImage(ThemeData theme) {
     debugPrint('📸 Building Instagram-style image for: "${content.fileUrl}"');
-    return Container(
-      margin:
-          const EdgeInsets.symmetric(horizontal: -16), // Extend to card edges
-      child: GestureDetector(
-        onTap: () => _openImageViewer(Get.context!),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: AspectRatio(
-            aspectRatio: 1.0, // Square like Instagram
-            child: Image.network(
-              content.fileUrl,
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  child: const Center(child: CircularProgressIndicator()),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
-                debugPrint('❌ Instagram image failed: "${content.fileUrl}"');
-                return Container(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.broken_image_outlined,
-                        size: 48,
+    return GestureDetector(
+      onTap: () => _openImageViewer(Get.context!),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: AspectRatio(
+          aspectRatio: 1.0, // Square like Instagram
+          child: Image.network(
+            content.fileUrl,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Container(
+                color: theme.colorScheme.surfaceContainerHighest,
+                child: const Center(child: CircularProgressIndicator()),
+              );
+            },
+            errorBuilder: (context, error, stackTrace) {
+              debugPrint('❌ Instagram image failed: "${content.fileUrl}"');
+              return Container(
+                color: theme.colorScheme.surfaceContainerHighest,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.broken_image_outlined,
+                      size: 48,
+                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Image not available',
+                      style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurface.withOpacity(0.5),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Image not available',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.5),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ),
       ),

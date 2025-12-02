@@ -17,28 +17,28 @@ class TopicCard extends StatelessWidget {
 
     return Row(
       children: [
-        // Left Button (English)
-        if (topic.name.isNotEmpty)
-          Flexible(
-            child: _buildCompactButton(
-              theme: theme,
-              label: topic.name,
-              onTap: () => onLanguageTap('english'),
-              color: Colors.blue,
-              isAvailable: true,
-            ),
-          ),
-
-        if (topic.name.isNotEmpty && topic.nameSw.isNotEmpty)
-          const SizedBox(width: 8),
-
-        // Right Button (Swahili)
+        // Left Button (Swahili) - Blue
         if (topic.nameSw.isNotEmpty)
           Flexible(
             child: _buildCompactButton(
               theme: theme,
               label: topic.nameSw,
               onTap: () => onLanguageTap('swahili'),
+              color: Colors.blue,
+              isAvailable: true,
+            ),
+          ),
+
+        if (topic.nameSw.isNotEmpty && topic.name.isNotEmpty)
+          const SizedBox(width: 8),
+
+        // Right Button (English) - Amber
+        if (topic.name.isNotEmpty)
+          Flexible(
+            child: _buildCompactButton(
+              theme: theme,
+              label: topic.name,
+              onTap: () => onLanguageTap('english'),
               color: Colors.amber.shade700,
               isAvailable: true,
             ),
@@ -58,30 +58,26 @@ class TopicCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: isAvailable ? onTap : null,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(20),
         child: Container(
           height: 32,
           decoration: BoxDecoration(
             border: Border.all(
-              color: isAvailable
-                  ? color.withOpacity(0.4)
-                  : Colors.grey.withOpacity(0.3),
+              color: color.withOpacity(0.3),
               width: 1,
             ),
-            borderRadius: BorderRadius.circular(6),
-            color: isAvailable
-                ? color.withOpacity(0.08)
-                : Colors.grey.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(20),
+            color: Colors.transparent,
           ),
           child: Center(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Text(
                 label,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: isAvailable ? color : Colors.grey,
+                  color: theme.colorScheme.onSurface,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
