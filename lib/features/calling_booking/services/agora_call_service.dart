@@ -33,12 +33,35 @@ class AgoraCallService {
   /// Request microphone permissions
   Future<bool> requestPermissions() async {
     try {
-      Map<Permission, PermissionStatus> statuses = await [
-        Permission.microphone,
-      ].request();
+      print('🎤 Checking microphone permission status...');
 
-      return statuses[Permission.microphone]!.isGranted;
+      // Check current status
+      var status = await Permission.microphone.status;
+      print('🎤 Current permission status: $status');
+
+      if (status.isGranted) {
+        print('✅ Microphone permission already granted');
+        return true;
+      }
+
+      if (status.isDenied) {
+        print('❓ Requesting microphone permission...');
+        status = await Permission.microphone.request();
+        print('🎤 Permission request result: $status');
+      }
+
+      if (status.isPermanentlyDenied) {
+        print(
+            '❌ Microphone permission permanently denied. Opening app settings...');
+        onError?.call(
+            'Microphone permission denied. Please enable it in app settings.');
+        await openAppSettings();
+        return false;
+      }
+
+      return status.isGranted;
     } catch (e) {
+      print('❌ Permission error: $e');
       onError?.call('Permission error: ${e.toString()}');
       return false;
     }
@@ -52,62 +75,97 @@ class AgoraCallService {
       }
 
       // Check Agora App ID
-      if (AgoraConfig.APP_ID == 'YOUR_AGORA_APP_ID_HERE') {
+      final appId = AgoraConfig.APP_ID;
+      if (appId.isEmpty || appId == 'YOUR_AGORA_APP_ID_HERE') {
         throw Exception(
-            'Please set your Agora App ID in lib/config/agora_config.dart');
+            'Agora App ID not configured. Please check your .env file.');
       }
+
+      print('🔑 Using Agora App ID: ${appId.substring(0, 8)}...');
+      print('🔑 App ID length: ${appId.length}');
+      print('🔑 Full App ID: $appId');
 
       // Create engine
       _engine = createAgoraRtcEngine();
 
+      print('📱 Created Agora RTC Engine');
+
       await _engine!.initialize(RtcEngineContext(
-        appId: AgoraConfig.APP_ID,
-        channelProfile: ChannelProfileType.channelProfileCommunication,
+        appId: appId,
       ));
 
+      print('✅ Agora RTC Engine initialized successfully');
+
       // Register event handlers
-      _engine!.registerEventHandler(
-        RtcEngineEventHandler(
-          onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-            print('✅ Successfully joined channel: ${connection.channelId}');
-            onJoinChannel?.call();
-          },
-          onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
-            print('👤 Consultant joined the call (UID: $remoteUid)');
-            onConsultantJoined?.call();
-          },
-          onUserOffline: (RtcConnection connection, int remoteUid,
-              UserOfflineReasonType reason) {
-            print('👤 Consultant left the call');
-            onConsultantLeft?.call();
-          },
-          onLeaveChannel: (RtcConnection connection, RtcStats stats) {
-            print('📞 Left channel');
-          },
-          onError: (ErrorCodeType err, String msg) {
-            print('❌ Call error: $msg');
-            onError?.call('Call error: $msg');
-          },
-          onConnectionLost: (RtcConnection connection) {
-            print('📡 Connection lost');
-            onError?.call('Connection lost. Please check your internet.');
-          },
-          onAudioQuality: (RtcConnection connection, int remoteUid,
-              QualityType quality, int delay, int lost) {
-            if (quality == QualityType.qualityBad ||
-                quality == QualityType.qualityPoor) {
-              print('⚠️ Poor audio quality detected');
-            }
-          },
-        ),
-      );
+      try {
+        print('📝 Registering event handlers...');
+        _engine!.registerEventHandler(
+          RtcEngineEventHandler(
+            onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
+              print('✅ Successfully joined channel: ${connection.channelId}');
+              onJoinChannel?.call();
+            },
+            onUserJoined:
+                (RtcConnection connection, int remoteUid, int elapsed) {
+              print('👤 Consultant joined the call (UID: $remoteUid)');
+              onConsultantJoined?.call();
+              // Start timer only when consultant joins
+              _startDurationTimer();
+            },
+            onUserOffline: (RtcConnection connection, int remoteUid,
+                UserOfflineReasonType reason) {
+              print('👤 Consultant left the call');
+              onConsultantLeft?.call();
+            },
+            onLeaveChannel: (RtcConnection connection, RtcStats stats) {
+              print('📞 Left channel');
+            },
+            onError: (ErrorCodeType err, String msg) {
+              print('❌ Call error: $msg');
+              onError?.call('Call error: $msg');
+            },
+            onConnectionLost: (RtcConnection connection) {
+              print('📡 Connection lost');
+              onError?.call('Connection lost. Please check your internet.');
+            },
+            onAudioQuality: (RtcConnection connection, int remoteUid,
+                QualityType quality, int delay, int lost) {
+              if (quality == QualityType.qualityBad ||
+                  quality == QualityType.qualityPoor) {
+                print('⚠️ Poor audio quality detected');
+              }
+            },
+          ),
+        );
+        print('✅ Event handlers registered');
+      } catch (e) {
+        print('❌ Event handler registration failed: $e');
+        throw Exception('Event handler registration failed: $e');
+      }
 
       // Configure audio settings
-      await _engine!.enableAudio();
-      await _engine!.setEnableSpeakerphone(_isSpeakerOn);
+      try {
+        print('🔊 Enabling audio...');
+        await _engine!.enableAudio();
+        print('✅ Audio enabled');
+      } catch (e) {
+        print('❌ Enable audio failed: $e');
+        throw Exception('Enable audio failed: $e');
+      }
+
+      try {
+        print('📢 Setting speaker mode...');
+        await _engine!.setEnableSpeakerphone(_isSpeakerOn);
+        print('✅ Speaker mode set');
+      } catch (e) {
+        print('⚠️ Set speaker mode failed (non-critical): $e');
+        // Non-blocking - speaker mode can be adjusted later
+      }
 
       _isInitialized = true;
+      print('🎉 Agora initialization complete!');
     } catch (e) {
+      print('❌ Agora initialization error: $e');
       onError?.call('Failed to initialize Agora: ${e.toString()}');
       rethrow;
     }
@@ -137,8 +195,8 @@ class AgoraCallService {
         ),
       );
 
-      // Start duration timer
-      _startDurationTimer();
+      // Don't start timer yet - wait for consultant to join
+      print('⏳ Waiting for consultant to join before starting timer...');
     } catch (e) {
       onError?.call('Failed to join channel: ${e.toString()}');
       rethrow;

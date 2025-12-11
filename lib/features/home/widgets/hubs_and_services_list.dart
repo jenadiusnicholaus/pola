@@ -344,6 +344,9 @@ class HubsAndServicesList extends StatelessWidget {
       case 'talk_to_lawyers':
         Get.toNamed('/consultants');
         break;
+      case 'legal_templates':
+        Get.toNamed('/templates');
+        break;
       default:
         // Show a snackbar for other items - will implement later
         Get.snackbar(

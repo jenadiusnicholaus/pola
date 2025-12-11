@@ -54,7 +54,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.workspace_premium,
                             color: Colors.amber,
                             size: 28,

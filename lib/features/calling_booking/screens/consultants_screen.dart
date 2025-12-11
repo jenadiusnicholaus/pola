@@ -102,134 +102,142 @@ class ConsultantsScreen extends StatelessWidget {
           width: 1,
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header: Name and Rating
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        consultant.userDetails.fullName,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${consultant.consultantType.toUpperCase()} • ${consultant.yearsOfExperience}yrs',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Rating badge
-                if (consultant.averageRating > 0)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+      child: InkWell(
+        onTap: () {
+          Get.toNamed('/consultant-detail',
+              arguments: {'consultant': consultant});
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header: Name and Rating
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.star,
-                          size: 13,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 3),
                         Text(
-                          consultant.averageRating.toStringAsFixed(1),
+                          consultant.userDetails.fullName,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${consultant.consultantType.toUpperCase()} • ${consultant.yearsOfExperience}yrs',
                           style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: theme.colorScheme.onSurface,
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurface.withOpacity(0.6),
                           ),
                         ),
                       ],
                     ),
                   ),
-              ],
-            ),
-
-            // Specialization
-            if (consultant.specialization.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                consultant.specialization,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: theme.colorScheme.onSurface.withOpacity(0.7),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-
-            const SizedBox(height: 12),
-
-            // Action Buttons based on what consultant offers
-            Row(
-              children: [
-                // Mobile Call button
-                if (consultant.offersMobileConsultations)
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _handleCallConsultant(consultant),
-                      icon: const Icon(Icons.phone, size: 14),
-                      label: const Text('Call', style: TextStyle(fontSize: 13)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.colorScheme.primary,
-                        foregroundColor: theme.colorScheme.onPrimary,
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 8, horizontal: 12),
-                        minimumSize: const Size(0, 36),
+                  // Rating badge
+                  if (consultant.averageRating > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.star,
+                            size: 13,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            consultant.averageRating.toStringAsFixed(1),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
+                ],
+              ),
 
-                // Physical consultation button
-                if (consultant.offersPhysicalConsultations) ...[
+              // Specialization
+              if (consultant.specialization.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  consultant.specialization,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+
+              const SizedBox(height: 12),
+
+              // Action Buttons based on what consultant offers
+              Row(
+                children: [
+                  // Mobile Call button
                   if (consultant.offersMobileConsultations)
-                    const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _handleBookConsultation(consultant),
-                      icon: Icon(Icons.location_on,
-                          size: 14, color: theme.colorScheme.onSurface),
-                      label: Text(
-                        'Book',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: theme.colorScheme.onSurface,
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => _handleCallConsultant(consultant),
+                        icon: const Icon(Icons.phone, size: 14),
+                        label:
+                            const Text('Call', style: TextStyle(fontSize: 13)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: theme.colorScheme.primary,
+                          foregroundColor: theme.colorScheme.onPrimary,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 8, horizontal: 12),
+                          minimumSize: const Size(0, 36),
                         ),
                       ),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: theme.colorScheme.outline),
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 8, horizontal: 12),
-                        minimumSize: const Size(0, 36),
+                    ),
+
+                  // Physical consultation button
+                  if (consultant.offersPhysicalConsultations) ...[
+                    if (consultant.offersMobileConsultations)
+                      const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _handleBookConsultation(consultant),
+                        icon: Icon(Icons.location_on,
+                            size: 14, color: theme.colorScheme.onSurface),
+                        label: Text(
+                          'Book',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: theme.colorScheme.outline),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 8, horizontal: 12),
+                          minimumSize: const Size(0, 36),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );

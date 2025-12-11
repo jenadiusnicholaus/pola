@@ -35,11 +35,12 @@ class _CallScreenState extends State<CallScreen> {
       // Initialize controller
       controller = Get.put(CallController());
 
-      // Start call immediately in background (WhatsApp-style)
-      // UI shows immediately, errors are handled with toasts
-      if (consultant != null && controller != null) {
-        controller!.initiateCall(consultant!);
-      }
+      // Start call
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (consultant != null && controller != null) {
+          controller!.initiateCall(consultant!);
+        }
+      });
     } catch (e) {
       print('Error initializing call screen: $e');
       _hasError = true;
@@ -109,19 +110,43 @@ class _CallScreenState extends State<CallScreen> {
                       : 'Call Failed')
                   : 'Voice Call',
             ),
-            leading: BackButton(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
               onPressed: () {
-                // Always end the call and go back
-                controller?.endCall();
-                Get.back();
+                // If there's an error, go back directly
+                if (controller!.error.value.isNotEmpty) {
+                  Get.back();
+                } else {
+                  // If call is in progress, show end call dialog
+                  _showEndCallDialog();
+                }
               },
             ),
           ),
           body: SafeArea(
             child: Obx(() {
-              // Show error screen only for critical errors (insufficient credits)
-              if (controller!.error.value.isNotEmpty &&
-                  controller!.isInsufficientCreditsError) {
+              // Show loading while checking credits
+              if (controller!.isCheckingCredits.value) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Checking credits...',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              // Show error if any
+              if (controller!.error.value.isNotEmpty) {
                 return SingleChildScrollView(
                   padding: const EdgeInsets.all(24),
                   child: Column(
@@ -453,9 +478,9 @@ class _CallScreenState extends State<CallScreen> {
                         const SizedBox(height: 24),
                         // Call status
                         Text(
-                          controller!.isConsultantConnected.value
+                          controller!.isCallConnected.value
                               ? 'Connected'
-                              : 'Ringing...',
+                              : 'Connecting...',
                           style: TextStyle(
                             fontSize: 16,
                             color: theme.colorScheme.onSurface.withOpacity(0.6),

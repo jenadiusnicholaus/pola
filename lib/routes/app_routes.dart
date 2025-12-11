@@ -19,7 +19,11 @@ import '../features/questions/screens/my_questions_screen.dart';
 import '../features/questions/screens/ask_question_screen.dart';
 import '../features/questions/screens/question_detail_screen.dart';
 import '../features/calling_booking/screens/consultants_screen.dart';
+import '../features/calling_booking/screens/consultant_detail_screen.dart';
 import '../features/calling_booking/screens/call_screen.dart';
+import '../features/calling_booking/screens/payment_screen.dart';
+import '../features/doc_templates/screens/templates_list_screen.dart';
+import '../features/doc_templates/screens/generated_documents_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -43,7 +47,11 @@ class AppRoutes {
   static const String askQuestion = '/ask-question';
   static const String questionDetail = '/question-detail';
   static const String consultants = '/consultants';
+  static const String consultantDetail = '/consultant-detail';
   static const String call = '/call';
+  static const String payment = '/payment';
+  static const String templates = '/templates';
+  static const String myDocuments = '/my-documents';
 
   static List<GetPage> routes = [
     GetPage(
@@ -136,8 +144,24 @@ class AppRoutes {
       page: () => const ConsultantsScreen(),
     ),
     GetPage(
+      name: consultantDetail,
+      page: () => const ConsultantDetailScreen(),
+    ),
+    GetPage(
       name: call,
       page: () => const CallScreen(),
+    ),
+    GetPage(
+      name: payment,
+      page: () => const PaymentScreen(),
+    ),
+    GetPage(
+      name: templates,
+      page: () => const TemplatesListScreen(),
+    ),
+    GetPage(
+      name: myDocuments,
+      page: () => const GeneratedDocumentsScreen(),
     ),
   ];
 

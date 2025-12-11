@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/consultant_models.dart';
 import '../services/call_service.dart';
@@ -10,6 +11,7 @@ class CallController extends GetxController {
   // Observable state
   var isCheckingCredits = false.obs;
   var isCallConnected = false.obs;
+  var isConsultantConnected = false.obs; // NEW: Track if consultant joined
   var error = ''.obs;
   var callDuration = '00:00'.obs;
   var creditsRemaining = 0.obs;
@@ -17,8 +19,30 @@ class CallController extends GetxController {
   var isSpeakerOn = false.obs;
   var availableBundles = <CreditBundle>[].obs;
   var showBundlesDialog = false.obs;
+  var selectedBundleId = Rxn<int>();
 
   Consultant? _currentConsultant;
+  DateTime? _callStartTime; // Track when both parties connected
+
+  // Check if current error is related to insufficient credits
+  bool get isInsufficientCreditsError {
+    return availableBundles.isNotEmpty ||
+        error.value.toLowerCase().contains('credit') ||
+        error.value.toLowerCase().contains('insufficient');
+  }
+
+  void selectBundle(int bundleId) {
+    selectedBundleId.value = bundleId;
+  }
+
+  CreditBundle? get selectedBundle {
+    if (selectedBundleId.value == null) return null;
+    try {
+      return availableBundles.firstWhere((b) => b.id == selectedBundleId.value);
+    } catch (e) {
+      return null;
+    }
+  }
 
   @override
   void onInit() {
@@ -40,13 +64,24 @@ class CallController extends GetxController {
     // Error callback
     _agoraService.onError = (errorMessage) {
       error.value = errorMessage;
-      Get.back();
-      Get.snackbar(
-        'Call Error',
-        errorMessage,
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 3),
-      );
+      if (Get.isRegistered<CallController>()) {
+        Get.back();
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (Get.context != null) {
+            ScaffoldMessenger.of(Get.context!).showSnackBar(
+              SnackBar(
+                content: Text(
+                  errorMessage.isNotEmpty
+                      ? errorMessage
+                      : 'An error occurred during the call',
+                ),
+                backgroundColor: Colors.red.shade700,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        });
+      }
     };
 
     // Join channel callback
@@ -57,27 +92,21 @@ class CallController extends GetxController {
 
     // Consultant joined callback
     _agoraService.onConsultantJoined = () {
-      print('Consultant has joined the call');
-      Get.snackbar(
-        'Connected',
-        '${_currentConsultant?.userDetails.fullName ?? "Consultant"} has joined',
-        snackPosition: SnackPosition.TOP,
-        duration: const Duration(seconds: 2),
-      );
+      print('👤 Consultant has joined the call');
+      isConsultantConnected.value = true;
+      _callStartTime = DateTime.now();
+      // TODO: Start call recording here once recording is implemented
+      print('📞 Both parties connected - ready to record');
     };
 
     // Consultant left callback
     _agoraService.onConsultantLeft = () {
       print('Consultant has left the call');
-      Get.snackbar(
-        'Call Ended',
-        'The consultant has left the call',
-        snackPosition: SnackPosition.TOP,
-        duration: const Duration(seconds: 2),
-      );
       // Auto end call when consultant leaves
-      Future.delayed(const Duration(seconds: 1), () {
-        endCall();
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (Get.isRegistered<CallController>()) {
+          endCall();
+        }
       });
     };
   }
@@ -95,8 +124,9 @@ class CallController extends GetxController {
       if (!creditCheck.hasCredits) {
         // Store available bundles for display
         availableBundles.value = creditCheck.availableBundles;
-        error.value = creditCheck.message ??
-            'You don\'t have enough credits to make this call.';
+        error.value = creditCheck.message.isNotEmpty
+            ? creditCheck.message
+            : 'You don\'t have enough credits to make this call.';
         showBundlesDialog.value = creditCheck.availableBundles.isNotEmpty;
         isCheckingCredits.value = false;
         return;
@@ -105,29 +135,71 @@ class CallController extends GetxController {
       creditsRemaining.value = creditCheck.availableMinutes;
       print('Credits available: ${creditCheck.availableMinutes} minutes');
 
-      // Step 2: Initialize Agora
+      // Step 2: Initialize Agora (non-blocking)
       print('Initializing Agora...');
-      await _agoraService.initializeAgora();
-
-      // Step 3: Request permissions
-      print('Requesting microphone permission...');
-      final hasPermission = await _agoraService.requestPermissions();
-      if (!hasPermission) {
-        error.value = 'Microphone permission is required to make calls.';
+      try {
+        await _agoraService.initializeAgora();
+      } catch (agoraError) {
+        print('Agora initialization failed: $agoraError');
         isCheckingCredits.value = false;
+        // Show toast instead of blocking UI
+        if (Get.context != null) {
+          ScaffoldMessenger.of(Get.context!).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to initialize call. Please try again.'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        Get.back();
         return;
       }
 
-      // Step 4: Join call channel
+      // Step 3: Check/Request permissions (non-blocking)
+      print('Checking microphone permission...');
+      final hasPermission = await _agoraService.requestPermissions();
+      if (!hasPermission) {
+        print(
+            '⚠️ Permission not granted, but continuing - Agora will request it');
+        // Don't block - Agora SDK will request permission when joining channel
+      }
+
+      // Step 4: Join call channel (Agora will request permission if needed)
       print('Joining call channel...');
-      await _agoraService.joinChannel(consultant.id);
+      try {
+        await _agoraService.joinChannel(consultant.id);
+      } catch (joinError) {
+        print('Failed to join channel: $joinError');
+        if (Get.context != null) {
+          ScaffoldMessenger.of(Get.context!).showSnackBar(
+            const SnackBar(
+              content: Text('Could not connect to call. Please try again.'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        Get.back();
+        return;
+      }
 
       isCheckingCredits.value = false;
       print('Call initiated successfully');
     } catch (e) {
       print('Error initiating call: $e');
-      error.value = 'Failed to start call: ${e.toString()}';
       isCheckingCredits.value = false;
+      // Show toast for unexpected errors
+      if (Get.context != null) {
+        ScaffoldMessenger.of(Get.context!).showSnackBar(
+          const SnackBar(
+            content: Text('An unexpected error occurred. Please try again.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      Get.back();
     }
   }
 
@@ -152,24 +224,36 @@ class CallController extends GetxController {
       await _agoraService.endCall(recordCall: true);
 
       // Navigate back
-      Get.back();
+      if (Get.isRegistered<CallController>()) {
+        Get.back();
 
-      // Show completion message
-      Get.snackbar(
-        'Call Ended',
-        'Your call has been recorded and credits have been deducted.',
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 3),
-      );
+        // Show completion message after navigation
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (Get.context != null) {
+            Get.snackbar(
+              'Call Ended',
+              'Your call has been recorded and credits have been deducted.',
+              snackPosition: SnackPosition.BOTTOM,
+              duration: const Duration(seconds: 3),
+            );
+          }
+        });
+      }
     } catch (e) {
       print('Error ending call: $e');
-      Get.back();
-      Get.snackbar(
-        'Error',
-        'Failed to properly end call: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 3),
-      );
+      if (Get.isRegistered<CallController>()) {
+        Get.back();
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (Get.context != null) {
+            Get.snackbar(
+              'Error',
+              'Failed to properly end call: ${e.toString()}',
+              snackPosition: SnackPosition.BOTTOM,
+              duration: const Duration(seconds: 3),
+            );
+          }
+        });
+      }
     }
   }
 
@@ -177,16 +261,22 @@ class CallController extends GetxController {
     print('Call ended. Duration: $durationSeconds seconds');
 
     // Navigate back
-    Get.back();
+    if (Get.isRegistered<CallController>()) {
+      Get.back();
 
-    // Show summary
-    final minutes = (durationSeconds / 60).ceil();
-    Get.snackbar(
-      'Call Completed',
-      'Call duration: ${callDuration.value}\nCredits used: $minutes minute(s)',
-      snackPosition: SnackPosition.BOTTOM,
-      duration: const Duration(seconds: 4),
-    );
+      // Show summary after navigation
+      final minutes = (durationSeconds / 60).ceil();
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (Get.context != null) {
+          Get.snackbar(
+            'Call Completed',
+            'Call duration: ${callDuration.value}\nCredits used: $minutes minute(s)',
+            snackPosition: SnackPosition.BOTTOM,
+            duration: const Duration(seconds: 4),
+          );
+        }
+      });
+    }
   }
 
   @override

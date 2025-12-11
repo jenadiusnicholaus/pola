@@ -1,8 +1,9 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class AgoraConfig {
   // Get this from console.agora.io
-  // For development, you can use the App ID directly
-  // For production, implement token generation on backend
-  static const String APP_ID = 'YOUR_AGORA_APP_ID_HERE';
+  // Loaded from .env file for security
+  static String get APP_ID => dotenv.env['APP_ID'] ?? '';
 
   // Token is empty for testing (configure in Agora Console)
   // For production, get token from your backend

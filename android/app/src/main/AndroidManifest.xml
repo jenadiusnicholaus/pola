@@ -3,6 +3,16 @@
     <!-- Internet permission for API calls -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    
+    <!-- Agora voice call permissions -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- The Agora SDK requires Bluetooth permissions in case users are using Bluetooth devices -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <!-- For Android 12 and above devices -->
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     
     <!-- File and camera permissions for document upload -->
     <uses-permission android:name="android.permission.CAMERA" />
