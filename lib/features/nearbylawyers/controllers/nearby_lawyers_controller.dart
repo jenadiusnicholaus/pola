@@ -10,12 +10,8 @@ class NearbyLawyersController extends GetxController {
   final _isLoading = false.obs;
   final _error = Rx<String?>(null);
   final _radius = 20.0.obs;
-  final _selectedTypes = <String>[
-    'advocate',
-    'lawyer',
-    'paralegal',
-    'law_firm'
-  ].obs;
+  final _selectedTypes =
+      <String>['advocate', 'lawyer', 'paralegal', 'law_firm'].obs;
   final _userLocation = Rx<UserLocation?>(null);
 
   List<NearbyLawyer> get lawyers => _lawyers;
@@ -87,7 +83,11 @@ class NearbyLawyersController extends GetxController {
   /// Filter lawyers by specialization
   List<NearbyLawyer> filterBySpecialization(String specialization) {
     return _lawyers
-        .where((lawyer) => lawyer.specialization?.toLowerCase().contains(specialization.toLowerCase()) ?? false)
+        .where((lawyer) =>
+            lawyer.specialization
+                ?.toLowerCase()
+                .contains(specialization.toLowerCase()) ??
+            false)
         .toList();
   }
 

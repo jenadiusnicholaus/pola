@@ -31,7 +31,8 @@ class DeviceRegistrationService extends GetxService {
 
       // If location is missing, note it but continue (location is optional)
       if (deviceInfo.latitude == null || deviceInfo.longitude == null) {
-        debugPrint('⚠️ Location not available, registering without it (can update later)');
+        debugPrint(
+            '⚠️ Location not available, registering without it (can update later)');
       }
 
       // Register device with backend

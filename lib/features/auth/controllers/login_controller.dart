@@ -403,7 +403,6 @@ class LoginController extends GetxController {
       // Register device with all available info
       await deviceRegistrationService.registerDevice();
       debugPrint('✅ Device registration completed');
-      
     } catch (e) {
       debugPrint('⚠️ Device registration failed (non-blocking): $e');
       // Don't show error to user - this is a background operation

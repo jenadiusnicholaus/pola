@@ -55,11 +55,11 @@ class DeviceInfoService {
     }
   }
 
-/// Get device location
+  /// Get device location
   Future<Position?> getLocation({int maxRetries = 1}) async {
     try {
       debugPrint('📍 Checking location availability...');
-      
+
       // Check if location services are enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
@@ -70,12 +70,12 @@ class DeviceInfoService {
       // Check location permission
       LocationPermission permission = await Geolocator.checkPermission();
       debugPrint('📍 Current permission status: $permission');
-      
+
       if (permission == LocationPermission.denied) {
         debugPrint('📍 Requesting location permission...');
         permission = await Geolocator.requestPermission();
         debugPrint('📍 Permission after request: $permission');
-        
+
         if (permission == LocationPermission.denied) {
           debugPrint('⚠️ Location permission denied by user');
           return null;
@@ -95,7 +95,8 @@ class DeviceInfoService {
         timeLimit: Duration(seconds: 15),
       );
 
-      debugPrint('✅ Location obtained: ${position.latitude}, ${position.longitude}');
+      debugPrint(
+          '✅ Location obtained: ${position.latitude}, ${position.longitude}');
       return position;
     } catch (e) {
       debugPrint('⚠️ Could not get location: $e');

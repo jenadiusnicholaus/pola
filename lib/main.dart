@@ -78,7 +78,8 @@ Future<void> _requestLocationPermission() async {
 void _scheduleLocationUpdate() {
   // Disabled for emulators - location can be updated manually when needed
   // Emulators often don't have proper GPS and cause timeouts
-  debugPrint('📍 Background location update disabled (use manual update if needed)');
+  debugPrint(
+      '📍 Background location update disabled (use manual update if needed)');
 }
 
 void main() async {

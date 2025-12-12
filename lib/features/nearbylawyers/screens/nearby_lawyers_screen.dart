@@ -32,11 +32,15 @@ class NearbyLawyersScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error.withOpacity(0.5)),
+                Icon(Icons.error_outline,
+                    size: 64, color: theme.colorScheme.error.withOpacity(0.5)),
                 SizedBox(height: 16),
                 Text(
                   controller.error!,
-                  style: TextStyle(fontSize: 16, color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7)),
+                  style: TextStyle(
+                      fontSize: 16,
+                      color:
+                          theme.textTheme.bodyMedium?.color?.withOpacity(0.7)),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 16),
@@ -56,7 +60,9 @@ class NearbyLawyersScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.location_off, size: 64, color: theme.colorScheme.onSurface.withOpacity(0.3)),
+                Icon(Icons.location_off,
+                    size: 64,
+                    color: theme.colorScheme.onSurface.withOpacity(0.3)),
                 SizedBox(height: 16),
                 Text(
                   'No lawyers found nearby',
@@ -65,7 +71,9 @@ class NearbyLawyersScreen extends StatelessWidget {
                 SizedBox(height: 8),
                 Text(
                   'Try increasing the search radius',
-                  style: TextStyle(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7)),
+                  style: TextStyle(
+                      color:
+                          theme.textTheme.bodyMedium?.color?.withOpacity(0.7)),
                 ),
                 SizedBox(height: 24),
                 ElevatedButton(
@@ -106,10 +114,11 @@ class NearbyLawyersScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, NearbyLawyersController controller) {
+  Widget _buildHeader(
+      BuildContext context, NearbyLawyersController controller) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       padding: EdgeInsets.all(16),
@@ -123,7 +132,8 @@ class NearbyLawyersScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.location_on, color: theme.colorScheme.primary, size: 20),
+              Icon(Icons.location_on,
+                  color: theme.colorScheme.primary, size: 20),
               SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -162,7 +172,7 @@ class NearbyLawyersScreen extends StatelessWidget {
   Widget _buildViewOnMapButton(
       BuildContext context, NearbyLawyersController controller) {
     final theme = Theme.of(context);
-    
+
     return Positioned(
       bottom: 16,
       left: 16,
@@ -191,7 +201,8 @@ class NearbyLawyersScreen extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.map_outlined, color: theme.colorScheme.primary, size: 20),
+                  Icon(Icons.map_outlined,
+                      color: theme.colorScheme.primary, size: 20),
                   SizedBox(width: 10),
                   Text(
                     'View on Map',
@@ -324,7 +335,7 @@ class _LawyerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Card(
       margin: EdgeInsets.only(bottom: 16),
       elevation: isDark ? 1 : 2,
@@ -335,188 +346,200 @@ class _LawyerCard extends StatelessWidget {
           return InkWell(
             borderRadius: BorderRadius.circular(12),
             onTap: () {
-              final consultant = NearbyLawyersScreen._convertToConsultant(lawyer);
-              Get.toNamed('/consultant-detail', arguments: {'consultant': consultant});
+              final consultant =
+                  NearbyLawyersScreen._convertToConsultant(lawyer);
+              Get.toNamed('/consultant-detail',
+                  arguments: {'consultant': consultant});
             },
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with profile picture and basic info
-              Row(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                    backgroundImage: lawyer.profilePicture != null
-                        ? NetworkImage(lawyer.profilePicture!)
-                        : null,
-                    child: lawyer.profilePicture == null
-                        ? Text(
-                            lawyer.getUserTypeIcon(),
-                            style: TextStyle(fontSize: 24),
-                          )
-                        : null,
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          lawyer.name ?? 'Unknown',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Row(
+                  // Header with profile picture and basic info
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundColor:
+                            theme.colorScheme.surfaceContainerHighest,
+                        backgroundImage: lawyer.profilePicture != null
+                            ? NetworkImage(lawyer.profilePicture!)
+                            : null,
+                        child: lawyer.profilePicture == null
+                            ? Text(
+                                lawyer.getUserTypeIcon(),
+                                style: TextStyle(fontSize: 24),
+                              )
+                            : null,
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                lawyer.getUserTypeLabel(),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            Text(
+                              lawyer.name ?? 'Unknown',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            SizedBox(width: 8),
-                            Icon(Icons.location_on,
-                                size: 14, color: theme.colorScheme.onSurfaceVariant),
-                            Text(
-                              '${lawyer.distanceKm.toStringAsFixed(1)}km',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
+                            SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: theme
+                                        .colorScheme.surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    lawyer.getUserTypeLabel(),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Icon(Icons.location_on,
+                                    size: 14,
+                                    color: theme.colorScheme.onSurfaceVariant),
+                                Text(
+                                  '${lawyer.distanceKm.toStringAsFixed(1)}km',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              // Specialization
-              if (lawyer.specialization != null) ...[
-                SizedBox(height: 12),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainer,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    lawyer.specialization!,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-              ],
-
-              // Experience
-              if (lawyer.yearsOfExperience != null) ...[
-                SizedBox(width: 16),
-                Row(
-                  children: [
-                    Icon(Icons.work_outline, size: 14, color: theme.colorScheme.onSurfaceVariant),
-                    SizedBox(width: 4),
-                    Text(
-                      '${lawyer.yearsOfExperience} years experience',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.colorScheme.onSurfaceVariant,
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
 
-              // Location
-              if (lawyer.location.officeAddress != null) ...[
-                SizedBox(height: 8),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.location_city, size: 14, color: theme.colorScheme.onSurfaceVariant),
-                    SizedBox(width: 4),
-                    Expanded(
+                  // Specialization
+                  if (lawyer.specialization != null) ...[
+                    SizedBox(height: 12),
+                    Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       child: Text(
-                        lawyer.location.officeAddress!,
+                        lawyer.specialization!,
                         style: TextStyle(
                           fontSize: 12,
-                          color: theme.colorScheme.onSurfaceVariant,
+                          color: theme.colorScheme.onSurface,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
-                ),
-              ],
 
-              // Action buttons
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  // Call button - only show if mobile consultations offered
-                  if (lawyer.offersMobileConsultations) ...[
-                    OutlinedButton.icon(
-                      onPressed: () => _callLawyer(lawyer),
-                      icon: Icon(Icons.phone, size: 16),
-                      label: Text('Call', style: TextStyle(fontSize: 13)),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: theme.colorScheme.primary,
-                        side: BorderSide(color: theme.colorScheme.outline),
-                        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      ),
+                  // Experience
+                  if (lawyer.yearsOfExperience != null) ...[
+                    SizedBox(width: 16),
+                    Row(
+                      children: [
+                        Icon(Icons.work_outline,
+                            size: 14,
+                            color: theme.colorScheme.onSurfaceVariant),
+                        SizedBox(width: 4),
+                        Text(
+                          '${lawyer.yearsOfExperience} years experience',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(width: 8),
                   ],
-                  // Book button - only show if physical consultations offered
-                  if (lawyer.offersPhysicalConsultations) ...[
-                    ElevatedButton.icon(
-                      onPressed: () => _bookConsultation(lawyer),
-                      icon: Icon(Icons.calendar_today, size: 16),
-                      label: Text('Book', style: TextStyle(fontSize: 13)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.colorScheme.primary,
-                        foregroundColor: theme.colorScheme.onPrimary,
-                        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        elevation: 0,
-                      ),
+
+                  // Location
+                  if (lawyer.location.officeAddress != null) ...[
+                    SizedBox(height: 8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.location_city,
+                            size: 14,
+                            color: theme.colorScheme.onSurfaceVariant),
+                        SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            lawyer.location.officeAddress!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(width: 8),
                   ],
-                  Spacer(),
-                  // Distance - text only
-                  Text(
-                    '${lawyer.distanceKm.toStringAsFixed(1)}km',
-                    style: TextStyle(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 13,
-                    ),
+
+                  // Action buttons
+                  SizedBox(height: 12),
+                  Row(
+                    children: [
+                      // Call button - only show if mobile consultations offered
+                      if (lawyer.offersMobileConsultations) ...[
+                        OutlinedButton.icon(
+                          onPressed: () => _callLawyer(lawyer),
+                          icon: Icon(Icons.phone, size: 16),
+                          label: Text('Call', style: TextStyle(fontSize: 13)),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: theme.colorScheme.primary,
+                            side: BorderSide(color: theme.colorScheme.outline),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 8),
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                      ],
+                      // Book button - only show if physical consultations offered
+                      if (lawyer.offersPhysicalConsultations) ...[
+                        ElevatedButton.icon(
+                          onPressed: () => _bookConsultation(lawyer),
+                          icon: Icon(Icons.calendar_today, size: 16),
+                          label: Text('Book', style: TextStyle(fontSize: 13)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: theme.colorScheme.primary,
+                            foregroundColor: theme.colorScheme.onPrimary,
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 8),
+                            elevation: 0,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                      ],
+                      Spacer(),
+                      // Distance - text only
+                      Text(
+                        '${lawyer.distanceKm.toStringAsFixed(1)}km',
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
             ),
           );
         },

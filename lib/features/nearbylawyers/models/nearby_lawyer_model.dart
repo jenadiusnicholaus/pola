@@ -54,19 +54,21 @@ class NearbyLawyer {
       specialization: json['specialization'],
       yearsOfExperience: json['years_of_experience'],
       offersMobileConsultations: json['offers_mobile_consultations'] ?? false,
-      offersPhysicalConsultations: json['offers_physical_consultations'] ?? false,
+      offersPhysicalConsultations:
+          json['offers_physical_consultations'] ?? false,
       city: json['city'],
       isAvailable: json['is_available'] ?? false,
       totalConsultations: json['total_consultations'] ?? 0,
       totalEarnings: json['total_earnings'] ?? '0.00',
-      averageRating: json['average_rating'] != null 
-          ? (json['average_rating'] as num).toDouble() 
+      averageRating: json['average_rating'] != null
+          ? (json['average_rating'] as num).toDouble()
           : null,
       totalReviews: json['total_reviews'] ?? 0,
       pricing: PricingInfo.fromJson(json['pricing']),
       distanceKm: (json['distance_km'] as num).toDouble(),
       location: LocationInfo.fromJson(json['location']),
-      professionalDetails: ProfessionalDetails.fromJson(json['professional_details']),
+      professionalDetails:
+          ProfessionalDetails.fromJson(json['professional_details']),
       firmInfo: json['firm_info'] != null
           ? FirmInfo.fromJson(json['firm_info'])
           : null,
@@ -80,7 +82,7 @@ class NearbyLawyer {
   String? get email => userDetails.email;
   String? get phone => userDetails.phoneNumber;
   String? get profilePicture => null; // Not in new API
-  
+
   String getUserTypeLabel() {
     switch (consultantType) {
       case 'advocate':

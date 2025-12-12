@@ -94,7 +94,9 @@ class _LawyersMapScreenState extends State<LawyersMapScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.location_off, size: 64, color: theme.colorScheme.onSurface.withOpacity(0.3)),
+              Icon(Icons.location_off,
+                  size: 64,
+                  color: theme.colorScheme.onSurface.withOpacity(0.3)),
               SizedBox(height: 16),
               Text('Location not available'),
             ],
@@ -110,7 +112,8 @@ class _LawyersMapScreenState extends State<LawyersMapScreen> {
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              initialCenter: LatLng(userLocation.latitude, userLocation.longitude),
+              initialCenter:
+                  LatLng(userLocation.latitude, userLocation.longitude),
               initialZoom: 13,
               onTap: (_, __) {
                 // Hide bottom sheet when tapping map
@@ -204,7 +207,8 @@ class _LawyersMapScreenState extends State<LawyersMapScreen> {
               heroTag: 'list_toggle_button',
               backgroundColor: theme.colorScheme.surface,
               onPressed: () => Get.back(),
-              icon: Icon(Icons.list, color: theme.colorScheme.onSurface, size: 20),
+              icon: Icon(Icons.list,
+                  color: theme.colorScheme.onSurface, size: 20),
               label: Text(
                 'List',
                 style: TextStyle(
@@ -269,83 +273,88 @@ class _LawyersMapScreenState extends State<LawyersMapScreen> {
                   InkWell(
                     onTap: () {
                       final consultant = _convertToConsultant(lawyer);
-                      Get.toNamed('/consultant-detail', arguments: {'consultant': consultant});
+                      Get.toNamed('/consultant-detail',
+                          arguments: {'consultant': consultant});
                     },
                     borderRadius: BorderRadius.circular(8),
                     child: Padding(
                       padding: EdgeInsets.all(8),
                       child: Row(
                         children: [
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                        backgroundImage: lawyer.profilePicture != null
-                            ? NetworkImage(lawyer.profilePicture!)
-                            : null,
-                        child: lawyer.profilePicture == null
-                            ? Text(
-                                lawyer.getUserTypeIcon(),
-                                style: TextStyle(fontSize: 24),
-                              )
-                            : null,
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              lawyer.name ?? 'Unknown',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Row(
+                          CircleAvatar(
+                            radius: 28,
+                            backgroundColor:
+                                theme.colorScheme.surfaceContainerHighest,
+                            backgroundImage: lawyer.profilePicture != null
+                                ? NetworkImage(lawyer.profilePicture!)
+                                : null,
+                            child: lawyer.profilePicture == null
+                                ? Text(
+                                    lawyer.getUserTypeIcon(),
+                                    style: TextStyle(fontSize: 24),
+                                  )
+                                : null,
+                          ),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.surfaceContainerHighest,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    lawyer.getUserTypeLabel(),
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                Text(
+                                  lawyer.name ?? 'Unknown',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                SizedBox(width: 8),
-                                Icon(Icons.navigation, size: 14, color: Colors.blue),
-                                SizedBox(width: 4),
-                                Text(
-                                  '${lawyer.distanceKm.toStringAsFixed(1)}km',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[600],
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                SizedBox(height: 2),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme
+                                            .surfaceContainerHighest,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        lawyer.getUserTypeLabel(),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: theme
+                                              .colorScheme.onSurfaceVariant,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Icon(Icons.navigation,
+                                        size: 14, color: Colors.blue),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      '${lawyer.distanceKm.toStringAsFixed(1)}km',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey[600],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.close),
-                        onPressed: () {
-                          setState(() {
-                            _selectedLawyer = null;
-                          });
-                        },
-                      ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.close),
+                            onPressed: () {
+                              setState(() {
+                                _selectedLawyer = null;
+                              });
+                            },
+                          ),
                         ],
                       ),
                     ),
@@ -355,14 +364,17 @@ class _LawyersMapScreenState extends State<LawyersMapScreen> {
                   if (lawyer.specialization != null) ...[
                     SizedBox(height: 12),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: theme.colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         lawyer.specialization!,
-                        style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurfaceVariant),
                       ),
                     ),
                   ],
@@ -381,12 +393,14 @@ class _LawyersMapScreenState extends State<LawyersMapScreen> {
                             label: Text('Call', style: TextStyle(fontSize: 14)),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: theme.colorScheme.primary,
-                              side: BorderSide(color: theme.colorScheme.outline),
+                              side:
+                                  BorderSide(color: theme.colorScheme.outline),
                               padding: EdgeInsets.symmetric(vertical: 12),
                             ),
                           ),
                         ),
-                      if (lawyer.offersMobileConsultations && lawyer.offersPhysicalConsultations)
+                      if (lawyer.offersMobileConsultations &&
+                          lawyer.offersPhysicalConsultations)
                         SizedBox(width: 10),
                       // Book button - only show if physical consultations offered
                       if (lawyer.offersPhysicalConsultations)
@@ -403,14 +417,16 @@ class _LawyersMapScreenState extends State<LawyersMapScreen> {
                             ),
                           ),
                         ),
-                      if (lawyer.offersMobileConsultations || lawyer.offersPhysicalConsultations)
+                      if (lawyer.offersMobileConsultations ||
+                          lawyer.offersPhysicalConsultations)
                         SizedBox(width: 10),
                       ElevatedButton(
                         onPressed: () => _openInMaps(lawyer),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: theme.colorScheme.secondary,
                           foregroundColor: theme.colorScheme.onSecondary,
-                          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
                           elevation: 0,
                         ),
                         child: Icon(Icons.directions, size: 18),
