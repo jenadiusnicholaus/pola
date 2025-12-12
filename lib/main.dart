@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'constants/app_theme.dart';
 import 'constants/app_colors.dart';
 import 'constants/app_strings.dart';
@@ -17,9 +19,79 @@ import 'features/hubs_and_services/legal_education/services/legal_education_serv
 import 'features/hubs_and_services/hub_content/services/hub_content_service.dart';
 import 'features/consultation/services/consultation_service.dart';
 import 'features/subscription/services/subscription_service.dart';
+import 'services/device_registration_service.dart';
+import 'features/nearbylawyers/services/nearby_lawyers_service.dart';
+import 'package:geolocator/geolocator.dart';
+
+/// Request location permission at app startup
+Future<void> _requestLocationPermission() async {
+  try {
+    debugPrint('📍 Requesting location permission...');
+
+    // Check if location services are enabled
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      debugPrint('⚠️ Location services are disabled');
+      return;
+    }
+
+    // Check current permission status
+    LocationPermission permission = await Geolocator.checkPermission();
+    debugPrint('📍 Current permission: $permission');
+
+    if (permission == LocationPermission.denied) {
+      // Request permission
+      permission = await Geolocator.requestPermission();
+      debugPrint('📍 Permission after request: $permission');
+
+      if (permission == LocationPermission.denied) {
+        debugPrint('⚠️ Location permission denied by user');
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      debugPrint('⚠️ Location permission permanently denied');
+      return;
+    }
+
+    // Permission granted
+    debugPrint('✅ Location permission granted');
+
+    // Get initial location to verify it works
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium,
+        timeLimit: Duration(seconds: 10),
+      );
+      debugPrint(
+          '✅ Initial location: ${position.latitude}, ${position.longitude}');
+    } catch (e) {
+      debugPrint('⚠️ Could not get initial location: $e');
+    }
+  } catch (e) {
+    debugPrint('❌ Error requesting location permission: $e');
+  }
+}
+
+/// Schedule background location updates to ensure we capture it
+void _scheduleLocationUpdate() {
+  // Disabled for emulators - location can be updated manually when needed
+  // Emulators often don't have proper GPS and cause timeouts
+  debugPrint('📍 Background location update disabled (use manual update if needed)');
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  debugPrint('✅ Firebase initialized');
+
+  // Request location permission early
+  await _requestLocationPermission();
 
   // Initialize GetStorage first
   await GetStorage.init();
@@ -84,8 +156,19 @@ LOGOUT_ENDPOINT=/api/v1/authentication/logout/
   Get.put(SubscriptionService());
   debugPrint('✅ SubscriptionService initialized');
 
+  // Initialize device registration service
+  Get.put(DeviceRegistrationService());
+  debugPrint('✅ DeviceRegistrationService initialized');
+
+  // Initialize nearby lawyers service
+  Get.put(NearbyLawyersService());
+  debugPrint('✅ NearbyLawyersService initialized');
+
   // Initialize controllers
   Get.put(ThemeController());
+
+  // Schedule background location update after app is fully loaded
+  _scheduleLocationUpdate();
 
   runApp(const MyApp());
 }

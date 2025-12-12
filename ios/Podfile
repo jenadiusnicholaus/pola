@@ -1,5 +1,5 @@
 # Uncomment this line to define a global platform for your project
-platform :ios, '12.0'
+# platform :ios, '12.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -33,8 +33,10 @@ target 'Runner' do
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   
-  # Fix SDWebImage compatibility issue
-  pod 'SDWebImage', '~> 5.15.0'
+  # Version overrides for Xcode 16-26 compatibility
+  pod 'gRPC-C++', '1.62.5'
+  pod 'gRPC-Core', '1.62.5'
+  pod 'abseil', '1.20240116.2'
   
   target 'RunnerTests' do
     inherit! :search_paths
@@ -45,15 +47,30 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
     
-    # Fix for SDWebImage compilation issues
     target.build_configurations.each do |config|
-      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+      config.build_settings['ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
       config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
         '$(inherited)',
         'PERMISSION_CAMERA=1',
         'PERMISSION_PHOTOS=1',
         'PERMISSION_MEDIA_LIBRARY=1',
+        'PERMISSION_LOCATION=1'
       ]
+      # Force C++17 for all targets (Xcode 16+ requirement)
+      config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+      
+      # Remove problematic BoringSSL-GRPC compiler flags (Xcode 16+ compatibility)
+      if config.build_settings['OTHER_CFLAGS']
+        config.build_settings['OTHER_CFLAGS'].delete('-GCC_WARN_INHIBIT_ALL_WARNINGS')
+      end
+      if config.build_settings['OTHER_CPLUSPLUSFLAGS']
+        config.build_settings['OTHER_CPLUSPLUSFLAGS'].delete('-GCC_WARN_INHIBIT_ALL_WARNINGS')
+      end
     end
   end
+  
+  # Fix BoringSSL-GRPC flags in project.pbxproj file
+  `sed -i '' 's/-GCC_WARN_INHIBIT_ALL_WARNINGS//g' "#{installer.pods_project.path}/project.pbxproj"`
+  puts "✓ Removed problematic BoringSSL-GRPC compiler flags"
 end

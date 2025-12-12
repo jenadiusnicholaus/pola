@@ -122,6 +122,12 @@ class _CallScreenState extends State<CallScreen> {
               // Show error screen only for critical errors (insufficient credits)
               if (controller!.error.value.isNotEmpty &&
                   controller!.isInsufficientCreditsError) {
+                // Debug logging
+                print('🔍 Showing insufficient credits screen');
+                print('📦 Available bundles count: ${controller!.availableBundles.length}');
+                print('💬 Error message: ${controller!.error.value}');
+                print('🎯 isInsufficientCreditsError: ${controller!.isInsufficientCreditsError}');
+                
                 return SingleChildScrollView(
                   padding: const EdgeInsets.all(24),
                   child: Column(

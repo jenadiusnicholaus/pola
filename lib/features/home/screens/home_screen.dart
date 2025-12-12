@@ -135,24 +135,24 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               const Text(
                 '⚖️',
-                style: TextStyle(fontSize: 28),
+                style: TextStyle(fontSize: 22),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 3),
               Text(
                 AppStrings.appName,
                 style: TextStyle(
                   color: theme.colorScheme.onPrimary,
-                  fontSize: 22,
+                  fontSize: 18,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0.5,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 1),
               Text(
                 AppStrings.lawyerTagline,
                 style: TextStyle(
                   color: theme.colorScheme.onPrimary.withOpacity(0.8),
-                  fontSize: 11,
+                  fontSize: 9,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 0.3,
                 ),

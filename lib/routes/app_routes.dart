@@ -24,6 +24,8 @@ import '../features/calling_booking/screens/call_screen.dart';
 import '../features/calling_booking/screens/payment_screen.dart';
 import '../features/doc_templates/screens/templates_list_screen.dart';
 import '../features/doc_templates/screens/generated_documents_screen.dart';
+import '../features/nearbylawyers/screens/nearby_lawyers_screen.dart';
+import '../features/nearbylawyers/screens/lawyers_map_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -52,6 +54,8 @@ class AppRoutes {
   static const String payment = '/payment';
   static const String templates = '/templates';
   static const String myDocuments = '/my-documents';
+  static const String nearbyLawyers = '/nearby-lawyers';
+  static const String lawyersMap = '/lawyers-map';
 
   static List<GetPage> routes = [
     GetPage(
@@ -162,6 +166,14 @@ class AppRoutes {
     GetPage(
       name: myDocuments,
       page: () => const GeneratedDocumentsScreen(),
+    ),
+    GetPage(
+      name: nearbyLawyers,
+      page: () => const NearbyLawyersScreen(),
+    ),
+    GetPage(
+      name: lawyersMap,
+      page: () => const LawyersMapScreen(),
     ),
   ];
 
