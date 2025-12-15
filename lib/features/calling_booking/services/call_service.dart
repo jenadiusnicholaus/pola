@@ -1,13 +1,149 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import '../../../config/dio_config.dart';
-import '../../../services/token_storage_service.dart';
 import '../models/consultant_models.dart';
-import 'package:get/get.dart' as getx;
+import '../../../config/agora_config.dart';
 
 class CallService {
   final Dio _dio = DioConfig.instance;
-  final TokenStorageService _tokenService =
-      getx.Get.find<TokenStorageService>();
+
+  // Call Management Endpoints
+
+  /// Initiate a call to a consultant
+  Future<Map<String, dynamic>> initiateCall({
+    required int consultantId,
+    String callType = 'voice',
+  }) async {
+    try {
+      // Generate channel name in app
+      final channelName = AgoraConfig.generateChannelName(consultantId);
+
+      debugPrint('📞 Initiating call to consultant $consultantId');
+      debugPrint('📡 Channel: $channelName');
+      debugPrint('🌐 Base URL: ${_dio.options.baseUrl}');
+      debugPrint('🎯 Full URL: ${_dio.options.baseUrl}/api/v1/subscriptions/calls/initiate');
+
+      final response = await _dio.post(
+        '/api/v1/subscriptions/calls/initiate',
+        data: {
+          'consultant_id': consultantId,
+          'channel_name': channelName,
+          'call_type': callType,
+        },
+      );
+
+      return {
+        'success': true,
+        'call_id': response.data['call_id'],
+        'channel_name': response.data['channel_name'],
+        'message': response.data['message'] ?? 'Call initiated successfully',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': _handleError(e),
+      };
+    }
+  }
+
+  /// Accept an incoming call
+  Future<Map<String, dynamic>> acceptCall({required String callId}) async {
+    try {
+      debugPrint('✅ Accepting call: $callId');
+
+      final response = await _dio.post(
+        '/api/v1/subscriptions/calls/$callId/accept/',
+      );
+
+      return {
+        'success': true,
+        'call_id': response.data['call_id'],
+        'channel_name': response.data['channel_name'],
+        'caller': response.data['caller'],
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': _handleError(e),
+      };
+    }
+  }
+
+  /// Reject an incoming call
+  Future<void> rejectCall({
+    required String callId,
+    String? reason,
+  }) async {
+    try {
+      debugPrint('❌ Rejecting call: $callId');
+
+      await _dio.post(
+        '/api/v1/subscriptions/calls/$callId/reject/',
+        data: {
+          'reason': reason ?? 'busy',
+        },
+      );
+    } catch (e) {
+      debugPrint('Error rejecting call: $e');
+      throw _handleError(e);
+    }
+  }
+
+  /// End an active call
+  Future<Map<String, dynamic>> endCall({
+    required String callId,
+    required int durationSeconds,
+  }) async {
+    try {
+      debugPrint(
+          '📞 Ending call: $callId (duration: $durationSeconds seconds)');
+
+      final response = await _dio.post(
+        '/api/v1/subscriptions/calls/$callId/end/',
+        data: {
+          'duration_seconds': durationSeconds,
+        },
+      );
+
+      return {
+        'success': true,
+        'call_summary': response.data['call_summary'],
+        'message': response.data['message'] ?? 'Call ended successfully',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': _handleError(e),
+      };
+    }
+  }
+
+  /// Mark call as missed
+  Future<void> markCallMissed({required String callId}) async {
+    try {
+      debugPrint('📵 Marking call as missed: $callId');
+
+      await _dio.post(
+        '/api/v1/subscriptions/calls/$callId/missed/',
+      );
+    } catch (e) {
+      debugPrint('Error marking call as missed: $e');
+      throw _handleError(e);
+    }
+  }
+
+  /// Get consultant online status
+  Future<Map<String, dynamic>> getConsultantStatus(int consultantId) async {
+    try {
+      final response = await _dio.get(
+        '/api/v1/subscriptions/calls/consultants/$consultantId/status/',
+      );
+
+      return response.data;
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
 
   // Consultant Endpoints
 

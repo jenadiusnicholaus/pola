@@ -137,6 +137,8 @@ class EnvironmentConfig {
       dotenv.env['CHAPTERS_ENDPOINT'] ?? '/chapters';
   static String get advocatesEndpoint =>
       dotenv.env['ADVOCATES_ENDPOINT'] ?? '/advocates';
+  static String get userListEndpoint =>
+      dotenv.env['USER_LIST_ENDPOINT'] ?? '/api/v1.0/user/user-list/';
 
   // Complete lookup URLs
   static String get rolesUrl => '$baseUrl$lookupsBaseUrl$rolesEndpoint';
@@ -148,6 +150,7 @@ class EnvironmentConfig {
       '$baseUrl$lookupsBaseUrl$workplacesEndpoint';
   static String get chaptersUrl => '$baseUrl$lookupsBaseUrl$chaptersEndpoint';
   static String get advocatesUrl => '$baseUrl$lookupsBaseUrl$advocatesEndpoint';
+  static String get userListUrl => '$baseUrl$userListEndpoint';
 
   // Hub Content endpoints
   static String get hubContentEndpoint =>
@@ -265,6 +268,12 @@ class EnvironmentConfig {
   static String get consultationMyReviewsEndpoint =>
       dotenv.env['CONSULTATION_MY_REVIEWS_ENDPOINT'] ??
       '/api/v1/consultants/my-reviews/';
+  static String get consultationMyConsultationsEndpoint =>
+      dotenv.env['CONSULTATION_MY_CONSULTATIONS_ENDPOINT'] ??
+      '/api/v1/subscriptions/consultants/';
+  static String get consultationUpdateStatusEndpoint =>
+      dotenv.env['CONSULTATION_UPDATE_STATUS_ENDPOINT'] ??
+      '/api/v1/subscriptions/consultants/';
 
   // Complete Consultation URLs
   static String get consultationApplicationStatusUrl =>
@@ -275,6 +284,32 @@ class EnvironmentConfig {
       '$baseUrl$consultationMyProfileEndpoint';
   static String get consultationMyReviewsUrl =>
       '$baseUrl$consultationMyReviewsEndpoint';
+  static String get consultationMyConsultationsUrl =>
+      '$baseUrl$consultationMyConsultationsEndpoint';
+  static String get consultationUpdateStatusUrl =>
+      '$baseUrl$consultationUpdateStatusEndpoint';
+
+  // Authentication endpoints
+  static String get authChangeRoleEndpoint =>
+      dotenv.env['AUTH_CHANGE_ROLE_ENDPOINT'] ??
+      '/api/v1/authentication/change-role/';
+  static String get authChangeRoleUrl => '$baseUrl$authChangeRoleEndpoint';
+
+  // Consultant endpoints
+  static String get consultantRespondToReviewEndpoint =>
+      dotenv.env['CONSULTANT_RESPOND_TO_REVIEW_ENDPOINT'] ??
+      '/api/v1/consultants/';
+  static String get consultantListEndpoint =>
+      dotenv.env['CONSULTANT_LIST_ENDPOINT'] ?? '/api/v1/consultants/';
+  static String get consultantRespondToReviewUrl =>
+      '$baseUrl$consultantRespondToReviewEndpoint';
+  static String get consultantListUrl => '$baseUrl$consultantListEndpoint';
+
+  // Device Security endpoints
+  static String get deviceRegistrationEndpoint =>
+      dotenv.env['DEVICE_REGISTRATION_ENDPOINT'] ?? '/api/v1/security/devices/';
+  static String get deviceRegistrationUrl =>
+      '$baseUrl$deviceRegistrationEndpoint';
 
   // Subscription endpoints
   static String get subscriptionPlansEndpoint =>

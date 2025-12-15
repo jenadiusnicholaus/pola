@@ -26,6 +26,8 @@ import '../features/doc_templates/screens/templates_list_screen.dart';
 import '../features/doc_templates/screens/generated_documents_screen.dart';
 import '../features/nearbylawyers/screens/nearby_lawyers_screen.dart';
 import '../features/nearbylawyers/screens/lawyers_map_screen.dart';
+import '../features/auth/screens/change_role_screen.dart';
+import '../features/consultation/screens/my_consultations_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -56,6 +58,8 @@ class AppRoutes {
   static const String myDocuments = '/my-documents';
   static const String nearbyLawyers = '/nearby-lawyers';
   static const String lawyersMap = '/lawyers-map';
+  static const String changeRole = '/change-role';
+  static const String myConsultations = '/my-consultations';
 
   static List<GetPage> routes = [
     GetPage(
@@ -153,7 +157,14 @@ class AppRoutes {
     ),
     GetPage(
       name: call,
-      page: () => const CallScreen(),
+      page: () => CallScreen(
+        consultant: Get.arguments?['consultant'],
+        callId: Get.arguments?['callId'],
+        channelName: Get.arguments?['channelName'],
+        isIncoming: Get.arguments?['isIncoming'] ?? false,
+        callerName: Get.arguments?['callerName'],
+        callerPhoto: Get.arguments?['callerPhoto'],
+      ),
     ),
     GetPage(
       name: payment,
@@ -174,6 +185,14 @@ class AppRoutes {
     GetPage(
       name: lawyersMap,
       page: () => const LawyersMapScreen(),
+    ),
+    GetPage(
+      name: changeRole,
+      page: () => const ChangeRoleScreen(),
+    ),
+    GetPage(
+      name: myConsultations,
+      page: () => const MyConsultationsScreen(),
     ),
   ];
 

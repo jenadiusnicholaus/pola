@@ -183,7 +183,7 @@ class ConsultationService extends GetxService {
     try {
       debugPrint('📤 Responding to review $reviewId...');
       final response = await _apiService.post(
-        '${EnvironmentConfig.baseUrl}/api/v1/consultants/$reviewId/respond-to-review/',
+        '${EnvironmentConfig.consultantRespondToReviewUrl}$reviewId/respond-to-review/',
         data: {'response': responseText},
       );
 
@@ -214,7 +214,7 @@ class ConsultationService extends GetxService {
       }
 
       final response = await _apiService.get(
-        '${EnvironmentConfig.baseUrl}/api/v1/consultants/',
+        EnvironmentConfig.consultantListUrl,
         queryParameters: queryParams,
       );
 
@@ -227,6 +227,72 @@ class ConsultationService extends GetxService {
     } catch (e) {
       debugPrint('❌ Error fetching consultants: $e');
       return [];
+    }
+  }
+
+  /// Get my consultations/bookings as a consultant
+  /// This returns bookings made TO this consultant by other users
+  Future<MyConsultationsResponse?> getMyConsultations({
+    int page = 1,
+    int pageSize = 20,
+    String? status, // 'pending', 'confirmed', 'completed', 'cancelled'
+  }) async {
+    try {
+      debugPrint('📋 Fetching my consultations as consultant...');
+
+      final queryParams = <String, dynamic>{
+        'page': page,
+        'page_size': pageSize,
+      };
+
+      if (status != null && status.isNotEmpty) {
+        queryParams['status'] = status;
+      }
+
+      final response = await _apiService.get(
+        EnvironmentConfig.consultationMyConsultationsUrl,
+        queryParameters: queryParams,
+      );
+
+      if (response.statusCode == 200) {
+        return MyConsultationsResponse.fromJson(response.data);
+      }
+
+      debugPrint('⚠️ Failed to fetch consultations: ${response.statusCode}');
+      return null;
+    } catch (e) {
+      debugPrint('❌ Error fetching my consultations: $e');
+      return null;
+    }
+  }
+
+  /// Update consultation status (accept, reject, complete)
+  Future<bool> updateConsultationStatus({
+    required int consultationId,
+    required String status, // 'confirmed', 'rejected', 'completed'
+    String? notes,
+  }) async {
+    try {
+      debugPrint('📤 Updating consultation status to: $status');
+
+      final data = <String, dynamic>{
+        'status': status,
+      };
+
+      if (notes != null && notes.isNotEmpty) {
+        data['notes'] = notes;
+      }
+
+      final response = await _apiService.patch(
+        '${EnvironmentConfig.consultationUpdateStatusUrl}$consultationId/status/',
+        data: data,
+      );
+
+      debugPrint('📥 Status update response: ${response.statusCode}');
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('❌ Error updating consultation status: $e');
+      return false;
     }
   }
 }
@@ -431,4 +497,91 @@ class ConsultantReviewsResponse {
       summary: json['summary'],
     );
   }
+}
+
+class MyConsultationsResponse {
+  final int count;
+  final String? next;
+  final String? previous;
+  final List<ConsultationBooking> results;
+
+  MyConsultationsResponse({
+    required this.count,
+    this.next,
+    this.previous,
+    required this.results,
+  });
+
+  factory MyConsultationsResponse.fromJson(Map<String, dynamic> json) {
+    return MyConsultationsResponse(
+      count: json['count'] ?? 0,
+      next: json['next'],
+      previous: json['previous'],
+      results: (json['results'] as List<dynamic>? ?? [])
+          .map((item) => ConsultationBooking.fromJson(item))
+          .toList(),
+    );
+  }
+}
+
+class ConsultationBooking {
+  final int id;
+  final Map<String, dynamic> client; // Client who booked
+  final String consultationType; // 'mobile' or 'physical'
+  final DateTime scheduledDate;
+  final String scheduledTime;
+  final String status; // 'pending', 'confirmed', 'completed', 'cancelled'
+  final String? notes;
+  final double? price;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
+
+  ConsultationBooking({
+    required this.id,
+    required this.client,
+    required this.consultationType,
+    required this.scheduledDate,
+    required this.scheduledTime,
+    required this.status,
+    this.notes,
+    this.price,
+    required this.createdAt,
+    this.updatedAt,
+  });
+
+  factory ConsultationBooking.fromJson(Map<String, dynamic> json) {
+    return ConsultationBooking(
+      id: json['id'],
+      client: json['client'] as Map<String, dynamic>,
+      consultationType: json['consultation_type'] ?? 'mobile',
+      scheduledDate: DateTime.parse(json['scheduled_date']),
+      scheduledTime: json['scheduled_time'] ?? '',
+      status: json['status'] ?? 'pending',
+      notes: json['notes'],
+      price: json['price'] != null
+          ? double.tryParse(json['price'].toString())
+          : null,
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'])
+          : null,
+    );
+  }
+
+  String get clientName {
+    final firstName = client['first_name'] ?? '';
+    final lastName = client['last_name'] ?? '';
+    if (firstName.isNotEmpty || lastName.isNotEmpty) {
+      return '$firstName $lastName'.trim();
+    }
+    return client['email']?.split('@').first ?? 'Unknown Client';
+  }
+
+  String get clientEmail => client['email'] ?? '';
+  String? get clientPhone => client['phone_number'];
+
+  bool get isPending => status.toLowerCase() == 'pending';
+  bool get isConfirmed => status.toLowerCase() == 'confirmed';
+  bool get isCompleted => status.toLowerCase() == 'completed';
+  bool get isCancelled => status.toLowerCase() == 'cancelled';
 }

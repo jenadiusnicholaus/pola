@@ -312,6 +312,17 @@ class AppDrawer extends StatelessWidget {
             badgeColor: Colors.green,
             onTap: () => _handleConsultationTap(context),
           ),
+
+        // My Consultations - for verified professionals to view bookings
+        if (isLegalProfessional)
+          _buildDrawerItem(
+            context: context,
+            icon: Icons.event_note_outlined,
+            activeIcon: Icons.event_note,
+            title: 'My Consultations',
+            subtitle: 'View client bookings',
+            onTap: () => _navigateAndClose(context, AppRoutes.myConsultations),
+          ),
       ],
     );
   }

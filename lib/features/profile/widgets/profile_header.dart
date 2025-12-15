@@ -105,27 +105,47 @@ class ProfileHeader extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Role Badge - simple
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
-              ),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: theme.colorScheme.primary.withOpacity(0.3),
-                  width: 1,
+            // Role Badge - clickable with edit icon
+            GestureDetector(
+              onTap: () async {
+                final result = await Get.toNamed('/change-role');
+                if (result == true) {
+                  // Role changed successfully, refresh profile
+                  _profileService.fetchProfile();
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
                 ),
-              ),
-              child: Text(
-                profile.displayRole,
-                style: TextStyle(
-                  color: theme.colorScheme.onPrimaryContainer,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                  letterSpacing: 0.3,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: theme.colorScheme.primary.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      profile.displayRole,
+                      style: TextStyle(
+                        color: theme.colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Icon(
+                      Icons.edit,
+                      size: 14,
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                  ],
                 ),
               ),
             ),

@@ -25,6 +25,15 @@ class AppTheme {
       outlineVariant: AppColors.grey,
     ),
 
+    // Icon Button Theme - ensure minimum 48x48 touch target
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(
+        minimumSize: const Size(48, 48),
+        padding: const EdgeInsets.all(8),
+        tapTargetSize: MaterialTapTargetSize.padded,
+      ),
+    ),
+
     // App Bar Theme
     appBarTheme: const AppBarTheme(
       backgroundColor: AppColors.primaryAmber,
@@ -36,7 +45,14 @@ class AppTheme {
         fontSize: 20,
         fontWeight: FontWeight.w600,
       ),
-      iconTheme: IconThemeData(color: AppColors.white),
+      iconTheme: IconThemeData(
+        color: AppColors.white,
+        size: 24,
+      ),
+      actionsIconTheme: IconThemeData(
+        color: AppColors.white,
+        size: 24,
+      ),
       systemOverlayStyle: SystemUiOverlayStyle(
         statusBarColor: AppColors.primaryAmberDark,
         statusBarIconBrightness: Brightness.light,
@@ -196,6 +212,15 @@ class AppTheme {
       outlineVariant: AppColors.grey,
     ),
 
+    // Icon Button Theme - ensure minimum 48x48 touch target
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(
+        minimumSize: const Size(48, 48),
+        padding: const EdgeInsets.all(8),
+        tapTargetSize: MaterialTapTargetSize.padded,
+      ),
+    ),
+
     // App Bar Theme
     appBarTheme: const AppBarTheme(
       backgroundColor: AppColors.primaryAmber,
@@ -207,7 +232,14 @@ class AppTheme {
         fontSize: 20,
         fontWeight: FontWeight.w600,
       ),
-      iconTheme: IconThemeData(color: AppColors.black),
+      iconTheme: IconThemeData(
+        color: AppColors.black,
+        size: 24,
+      ),
+      actionsIconTheme: IconThemeData(
+        color: AppColors.black,
+        size: 24,
+      ),
       systemOverlayStyle: SystemUiOverlayStyle(
         statusBarColor: AppColors.primaryAmberDark,
         statusBarIconBrightness: Brightness.light,

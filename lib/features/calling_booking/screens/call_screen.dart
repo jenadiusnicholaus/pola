@@ -5,7 +5,22 @@ import '../models/consultant_models.dart';
 import '../../../routes/app_routes.dart';
 
 class CallScreen extends StatefulWidget {
-  const CallScreen({super.key});
+  final Consultant? consultant;
+  final String? callId;
+  final String? channelName;
+  final bool isIncoming;
+  final String? callerName;
+  final String? callerPhoto;
+
+  const CallScreen({
+    super.key,
+    this.consultant,
+    this.callId,
+    this.channelName,
+    this.isIncoming = false,
+    this.callerName,
+    this.callerPhoto,
+  });
 
   @override
   State<CallScreen> createState() => _CallScreenState();
@@ -13,7 +28,6 @@ class CallScreen extends StatefulWidget {
 
 class _CallScreenState extends State<CallScreen> {
   CallController? controller;
-  Consultant? consultant;
   bool _hasError = false;
   String _errorMessage = '';
 
@@ -22,26 +36,40 @@ class _CallScreenState extends State<CallScreen> {
     super.initState();
 
     try {
-      // Get consultant from arguments
-      final args = Get.arguments;
-      if (args == null || args is! Map || !args.containsKey('consultant')) {
-        _hasError = true;
-        _errorMessage = 'No consultant data provided';
-        return;
+      // Validate required parameters
+      if (widget.isIncoming) {
+        // Incoming call - need callId and channelName
+        if (widget.callId == null || widget.channelName == null) {
+          _hasError = true;
+          _errorMessage = 'Missing call information';
+          return;
+        }
+      } else {
+        // Outgoing call - need consultant
+        if (widget.consultant == null) {
+          _hasError = true;
+          _errorMessage = 'No consultant data provided';
+          return;
+        }
       }
-
-      consultant = args['consultant'] as Consultant;
 
       // Initialize controller
       controller = Get.put(CallController());
 
-      // Start call immediately in background (WhatsApp-style)
-      // UI shows immediately, errors are handled with toasts
-      if (consultant != null && controller != null) {
-        controller!.initiateCall(consultant!);
+      // Start call based on type
+      if (widget.isIncoming) {
+        // Join existing channel for incoming call
+        controller!.joinIncomingCall(
+          callId: widget.callId!,
+          channelName: widget.channelName!,
+          callerName: widget.callerName ?? 'Unknown',
+        );
+      } else {
+        // Initiate new call to consultant
+        controller!.initiateCall(widget.consultant!);
       }
     } catch (e) {
-      print('Error initializing call screen: $e');
+      debugPrint('Error initializing call screen: $e');
       _hasError = true;
       _errorMessage = 'Failed to initialize call: ${e.toString()}';
     }
@@ -52,7 +80,7 @@ class _CallScreenState extends State<CallScreen> {
     final theme = Theme.of(context);
 
     // Show error if initialization failed
-    if (_hasError || consultant == null || controller == null) {
+    if (_hasError || controller == null) {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Call'),
@@ -429,19 +457,34 @@ class _CallScreenState extends State<CallScreen> {
                           radius: 60,
                           backgroundColor:
                               theme.colorScheme.surfaceContainerHighest,
-                          child: Text(
-                            consultant!.userDetails.firstName[0].toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 48,
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
+                          backgroundImage: widget.callerPhoto != null &&
+                                  widget.callerPhoto!.isNotEmpty
+                              ? NetworkImage(widget.callerPhoto!)
+                              : null,
+                          child: widget.callerPhoto == null ||
+                                  widget.callerPhoto!.isEmpty
+                              ? Text(
+                                  widget.consultant != null
+                                      ? widget
+                                          .consultant!.userDetails.firstName[0]
+                                          .toUpperCase()
+                                      : widget.callerName?.isNotEmpty == true
+                                          ? widget.callerName![0].toUpperCase()
+                                          : 'C',
+                                  style: TextStyle(
+                                    fontSize: 48,
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                )
+                              : null,
                         ),
                         const SizedBox(height: 24),
                         // Name
                         Text(
-                          consultant!.userDetails.fullName,
+                          widget.consultant != null
+                              ? widget.consultant!.userDetails.fullName
+                              : widget.callerName ?? 'Unknown',
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -450,14 +493,16 @@ class _CallScreenState extends State<CallScreen> {
                         ),
                         const SizedBox(height: 8),
                         // Type
-                        Text(
-                          consultant!.consultantType.toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: theme.colorScheme.onSurface.withOpacity(0.6),
-                            letterSpacing: 1.2,
+                        if (widget.consultant != null)
+                          Text(
+                            widget.consultant!.consultantType.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color:
+                                  theme.colorScheme.onSurface.withOpacity(0.6),
+                              letterSpacing: 1.2,
+                            ),
                           ),
-                        ),
                         const SizedBox(height: 24),
                         // Call status
                         Text(

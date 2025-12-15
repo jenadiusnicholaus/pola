@@ -22,7 +22,6 @@ class CallController extends GetxController {
   var selectedBundleId = Rxn<int>();
 
   Consultant? _currentConsultant;
-  DateTime? _callStartTime; // Track when both parties connected
 
   // Check if current error is related to insufficient credits
   bool get isInsufficientCreditsError {
@@ -94,7 +93,6 @@ class CallController extends GetxController {
     _agoraService.onConsultantJoined = () {
       print('👤 Consultant has joined the call');
       isConsultantConnected.value = true;
-      _callStartTime = DateTime.now();
       // TODO: Start call recording here once recording is implemented
       print('📞 Both parties connected - ready to record');
     };
@@ -109,6 +107,63 @@ class CallController extends GetxController {
         }
       });
     };
+  }
+
+  /// Join an incoming call (when accepting)
+  Future<void> joinIncomingCall({
+    required String callId,
+    required String channelName,
+    required String callerName,
+  }) async {
+    error.value = '';
+    isCheckingCredits.value = true;
+
+    try {
+      debugPrint('📞 Joining incoming call: $callId');
+      debugPrint('📡 Channel: $channelName');
+
+      // Step 1: Initialize Agora
+      try {
+        await _agoraService.initializeAgora();
+      } catch (agoraError) {
+        debugPrint('Agora initialization failed: $agoraError');
+        isCheckingCredits.value = false;
+        if (Get.context != null) {
+          ScaffoldMessenger.of(Get.context!).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to initialize call. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        Get.back();
+        return;
+      }
+
+      // Step 2: Check/Request permissions
+      final hasPermission = await _agoraService.requestPermissions();
+      if (!hasPermission) {
+        debugPrint('⚠️ Microphone permission not granted');
+      }
+
+      // Step 3: Join the channel directly (bypass credit check for receiver)
+      await _agoraService.joinChannelDirect(channelName);
+
+      isCheckingCredits.value = false;
+      debugPrint('✅ Successfully joined incoming call');
+    } catch (e) {
+      debugPrint('❌ Error joining incoming call: $e');
+      isCheckingCredits.value = false;
+      if (Get.context != null) {
+        ScaffoldMessenger.of(Get.context!).showSnackBar(
+          const SnackBar(
+            content: Text('Could not join call. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      Get.back();
+    }
   }
 
   Future<void> initiateCall(Consultant consultant) async {
@@ -135,7 +190,34 @@ class CallController extends GetxController {
       creditsRemaining.value = creditCheck.availableMinutes;
       print('Credits available: ${creditCheck.availableMinutes} minutes');
 
-      // Step 2: Initialize Agora (non-blocking)
+      // Step 2: Notify backend to send FCM to consultant
+      print('📞 Notifying backend to send FCM notification...');
+      final initiateResult = await _callService.initiateCall(
+        consultantId: consultant.id,
+        callType: 'voice',
+      );
+
+      if (!initiateResult['success']) {
+        print('❌ Failed to initiate call: ${initiateResult['error']}');
+        isCheckingCredits.value = false;
+        error.value = initiateResult['error'] ?? 'Failed to initiate call';
+        if (Get.context != null) {
+          ScaffoldMessenger.of(Get.context!).showSnackBar(
+            SnackBar(
+              content: Text(initiateResult['error'] ?? 'Failed to initiate call'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+        Get.back();
+        return;
+      }
+
+      print('✅ Backend notified, FCM sent to consultant');
+      print('📡 Channel: ${initiateResult['channel_name']}');
+
+      // Step 3: Initialize Agora (non-blocking)
       print('Initializing Agora...');
       try {
         await _agoraService.initializeAgora();
@@ -156,7 +238,7 @@ class CallController extends GetxController {
         return;
       }
 
-      // Step 3: Check/Request permissions (non-blocking)
+      // Step 4: Check/Request permissions (non-blocking)
       print('Checking microphone permission...');
       final hasPermission = await _agoraService.requestPermissions();
       if (!hasPermission) {
@@ -165,10 +247,12 @@ class CallController extends GetxController {
         // Don't block - Agora SDK will request permission when joining channel
       }
 
-      // Step 4: Join call channel (Agora will request permission if needed)
+      // Step 5: Join call channel using the channel name from backend
       print('Joining call channel...');
       try {
-        await _agoraService.joinChannel(consultant.id);
+        // Use the channel name returned from backend (same as what we generated)
+        final channelName = initiateResult['channel_name'] as String;
+        await _agoraService.joinChannelDirect(channelName);
       } catch (joinError) {
         print('Failed to join channel: $joinError');
         if (Get.context != null) {
@@ -185,7 +269,7 @@ class CallController extends GetxController {
       }
 
       isCheckingCredits.value = false;
-      print('Call initiated successfully');
+      print('✅ Call initiated successfully - waiting for consultant to join');
     } catch (e) {
       print('Error initiating call: $e');
       isCheckingCredits.value = false;

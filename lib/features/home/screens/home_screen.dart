@@ -85,12 +85,19 @@ class _HomeScreenState extends State<HomeScreen> {
       foregroundColor: theme.colorScheme.onPrimary,
       iconTheme: IconThemeData(
         color: theme.colorScheme.onPrimary,
+        size: 24,
+      ),
+      actionsIconTheme: IconThemeData(
+        color: theme.colorScheme.onPrimary,
+        size: 24,
       ),
       elevation: 2,
       pinned: true,
       floating: false,
       snap: false,
       expandedHeight: 180.0,
+      leadingWidth: 56, // Proper width for icon button
+      toolbarHeight: 56, // Standard toolbar height
 
       // Dynamic title that appears when collapsed
       centerTitle: true,

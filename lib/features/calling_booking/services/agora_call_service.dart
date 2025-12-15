@@ -121,8 +121,9 @@ class AgoraCallService {
               print('📞 Left channel');
             },
             onError: (ErrorCodeType err, String msg) {
-              print('❌ Call error: $msg');
-              onError?.call('Call error: $msg');
+              final errorMsg = msg.isNotEmpty ? msg : err.toString();
+              print('❌ Call error: $errorMsg (Error code: $err)');
+              onError?.call('Call error: $errorMsg');
             },
             onConnectionLost: (RtcConnection connection) {
               print('📡 Connection lost');
@@ -167,6 +168,37 @@ class AgoraCallService {
     } catch (e) {
       print('❌ Agora initialization error: $e');
       onError?.call('Failed to initialize Agora: ${e.toString()}');
+      rethrow;
+    }
+  }
+
+  /// Join a channel directly with channel name (for incoming calls)
+  Future<void> joinChannelDirect(String channelName) async {
+    try {
+      if (!_isInitialized) {
+        await initializeAgora();
+      }
+
+      _channelName = channelName;
+      _userId = AgoraConfig.generateUserId();
+
+      print('📞 Joining channel directly: $_channelName with UID: $_userId');
+
+      await _engine!.joinChannel(
+        token: AgoraConfig.TOKEN,
+        channelId: _channelName!,
+        uid: _userId!,
+        options: const ChannelMediaOptions(
+          channelProfile: ChannelProfileType.channelProfileCommunication,
+          clientRoleType: ClientRoleType.clientRoleBroadcaster,
+          autoSubscribeAudio: true,
+        ),
+      );
+
+      print('✅ Joined channel for incoming call');
+    } catch (e) {
+      print('❌ Failed to join channel: $e');
+      onError?.call('Failed to join call channel');
       rethrow;
     }
   }

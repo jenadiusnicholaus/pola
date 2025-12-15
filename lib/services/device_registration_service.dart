@@ -3,20 +3,38 @@ import 'package:flutter/foundation.dart';
 import '../models/device_model.dart';
 import 'api_service.dart';
 import 'device_info_service.dart';
+import '../config/environment_config.dart';
 
 class DeviceRegistrationService extends GetxService {
   final ApiService _apiService = Get.find<ApiService>();
   final DeviceInfoService _deviceInfoService = DeviceInfoService();
 
-  static const String _registerDeviceEndpoint = '/api/v1/security/devices/';
-
   /// Register or update device with the backend
-  Future<RegisteredDevice?> registerDevice() async {
+  Future<RegisteredDevice?> registerDevice({String? fcmToken}) async {
     try {
       debugPrint('📱 Starting device registration...');
 
       // Collect device information
-      final deviceInfo = await _deviceInfoService.collectDeviceInfo();
+      var deviceInfo = await _deviceInfoService.collectDeviceInfo();
+
+      // Create new DeviceInfo with FCM token if provided
+      if (fcmToken != null) {
+        deviceInfo = DeviceInfo(
+          deviceId: deviceInfo.deviceId,
+          deviceName: deviceInfo.deviceName,
+          deviceType: deviceInfo.deviceType,
+          osName: deviceInfo.osName,
+          osVersion: deviceInfo.osVersion,
+          browserName: deviceInfo.browserName,
+          browserVersion: deviceInfo.browserVersion,
+          appVersion: deviceInfo.appVersion,
+          deviceModel: deviceInfo.deviceModel,
+          deviceManufacturer: deviceInfo.deviceManufacturer,
+          fcmToken: fcmToken,
+          latitude: deviceInfo.latitude,
+          longitude: deviceInfo.longitude,
+        );
+      }
 
       debugPrint('📱 Device Info collected:');
       debugPrint('  - Device ID: ${deviceInfo.deviceId}');
@@ -37,7 +55,7 @@ class DeviceRegistrationService extends GetxService {
 
       // Register device with backend
       final response = await _apiService.post(
-        _registerDeviceEndpoint,
+        EnvironmentConfig.deviceRegistrationUrl,
         data: deviceInfo.toJson(),
       );
 
@@ -121,7 +139,7 @@ class DeviceRegistrationService extends GetxService {
       // Send PATCH request if we have data to update
       if (updateData.isNotEmpty) {
         final response = await _apiService.patch(
-          '$_registerDeviceEndpoint$deviceId/',
+          '${EnvironmentConfig.deviceRegistrationUrl}$deviceId/',
           data: updateData,
         );
 
@@ -153,7 +171,7 @@ class DeviceRegistrationService extends GetxService {
       }
 
       await _apiService.post(
-        _registerDeviceEndpoint,
+        EnvironmentConfig.deviceRegistrationUrl,
         data: {
           'device_id': deviceId,
           'fcm_token': fcmToken,
@@ -179,7 +197,7 @@ class DeviceRegistrationService extends GetxService {
         // Still try to register device with available info
         debugPrint('📍 Registering device info without location...');
         await _apiService.post(
-          _registerDeviceEndpoint,
+          EnvironmentConfig.deviceRegistrationUrl,
           data: {
             'device_id': deviceId,
           },
@@ -191,7 +209,7 @@ class DeviceRegistrationService extends GetxService {
           '📍 Location obtained: ${position.latitude}, ${position.longitude}');
 
       final response = await _apiService.post(
-        _registerDeviceEndpoint,
+        EnvironmentConfig.deviceRegistrationUrl,
         data: {
           'device_id': deviceId,
           'latitude': position.latitude,
@@ -249,7 +267,8 @@ class DeviceRegistrationService extends GetxService {
     try {
       debugPrint('📱 Fetching registered devices...');
 
-      final response = await _apiService.get(_registerDeviceEndpoint);
+      final response =
+          await _apiService.get(EnvironmentConfig.deviceRegistrationUrl);
 
       if (response.statusCode == 200) {
         final List<dynamic> devicesJson =
@@ -275,7 +294,7 @@ class DeviceRegistrationService extends GetxService {
       debugPrint('🗑️ Removing device $deviceId...');
 
       final response = await _apiService.delete(
-        '$_registerDeviceEndpoint$deviceId/',
+        '${EnvironmentConfig.deviceRegistrationUrl}$deviceId/',
       );
 
       if (response.statusCode == 204 || response.statusCode == 200) {

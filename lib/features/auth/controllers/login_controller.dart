@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart' as dio;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../services/api_service.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/device_registration_service.dart';
@@ -11,6 +12,12 @@ import '../../profile/services/profile_service.dart';
 
 class LoginController extends GetxController {
   final ApiService _apiService = Get.find<ApiService>();
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+
+  // Storage keys
+  static const String _keyRememberMe = 'remember_me';
+  static const String _keySavedEmail = 'saved_email';
+  static const String _keySavedPassword = 'saved_password';
 
   // Form controllers
   final TextEditingController emailController = TextEditingController();
@@ -52,9 +59,14 @@ class LoginController extends GetxController {
     debugPrint('👁️ Password visibility toggled: ${_isPasswordVisible.value}');
   }
 
-  void toggleRememberMe(bool? value) {
+  void toggleRememberMe(bool? value) async {
     _rememberMe.value = value ?? false;
     debugPrint('💭 Remember me toggled: ${_rememberMe.value}');
+
+    // If unchecked, clear saved credentials immediately
+    if (!_rememberMe.value) {
+      await _clearSavedCredentials();
+    }
   }
 
   /// Fetch user profile after successful login
@@ -85,9 +97,36 @@ class LoginController extends GetxController {
     }
   }
 
-  void _loadSavedCredentials() {
-    // TODO: Load saved credentials from secure storage if remember me was checked
-    debugPrint('📱 Loading saved credentials (if any)');
+  Future<void> _loadSavedCredentials() async {
+    try {
+      debugPrint('📱 Loading saved credentials (if any)');
+
+      // Check if remember me was enabled
+      final rememberMeValue = await _secureStorage.read(key: _keyRememberMe);
+
+      if (rememberMeValue == 'true') {
+        final savedEmail = await _secureStorage.read(key: _keySavedEmail);
+        final savedPassword = await _secureStorage.read(key: _keySavedPassword);
+
+        if (savedEmail != null && savedEmail.isNotEmpty) {
+          emailController.text = savedEmail;
+          debugPrint('✅ Loaded saved email: $savedEmail');
+        }
+
+        if (savedPassword != null && savedPassword.isNotEmpty) {
+          passwordController.text = savedPassword;
+          debugPrint(
+              '✅ Loaded saved password (length: ${savedPassword.length})');
+        }
+
+        _rememberMe.value = true;
+        debugPrint('✅ Remember me is enabled');
+      } else {
+        debugPrint('ℹ️ No saved credentials found or remember me disabled');
+      }
+    } catch (e) {
+      debugPrint('⚠️ Error loading saved credentials: $e');
+    }
   }
 
   Future<void> login() async {
@@ -296,9 +335,39 @@ class LoginController extends GetxController {
   }
 
   Future<void> _saveCredentials() async {
-    debugPrint('💾 Saving login credentials...');
-    // TODO: Implement secure storage for credentials
-    // Use flutter_secure_storage or similar
+    try {
+      debugPrint('💾 Saving login credentials...');
+
+      if (_rememberMe.value) {
+        // Save credentials securely
+        await _secureStorage.write(key: _keyRememberMe, value: 'true');
+        await _secureStorage.write(
+            key: _keySavedEmail, value: emailController.text.trim());
+        await _secureStorage.write(
+            key: _keySavedPassword, value: passwordController.text);
+
+        debugPrint('✅ Credentials saved securely');
+      } else {
+        // Clear saved credentials if remember me is disabled
+        await _clearSavedCredentials();
+      }
+    } catch (e) {
+      debugPrint('⚠️ Error saving credentials: $e');
+    }
+  }
+
+  Future<void> _clearSavedCredentials() async {
+    try {
+      debugPrint('🗑️ Clearing saved credentials...');
+
+      await _secureStorage.delete(key: _keyRememberMe);
+      await _secureStorage.delete(key: _keySavedEmail);
+      await _secureStorage.delete(key: _keySavedPassword);
+
+      debugPrint('✅ Saved credentials cleared');
+    } catch (e) {
+      debugPrint('⚠️ Error clearing credentials: $e');
+    }
   }
 
   void _showLoginSuccessDialog(Map<String, dynamic>? userData) {
@@ -367,11 +436,12 @@ class LoginController extends GetxController {
   }
 
   // Helper method to clear form
-  void clearForm() {
+  void clearForm() async {
     emailController.clear();
     passwordController.clear();
     _isPasswordVisible.value = false;
     _rememberMe.value = false;
+    await _clearSavedCredentials();
     debugPrint('🧹 Login form cleared');
   }
 

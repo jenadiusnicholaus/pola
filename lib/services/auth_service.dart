@@ -343,4 +343,90 @@ class AuthService extends GetxController {
       'verified': _tokenStorage.isUserVerified().toString(),
     };
   }
+
+  /// Change user role
+  Future<Map<String, dynamic>> changeRole({
+    required String newRole,
+    String? reason,
+  }) async {
+    try {
+      debugPrint('🔄 Attempting to change role to: $newRole');
+
+      final data = <String, dynamic>{
+        'new_role': newRole,
+      };
+
+      if (reason != null && reason.isNotEmpty) {
+        data['reason'] = reason;
+      }
+
+      final response = await _apiService.post(
+        EnvironmentConfig.authChangeRoleUrl,
+        data: data,
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = response.data as Map<String, dynamic>;
+
+        debugPrint('✅ Role changed successfully');
+        debugPrint('  - Old Role: ${responseData['old_role']}');
+        debugPrint('  - New Role: ${responseData['new_role']}');
+        debugPrint(
+            '  - Verification Required: ${responseData['verification_required']}');
+
+        // Refresh the access token to get updated user data
+        await refreshAccessToken();
+
+        // Fetch updated profile
+        if (Get.isRegistered<ProfileService>()) {
+          await _profileService.fetchProfile();
+          debugPrint('✅ Profile refreshed after role change');
+        }
+
+        return {
+          'success': true,
+          'message': responseData['message'],
+          'old_role': responseData['old_role'],
+          'new_role': responseData['new_role'],
+          'verification_required': responseData['verification_required'],
+          'is_verified': responseData['is_verified'],
+        };
+      } else {
+        debugPrint('❌ Role change failed with status: ${response.statusCode}');
+        return {
+          'success': false,
+          'error': 'Failed to change role: ${response.statusCode}',
+        };
+      }
+    } on dio.DioException catch (e) {
+      debugPrint('❌ Dio error during role change: ${e.type}');
+
+      if (e.response != null && e.response!.data != null) {
+        final errorData = e.response!.data;
+        String errorMessage = 'Failed to change role';
+
+        if (errorData is Map && errorData.containsKey('error')) {
+          errorMessage = errorData['error'].toString();
+        } else if (errorData is String) {
+          errorMessage = errorData;
+        }
+
+        return {
+          'success': false,
+          'error': errorMessage,
+        };
+      }
+
+      return {
+        'success': false,
+        'error': 'Network error: ${e.message}',
+      };
+    } catch (e) {
+      debugPrint('❌ Unexpected error during role change: $e');
+      return {
+        'success': false,
+        'error': 'Unexpected error: $e',
+      };
+    }
+  }
 }

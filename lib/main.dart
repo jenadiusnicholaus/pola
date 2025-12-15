@@ -14,6 +14,7 @@ import 'config/dio_config.dart';
 import 'services/api_service.dart';
 import 'services/token_storage_service.dart';
 import 'services/auth_service.dart';
+import 'features/auth/services/lookup_service.dart';
 import 'features/profile/services/profile_service.dart';
 import 'features/hubs_and_services/legal_education/services/legal_education_service.dart';
 import 'features/hubs_and_services/hub_content/services/hub_content_service.dart';
@@ -21,6 +22,9 @@ import 'features/consultation/services/consultation_service.dart';
 import 'features/subscription/services/subscription_service.dart';
 import 'services/device_registration_service.dart';
 import 'features/nearbylawyers/services/nearby_lawyers_service.dart';
+import 'features/calling_booking/services/fcm_service.dart';
+import 'features/calling_booking/services/online_status_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:geolocator/geolocator.dart';
 
 /// Request location permission at app startup
@@ -135,6 +139,10 @@ LOGOUT_ENDPOINT=/api/v1/authentication/logout/
   Get.put(TokenStorageService());
   debugPrint('✅ TokenStorageService initialized');
 
+  // Initialize lookup service (for roles, etc.)
+  Get.put(LookupService());
+  debugPrint('✅ LookupService initialized');
+
   // Initialize profile service before auth service (dependency)
   Get.put(ProfileService());
   debugPrint('✅ ProfileService initialized');
@@ -165,11 +173,22 @@ LOGOUT_ENDPOINT=/api/v1/authentication/logout/
   Get.put(NearbyLawyersService());
   debugPrint('✅ NearbyLawyersService initialized');
 
+  // Initialize FCM service (for incoming calls)
+  Get.putAsync(() => FCMService().init());
+  debugPrint('✅ FCMService initialized');
+
+  // Initialize online status service
+  Get.put(OnlineStatusService());
+  debugPrint('✅ OnlineStatusService initialized');
+
   // Initialize controllers
   Get.put(ThemeController());
 
   // Schedule background location update after app is fully loaded
   _scheduleLocationUpdate();
+
+  // Setup FCM background message handler
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   runApp(const MyApp());
 }

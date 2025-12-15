@@ -9,7 +9,10 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize the login controller
+    // Initialize the login controller - delete existing to prevent duplicate GlobalKey
+    if (Get.isRegistered<LoginController>()) {
+      Get.delete<LoginController>();
+    }
     final controller = Get.put(LoginController());
 
     return Scaffold(
@@ -25,9 +28,32 @@ class LoginScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
 
-                  const SizedBox(height: 48),
+                  // Welcome message
+                  Text(
+                    'Welcome Back',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.onSurface,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Sign in to continue',
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
 
                   // Login Form
                   _buildLoginForm(context, controller),
@@ -56,80 +82,75 @@ class LoginScreen extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppColors.primaryAmber,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isDark
+              ? [
+                  AppColors.primaryAmber.withOpacity(0.15),
+                  theme.colorScheme.surface,
+                ]
+              : [
+                  AppColors.primaryAmber.withOpacity(0.95),
+                  AppColors.primaryAmber.withOpacity(0.85),
+                ],
+        ),
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16.0),
+          padding: const EdgeInsets.symmetric(vertical: 40.0, horizontal: 24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Justice scale icon on top
-              const Text(
+              // Justice scale icon
+              Text(
                 '⚖️',
                 style: TextStyle(
-                  fontSize: 36,
+                  fontSize: 48,
+                  shadows: isDark
+                      ? []
+                      : [
+                          Shadow(
+                            color: Colors.black.withOpacity(0.1),
+                            offset: const Offset(0, 2),
+                            blurRadius: 4,
+                          ),
+                        ],
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 12),
 
-              // POLA app name in middle
-              const Text(
+              // POLA app name
+              Text(
                 AppStrings.appName,
                 style: TextStyle(
-                  color: AppColors.black,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                  height: 1.1,
+                  color: isDark ? theme.colorScheme.onSurface : AppColors.black,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.5,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
 
-              // Horizontal line spacer
-              Container(
-                width: 60,
-                height: 1.5,
-                color: AppColors.black,
-                margin: const EdgeInsets.symmetric(vertical: 2),
-              ),
-              const SizedBox(height: 4),
-
-              // Tagline at bottom
-              const Text(
+              // Tagline
+              Text(
                 'The lawyer you carry',
                 style: TextStyle(
-                  color: AppColors.black,
-                  fontSize: 12,
+                  color: isDark
+                      ? theme.colorScheme.onSurface.withOpacity(0.6)
+                      : AppColors.black.withOpacity(0.7),
+                  fontSize: 13,
                   fontStyle: FontStyle.italic,
-                  letterSpacing: 0.3,
-                  height: 1.1,
+                  letterSpacing: 0.5,
+                  fontWeight: FontWeight.w500,
                 ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Welcome message
-              Text(
-                'Welcome Back',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.black,
-                    ),
-              ),
-              const SizedBox(height: 4),
-
-              // Subtitle
-              Text(
-                'Sign in to your Pola Legal account',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.black.withOpacity(0.8),
-                    ),
-                textAlign: TextAlign.center,
               ),
             ],
           ),
@@ -152,23 +173,37 @@ class LoginScreen extends StatelessWidget {
             validator: controller.validateEmail,
             decoration: InputDecoration(
               labelText: 'Email Address',
-              hintText: 'Enter your email address',
-              prefixIcon: const Icon(Icons.email_outlined),
+              hintText: 'Enter your email',
+              prefixIcon: Icon(
+                Icons.email_outlined,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .outlineVariant
+                      .withOpacity(0.5),
+                ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .outlineVariant
+                      .withOpacity(0.5),
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Theme.of(context).primaryColor),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 1.5,
+                ),
               ),
-              filled: true,
-              fillColor: Theme.of(context).colorScheme.surface,
+              filled: false,
             ),
           ),
 
@@ -184,34 +219,51 @@ class LoginScreen extends StatelessWidget {
                 decoration: InputDecoration(
                   labelText: 'Password',
                   hintText: 'Enter your password',
-                  prefixIcon: const Icon(Icons.lock_outlined),
+                  prefixIcon: Icon(
+                    Icons.lock_outlined,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.4),
+                  ),
                   suffixIcon: IconButton(
                     onPressed: controller.togglePasswordVisibility,
                     icon: Icon(
                       controller.isPasswordVisible
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.4),
                     ),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .outlineVariant
+                          .withOpacity(0.5),
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
                       color: Theme.of(context)
                           .colorScheme
-                          .outline
+                          .outlineVariant
                           .withOpacity(0.5),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        BorderSide(color: Theme.of(context).primaryColor),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 1.5,
+                    ),
                   ),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surface,
+                  filled: false,
                 ),
               )),
         ],
@@ -225,11 +277,12 @@ class LoginScreen extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Theme.of(context).colorScheme.onPrimary,
-            padding: const EdgeInsets.symmetric(vertical: 16),
+            padding: const EdgeInsets.symmetric(vertical: 18),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            elevation: 2,
+            elevation: 0,
+            shadowColor: Colors.transparent,
           ),
           child: controller.isLoading
               ? SizedBox(
@@ -280,41 +333,18 @@ class LoginScreen extends StatelessWidget {
             ),
 
             // Forgot Password Link
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: Theme.of(context).brightness == Brightness.dark
-                    ? [
-                        BoxShadow(
-                          color: AppColors.primaryAmberLight.withOpacity(0.3),
-                          blurRadius: 8,
-                          spreadRadius: 1,
-                        ),
-                      ]
-                    : [],
+            TextButton(
+              onPressed: controller.goToForgotPassword,
+              style: TextButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
-              child: TextButton(
-                onPressed: controller.goToForgotPassword,
-                style: TextButton.styleFrom(
-                  backgroundColor: Theme.of(context).brightness ==
-                          Brightness.dark
-                      ? AppColors.primaryAmberLight.withOpacity(0.2)
-                      : Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text(
-                  'Forgot Password?',
-                  style: TextStyle(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? AppColors.primaryAmberLight
-                        : Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
+              child: Text(
+                'Forgot Password?',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
                 ),
               ),
             ),
@@ -325,56 +355,46 @@ class LoginScreen extends StatelessWidget {
   }
 
   Widget _buildRegisterLink(BuildContext context, LoginController controller) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? AppColors.darkCard
-            : Theme.of(context).colorScheme.surface,
+        color: isDark
+            ? theme.colorScheme.surfaceContainerHighest
+            : theme.colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? AppColors.primaryAmberLight.withOpacity(0.3)
-              : Theme.of(context).colorScheme.outline.withOpacity(0.5),
-          width: 1.5,
+          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+          width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         children: [
           Text(
             'Don\'t have an account?',
             style: TextStyle(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? AppColors.textPrimaryDark
-                  : Theme.of(context).colorScheme.onSurface,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
+            child: OutlinedButton(
               onPressed: controller.goToRegistration,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).brightness == Brightness.dark
-                    ? AppColors.buttonBlue
-                    : Theme.of(context).colorScheme.secondary,
-                foregroundColor: Colors.white,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: theme.colorScheme.primary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
+                side: BorderSide(
+                  color: theme.colorScheme.primary,
+                  width: 1.5,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                elevation: 3,
-                shadowColor:
-                    Theme.of(context).colorScheme.primary.withOpacity(0.3),
               ),
               child: const Text(
                 'Create New Account',

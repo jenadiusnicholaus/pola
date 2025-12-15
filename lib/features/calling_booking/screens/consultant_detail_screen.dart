@@ -337,13 +337,16 @@ class ConsultantDetailScreen extends StatelessWidget {
     String value,
     String label,
   ) {
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
+        color: isDark
+            ? theme.colorScheme.surfaceContainerHighest
+            : theme.colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.15),
+          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
           width: 1,
         ),
       ),
@@ -351,8 +354,8 @@ class ConsultantDetailScreen extends StatelessWidget {
         children: [
           Icon(
             icon,
-            size: 28,
-            color: theme.colorScheme.onSurfaceVariant,
+            size: 26,
+            color: theme.colorScheme.onSurface.withOpacity(0.4),
           ),
           const SizedBox(height: 10),
           Text(
@@ -361,6 +364,7 @@ class ConsultantDetailScreen extends StatelessWidget {
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: theme.colorScheme.onSurface,
+              letterSpacing: 0.1,
             ),
           ),
           const SizedBox(height: 4),
@@ -368,8 +372,9 @@ class ConsultantDetailScreen extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 11,
-              color: theme.colorScheme.onSurfaceVariant,
+              color: theme.colorScheme.onSurface.withOpacity(0.5),
               fontWeight: FontWeight.w500,
+              letterSpacing: 0.2,
             ),
           ),
         ],
@@ -383,32 +388,25 @@ class ConsultantDetailScreen extends StatelessWidget {
     String title,
     String subtitle,
   ) {
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
+        color: isDark
+            ? theme.colorScheme.surfaceContainerHighest
+            : theme.colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.2),
+          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
           width: 1,
         ),
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: theme.colorScheme.outline.withOpacity(0.2),
-                width: 1,
-              ),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              icon,
-              size: 22,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+          Icon(
+            icon,
+            size: 24,
+            color: theme.colorScheme.onSurface.withOpacity(0.4),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -421,6 +419,7 @@ class ConsultantDetailScreen extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: theme.colorScheme.onSurface,
+                    letterSpacing: 0.1,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -428,7 +427,7 @@ class ConsultantDetailScreen extends StatelessWidget {
                   subtitle,
                   style: TextStyle(
                     fontSize: 12,
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: theme.colorScheme.onSurface.withOpacity(0.65),
                   ),
                 ),
               ],
