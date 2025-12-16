@@ -46,6 +46,19 @@ class PermissionService extends GetxService {
   /// Get current user role name
   String? get userRoleName => currentProfile?.userRole.roleName;
 
+  /// Get global user permissions (CRUD permissions)
+  List<String> get globalPermissions => currentProfile?.permissions ?? [];
+
+  /// Check if user has a specific global permission (string)
+  bool hasGlobalPermission(String permission) {
+    return globalPermissions.contains(permission);
+  }
+
+  /// Check if user has a specific global permission (enum)
+  bool hasPermission(GlobalPermission permission) {
+    return hasGlobalPermission(permission.value);
+  }
+
   /// Check if user is a professional (advocate, lawyer, paralegal, law_firm)
   bool get isProfessional {
     final role = userRoleName?.toLowerCase();
@@ -62,6 +75,58 @@ class PermissionService extends GetxService {
     if (role == null) return false;
     return role == 'citizen' || role == 'law_student' || role == 'lecturer';
   }
+
+  // ============ Global CRUD Permissions ============
+
+  /// Check if user can edit own profile
+  bool get canEditOwnProfile => hasGlobalPermission('edit_own_profile');
+
+  /// Check if user can view own profile
+  bool get canViewOwnProfile => hasGlobalPermission('view_own_profile');
+
+  /// Check if user can upload documents
+  bool get canUploadDocuments => hasGlobalPermission('upload_documents');
+
+  /// Check if user can view own documents
+  bool get canViewOwnDocuments => hasGlobalPermission('view_own_documents');
+
+  /// Check if user can delete own documents
+  bool get canDeleteOwnDocuments => hasGlobalPermission('delete_own_documents');
+
+  /// Check if user can add address
+  bool get canAddAddress => hasGlobalPermission('add_address');
+
+  /// Check if user can change address
+  bool get canChangeAddress => hasGlobalPermission('change_address');
+
+  /// Check if user can delete address
+  bool get canDeleteAddress => hasGlobalPermission('delete_address');
+
+  /// Check if user can add contact
+  bool get canAddContact => hasGlobalPermission('add_contact');
+
+  /// Check if user can change contact
+  bool get canChangeContact => hasGlobalPermission('change_contact');
+
+  /// Check if user can delete contact
+  bool get canDeleteContact => hasGlobalPermission('delete_contact');
+
+  /// Check if user can search professionals
+  bool get canSearchProfessionals =>
+      hasGlobalPermission('search_professionals');
+
+  /// Check if user can view professional profiles
+  bool get canViewProfessionalProfiles =>
+      hasGlobalPermission('view_professional_profiles');
+
+  /// Check if user can update practice info
+  bool get canUpdatePracticeInfo => hasGlobalPermission('update_practice_info');
+
+  /// Check if user can view verification
+  bool get canViewVerification => hasGlobalPermission('view_verification');
+
+  /// Check if user can add verification
+  bool get canAddVerification => hasGlobalPermission('add_verification');
 
   // ============ Legal Library Permissions ============
 
@@ -403,10 +468,27 @@ class PermissionService extends GetxService {
     debugPrint('   📋 Purchase Documents: $canPurchaseDocuments');
     debugPrint(
         '   📖 Purchase Learning Materials: $canPurchaseLearningMaterials');
+    debugPrint('');
+    debugPrint('   🔑 Global Permissions (${globalPermissions.length} total):');
+    debugPrint('      Edit Profile: $canEditOwnProfile');
+    debugPrint('      Upload Documents: $canUploadDocuments');
+    debugPrint('      View Own Documents: $canViewOwnDocuments');
+    debugPrint('      Delete Own Documents: $canDeleteOwnDocuments');
+    debugPrint('      Search Professionals: $canSearchProfessionals');
+    debugPrint(
+        '      View Professional Profiles: $canViewProfessionalProfiles');
+    debugPrint('      Update Practice Info: $canUpdatePracticeInfo');
+    debugPrint(
+        '      Manage Address: $canAddAddress/$canChangeAddress/$canDeleteAddress');
+    debugPrint(
+        '      Manage Contact: $canAddContact/$canChangeContact/$canDeleteContact');
+    if (kDebugMode && globalPermissions.length <= 15) {
+      debugPrint('      All: ${globalPermissions.join(", ")}');
+    }
   }
 }
 
-/// Enum for all permission features in the app
+/// Enum for all permission features in the app (subscription-based)
 enum PermissionFeature {
   legalLibrary,
   askQuestions,
@@ -419,4 +501,35 @@ enum PermissionFeature {
   purchaseLearningMaterials,
   talkToLawyer,
   nearbyLawyers,
+}
+
+/// Enum for global user permissions (CRUD operations)
+enum GlobalPermission {
+  deleteAddress('delete_address'),
+  addAddress('add_address'),
+  addContact('add_contact'),
+  viewOwnDocuments('view_own_documents'),
+  updatePracticeInfo('update_practice_info'),
+  changeContact('change_contact'),
+  viewVerification('view_verification'),
+  deleteOwnDocuments('delete_own_documents'),
+  uploadDocuments('upload_documents'),
+  changePolaUser('change_polauser'),
+  viewProfessionalProfiles('view_professional_profiles'),
+  deleteDocument('delete_document'),
+  editOwnProfile('edit_own_profile'),
+  searchProfessionals('search_professionals'),
+  addVerification('add_verification'),
+  changeAddress('change_address'),
+  viewOwnProfile('view_own_profile'),
+  viewContact('view_contact'),
+  viewDocument('view_document'),
+  changeDocument('change_document'),
+  addDocument('add_document'),
+  deleteContact('delete_contact'),
+  viewPolaUser('view_polauser'),
+  viewAddress('view_address');
+
+  final String value;
+  const GlobalPermission(this.value);
 }

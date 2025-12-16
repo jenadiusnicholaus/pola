@@ -354,12 +354,13 @@ class _EnhancedCommentThreadState extends State<EnhancedCommentThread> {
       enableDrag: false,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.85,
+      builder: (context) => Padding(
+        padding: MediaQuery.of(context).viewInsets,
         child: DraggableScrollableSheet(
-          initialChildSize: 1.0,
+          initialChildSize: 0.85,
           minChildSize: 0.5,
-          maxChildSize: 1.0,
+          maxChildSize: 0.95,
+          expand: false,
           builder: (context, scrollController) => Container(
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
