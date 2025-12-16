@@ -60,7 +60,12 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen>
 
       await _checkPaymentStatus();
 
-      if (status == 'success' || status == 'failed' || status == 'error') {
+      // Stop polling on terminal states
+      if (status == 'completed' ||
+          status == 'success' ||
+          status == 'failed' ||
+          status == 'cancelled' ||
+          status == 'error') {
         timer.cancel();
         _animationController.stop();
       }
@@ -78,8 +83,11 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen>
           message = paymentStatus.message;
         });
 
-        if (status == 'success') {
+        // Handle different status values from unified payment API
+        if (status == 'completed' || status == 'success') {
           _onPaymentSuccess();
+        } else if (status == 'failed' || status == 'cancelled') {
+          _animationController.stop();
         }
       }
     } catch (e) {

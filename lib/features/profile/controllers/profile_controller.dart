@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:flutter/foundation.dart';
 import '../services/profile_service.dart';
 import '../models/profile_models.dart';
+import '../../../services/permission_service.dart';
 
 class ProfileController extends GetxController {
   final ProfileService _profileService = Get.find<ProfileService>();
@@ -38,10 +39,19 @@ class ProfileController extends GetxController {
     }
   }
 
-  /// Refresh profile from API
+  /// Refresh profile and permissions from API
   Future<void> refreshProfile() async {
     try {
       await _profileService.refreshProfile();
+
+      // Also refresh permissions after profile update
+      try {
+        final permService = Get.find<PermissionService>();
+        await permService.refreshPermissions();
+      } catch (e) {
+        debugPrint('⚠️ Could not refresh permissions: $e');
+      }
+
       Get.snackbar(
         'Success',
         'Profile refreshed successfully',

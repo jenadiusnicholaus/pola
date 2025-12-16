@@ -204,7 +204,8 @@ class CallController extends GetxController {
         if (Get.context != null) {
           ScaffoldMessenger.of(Get.context!).showSnackBar(
             SnackBar(
-              content: Text(initiateResult['error'] ?? 'Failed to initiate call'),
+              content:
+                  Text(initiateResult['error'] ?? 'Failed to initiate call'),
               backgroundColor: Colors.red,
               duration: const Duration(seconds: 3),
             ),

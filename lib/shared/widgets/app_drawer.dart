@@ -50,167 +50,163 @@ class AppDrawer extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final profileService = Get.find<ProfileService>();
 
-    // Ensure profile is loaded
-    if (profileService.currentProfile == null) {
-      debugPrint('⚠️ Profile is null, fetching profile...');
-      profileService.fetchProfile();
-    }
+    return Obx(() {
+      final profile = profileService.currentProfile;
 
-    final profile = profileService.currentProfile;
+      // Get user details
+      final firstName = profile?.firstName ?? '';
+      final lastName = profile?.lastName ?? '';
+      final userEmail = profile?.email ?? '';
+      final profilePicture = profile?.profilePicture;
 
-    // Get user details
-    final firstName = profile?.firstName ?? '';
-    final lastName = profile?.lastName ?? '';
-    final userEmail = profile?.email ?? '';
-    final profilePicture = profile?.profilePicture;
-
-    // Build user name, fallback to email username if names are empty
-    String userName = 'User';
-    if (firstName.isNotEmpty || lastName.isNotEmpty) {
-      userName = '$firstName $lastName'.trim();
-    } else if (userEmail.isNotEmpty) {
-      // Use email username part as fallback
-      userName = userEmail.split('@').first;
-    }
-
-    // Get subscription status
-    final subscription = profile?.subscription;
-    String subscriptionBadge = 'Free';
-    Color badgeColor = theme.colorScheme.onSurfaceVariant;
-
-    if (subscription != null && subscription.isActive) {
-      if (subscription.isTrial) {
-        subscriptionBadge = 'Trial';
-        badgeColor = Colors.blue;
-      } else if (subscription.planType.toLowerCase().contains('premium')) {
-        subscriptionBadge = 'Premium';
-        badgeColor = Colors.amber;
-      } else if (subscription.planType.toLowerCase().contains('professional')) {
-        subscriptionBadge = 'Pro';
-        badgeColor = Colors.purple;
-      } else if (subscription.planType.toLowerCase() != 'free') {
-        subscriptionBadge = 'Plus';
-        badgeColor = theme.colorScheme.primary;
+      // Build user name, fallback to email username if names are empty
+      String userName = 'User';
+      if (firstName.isNotEmpty || lastName.isNotEmpty) {
+        userName = '$firstName $lastName'.trim();
+      } else if (userEmail.isNotEmpty) {
+        userName = userEmail.split('@').first;
       }
-    }
 
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: isDark
-            ? theme.colorScheme.surfaceContainerHighest
-            : theme.colorScheme.surfaceContainer,
-        border: Border(
-          bottom: BorderSide(
-            color: theme.colorScheme.outlineVariant.withOpacity(0.5),
-            width: 1,
+      // Get subscription status - use real subscription data
+      final subscription = profile?.subscription;
+      String subscriptionBadge = 'Free';
+      Color badgeColor = theme.colorScheme.onSurfaceVariant;
+
+      if (subscription != null && subscription.isActive) {
+        // Use the actual plan name from subscription
+        subscriptionBadge = subscription.planName;
+
+        if (subscription.isTrial) {
+          badgeColor = Colors.blue;
+        } else if (subscription.planType.toLowerCase().contains('monthly')) {
+          badgeColor = Colors.green;
+        } else if (subscription.planType.toLowerCase().contains('yearly')) {
+          badgeColor = Colors.amber;
+        } else if (subscription.planType.toLowerCase().contains('premium')) {
+          badgeColor = Colors.amber;
+        } else {
+          badgeColor = theme.colorScheme.primary;
+        }
+      }
+
+      return Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: isDark
+              ? theme.colorScheme.surfaceContainerHighest
+              : theme.colorScheme.surfaceContainer,
+          border: Border(
+            bottom: BorderSide(
+              color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+              width: 1,
+            ),
           ),
         ),
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-          child: Row(
-            children: [
-              // Profile Picture
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: theme.colorScheme.primaryContainer,
-                  border: Border.all(
-                    color: theme.colorScheme.outline.withOpacity(0.2),
-                    width: 2,
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Row(
+              children: [
+                // Profile Picture
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: theme.colorScheme.primaryContainer,
+                    border: Border.all(
+                      color: theme.colorScheme.outline.withOpacity(0.2),
+                      width: 2,
+                    ),
                   ),
-                ),
-                child: profilePicture != null
-                    ? ClipOval(
-                        child: Image.network(
-                          profilePicture,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(
-                              Icons.person,
-                              size: 24,
-                              color: theme.colorScheme.onPrimaryContainer,
-                            );
-                          },
+                  child: profilePicture != null
+                      ? ClipOval(
+                          child: Image.network(
+                            profilePicture,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(
+                                Icons.person,
+                                size: 24,
+                                color: theme.colorScheme.onPrimaryContainer,
+                              );
+                            },
+                          ),
+                        )
+                      : Icon(
+                          Icons.person,
+                          size: 24,
+                          color: theme.colorScheme.onPrimaryContainer,
                         ),
-                      )
-                    : Icon(
-                        Icons.person,
-                        size: 24,
-                        color: theme.colorScheme.onPrimaryContainer,
-                      ),
-              ),
-
-              const SizedBox(width: 12),
-
-              // User Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // User Name
-                    Text(
-                      userName,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.2,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                    const SizedBox(height: 2),
-
-                    // User Email
-                    Text(
-                      userEmail,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
-                        fontSize: 11,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
                 ),
-              ),
 
-              // Subscription Badge (compact)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: badgeColor.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: badgeColor.withOpacity(0.3),
-                    width: 1,
+                const SizedBox(width: 12),
+
+                // User Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // User Name
+                      Text(
+                        userName,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.2,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+
+                      const SizedBox(height: 2),
+
+                      // User Email
+                      Text(
+                        userEmail,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          fontSize: 11,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
-                child: Text(
-                  subscriptionBadge,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: badgeColor,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 10,
-                    letterSpacing: 0.5,
+
+                // Subscription Badge (compact)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: badgeColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: badgeColor.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    subscriptionBadge,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: badgeColor,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 10,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildNavigationSection(BuildContext context, ThemeData theme) {
@@ -328,6 +324,16 @@ class AppDrawer extends StatelessWidget {
   }
 
   Widget _buildToolsSection(BuildContext context, ThemeData theme) {
+    // Note: These tools can be gated with PermissionMenuItem when features are ready
+    // Example:
+    // PermissionMenuItem(
+    //   feature: PermissionFeature.legalLibrary,
+    //   icon: Icons.library_books_outlined,
+    //   title: 'Case Library',
+    //   subtitle: 'Browse legal cases',
+    //   onTap: () => Get.toNamed(AppRoutes.caseLibrary),
+    // ),
+
     return Column(
       children: [
         _buildSectionHeader('Legal Tools', theme),
@@ -366,22 +372,16 @@ class AppDrawer extends StatelessWidget {
   }
 
   Widget _buildAccountSection(BuildContext context, ThemeData theme) {
-    // Check if user needs to show upgrade option
     final profileService = Get.find<ProfileService>();
-    final profile = profileService.currentProfile;
-    bool showUpgrade = true; // Default to showing upgrade option
 
-    if (profile != null) {
-      final subscription = profile.subscription;
-      // Only hide upgrade if user has an active paid subscription
-      // Show upgrade for: free trial, inactive subscriptions, or free plan
-      final isPaidPlan = subscription.planType != 'free_trial' &&
-          subscription.planType != 'free';
-      showUpgrade = !isPaidPlan || !subscription.isActive;
-    }
+    return Obx(() {
+      final profile = profileService.currentProfile;
+      final subscription = profile?.subscription;
 
-    return Column(
-      children: [
+      // Hide upgrade if user has an active subscription (any type)
+      final showUpgrade = subscription == null || !subscription.isActive;
+
+      return Column(children: [
         _buildSectionHeader('Account', theme),
         _buildDrawerItem(
           context: context,
@@ -413,8 +413,8 @@ class AppDrawer extends StatelessWidget {
               Get.to(() => const SubscriptionPlansScreen());
             },
           ),
-      ],
-    );
+      ]);
+    });
   }
 
   Widget _buildSupportSection(BuildContext context, ThemeData theme) {

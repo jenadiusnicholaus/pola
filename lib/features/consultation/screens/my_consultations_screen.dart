@@ -237,7 +237,13 @@ class _MyConsultationsScreenState extends State<MyConsultationsScreen>
                     color: theme.colorScheme.primaryContainer,
                   ),
                   child: Icon(
-                    Icons.person,
+                    booking.isCall
+                        ? (booking.callType == 'video'
+                            ? Icons.videocam
+                            : Icons.phone)
+                        : (booking.bookingType == 'physical'
+                            ? Icons.location_on
+                            : Icons.chat),
                     color: theme.colorScheme.onPrimaryContainer,
                   ),
                 ),
@@ -303,39 +309,78 @@ class _MyConsultationsScreenState extends State<MyConsultationsScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Date and Time
-                Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today,
-                      size: 16,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _formatDate(booking.scheduledDate),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
+                // Date and Time (for bookings) or Call info (for calls)
+                if (booking.isBooking) ...[
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        size: 16,
+                        color: theme.colorScheme.primary,
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Icon(
-                      Icons.access_time,
-                      size: 16,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      booking.scheduledTime,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
+                      const SizedBox(width: 8),
+                      Text(
+                        _formatDate(booking.scheduledDate),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                      const SizedBox(width: 16),
+                      Icon(
+                        Icons.access_time,
+                        size: 16,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        booking.scheduledTime,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ] else ...[
+                  // Call information
+                  Row(
+                    children: [
+                      Icon(
+                        booking.callType == 'video'
+                            ? Icons.videocam
+                            : Icons.phone,
+                        size: 16,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        booking.callType == 'video'
+                            ? 'Video Call'
+                            : 'Voice Call',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (booking.durationMinutes != null) ...[
+                        const SizedBox(width: 16),
+                        Icon(
+                          Icons.timer,
+                          size: 16,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${booking.durationMinutes} min',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 12),
 
-                // Type and Price
+                // Type and Price/Credits
                 Row(
                   children: [
                     Container(
@@ -352,15 +397,21 @@ class _MyConsultationsScreenState extends State<MyConsultationsScreen>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            booking.consultationType == 'physical'
-                                ? Icons.business
-                                : Icons.phone_android,
+                            booking.isCall
+                                ? (booking.callType == 'video'
+                                    ? Icons.videocam
+                                    : Icons.phone)
+                                : (booking.bookingType == 'physical'
+                                    ? Icons.business
+                                    : Icons.phone_android),
                             size: 14,
                             color: theme.colorScheme.onPrimaryContainer,
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            booking.consultationType.toUpperCase(),
+                            booking.isCall
+                                ? 'INSTANT ${booking.callType?.toUpperCase() ?? 'CALL'}'
+                                : booking.consultationType.toUpperCase(),
                             style: theme.textTheme.labelSmall?.copyWith(
                               color: theme.colorScheme.onPrimaryContainer,
                               fontWeight: FontWeight.bold,
@@ -369,21 +420,40 @@ class _MyConsultationsScreenState extends State<MyConsultationsScreen>
                         ],
                       ),
                     ),
-                    if (booking.price != null) ...[
+                    if (booking.amount != null) ...[
                       const SizedBox(width: 12),
                       Text(
-                        'TZS ${booking.price!.toStringAsFixed(0)}',
+                        'TZS ${booking.amount!.toStringAsFixed(0)}',
                         style: theme.textTheme.titleSmall?.copyWith(
                           color: Colors.green,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                    ] else if (booking.creditsDeducted != null) ...[
+                      const SizedBox(width: 12),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.account_balance_wallet,
+                            size: 16,
+                            color: Colors.orange,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${booking.creditsDeducted!.toStringAsFixed(0)} credits',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: Colors.orange,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ],
                 ),
 
-                // Notes
-                if (booking.notes != null && booking.notes!.isNotEmpty) ...[
+                // Notes/Topic
+                if (booking.topic != null && booking.topic!.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Container(
                     width: double.infinity,
@@ -397,14 +467,14 @@ class _MyConsultationsScreenState extends State<MyConsultationsScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Notes:',
+                          booking.isBooking ? 'Topic:' : 'Notes:',
                           style: theme.textTheme.labelSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          booking.notes!,
+                          booking.topic!,
                           style: theme.textTheme.bodySmall,
                         ),
                       ],
@@ -467,7 +537,9 @@ class _MyConsultationsScreenState extends State<MyConsultationsScreen>
     );
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'N/A';
+
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final tomorrow = today.add(const Duration(days: 1));

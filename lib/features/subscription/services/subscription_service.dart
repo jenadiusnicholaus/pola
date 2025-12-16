@@ -45,7 +45,7 @@ class SubscriptionService extends GetxService {
     }
   }
 
-  /// Subscribe to a plan
+  /// Subscribe to a plan using unified payment API
   Future<SubscriptionResult> subscribe({
     required int planId,
     required String phoneNumber,
@@ -54,51 +54,77 @@ class SubscriptionService extends GetxService {
     try {
       debugPrint('💳 Subscribing to plan $planId...');
       debugPrint('   Phone: $phoneNumber');
-      debugPrint('   Payment method: $paymentMethod');
+      debugPrint('   Provider: $paymentMethod');
 
       final response = await _apiService.post(
-        EnvironmentConfig.subscriptionSubscribeUrl,
+        '/api/v1/subscriptions/unified-payments/initiate/',
         data: {
-          'plan_id': planId,
+          'payment_category': 'subscription',
+          'item_id': planId,
           'phone_number': phoneNumber,
-          'payment_method': paymentMethod,
+          'payment_method': 'mobile_money',
+          'provider': paymentMethod,
         },
       );
 
-      debugPrint('💳 Subscribe Response: ${response.statusCode}');
+      debugPrint('💳 Payment Response: ${response.statusCode}');
+      debugPrint('💳 Response data: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final result = SubscriptionResult.fromJson(response.data);
-        debugPrint('✅ Subscription initiated: ${result.transactionId}');
-        return result;
+        final data = response.data;
+        return SubscriptionResult(
+          success: data['success'] ?? true,
+          message: data['message'] ?? 'Payment initiated',
+          transactionId: data['transaction']?['id']?.toString(),
+        );
       }
 
-      throw Exception('Subscription failed: ${response.statusCode}');
+      throw Exception('Payment failed: ${response.statusCode}');
     } catch (e) {
-      debugPrint('❌ Error subscribing: $e');
+      debugPrint('❌ Error initiating payment: $e');
       return SubscriptionResult(
         success: false,
-        message: 'Failed to initiate subscription: $e',
+        message: 'Failed to initiate payment: $e',
       );
     }
   }
 
-  /// Check payment status
+  /// Check payment status using unified payment API
   Future<PaymentStatus> checkPaymentStatus(String transactionId) async {
     try {
       debugPrint('🔍 Checking payment status for: $transactionId');
 
       final response = await _apiService.get(
-        EnvironmentConfig.subscriptionPaymentStatusUrl,
-        queryParameters: {'transaction_id': transactionId},
+        '/api/v1/subscriptions/unified-payments/$transactionId/status/',
       );
 
       debugPrint('🔍 Payment Status Response: ${response.statusCode}');
+      debugPrint('🔍 Response data: ${response.data}');
 
       if (response.statusCode == 200) {
-        final status = PaymentStatus.fromJson(response.data);
-        debugPrint('   Status: ${status.status}');
-        return status;
+        final data = response.data;
+
+        if (data == null) {
+          return PaymentStatus(
+            status: 'error',
+            message: 'No data received from server',
+          );
+        }
+
+        final payment = data['payment'];
+
+        if (payment == null) {
+          return PaymentStatus(
+            status: 'error',
+            message: 'Invalid payment data received',
+          );
+        }
+
+        return PaymentStatus(
+          status: payment['status'] ?? 'unknown',
+          message: payment['message'] ?? data['message'] ?? '',
+          transactionId: payment['id']?.toString(),
+        );
       }
 
       throw Exception('Failed to check payment status: ${response.statusCode}');

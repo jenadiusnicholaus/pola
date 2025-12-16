@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart' as dio;
 import '../../../services/api_service.dart';
 import '../../../services/token_storage_service.dart';
+import '../../../services/permission_service.dart';
 import '../../../config/environment_config.dart';
 import '../../../config/dio_config.dart';
 import '../models/profile_models.dart';
@@ -196,6 +197,14 @@ class ProfileService extends GetxService {
 
         // Update user data in token storage for admin role detection
         await _tokenStorage.updateUserProfile(response.data);
+
+        // Notify permission service that profile was updated
+        try {
+          final permService = Get.find<PermissionService>();
+          permService.debugSubscriptionStatus();
+        } catch (e) {
+          debugPrint('⚠️ Could not notify permission service: $e');
+        }
 
         debugPrint(
             '✅ Profile fetched and cached: ${profile.fullName} (${profile.userRole.roleName})');

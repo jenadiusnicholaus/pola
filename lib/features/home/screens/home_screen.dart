@@ -6,6 +6,8 @@ import '../widgets/hubs_and_services_list.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
 import '../../../shared/widgets/app_drawer.dart';
+import '../../../shared/widgets/permission_gate.dart';
+import '../../profile/services/profile_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -65,6 +67,32 @@ class _HomeScreenState extends State<HomeScreen> {
           slivers: [
             // Dynamic Sliver App Bar
             _buildDynamicSliverAppBar(context, controller),
+
+            // Subscription Status Banner (reactive)
+            SliverToBoxAdapter(
+              child: Obx(() {
+                final profileService = Get.find<ProfileService>();
+                final subscription =
+                    profileService.currentProfile?.subscription;
+
+                // Only show banner if truly needed
+                if (subscription != null && subscription.isActive) {
+                  // Active subscription - check if expiring soon or trial
+                  if (subscription.daysRemaining > 0 &&
+                      subscription.daysRemaining <= 7) {
+                    return const SubscriptionStatusBanner(); // Expiring soon
+                  }
+                  if (subscription.isTrial) {
+                    return const SubscriptionStatusBanner(); // Trial
+                  }
+                  // Active paid subscription - no banner
+                  return const SizedBox.shrink();
+                }
+
+                // No subscription or inactive - show banner
+                return const SubscriptionStatusBanner();
+              }),
+            ),
 
             // Hubs and Services Content
             const SliverToBoxAdapter(
@@ -255,15 +283,33 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
 
-      // User profile button
-      IconButton(
-        onPressed: () => _showUserProfile(context, controller),
-        icon: const Icon(
-          Icons.account_circle_outlined,
-          color: Colors.black87,
-        ),
-        tooltip: 'Profile',
-      ),
+      // User profile button with picture
+      Obx(() {
+        final profileService = Get.find<ProfileService>();
+        final profilePicture = profileService.currentProfile?.profilePicture;
+
+        return GestureDetector(
+          onTap: () => _showUserProfile(context, controller),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: CircleAvatar(
+              radius: 18,
+              backgroundColor: Colors.white.withOpacity(0.2),
+              backgroundImage:
+                  profilePicture != null && profilePicture.isNotEmpty
+                      ? NetworkImage(profilePicture)
+                      : null,
+              child: profilePicture == null || profilePicture.isEmpty
+                  ? const Icon(
+                      Icons.account_circle_outlined,
+                      color: Colors.black87,
+                      size: 24,
+                    )
+                  : null,
+            ),
+          ),
+        );
+      }),
 
       const SizedBox(width: 8), // Add some spacing from the edge
     ];

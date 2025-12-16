@@ -14,6 +14,7 @@ import 'config/dio_config.dart';
 import 'services/api_service.dart';
 import 'services/token_storage_service.dart';
 import 'services/auth_service.dart';
+import 'services/permission_service.dart';
 import 'features/auth/services/lookup_service.dart';
 import 'features/profile/services/profile_service.dart';
 import 'features/hubs_and_services/legal_education/services/legal_education_service.dart';
@@ -146,6 +147,10 @@ LOGOUT_ENDPOINT=/api/v1/authentication/logout/
   // Initialize profile service before auth service (dependency)
   Get.put(ProfileService());
   debugPrint('✅ ProfileService initialized');
+
+  // Initialize permission service (depends on ProfileService)
+  Get.put(PermissionService());
+  debugPrint('✅ PermissionService initialized');
 
   // Initialize auth service (depends on ProfileService)
   Get.put(AuthService());

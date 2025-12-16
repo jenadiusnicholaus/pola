@@ -241,6 +241,10 @@ class SubscriptionPermissions {
   final bool canPurchaseConsultations;
   final bool canPurchaseDocuments;
   final bool canPurchaseLearningMaterials;
+  
+  // Role-specific permissions
+  final bool canViewTalkToLawyer;
+  final bool canViewNearbyLawyers;
 
   SubscriptionPermissions({
     required this.isActive,
@@ -257,6 +261,8 @@ class SubscriptionPermissions {
     required this.canPurchaseConsultations,
     required this.canPurchaseDocuments,
     required this.canPurchaseLearningMaterials,
+    required this.canViewTalkToLawyer,
+    required this.canViewNearbyLawyers,
   });
 
   factory SubscriptionPermissions.fromJson(Map<String, dynamic> json) {
@@ -276,6 +282,8 @@ class SubscriptionPermissions {
       canPurchaseDocuments: json['can_purchase_documents'] ?? false,
       canPurchaseLearningMaterials:
           json['can_purchase_learning_materials'] ?? false,
+      canViewTalkToLawyer: json['can_view_talk_to_lawyer'] ?? true,
+      canViewNearbyLawyers: json['can_view_nearby_lawyers'] ?? false,
     );
   }
 }

@@ -230,15 +230,18 @@ class ConsultationService extends GetxService {
     }
   }
 
-  /// Get my consultations/bookings as a consultant
-  /// This returns bookings made TO this consultant by other users
+  /// Get my consultations (unified: bookings + calls)
+  /// This returns ALL consultations (scheduled bookings + instant calls) for this consultant
   Future<MyConsultationsResponse?> getMyConsultations({
     int page = 1,
     int pageSize = 20,
-    String? status, // 'pending', 'confirmed', 'completed', 'cancelled'
+    String?
+        status, // For bookings: 'pending', 'confirmed', 'in_progress', 'completed', 'cancelled'
+    // For calls: 'ringing', 'active', 'completed', 'rejected', 'missed', 'cancelled'
+    String? type, // Filter by type: 'booking', 'call', 'mobile', or 'physical'
   }) async {
     try {
-      debugPrint('📋 Fetching my consultations as consultant...');
+      debugPrint('📋 Fetching my consultations (unified)...');
 
       final queryParams = <String, dynamic>{
         'page': page,
@@ -249,12 +252,17 @@ class ConsultationService extends GetxService {
         queryParams['status'] = status;
       }
 
+      if (type != null && type.isNotEmpty) {
+        queryParams['type'] = type;
+      }
+
       final response = await _apiService.get(
         EnvironmentConfig.consultationMyConsultationsUrl,
         queryParameters: queryParams,
       );
 
       if (response.statusCode == 200) {
+        debugPrint('✅ Consultations fetched: ${response.data['count']} total');
         return MyConsultationsResponse.fromJson(response.data);
       }
 
@@ -501,74 +509,146 @@ class ConsultantReviewsResponse {
 
 class MyConsultationsResponse {
   final int count;
-  final String? next;
-  final String? previous;
-  final List<ConsultationBooking> results;
+  final int page;
+  final int pageSize;
+  final int totalPages;
+  final ConsultationSummary? summary;
+  final List<ConsultationBooking> consultations;
 
   MyConsultationsResponse({
     required this.count,
-    this.next,
-    this.previous,
-    required this.results,
+    required this.page,
+    required this.pageSize,
+    required this.totalPages,
+    this.summary,
+    required this.consultations,
   });
 
   factory MyConsultationsResponse.fromJson(Map<String, dynamic> json) {
     return MyConsultationsResponse(
       count: json['count'] ?? 0,
-      next: json['next'],
-      previous: json['previous'],
-      results: (json['results'] as List<dynamic>? ?? [])
+      page: json['page'] ?? 1,
+      pageSize: json['page_size'] ?? 20,
+      totalPages: json['total_pages'] ?? 1,
+      summary: json['summary'] != null
+          ? ConsultationSummary.fromJson(json['summary'])
+          : null,
+      consultations: (json['consultations'] as List<dynamic>? ?? [])
           .map((item) => ConsultationBooking.fromJson(item))
           .toList(),
+    );
+  }
+
+  // Legacy compatibility - map consultations to results
+  List<ConsultationBooking> get results => consultations;
+}
+
+class ConsultationSummary {
+  final int totalBookings;
+  final int totalCalls;
+  final int totalCombined;
+
+  ConsultationSummary({
+    required this.totalBookings,
+    required this.totalCalls,
+    required this.totalCombined,
+  });
+
+  factory ConsultationSummary.fromJson(Map<String, dynamic> json) {
+    return ConsultationSummary(
+      totalBookings: json['total_bookings'] ?? 0,
+      totalCalls: json['total_calls'] ?? 0,
+      totalCombined: json['total_combined'] ?? 0,
     );
   }
 }
 
 class ConsultationBooking {
+  final String type; // 'call' or 'booking'
   final int id;
-  final Map<String, dynamic> client; // Client who booked
-  final String consultationType; // 'mobile' or 'physical'
-  final DateTime scheduledDate;
-  final String scheduledTime;
-  final String status; // 'pending', 'confirmed', 'completed', 'cancelled'
-  final String? notes;
-  final double? price;
+  final Map<String, dynamic> client; // Client who booked/called
+
+  // Common fields
+  final String status;
   final DateTime createdAt;
-  final DateTime? updatedAt;
+
+  // Booking-specific fields (null for calls)
+  final String? bookingType; // 'mobile' or 'physical' (for bookings)
+  final String? topic;
+  final DateTime? scheduledDate;
+  final double? amount;
+
+  // Call-specific fields (null for bookings)
+  final String? callType; // 'voice' or 'video' (for calls)
+  final String? channelName;
+  final DateTime? initiatedAt;
+  final DateTime? acceptedAt;
+  final DateTime? endedAt;
+  final int? durationMinutes;
+  final double? creditsDeducted;
 
   ConsultationBooking({
+    required this.type,
     required this.id,
     required this.client,
-    required this.consultationType,
-    required this.scheduledDate,
-    required this.scheduledTime,
     required this.status,
-    this.notes,
-    this.price,
     required this.createdAt,
-    this.updatedAt,
+    // Booking fields
+    this.bookingType,
+    this.topic,
+    this.scheduledDate,
+    this.amount,
+    // Call fields
+    this.callType,
+    this.channelName,
+    this.initiatedAt,
+    this.acceptedAt,
+    this.endedAt,
+    this.durationMinutes,
+    this.creditsDeducted,
   });
 
   factory ConsultationBooking.fromJson(Map<String, dynamic> json) {
     return ConsultationBooking(
-      id: json['id'],
-      client: json['client'] as Map<String, dynamic>,
-      consultationType: json['consultation_type'] ?? 'mobile',
-      scheduledDate: DateTime.parse(json['scheduled_date']),
-      scheduledTime: json['scheduled_time'] ?? '',
-      status: json['status'] ?? 'pending',
-      notes: json['notes'],
-      price: json['price'] != null
-          ? double.tryParse(json['price'].toString())
+      type: json['type'] ?? 'booking',
+      id: json['id'] ?? 0,
+      client: (json['client'] as Map<String, dynamic>?) ?? {},
+      status: json['status'] ?? '',
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : DateTime.now(),
+      // Booking-specific fields
+      bookingType: json['booking_type'],
+      topic: json['topic'],
+      scheduledDate: json['scheduled_date'] != null
+          ? DateTime.parse(json['scheduled_date'])
           : null,
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'])
+      amount: json['amount'] != null
+          ? double.tryParse(json['amount'].toString())
+          : null,
+      // Call-specific fields
+      callType: json['call_type'],
+      channelName: json['channel_name'],
+      initiatedAt: json['initiated_at'] != null
+          ? DateTime.parse(json['initiated_at'])
+          : null,
+      acceptedAt: json['accepted_at'] != null
+          ? DateTime.parse(json['accepted_at'])
+          : null,
+      endedAt:
+          json['ended_at'] != null ? DateTime.parse(json['ended_at']) : null,
+      durationMinutes: json['duration_minutes'],
+      creditsDeducted: json['credits_deducted'] != null
+          ? double.tryParse(json['credits_deducted'].toString())
           : null,
     );
   }
 
+  // Helper getters for client info
   String get clientName {
+    final name = client['name'];
+    if (name != null && name.isNotEmpty) return name;
+
     final firstName = client['first_name'] ?? '';
     final lastName = client['last_name'] ?? '';
     if (firstName.isNotEmpty || lastName.isNotEmpty) {
@@ -578,10 +658,78 @@ class ConsultationBooking {
   }
 
   String get clientEmail => client['email'] ?? '';
-  String? get clientPhone => client['phone_number'];
+  int get clientId => client['id'] ?? 0;
 
+  // Type checking helpers
+  bool get isCall => type == 'call';
+  bool get isBooking => type == 'booking';
+
+  // Status helpers for bookings
   bool get isPending => status.toLowerCase() == 'pending';
   bool get isConfirmed => status.toLowerCase() == 'confirmed';
+  bool get isInProgress => status.toLowerCase() == 'in_progress';
   bool get isCompleted => status.toLowerCase() == 'completed';
   bool get isCancelled => status.toLowerCase() == 'cancelled';
+
+  // Status helpers for calls
+  bool get isRinging => status.toLowerCase() == 'ringing';
+  bool get isActive => status.toLowerCase() == 'active';
+  bool get isRejected => status.toLowerCase() == 'rejected';
+  bool get isMissed => status.toLowerCase() == 'missed';
+
+  // Display helpers
+  String get consultationType {
+    if (isCall) {
+      return callType ?? 'call';
+    }
+    return bookingType ?? 'booking';
+  }
+
+  String get statusLabel {
+    if (isCall) {
+      switch (status.toLowerCase()) {
+        case 'completed':
+          return 'Call Completed';
+        case 'missed':
+          return 'Missed Call';
+        case 'rejected':
+          return 'Call Rejected';
+        case 'active':
+          return 'Ongoing Call';
+        case 'ringing':
+          return 'Incoming Call';
+        default:
+          return status;
+      }
+    } else {
+      switch (status.toLowerCase()) {
+        case 'confirmed':
+          return 'Confirmed';
+        case 'pending':
+          return 'Pending';
+        case 'completed':
+          return 'Completed';
+        case 'in_progress':
+          return 'In Progress';
+        case 'cancelled':
+          return 'Cancelled';
+        default:
+          return status;
+      }
+    }
+  }
+
+  // Legacy compatibility
+  @deprecated
+  String get scheduledTime =>
+      scheduledDate?.toIso8601String().split('T').last.substring(0, 5) ?? '';
+
+  @deprecated
+  double? get price => amount;
+
+  @deprecated
+  DateTime? get updatedAt => endedAt ?? acceptedAt;
+
+  @deprecated
+  String? get notes => topic;
 }

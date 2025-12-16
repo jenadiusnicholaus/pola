@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../../hubs_and_services/data.dart';
 import '../controllers/home_controller.dart';
 import '../../../services/token_storage_service.dart';
+import '../../../services/permission_service.dart';
+import '../../profile/services/profile_service.dart';
 import '../../hubs_and_services/hub_content/utils/user_role_manager.dart';
 
 class HubsAndServicesList extends StatelessWidget {
@@ -11,7 +13,20 @@ class HubsAndServicesList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetBuilder<HomeController>(
-      builder: (controller) => _buildContent(context, controller),
+      builder: (controller) {
+        // Make it reactive to profile changes
+        return Obx(() {
+          // Trigger rebuild when profile changes
+          try {
+            final profileService = Get.find<ProfileService>();
+            final profile = profileService.currentProfile;
+            debugPrint('🔄 HubsAndServicesList rebuild - Profile: ${profile?.email ?? 'not loaded'}');
+          } catch (e) {
+            debugPrint('⚠️ ProfileService not ready: $e');
+          }
+          return _buildContent(context, controller);
+        });
+      },
     );
   }
 
@@ -59,9 +74,15 @@ class HubsAndServicesList extends StatelessWidget {
     debugPrint(
         '🔍 HUB FILTER: Filtered hubs: ${hubs.map((h) => h['key']).join(', ')}');
 
-    final services = HubsAndServicesData.hubAndServices
+    // Filter services based on role permissions
+    final allServices = HubsAndServicesData.hubAndServices
         .where((item) => item['type'] == 'service')
         .toList();
+    
+    final services = _filterServicesByRole(allServices);
+    
+    debugPrint(
+        '🔍 SERVICE FILTER: Filtered services: ${services.map((s) => s['key']).join(', ')}');
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -86,7 +107,7 @@ class HubsAndServicesList extends StatelessWidget {
             _buildSubsectionTitle(context, 'Legal Services',
                 Icons.miscellaneous_services, Colors.green, services.length),
             const SizedBox(height: 16),
-            _buildItemsList(context, services),
+            _buildItemsList(context, services.cast<Map<String, String>>()),
           ],
         ],
       ),
@@ -432,6 +453,55 @@ class HubsAndServicesList extends StatelessWidget {
     debugPrint(
         '🔍 ACCESS CHECK RESULT: Hub "$hubKey" for role "$role" = $hasAccess');
     return hasAccess;
+  }
+
+  /// Filter services based on role permissions
+  List<Map<String, dynamic>> _filterServicesByRole(
+      List<Map<String, dynamic>> services) {
+    try {
+      final permissionService = Get.find<PermissionService>();
+      
+      // Check if profile is loaded
+      final profile = permissionService.currentProfile;
+      if (profile == null) {
+        debugPrint('⚠️ SERVICE FILTER: Profile not loaded yet - showing all services');
+        return services;
+      }
+      
+      debugPrint('🔍 SERVICE FILTER: Checking role-based permissions...');
+      debugPrint('   User: ${profile.email}');
+      debugPrint('   User Role: ${permissionService.userRoleName}');
+      debugPrint('   Is Professional: ${permissionService.isProfessional}');
+      debugPrint('   Can View Talk to Lawyer: ${permissionService.canViewTalkToLawyer}');
+      debugPrint('   Can View Nearby Lawyers: ${permissionService.canViewNearbyLawyers}');
+      
+      final filteredServices = services.where((service) {
+        final key = service['key'] as String?;
+        if (key == null) return true;
+        
+        // Filter based on role-specific permissions
+        switch (key) {
+          case 'talk_to_lawyers':
+            final canView = permissionService.canViewTalkToLawyer;
+            debugPrint('   - Talk to Lawyers: $canView');
+            return canView;
+          case 'search_nearby_lawyers':
+            final canView = permissionService.canViewNearbyLawyers;
+            debugPrint('   - Search Nearby Lawyers: $canView');
+            return canView;
+          default:
+            return true; // Show all other services
+        }
+      }).toList();
+      
+      debugPrint('🔍 SERVICE FILTER: ${services.length} services → ${filteredServices.length} after filtering');
+      return filteredServices;
+    } catch (e) {
+      debugPrint('❌ SERVICE FILTER ERROR: $e');
+      debugPrint('   Showing all services as fallback');
+      // If permission service not available, show all services
+      return services;
+    }
   }
 
   /// Filter hubs based on user role

@@ -28,6 +28,7 @@ import '../features/nearbylawyers/screens/nearby_lawyers_screen.dart';
 import '../features/nearbylawyers/screens/lawyers_map_screen.dart';
 import '../features/auth/screens/change_role_screen.dart';
 import '../features/consultation/screens/my_consultations_screen.dart';
+import '../features/subscription/screens/subscription_plans_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -60,6 +61,7 @@ class AppRoutes {
   static const String lawyersMap = '/lawyers-map';
   static const String changeRole = '/change-role';
   static const String myConsultations = '/my-consultations';
+  static const String subscriptionPlans = '/subscription-plans';
 
   static List<GetPage> routes = [
     GetPage(
@@ -193,6 +195,10 @@ class AppRoutes {
     GetPage(
       name: myConsultations,
       page: () => const MyConsultationsScreen(),
+    ),
+    GetPage(
+      name: subscriptionPlans,
+      page: () => const SubscriptionPlansScreen(),
     ),
   ];
 

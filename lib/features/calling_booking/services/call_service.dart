@@ -21,16 +21,20 @@ class CallService {
       debugPrint('📞 Initiating call to consultant $consultantId');
       debugPrint('📡 Channel: $channelName');
       debugPrint('🌐 Base URL: ${_dio.options.baseUrl}');
-      debugPrint('🎯 Full URL: ${_dio.options.baseUrl}/api/v1/subscriptions/calls/initiate');
+      debugPrint(
+          '🎯 Full URL: ${_dio.options.baseUrl}/api/v1/subscriptions/calls/initiate/');
 
       final response = await _dio.post(
-        '/api/v1/subscriptions/calls/initiate',
+        '/api/v1/subscriptions/calls/initiate/',
         data: {
           'consultant_id': consultantId,
           'channel_name': channelName,
           'call_type': callType,
         },
       );
+
+      debugPrint('✅ Backend response: ${response.data}');
+      debugPrint('📞 Call ID: ${response.data['call_id']}');
 
       return {
         'success': true,
@@ -39,6 +43,11 @@ class CallService {
         'message': response.data['message'] ?? 'Call initiated successfully',
       };
     } catch (e) {
+      debugPrint('❌ Error initiating call: $e');
+      if (e is DioException) {
+        debugPrint('Status code: ${e.response?.statusCode}');
+        debugPrint('Response data: ${e.response?.data}');
+      }
       return {
         'success': false,
         'error': _handleError(e),

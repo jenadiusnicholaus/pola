@@ -2,10 +2,14 @@ import 'package:get/get.dart';
 import 'package:flutter/foundation.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/token_storage_service.dart';
+import '../../../services/permission_service.dart';
+import '../../profile/services/profile_service.dart';
 
 class HomeController extends GetxController {
   final AuthService _authService = Get.find<AuthService>();
   final TokenStorageService _tokenStorage = Get.find<TokenStorageService>();
+  final ProfileService _profileService = Get.find<ProfileService>();
+  final PermissionService _permissionService = Get.find<PermissionService>();
 
   // Current tab index
   final RxInt _currentIndex = 0.obs;
@@ -20,8 +24,28 @@ class HomeController extends GetxController {
     super.onInit();
     debugPrint('🏠 HomeController initialized');
 
-    // Verify session on initialization
+    // Verify session and refresh profile on initialization
     _verifySession();
+    _refreshProfileData();
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    // Refresh profile every time home screen is ready
+    _refreshProfileData();
+  }
+
+  /// Refresh profile and permissions data
+  Future<void> _refreshProfileData() async {
+    try {
+      debugPrint('🔄 Refreshing profile data on home screen...');
+      await _profileService.fetchProfile(forceRefresh: true);
+      await _permissionService.refreshPermissions();
+      debugPrint('✅ Profile refreshed successfully');
+    } catch (e) {
+      debugPrint('❌ Error refreshing profile: $e');
+    }
   }
 
   /// Verify the current session is still valid

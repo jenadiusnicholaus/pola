@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../screens/incoming_call_screen.dart';
 import '../../../services/device_registration_service.dart';
+import '../../../config/environment_config.dart';
 
 /// Background FCM message handler (top-level function required)
 @pragma('vm:entry-point')
@@ -160,9 +161,24 @@ class FCMService extends GetxService {
       final callId = data['call_id']?.toString() ?? '';
       final channelName = data['channel_name']?.toString() ?? '';
       final callerName = data['caller_name']?.toString() ?? 'Unknown';
-      final callerPhoto = data['caller_photo']?.toString() ?? '';
+      String callerPhoto = data['caller_photo']?.toString() ?? '';
       final callType = data['call_type']?.toString() ?? 'voice';
       final callerId = data['caller_id']?.toString() ?? '';
+
+      // Convert relative/file URLs to absolute URLs
+      if (callerPhoto.isNotEmpty) {
+        // Check if it's already an absolute URL (starts with http:// or https://)
+        if (!callerPhoto.startsWith('http://') &&
+            !callerPhoto.startsWith('https://')) {
+          // It's a relative path - remove file:// prefix and leading slashes
+          callerPhoto = callerPhoto
+              .replaceFirst('file:///', '')
+              .replaceFirst(RegExp(r'^/+'), '');
+          // Prepend base URL
+          callerPhoto = '${EnvironmentConfig.baseUrl}/$callerPhoto';
+          debugPrint('🖼️ Converted photo URL to: $callerPhoto');
+        }
+      }
 
       if (callId.isEmpty || channelName.isEmpty) {
         debugPrint('❌ Invalid incoming call data: $data');

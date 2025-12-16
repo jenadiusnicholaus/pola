@@ -131,26 +131,32 @@ class PaymentMethod {
     PaymentMethod(
       id: 'tigo',
       name: 'Tigo Pesa',
-      provider: 'tigo_pesa',
+      provider: 'Tigo',
       icon: Icons.phone_android,
     ),
     PaymentMethod(
       id: 'airtel',
       name: 'Airtel Money',
-      provider: 'airtel_money',
+      provider: 'Airtel',
       icon: Icons.phone_iphone,
     ),
     PaymentMethod(
       id: 'mpesa',
       name: 'M-Pesa',
-      provider: 'm_pesa',
+      provider: 'Mpesa',
       icon: Icons.phone,
     ),
     PaymentMethod(
       id: 'halo',
       name: 'Halopesa',
-      provider: 'halopesa',
+      provider: 'Halopesa',
       icon: Icons.payment,
+    ),
+    PaymentMethod(
+      id: 'azam',
+      name: 'Azam Pesa',
+      provider: 'Azampesa',
+      icon: Icons.account_balance_wallet,
     ),
   ];
 }

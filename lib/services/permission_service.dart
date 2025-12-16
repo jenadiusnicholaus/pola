@@ -1,0 +1,423 @@
+import 'package:get/get.dart';
+import 'package:flutter/foundation.dart';
+import '../features/profile/services/profile_service.dart';
+import '../features/profile/models/profile_models.dart';
+
+/// Service to manage subscription-based permissions
+class PermissionService extends GetxService {
+  final ProfileService _profileService = Get.find<ProfileService>();
+
+  @override
+  void onInit() {
+    super.onInit();
+    debugPrint('🔐 PermissionService initialized');
+    // Debug subscription on init
+    debugSubscriptionStatus();
+  }
+
+  /// Debug current subscription status
+  void debugSubscriptionStatus() {
+    final profile = _profileService.currentProfile;
+    if (profile != null) {
+      final sub = profile.subscription;
+      debugPrint('🔐 Subscription Debug:');
+      debugPrint('   Plan: ${sub.planName}');
+      debugPrint('   Status: ${sub.status}');
+      debugPrint('   isActive: ${sub.isActive}');
+      debugPrint('   isTrial: ${sub.isTrial}');
+      debugPrint('   Days Remaining: ${sub.daysRemaining}');
+      debugPrint('   Permissions isActive: ${sub.permissions.isActive}');
+    } else {
+      debugPrint('🔐 No profile loaded yet');
+    }
+  }
+
+  /// Get current subscription permissions
+  SubscriptionPermissions? get permissions =>
+      _profileService.currentProfile?.subscription.permissions;
+
+  /// Get subscription info
+  SubscriptionInfo? get subscription =>
+      _profileService.currentProfile?.subscription;
+
+  /// Get current user profile
+  UserProfile? get currentProfile => _profileService.currentProfile;
+
+  /// Get current user role name
+  String? get userRoleName => currentProfile?.userRole.roleName;
+
+  /// Check if user is a professional (advocate, lawyer, paralegal, law_firm)
+  bool get isProfessional {
+    final role = userRoleName?.toLowerCase();
+    if (role == null) return false;
+    return role == 'advocate' ||
+        role == 'lawyer' ||
+        role == 'paralegal' ||
+        role == 'law_firm';
+  }
+
+  /// Check if user is a client (citizen, law_student, lecturer)
+  bool get isClient {
+    final role = userRoleName?.toLowerCase();
+    if (role == null) return false;
+    return role == 'citizen' ||
+        role == 'law_student' ||
+        role == 'lecturer';
+  }
+
+  // ============ Legal Library Permissions ============
+
+  /// Check if user can access legal library
+  bool get canAccessLegalLibrary => permissions?.canAccessLegalLibrary ?? false;
+
+  // ============ Question Permissions ============
+
+  /// Check if user can ask questions
+  bool get canAskQuestions => permissions?.canAskQuestions ?? false;
+
+  /// Get remaining questions quota
+  int get questionsRemaining => permissions?.questionsRemaining ?? 0;
+
+  /// Get total questions limit
+  int get questionsLimit => permissions?.questionsLimit ?? 0;
+
+  /// Check if user has questions remaining
+  bool get hasQuestionsRemaining => questionsRemaining > 0;
+
+  /// Check if user can ask a question (has permission AND quota)
+  bool get canAskQuestion => canAskQuestions && hasQuestionsRemaining;
+
+  // ============ Document Generation Permissions ============
+
+  /// Check if user can generate documents
+  bool get canGenerateDocuments => permissions?.canGenerateDocuments ?? false;
+
+  /// Get remaining free documents quota
+  int get documentsRemaining => permissions?.documentsRemaining ?? 0;
+
+  /// Get total free documents limit
+  int get freeDocumentsLimit => permissions?.freeDocumentsLimit ?? 0;
+
+  /// Check if user has free documents remaining
+  bool get hasDocumentsRemaining => documentsRemaining > 0;
+
+  /// Check if user can generate a document (has permission AND quota)
+  bool get canGenerateDocument => canGenerateDocuments && hasDocumentsRemaining;
+
+  // ============ Communication Permissions ============
+
+  /// Check if user can receive legal updates
+  bool get canReceiveLegalUpdates =>
+      permissions?.canReceiveLegalUpdates ?? false;
+
+  /// Check if user can access forum
+  bool get canAccessForum => permissions?.canAccessForum ?? false;
+
+  /// Check if user can access student hub
+  bool get canAccessStudentHub {
+    // Professionals cannot access student hub
+    if (isProfessional) return false;
+    
+    // Students and lecturers need PAID subscription
+    final role = userRoleName?.toLowerCase();
+    if (role == 'law_student' || role == 'lecturer') {
+      // Must have active paid subscription (not trial)
+      return isSubscriptionActive && 
+             !isTrialSubscription && 
+             (permissions?.canAccessStudentHub ?? false);
+    }
+    
+    // Other clients with permission
+    return permissions?.canAccessStudentHub ?? false;
+  }
+
+  // ============ Role-Specific Permissions ============
+
+  /// Check if user can view "Talk to Lawyer" page
+  /// Professionals (lawyers) cannot view this - they ARE the lawyers
+  /// Clients can view this - it's a PUBLIC page
+  bool get canViewTalkToLawyer {
+    // Professionals cannot view (they are the service providers)
+    if (isProfessional) return false;
+    
+    // Clients can always view (PUBLIC page)
+    return permissions?.canViewTalkToLawyer ?? true;
+  }
+
+  /// Check if user can view "Nearby Lawyers" directory
+  /// Professionals cannot view (they are in the directory)
+  /// Clients need active subscription to view
+  bool get canViewNearbyLawyers {
+    // Professionals cannot view (they are the service providers)
+    if (isProfessional) return false;
+    
+    // Clients need active subscription
+    return isSubscriptionActive && (permissions?.canViewNearbyLawyers ?? false);
+  }
+
+  // ============ Purchase Permissions ============
+
+  /// Check if user can purchase consultations
+  bool get canPurchaseConsultations =>
+      permissions?.canPurchaseConsultations ?? false;
+
+  /// Check if user can purchase documents
+  bool get canPurchaseDocuments => permissions?.canPurchaseDocuments ?? false;
+
+  /// Check if user can purchase learning materials
+  bool get canPurchaseLearningMaterials =>
+      permissions?.canPurchaseLearningMaterials ?? false;
+
+  // ============ Subscription Status ============
+
+  /// Check if subscription is active
+  bool get isSubscriptionActive {
+    final sub = subscription;
+    if (sub == null) {
+      if (kDebugMode) debugPrint('🔐 No subscription found');
+      return false;
+    }
+
+    // Check both subscription.isActive AND permissions.isActive
+    final subscriptionActive = sub.isActive;
+    final permissionsActive = sub.permissions.isActive;
+
+    // Both should be true for active subscription
+    final result = subscriptionActive && permissionsActive;
+
+    if (kDebugMode) {
+      if (!result) {
+        debugPrint(
+            '🔐 Subscription inactive: sub.isActive=$subscriptionActive, permissions.isActive=$permissionsActive');
+        debugPrint(
+            '   Plan: ${sub.planName}, Status: ${sub.status}, Days: ${sub.daysRemaining}');
+      } else {
+        debugPrint('✅ Subscription is ACTIVE: ${sub.planName}');
+      }
+    }
+
+    return result;
+  }
+
+  /// Check if subscription is trial
+  bool get isTrialSubscription => subscription?.isTrial ?? false;
+
+  /// Get days remaining in subscription
+  int get daysRemaining => subscription?.daysRemaining ?? 0;
+
+  /// Check if subscription is expiring soon (less than 7 days)
+  bool get isExpiringSoon => daysRemaining > 0 && daysRemaining <= 7;
+
+  /// Get subscription status
+  String get subscriptionStatus => subscription?.status ?? 'inactive';
+
+  /// Get plan name
+  String get planName => subscription?.planName ?? 'Free';
+
+  /// Get plan name in Swahili
+  String get planNameSw => subscription?.planNameSw ?? 'Bure';
+
+  /// Get plan type
+  String get planType => subscription?.planType ?? 'free';
+
+  // ============ Permission Check Methods ============
+
+  /// Check any permission by feature name
+  bool canAccess(PermissionFeature feature) {
+    switch (feature) {
+      case PermissionFeature.legalLibrary:
+        return canAccessLegalLibrary;
+      case PermissionFeature.askQuestions:
+        return canAskQuestion;
+      case PermissionFeature.generateDocuments:
+        return canGenerateDocument;
+      case PermissionFeature.legalUpdates:
+        return canReceiveLegalUpdates;
+      case PermissionFeature.forum:
+        return canAccessForum;
+      case PermissionFeature.studentHub:
+        return canAccessStudentHub;
+      case PermissionFeature.purchaseConsultations:
+        return canPurchaseConsultations;
+      case PermissionFeature.purchaseDocuments:
+        return canPurchaseDocuments;
+      case PermissionFeature.purchaseLearningMaterials:
+        return canPurchaseLearningMaterials;
+      case PermissionFeature.talkToLawyer:
+        return canViewTalkToLawyer;
+      case PermissionFeature.nearbyLawyers:
+        return canViewNearbyLawyers;
+    }
+  }
+
+  /// Get user-friendly message for permission denial
+  String getPermissionDeniedMessage(PermissionFeature feature) {
+    if (!isSubscriptionActive) {
+      return 'You need an active subscription to access this feature. Please subscribe to continue.';
+    }
+
+    switch (feature) {
+      case PermissionFeature.legalLibrary:
+        return 'Your current plan does not include access to the Legal Library. Upgrade your subscription to access thousands of legal resources.';
+      case PermissionFeature.askQuestions:
+        if (!canAskQuestions) {
+          return 'Your current plan does not include asking questions. Upgrade to get expert legal answers.';
+        }
+        if (!hasQuestionsRemaining) {
+          return 'You have used all your questions for this period. Upgrade your plan or wait for renewal.';
+        }
+        return 'You cannot ask questions at this time.';
+      case PermissionFeature.generateDocuments:
+        if (!canGenerateDocuments) {
+          return 'Your current plan does not include document generation. Upgrade to create legal documents.';
+        }
+        if (!hasDocumentsRemaining) {
+          return 'You have used all your free documents for this period. You can purchase additional documents.';
+        }
+        return 'You cannot generate documents at this time.';
+      case PermissionFeature.legalUpdates:
+        return 'Your current plan does not include legal updates. Upgrade to stay informed about legal changes.';
+      case PermissionFeature.forum:
+        return 'Your current plan does not include forum access. Upgrade to join discussions with legal professionals.';
+      case PermissionFeature.studentHub:
+        if (isProfessional) {
+          return 'Student Hub is not available for legal professionals. This feature is designed for students and lecturers.';
+        }
+        return 'Your current plan does not include Student Hub access. Upgrade to a paid plan to access student resources.';
+      case PermissionFeature.talkToLawyer:
+        if (isProfessional) {
+          return 'As a legal professional, you are the service provider. This page is for clients seeking legal assistance.';
+        }
+        return 'Talk to Lawyer feature is available to all clients.';
+      case PermissionFeature.nearbyLawyers:
+        if (isProfessional) {
+          return 'As a legal professional, you are listed in the directory. This feature is for clients seeking lawyers.';
+        }
+        return 'You need an active subscription to view nearby lawyers. Upgrade to find legal professionals in your area.';
+      case PermissionFeature.purchaseConsultations:
+        return 'Your current plan does not allow purchasing consultations. Upgrade to book consultations with lawyers.';
+      case PermissionFeature.purchaseDocuments:
+        return 'Your current plan does not allow purchasing documents. Upgrade to access premium legal documents.';
+      case PermissionFeature.purchaseLearningMaterials:
+        return 'Your current plan does not allow purchasing learning materials. Upgrade to access educational content.';
+    }
+  }
+
+  /// Get upgrade action message
+  String getUpgradeMessage(PermissionFeature feature) {
+    return 'Upgrade your subscription to unlock this feature and more!';
+  }
+
+  /// Check if user should see upgrade prompt
+  bool shouldShowUpgradePrompt(PermissionFeature feature) {
+    // Always show upgrade if feature is not accessible
+    if (!canAccess(feature)) {
+      return true;
+    }
+
+    // Show prompt if quota-based and running low
+    if (feature == PermissionFeature.askQuestions &&
+        questionsRemaining > 0 &&
+        questionsRemaining <= 2) {
+      return true;
+    }
+
+    if (feature == PermissionFeature.generateDocuments &&
+        documentsRemaining > 0 &&
+        documentsRemaining <= 1) {
+      return true;
+    }
+
+    return false;
+  }
+
+  // ============ UI Helper Methods ============
+
+  /// Get quota display text for questions
+  String get questionsQuotaText {
+    if (!canAskQuestions) return 'Not available';
+    return '$questionsRemaining/$questionsLimit remaining';
+  }
+
+  /// Get quota display text for documents
+  String get documentsQuotaText {
+    if (!canGenerateDocuments) return 'Not available';
+    return '$documentsRemaining/$freeDocumentsLimit remaining';
+  }
+
+  /// Get subscription status badge text
+  String get statusBadgeText {
+    if (!isSubscriptionActive) return 'Inactive';
+    if (isTrialSubscription) return 'Trial';
+    if (isExpiringSoon) return 'Expiring Soon';
+    return 'Active';
+  }
+
+  /// Get days remaining text
+  String get daysRemainingText {
+    if (daysRemaining <= 0) return 'Expired';
+    if (daysRemaining == 1) return '1 day remaining';
+    return '$daysRemaining days remaining';
+  }
+
+  // ============ Debug Methods ============
+
+  /// Refresh subscription status from profile API
+  Future<void> refreshPermissions() async {
+    debugPrint('🔐 Refreshing permissions from API...');
+
+    try {
+      // Force refresh profile from API to get latest permissions
+      await _profileService.fetchProfile(forceRefresh: true);
+
+      // Debug the updated subscription status
+      debugSubscriptionStatus();
+
+      debugPrint('✅ Permissions refreshed successfully');
+    } catch (e) {
+      debugPrint('❌ Error refreshing permissions: $e');
+    }
+  }
+
+  /// Log permission status for debugging
+  void debugPermissions() {
+    debugSubscriptionStatus();
+
+    debugPrint('🔐 Permission Debug Info:');
+    debugPrint('   Subscription: $planName ($subscriptionStatus)');
+    debugPrint('   Active: $isSubscriptionActive');
+    debugPrint('   Trial: $isTrialSubscription');
+    debugPrint('   Days Remaining: $daysRemaining');
+    debugPrint('');
+    debugPrint('   � Role: $userRoleName (Professional: $isProfessional, Client: $isClient)');
+    debugPrint('');
+    debugPrint('   📚 Legal Library: $canAccessLegalLibrary');
+    debugPrint('   ❓ Ask Questions: $canAskQuestions ($questionsQuotaText)');
+    debugPrint(
+        '   📄 Generate Documents: $canGenerateDocuments ($documentsQuotaText)');
+    debugPrint('   📰 Legal Updates: $canReceiveLegalUpdates');
+    debugPrint('   💬 Forum Access: $canAccessForum');
+    debugPrint('   🎓 Student Hub: $canAccessStudentHub');
+    debugPrint('   👨‍⚖️ View Talk to Lawyer: $canViewTalkToLawyer');
+    debugPrint('   📍 View Nearby Lawyers: $canViewNearbyLawyers');
+    debugPrint('   📞 Purchase Consultations: $canPurchaseConsultations');
+    debugPrint('   📋 Purchase Documents: $canPurchaseDocuments');
+    debugPrint(
+        '   📖 Purchase Learning Materials: $canPurchaseLearningMaterials');
+  }
+}
+
+/// Enum for all permission features in the app
+enum PermissionFeature {
+  legalLibrary,
+  askQuestions,
+  generateDocuments,
+  legalUpdates,
+  forum,
+  studentHub,
+  purchaseConsultations,
+  purchaseDocuments,
+  purchaseLearningMaterials,
+  talkToLawyer,
+  nearbyLawyers,
+}
