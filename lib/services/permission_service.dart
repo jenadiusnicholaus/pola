@@ -60,9 +60,7 @@ class PermissionService extends GetxService {
   bool get isClient {
     final role = userRoleName?.toLowerCase();
     if (role == null) return false;
-    return role == 'citizen' ||
-        role == 'law_student' ||
-        role == 'lecturer';
+    return role == 'citizen' || role == 'law_student' || role == 'lecturer';
   }
 
   // ============ Legal Library Permissions ============
@@ -117,16 +115,16 @@ class PermissionService extends GetxService {
   bool get canAccessStudentHub {
     // Professionals cannot access student hub
     if (isProfessional) return false;
-    
+
     // Students and lecturers need PAID subscription
     final role = userRoleName?.toLowerCase();
     if (role == 'law_student' || role == 'lecturer') {
       // Must have active paid subscription (not trial)
-      return isSubscriptionActive && 
-             !isTrialSubscription && 
-             (permissions?.canAccessStudentHub ?? false);
+      return isSubscriptionActive &&
+          !isTrialSubscription &&
+          (permissions?.canAccessStudentHub ?? false);
     }
-    
+
     // Other clients with permission
     return permissions?.canAccessStudentHub ?? false;
   }
@@ -139,7 +137,7 @@ class PermissionService extends GetxService {
   bool get canViewTalkToLawyer {
     // Professionals cannot view (they are the service providers)
     if (isProfessional) return false;
-    
+
     // Clients can always view (PUBLIC page)
     return permissions?.canViewTalkToLawyer ?? true;
   }
@@ -150,7 +148,7 @@ class PermissionService extends GetxService {
   bool get canViewNearbyLawyers {
     // Professionals cannot view (they are the service providers)
     if (isProfessional) return false;
-    
+
     // Clients need active subscription
     return isSubscriptionActive && (permissions?.canViewNearbyLawyers ?? false);
   }
@@ -389,7 +387,8 @@ class PermissionService extends GetxService {
     debugPrint('   Trial: $isTrialSubscription');
     debugPrint('   Days Remaining: $daysRemaining');
     debugPrint('');
-    debugPrint('   � Role: $userRoleName (Professional: $isProfessional, Client: $isClient)');
+    debugPrint(
+        '   � Role: $userRoleName (Professional: $isProfessional, Client: $isClient)');
     debugPrint('');
     debugPrint('   📚 Legal Library: $canAccessLegalLibrary');
     debugPrint('   ❓ Ask Questions: $canAskQuestions ($questionsQuotaText)');

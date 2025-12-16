@@ -241,7 +241,7 @@ class SubscriptionPermissions {
   final bool canPurchaseConsultations;
   final bool canPurchaseDocuments;
   final bool canPurchaseLearningMaterials;
-  
+
   // Role-specific permissions
   final bool canViewTalkToLawyer;
   final bool canViewNearbyLawyers;

@@ -20,7 +20,8 @@ class HubsAndServicesList extends StatelessWidget {
           try {
             final profileService = Get.find<ProfileService>();
             final profile = profileService.currentProfile;
-            debugPrint('🔄 HubsAndServicesList rebuild - Profile: ${profile?.email ?? 'not loaded'}');
+            debugPrint(
+                '🔄 HubsAndServicesList rebuild - Profile: ${profile?.email ?? 'not loaded'}');
           } catch (e) {
             debugPrint('⚠️ ProfileService not ready: $e');
           }
@@ -78,9 +79,9 @@ class HubsAndServicesList extends StatelessWidget {
     final allServices = HubsAndServicesData.hubAndServices
         .where((item) => item['type'] == 'service')
         .toList();
-    
+
     final services = _filterServicesByRole(allServices);
-    
+
     debugPrint(
         '🔍 SERVICE FILTER: Filtered services: ${services.map((s) => s['key']).join(', ')}');
 
@@ -460,25 +461,28 @@ class HubsAndServicesList extends StatelessWidget {
       List<Map<String, dynamic>> services) {
     try {
       final permissionService = Get.find<PermissionService>();
-      
+
       // Check if profile is loaded
       final profile = permissionService.currentProfile;
       if (profile == null) {
-        debugPrint('⚠️ SERVICE FILTER: Profile not loaded yet - showing all services');
+        debugPrint(
+            '⚠️ SERVICE FILTER: Profile not loaded yet - showing all services');
         return services;
       }
-      
+
       debugPrint('🔍 SERVICE FILTER: Checking role-based permissions...');
       debugPrint('   User: ${profile.email}');
       debugPrint('   User Role: ${permissionService.userRoleName}');
       debugPrint('   Is Professional: ${permissionService.isProfessional}');
-      debugPrint('   Can View Talk to Lawyer: ${permissionService.canViewTalkToLawyer}');
-      debugPrint('   Can View Nearby Lawyers: ${permissionService.canViewNearbyLawyers}');
-      
+      debugPrint(
+          '   Can View Talk to Lawyer: ${permissionService.canViewTalkToLawyer}');
+      debugPrint(
+          '   Can View Nearby Lawyers: ${permissionService.canViewNearbyLawyers}');
+
       final filteredServices = services.where((service) {
         final key = service['key'] as String?;
         if (key == null) return true;
-        
+
         // Filter based on role-specific permissions
         switch (key) {
           case 'talk_to_lawyers':
@@ -493,8 +497,9 @@ class HubsAndServicesList extends StatelessWidget {
             return true; // Show all other services
         }
       }).toList();
-      
-      debugPrint('🔍 SERVICE FILTER: ${services.length} services → ${filteredServices.length} after filtering');
+
+      debugPrint(
+          '🔍 SERVICE FILTER: ${services.length} services → ${filteredServices.length} after filtering');
       return filteredServices;
     } catch (e) {
       debugPrint('❌ SERVICE FILTER ERROR: $e');
