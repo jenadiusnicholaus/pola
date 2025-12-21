@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/consultant_controller.dart';
 import '../models/consultant_models.dart';
+import '../../../widgets/profile_avatar.dart';
 
 class ConsultantsScreen extends StatelessWidget {
   const ConsultantsScreen({super.key});
@@ -16,6 +17,13 @@ class ConsultantsScreen extends StatelessWidget {
         title: const Text('Mahakama | Talk to Lawyers'),
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
+        actions: [
+          IconButton(
+            onPressed: () => Get.toNamed('/buy-credits'),
+            icon: const Icon(Icons.account_balance_wallet),
+            tooltip: 'My Credits',
+          ),
+        ],
       ),
       body: Obx(() {
         if (controller.isLoading.value && controller.consultants.isEmpty) {
@@ -77,11 +85,27 @@ class ConsultantsScreen extends StatelessWidget {
         return RefreshIndicator(
           onRefresh: () => controller.fetchConsultants(),
           child: ListView.builder(
+            controller: controller.scrollController,
             padding: const EdgeInsets.all(16),
-            itemCount: controller.consultants.length,
+            itemCount: controller.consultants.length +
+                (controller.hasMore.value ? 1 : 0),
+            addAutomaticKeepAlives: true,
+            addRepaintBoundaries: true,
+            cacheExtent: 500,
             itemBuilder: (context, index) {
+              if (index == controller.consultants.length) {
+                // Loading indicator at bottom
+                return Obx(() => controller.isLoadingMore.value
+                    ? const Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    : const SizedBox.shrink());
+              }
               final consultant = controller.consultants[index];
-              return _buildConsultantCard(context, consultant);
+              return RepaintBoundary(
+                child: _buildConsultantCard(context, consultant),
+              );
             },
           ),
         );
@@ -94,6 +118,7 @@ class ConsultantsScreen extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
+      key: ValueKey('consultant_${consultant.id}'),
       margin: const EdgeInsets.only(bottom: 10),
       child: Material(
         color: Colors.transparent,
@@ -120,9 +145,38 @@ class ConsultantsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header: Name and Rating
+                // Header: Profile Picture, Name and Rating
                 Row(
                   children: [
+                    // Profile Picture with online indicator
+                    Stack(
+                      children: [
+                        ProfileAvatar(
+                          imageUrl: consultant.userDetails.profilePicture,
+                          fallbackText: consultant.userDetails.fullName,
+                          radius: 28,
+                        ),
+                        // Online status indicator
+                        if (consultant.isOnline)
+                          Positioned(
+                            right: 2,
+                            bottom: 2,
+                            child: Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: theme.colorScheme.surface,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,15 +191,42 @@ class ConsultantsScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            '${consultant.consultantType.toUpperCase()} • ${consultant.yearsOfExperience} yrs',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color:
-                                  theme.colorScheme.onSurface.withOpacity(0.5),
-                              letterSpacing: 0.2,
-                            ),
+                          Row(
+                            children: [
+                              Text(
+                                '${consultant.consultantType.toUpperCase()} • ${consultant.yearsOfExperience} yrs',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.5),
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: consultant.isOnline
+                                      ? Colors.green.withOpacity(0.15)
+                                      : Colors.grey.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  consultant.isOnline ? 'Online' : 'Offline',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: consultant.isOnline
+                                        ? Colors.green.shade700
+                                        : Colors.grey.shade600,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -271,12 +352,11 @@ class ConsultantsScreen extends StatelessWidget {
   }
 
   void _handleBookConsultation(Consultant consultant) {
-    // TODO: Navigate to booking screen
-    Get.snackbar(
-      'Book Consultation',
-      'Physical consultation booking coming soon',
-      snackPosition: SnackPosition.BOTTOM,
-    );
+    // Navigate to booking screen - Book button is for physical consultations
+    Get.toNamed('/book-consultation', arguments: {
+      'consultant': consultant,
+      'bookingType': 'physical',
+    });
   }
 
   Widget _buildStatChip(BuildContext context, IconData icon, String label) {

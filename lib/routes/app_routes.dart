@@ -21,13 +21,15 @@ import '../features/questions/screens/question_detail_screen.dart';
 import '../features/calling_booking/screens/consultants_screen.dart';
 import '../features/calling_booking/screens/consultant_detail_screen.dart';
 import '../features/calling_booking/screens/call_screen.dart';
-import '../features/calling_booking/screens/payment_screen.dart';
+import '../features/calling_booking/screens/credit_payment_screen.dart';
+import '../features/calling_booking/screens/buy_credits_screen.dart';
 import '../features/doc_templates/screens/templates_list_screen.dart';
 import '../features/doc_templates/screens/generated_documents_screen.dart';
 import '../features/nearbylawyers/screens/nearby_lawyers_screen.dart';
 import '../features/nearbylawyers/screens/lawyers_map_screen.dart';
 import '../features/auth/screens/change_role_screen.dart';
 import '../features/consultation/screens/my_consultations_screen.dart';
+import '../features/consultation/screens/book_consultation_screen.dart';
 import '../features/subscription/screens/subscription_plans_screen.dart';
 
 class AppRoutes {
@@ -55,12 +57,14 @@ class AppRoutes {
   static const String consultantDetail = '/consultant-detail';
   static const String call = '/call';
   static const String payment = '/payment';
+  static const String buyCredits = '/buy-credits';
   static const String templates = '/templates';
   static const String myDocuments = '/my-documents';
   static const String nearbyLawyers = '/nearby-lawyers';
   static const String lawyersMap = '/lawyers-map';
   static const String changeRole = '/change-role';
   static const String myConsultations = '/my-consultations';
+  static const String bookConsultation = '/book-consultation';
   static const String subscriptionPlans = '/subscription-plans';
 
   static List<GetPage> routes = [
@@ -170,7 +174,11 @@ class AppRoutes {
     ),
     GetPage(
       name: payment,
-      page: () => const PaymentScreen(),
+      page: () => const CreditPaymentScreen(),
+    ),
+    GetPage(
+      name: buyCredits,
+      page: () => const BuyCreditsScreen(),
     ),
     GetPage(
       name: templates,
@@ -195,6 +203,10 @@ class AppRoutes {
     GetPage(
       name: myConsultations,
       page: () => const MyConsultationsScreen(),
+    ),
+    GetPage(
+      name: bookConsultation,
+      page: () => const BookConsultationScreen(),
     ),
     GetPage(
       name: subscriptionPlans,

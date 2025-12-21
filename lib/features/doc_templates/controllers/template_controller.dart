@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/template_model.dart';
 import '../services/template_service.dart';
@@ -10,24 +11,73 @@ class TemplateController extends GetxController {
   var error = ''.obs;
   var totalCount = 0.obs;
 
+  // Pagination
+  final ScrollController scrollController = ScrollController();
+  final isLoadingMore = false.obs;
+  final hasMore = true.obs;
+  int currentPage = 1;
+  final int pageSize = 20;
+
   @override
   void onInit() {
     super.onInit();
+    scrollController.addListener(_scrollListener);
     fetchTemplates();
+  }
+
+  @override
+  void onClose() {
+    scrollController.removeListener(_scrollListener);
+    scrollController.dispose();
+    super.onClose();
+  }
+
+  void _scrollListener() {
+    if (scrollController.position.pixels >=
+        scrollController.position.maxScrollExtent - 200) {
+      if (!isLoadingMore.value && hasMore.value) {
+        loadMore();
+      }
+    }
   }
 
   Future<void> fetchTemplates() async {
     try {
       isLoading.value = true;
       error.value = '';
-      final response = await _service.getTemplates();
+      currentPage = 1;
+      hasMore.value = true;
+
+      final response =
+          await _service.getTemplates(page: currentPage, pageSize: pageSize);
       templates.value = response['templates'] as List<DocumentTemplate>;
       totalCount.value = response['count'] as int;
+      hasMore.value = response['next'] != null;
     } catch (e) {
       error.value = e.toString();
       print('Error fetching templates: $e');
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (isLoadingMore.value || !hasMore.value) return;
+
+    try {
+      isLoadingMore.value = true;
+      currentPage++;
+
+      final response =
+          await _service.getTemplates(page: currentPage, pageSize: pageSize);
+      final newTemplates = response['templates'] as List<DocumentTemplate>;
+      templates.addAll(newTemplates);
+      hasMore.value = response['next'] != null;
+    } catch (e) {
+      debugPrint('Error loading more templates: $e');
+      currentPage--;
+    } finally {
+      isLoadingMore.value = false;
     }
   }
 

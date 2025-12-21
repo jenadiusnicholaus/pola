@@ -303,6 +303,45 @@ class ConsultationService extends GetxService {
       return false;
     }
   }
+
+  /// Create a new booking for a consultant
+  Future<ConsultationBooking?> createBooking({
+    required int consultantId,
+    required String bookingType, // 'mobile' or 'physical'
+    required DateTime scheduledDate,
+    String? topic,
+    double? amount,
+  }) async {
+    try {
+      debugPrint('📤 Creating booking for consultant $consultantId');
+
+      final data = <String, dynamic>{
+        'consultant_id': consultantId,
+        'booking_type': bookingType,
+        'scheduled_date': scheduledDate.toIso8601String(),
+      };
+
+      if (topic != null) data['topic'] = topic;
+      if (amount != null) data['amount'] = amount.toString();
+
+      final response = await _apiService.post(
+        EnvironmentConfig.consultationCreateUrl,
+        data: data,
+      );
+
+      debugPrint('📥 Create booking response: ${response.statusCode}');
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return ConsultationBooking.fromJson(response.data);
+      }
+
+      debugPrint('⚠️ Failed to create booking: ${response.statusCode}');
+      return null;
+    } catch (e) {
+      debugPrint('❌ Error creating booking: $e');
+      return null;
+    }
+  }
 }
 
 class ConsultationEligibility {

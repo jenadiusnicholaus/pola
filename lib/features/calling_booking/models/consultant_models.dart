@@ -13,6 +13,7 @@ class Consultant {
   final double averageRating;
   final int totalReviews;
   final ConsultantPricing pricing;
+  final bool isOnline;
 
   Consultant({
     required this.id,
@@ -29,9 +30,16 @@ class Consultant {
     required this.averageRating,
     required this.totalReviews,
     required this.pricing,
+    this.isOnline = false,
   });
 
   factory Consultant.fromJson(Map<String, dynamic> json) {
+    // Debug logging
+    final userDetails = json['user_details'] ?? {};
+    print('📋 Parsing consultant: ${userDetails['full_name']}');
+    print('   Profile Picture: ${userDetails['profile_picture']}');
+    print('   Is Online: ${json['is_online']}');
+
     return Consultant(
       id: json['id'] ?? 0,
       userDetails: UserDetails.fromJson(json['user_details'] ?? {}),
@@ -49,6 +57,7 @@ class Consultant {
           double.tryParse(json['average_rating']?.toString() ?? '0') ?? 0.0,
       totalReviews: json['total_reviews'] ?? 0,
       pricing: ConsultantPricing.fromJson(json['pricing'] ?? {}),
+      isOnline: json['is_online'] ?? false,
     );
   }
 
@@ -68,6 +77,7 @@ class Consultant {
       'average_rating': averageRating,
       'total_reviews': totalReviews,
       'pricing': pricing.toJson(),
+      'is_online': isOnline,
     };
   }
 }
@@ -79,6 +89,7 @@ class UserDetails {
   final String lastName;
   final String fullName;
   final String? phoneNumber;
+  final String? profilePicture;
 
   UserDetails({
     required this.id,
@@ -87,6 +98,7 @@ class UserDetails {
     required this.lastName,
     required this.fullName,
     this.phoneNumber,
+    this.profilePicture,
   });
 
   factory UserDetails.fromJson(Map<String, dynamic> json) {
@@ -97,6 +109,7 @@ class UserDetails {
       lastName: json['last_name'] ?? '',
       fullName: json['full_name'] ?? '',
       phoneNumber: json['phone_number'],
+      profilePicture: json['profile_picture'],
     );
   }
 
@@ -108,6 +121,7 @@ class UserDetails {
       'last_name': lastName,
       'full_name': fullName,
       'phone_number': phoneNumber,
+      'profile_picture': profilePicture,
     };
   }
 }

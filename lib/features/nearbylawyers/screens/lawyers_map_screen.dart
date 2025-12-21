@@ -469,6 +469,7 @@ class _LawyersMapScreenState extends State<LawyersMapScreen> {
         lastName: lawyer.userDetails.lastName ?? '',
         fullName: lawyer.userDetails.fullName ?? '',
         phoneNumber: lawyer.userDetails.phoneNumber,
+        profilePicture: lawyer.userDetails.profilePicture,
       ),
       consultantType: lawyer.consultantType,
       specialization: lawyer.specialization ?? '',
@@ -488,15 +489,17 @@ class _LawyersMapScreenState extends State<LawyersMapScreen> {
           platformShare: lawyer.pricing.mobile.platformShare.toString(),
         ),
       ),
+      isOnline: lawyer.isOnline,
     );
   }
 
   void _bookConsultation(NearbyLawyer lawyer) {
-    Get.snackbar(
-      'Book Consultation',
-      'Booking feature coming soon for ${lawyer.name ?? "this lawyer"}',
-      snackPosition: SnackPosition.BOTTOM,
-    );
+    final consultant = _convertToConsultant(lawyer);
+    // Book button is for physical consultations
+    Get.toNamed('/book-consultation', arguments: {
+      'consultant': consultant,
+      'bookingType': 'physical',
+    });
   }
 
   void _openInMaps(NearbyLawyer lawyer) async {

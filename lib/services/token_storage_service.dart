@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'dart:convert';
+import 'dart:async';
 import '../features/profile/services/profile_service.dart';
 
 class TokenStorageService extends GetxController {
@@ -30,28 +31,23 @@ class TokenStorageService extends GetxController {
   Map<String, dynamic>? get userData => _userData.value;
 
   bool _isInitialized = false;
+  final Completer<void> _initCompleter = Completer<void>();
 
-  @override
-  void onInit() {
-    super.onInit();
-    _initializeFromStorage();
+  // onInit removed - initialization is now async via init() method
+
+  /// Initialize the service asynchronously (called via Get.putAsync)
+  Future<TokenStorageService> init() async {
+    await _initializeFromStorage();
+    return this;
   }
 
   /// Wait for the service to be fully initialized
   Future<void> waitForInitialization() async {
     if (_isInitialized) return;
 
-    // If not initialized, wait for it to complete
-    int attempts = 0;
-    const maxAttempts = 50; // 5 seconds max wait
-    const delayMs = 100;
-
-    while (!_isInitialized && attempts < maxAttempts) {
-      await Future.delayed(const Duration(milliseconds: delayMs));
-      attempts++;
-    }
-
-    if (!_isInitialized) {
+    try {
+      await _initCompleter.future.timeout(const Duration(seconds: 5));
+    } catch (_) {
       debugPrint('⚠️ TokenStorageService initialization timeout');
     }
   }
@@ -97,6 +93,9 @@ class TokenStorageService extends GetxController {
       _isLoggedIn.value = false;
     } finally {
       _isInitialized = true;
+      if (!_initCompleter.isCompleted) {
+        _initCompleter.complete();
+      }
       debugPrint('🔐 TokenStorageService initialization complete');
     }
   }
@@ -189,22 +188,44 @@ class TokenStorageService extends GetxController {
   /// Check if access token is expired (for refresh logic)
   bool isAccessTokenExpired() {
     try {
-      if (_currentAccessToken.value.isEmpty) return true;
-      return JwtDecoder.isExpired(_currentAccessToken.value);
+      if (_currentAccessToken.value.isEmpty) {
+        debugPrint('🔐 Access token is empty');
+        return true;
+      }
+
+      final isExpired = JwtDecoder.isExpired(_currentAccessToken.value);
+      debugPrint('🔐 Access token check: isExpired=$isExpired');
+
+      return isExpired;
     } catch (e) {
-      debugPrint('❌ Error checking access token expiration: $e');
-      return true; // Assume expired on error
+      debugPrint('⚠️ Error checking access token expiration: $e');
+      // For access token, we can be more lenient - if it fails to decode,
+      // let the API server reject it instead of assuming it's expired
+      return false;
     }
   }
 
   /// Check if refresh token is expired
   bool isRefreshTokenExpired() {
     try {
-      if (_currentRefreshToken.value.isEmpty) return true;
-      return JwtDecoder.isExpired(_currentRefreshToken.value);
+      if (_currentRefreshToken.value.isEmpty) {
+        debugPrint('🔐 Refresh token is empty');
+        return true;
+      }
+
+      final isExpired = JwtDecoder.isExpired(_currentRefreshToken.value);
+      final expDate = JwtDecoder.getExpirationDate(_currentRefreshToken.value);
+      debugPrint(
+          '🔐 Refresh token check: isExpired=$isExpired, expires=$expDate');
+
+      return isExpired;
     } catch (e) {
-      debugPrint('❌ Error checking refresh token expiration: $e');
-      return true; // Assume expired on error
+      debugPrint('⚠️ Error checking refresh token expiration: $e');
+      debugPrint(
+          '⚠️ Token value (first 50 chars): ${_currentRefreshToken.value.substring(0, _currentRefreshToken.value.length > 50 ? 50 : _currentRefreshToken.value.length)}');
+      // Don't assume expired on parse errors - token might be valid but malformed
+      // Only return true if token is actually empty
+      return false;
     }
   }
 

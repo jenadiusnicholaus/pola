@@ -28,7 +28,8 @@ import 'features/calling_booking/services/online_status_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:geolocator/geolocator.dart';
 
-/// Request location permission at app startup
+/// Request location permission (UNUSED - location now requested lazily when needed)
+/// Kept for reference in case explicit early permission is needed
 Future<void> _requestLocationPermission() async {
   try {
     debugPrint('📍 Requesting location permission...');
@@ -79,7 +80,8 @@ Future<void> _requestLocationPermission() async {
   }
 }
 
-/// Schedule background location updates to ensure we capture it
+/// Schedule background location updates (UNUSED - not needed for performance)
+/// Location is updated on-demand when user accesses features
 void _scheduleLocationUpdate() {
   // Disabled for emulators - location can be updated manually when needed
   // Emulators often don't have proper GPS and cause timeouts
@@ -96,8 +98,8 @@ void main() async {
   );
   debugPrint('✅ Firebase initialized');
 
-  // Request location permission early
-  await _requestLocationPermission();
+  // Location permission will be requested lazily when needed (device registration, nearby lawyers)
+  // This avoids blocking the main thread during startup
 
   // Initialize GetStorage first
   await GetStorage.init();
@@ -136,9 +138,9 @@ LOGOUT_ENDPOINT=/api/v1/authentication/logout/
   Get.put(ApiService());
   debugPrint('✅ ApiService initialized');
 
-  // Initialize token storage service first
-  Get.put(TokenStorageService());
-  debugPrint('✅ TokenStorageService initialized');
+  // Initialize token storage service ASYNC to avoid blocking main thread with crypto operations
+  await Get.putAsync(() => TokenStorageService().init());
+  debugPrint('✅ TokenStorageService initialized (async)');
 
   // Initialize lookup service (for roles, etc.)
   Get.put(LookupService());
@@ -188,9 +190,6 @@ LOGOUT_ENDPOINT=/api/v1/authentication/logout/
 
   // Initialize controllers
   Get.put(ThemeController());
-
-  // Schedule background location update after app is fully loaded
-  _scheduleLocationUpdate();
 
   // Setup FCM background message handler
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);

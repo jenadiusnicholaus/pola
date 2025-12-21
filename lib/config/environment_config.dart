@@ -289,6 +289,15 @@ class EnvironmentConfig {
   static String get consultationUpdateStatusUrl =>
       '$baseUrl$consultationUpdateStatusEndpoint';
 
+  // Consultation booking creation endpoint
+  static String get consultationCreateEndpoint =>
+      dotenv.env['CONSULTATION_CREATE_ENDPOINT'] ??
+      '/api/v1/consultations/bookings/';
+
+  // Complete consultation create URL
+  static String get consultationCreateUrl =>
+      '$baseUrl$consultationCreateEndpoint';
+
   // Authentication endpoints
   static String get authChangeRoleEndpoint =>
       dotenv.env['AUTH_CHANGE_ROLE_ENDPOINT'] ??

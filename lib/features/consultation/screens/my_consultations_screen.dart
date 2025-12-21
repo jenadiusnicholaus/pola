@@ -15,27 +15,46 @@ class _MyConsultationsScreenState extends State<MyConsultationsScreen>
       Get.find<ConsultationService>();
 
   late TabController _tabController;
+  late ScrollController _scrollController;
   bool _isLoading = true;
+  bool _isLoadingMore = false;
   MyConsultationsResponse? _consultations;
   String _selectedStatus = 'all';
+  int _currentPage = 1;
+  bool _hasMore = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _scrollController = ScrollController();
     _tabController.addListener(_onTabChanged);
+    _scrollController.addListener(_scrollListener);
     _loadConsultations();
   }
 
   @override
   void dispose() {
     _tabController.removeListener(_onTabChanged);
+    _scrollController.removeListener(_scrollListener);
     _tabController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _scrollListener() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      if (!_isLoadingMore && _hasMore) {
+        _loadMore();
+      }
+    }
   }
 
   void _onTabChanged() {
     if (!_tabController.indexIsChanging) {
+      _currentPage = 1;
+      _hasMore = true;
       setState(() {
         switch (_tabController.index) {
           case 0:
@@ -57,14 +76,63 @@ class _MyConsultationsScreenState extends State<MyConsultationsScreen>
   }
 
   Future<void> _loadConsultations() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _currentPage = 1;
+      _hasMore = true;
+    });
 
     final status = _selectedStatus == 'all' ? null : _selectedStatus;
-    _consultations = await _consultationService.getMyConsultations(
+    final response = await _consultationService.getMyConsultations(
       status: status,
+      page: _currentPage,
     );
 
-    setState(() => _isLoading = false);
+    setState(() {
+      _consultations = response;
+      _hasMore = response != null && _currentPage < response.totalPages;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoadingMore || !_hasMore || _consultations == null) return;
+
+    setState(() => _isLoadingMore = true);
+
+    try {
+      _currentPage++;
+      final status = _selectedStatus == 'all' ? null : _selectedStatus;
+      final response = await _consultationService.getMyConsultations(
+        status: status,
+        page: _currentPage,
+      );
+
+      if (response != null && mounted) {
+        setState(() {
+          // Merge new consultations with existing ones
+          _consultations = MyConsultationsResponse(
+            count: response.count,
+            page: response.page,
+            pageSize: response.pageSize,
+            totalPages: response.totalPages,
+            summary: response.summary,
+            consultations: [
+              ..._consultations!.consultations,
+              ...response.consultations
+            ],
+          );
+          _hasMore = _currentPage < response.totalPages;
+        });
+      }
+    } catch (e) {
+      _currentPage--;
+      debugPrint('Error loading more consultations: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingMore = false);
+      }
+    }
   }
 
   Future<void> _updateConsultationStatus({
@@ -144,9 +212,20 @@ class _MyConsultationsScreenState extends State<MyConsultationsScreen>
               : RefreshIndicator(
                   onRefresh: _loadConsultations,
                   child: ListView.builder(
+                    controller: _scrollController,
                     padding: const EdgeInsets.all(16),
-                    itemCount: _consultations!.results.length,
+                    itemCount:
+                        _consultations!.results.length + (_hasMore ? 1 : 0),
                     itemBuilder: (context, index) {
+                      if (index == _consultations!.results.length) {
+                        return _isLoadingMore
+                            ? const Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child:
+                                    Center(child: CircularProgressIndicator()),
+                              )
+                            : const SizedBox.shrink();
+                      }
                       final booking = _consultations!.results[index];
                       return _buildConsultationCard(booking, theme);
                     },

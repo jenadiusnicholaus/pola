@@ -14,8 +14,17 @@ class NearbyLawyersController extends GetxController {
       <String>['advocate', 'lawyer', 'paralegal', 'law_firm'].obs;
   final _userLocation = Rx<UserLocation?>(null);
 
+  // Pagination
+  final ScrollController scrollController = ScrollController();
+  final _currentPage = 1.obs;
+  final _hasMore = true.obs;
+  final _isLoadingMore = false.obs;
+  final pageSize = 20;
+
   List<NearbyLawyer> get lawyers => _lawyers;
   bool get isLoading => _isLoading.value;
+  bool get isLoadingMore => _isLoadingMore.value;
+  bool get hasMore => _hasMore.value;
   String? get error => _error.value;
   double get radius => _radius.value;
   List<String> get selectedTypes => _selectedTypes;
@@ -25,26 +34,47 @@ class NearbyLawyersController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    fetchNearbyLawyers();
+    scrollController.addListener(_scrollListener);
+    // PERFORMANCE: Don't auto-fetch on init - let the screen trigger it when ready
+    // fetchNearbyLawyers();
   }
 
-  /// Fetch nearby lawyers
+  @override
+  void onClose() {
+    scrollController.dispose();
+    super.onClose();
+  }
+
+  void _scrollListener() {
+    if (scrollController.position.pixels >=
+            scrollController.position.maxScrollExtent - 200 &&
+        !_isLoadingMore.value &&
+        _hasMore.value) {
+      loadMore();
+    }
+  }
+
+  /// Fetch nearby lawyers (initial load)
   Future<void> fetchNearbyLawyers() async {
     try {
       _isLoading.value = true;
       _error.value = null;
+      _currentPage.value = 1;
+      _hasMore.value = true;
 
       final typesString = _selectedTypes.join(',');
 
       final response = await _service.fetchNearbyLawyers(
         radius: _radius.value,
         types: typesString,
-        limit: 100,
+        page: 1,
+        pageSize: pageSize,
       );
 
       if (response != null) {
         _lawyers.value = response.results;
         _userLocation.value = response.yourLocation;
+        _hasMore.value = response.results.length >= pageSize;
 
         if (response.count == 0) {
           _error.value = 'No lawyers found within ${_radius.value}km radius';
@@ -57,6 +87,36 @@ class NearbyLawyersController extends GetxController {
       debugPrint('❌ Error in fetchNearbyLawyers: $e');
     } finally {
       _isLoading.value = false;
+    }
+  }
+
+  /// Load more lawyers (pagination)
+  Future<void> loadMore() async {
+    if (_isLoadingMore.value || !_hasMore.value) return;
+
+    try {
+      _isLoadingMore.value = true;
+      final nextPage = _currentPage.value + 1;
+      final typesString = _selectedTypes.join(',');
+
+      final response = await _service.fetchNearbyLawyers(
+        radius: _radius.value,
+        types: typesString,
+        page: nextPage,
+        pageSize: pageSize,
+      );
+
+      if (response != null && response.results.isNotEmpty) {
+        _lawyers.addAll(response.results);
+        _currentPage.value = nextPage;
+        _hasMore.value = response.results.length >= pageSize;
+      } else {
+        _hasMore.value = false;
+      }
+    } catch (e) {
+      debugPrint('❌ Error loading more lawyers: $e');
+    } finally {
+      _isLoadingMore.value = false;
     }
   }
 

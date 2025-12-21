@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/nearby_lawyers_controller.dart';
 import '../models/nearby_lawyer_model.dart';
 import '../../calling_booking/models/consultant_models.dart' as calling;
+import '../../../widgets/profile_avatar.dart';
 
 class NearbyLawyersScreen extends StatelessWidget {
   const NearbyLawyersScreen({super.key});
@@ -90,19 +91,39 @@ class NearbyLawyersScreen extends StatelessWidget {
             RefreshIndicator(
               onRefresh: controller.refresh,
               child: ListView.builder(
+                controller: controller.scrollController,
                 padding: EdgeInsets.only(
                   left: 16,
                   right: 16,
                   top: 16,
                   bottom: 90, // Space for floating button
                 ),
-                itemCount: controller.lawyers.length + 1,
+                itemCount: controller.lawyers.length + 2,
+                addAutomaticKeepAlives: true,
+                addRepaintBoundaries: true,
+                cacheExtent: 500,
                 itemBuilder: (context, index) {
                   if (index == 0) {
                     return _buildHeader(context, controller);
                   }
+
+                  if (index == controller.lawyers.length + 1) {
+                    // Loading indicator at bottom
+                    return controller.isLoadingMore
+                        ? Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: Center(child: CircularProgressIndicator()),
+                          )
+                        : SizedBox.shrink();
+                  }
+
                   final lawyer = controller.lawyers[index - 1];
-                  return _LawyerCard(lawyer: lawyer);
+                  return RepaintBoundary(
+                    child: _LawyerCard(
+                      key: ValueKey('lawyer_${lawyer.id}'),
+                      lawyer: lawyer,
+                    ),
+                  );
                 },
               ),
             ),
@@ -240,6 +261,7 @@ class NearbyLawyersScreen extends StatelessWidget {
         lastName: lawyer.userDetails.lastName ?? '',
         fullName: lawyer.userDetails.fullName ?? '',
         phoneNumber: lawyer.userDetails.phoneNumber,
+        profilePicture: lawyer.userDetails.profilePicture,
       ),
       consultantType: lawyer.consultantType,
       specialization: lawyer.specialization ?? '',
@@ -259,6 +281,7 @@ class NearbyLawyersScreen extends StatelessWidget {
           platformShare: lawyer.pricing.mobile.platformShare.toString(),
         ),
       ),
+      isOnline: lawyer.isOnline,
     );
   }
 
@@ -329,7 +352,7 @@ class NearbyLawyersScreen extends StatelessWidget {
 class _LawyerCard extends StatelessWidget {
   final NearbyLawyer lawyer;
 
-  const _LawyerCard({required this.lawyer});
+  const _LawyerCard({super.key, required this.lawyer});
 
   @override
   Widget build(BuildContext context) {
@@ -367,31 +390,45 @@ class _LawyerCard extends StatelessWidget {
                 // Header with profile picture and basic info
                 Row(
                   children: [
-                    // Profile Picture
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color:
-                              theme.colorScheme.outlineVariant.withOpacity(0.3),
-                          width: 1.5,
+                    // Profile Picture with online indicator
+                    Stack(
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: theme.colorScheme.outlineVariant
+                                  .withOpacity(0.3),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: ProfileAvatar(
+                            imageUrl: lawyer.profilePicture,
+                            fallbackText: lawyer.name ?? '?',
+                            radius: 27,
+                          ),
                         ),
-                      ),
-                      child: CircleAvatar(
-                        radius: 27,
-                        backgroundColor: theme.colorScheme.surface,
-                        backgroundImage: lawyer.profilePicture != null
-                            ? NetworkImage(lawyer.profilePicture!)
-                            : null,
-                        child: lawyer.profilePicture == null
-                            ? Text(
-                                lawyer.getUserTypeIcon(),
-                                style: TextStyle(fontSize: 24),
-                              )
-                            : null,
-                      ),
+                        // Online indicator
+                        if (lawyer.isOnline)
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              width: 16,
+                              height: 16,
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: theme.colorScheme.surface,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     SizedBox(width: 12),
                     Expanded(
@@ -418,6 +455,29 @@ class _LawyerCard extends StatelessWidget {
                                       .withOpacity(0.5),
                                   fontWeight: FontWeight.w500,
                                   letterSpacing: 0.2,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: lawyer.isOnline
+                                      ? Colors.green.withOpacity(0.15)
+                                      : Colors.grey.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  lawyer.isOnline ? 'Online' : 'Offline',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: lawyer.isOnline
+                                        ? Colors.green.shade700
+                                        : Colors.grey.shade600,
+                                  ),
                                 ),
                               ),
                               SizedBox(width: 10),
@@ -565,11 +625,11 @@ class _LawyerCard extends StatelessWidget {
   }
 
   void _bookConsultation(NearbyLawyer lawyer) {
-    // TODO: Navigate to booking screen
-    Get.snackbar(
-      'Book Consultation',
-      'Booking feature coming soon for ${lawyer.name ?? "this lawyer"}',
-      snackPosition: SnackPosition.BOTTOM,
-    );
+    final consultant = NearbyLawyersScreen._convertToConsultant(lawyer);
+    // Book button is for physical consultations
+    Get.toNamed('/book-consultation', arguments: {
+      'consultant': consultant,
+      'bookingType': 'physical',
+    });
   }
 }

@@ -6,7 +6,7 @@ import '../models/generated_document_model.dart';
 class TemplateService {
   final Dio _dio = DioConfig.instance;
 
-  Future<Map<String, dynamic>> getTemplates() async {
+  Future<Map<String, dynamic>> getTemplates({int? page, int? pageSize}) async {
     // TODO: Replace with actual API endpoint when backend is ready
     // Endpoint should be: /api/v1/document-templates/
 

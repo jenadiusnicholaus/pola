@@ -13,20 +13,23 @@ class NearbyLawyersService extends GetxService {
   Future<NearbyLawyersResponse?> fetchNearbyLawyers({
     double radius = 20,
     String types = 'advocate,lawyer,paralegal,law_firm',
-    int limit = 50,
+    int page = 1,
+    int pageSize = 20,
   }) async {
     try {
       debugPrint('📍 Fetching nearby lawyers...');
       debugPrint('  - Radius: ${radius}km');
       debugPrint('  - Types: $types');
-      debugPrint('  - Limit: $limit');
+      debugPrint('  - Page: $page');
+      debugPrint('  - PageSize: $pageSize');
 
       final response = await _apiService.get(
         _nearbyEndpoint,
         queryParameters: {
           'radius': radius,
           'types': types,
-          'limit': limit,
+          'page': page,
+          'page_size': pageSize,
         },
       );
 
@@ -47,36 +50,42 @@ class NearbyLawyersService extends GetxService {
   /// Fetch advocates only
   Future<NearbyLawyersResponse?> fetchNearbyAdvocates({
     double radius = 20,
-    int limit = 50,
+    int page = 1,
+    int pageSize = 20,
   }) {
     return fetchNearbyLawyers(
       radius: radius,
       types: 'advocate',
-      limit: limit,
+      page: page,
+      pageSize: pageSize,
     );
   }
 
   /// Fetch lawyers only
   Future<NearbyLawyersResponse?> fetchNearbyLawyersOnly({
     double radius = 20,
-    int limit = 50,
+    int page = 1,
+    int pageSize = 20,
   }) {
     return fetchNearbyLawyers(
       radius: radius,
       types: 'lawyer',
-      limit: limit,
+      page: page,
+      pageSize: pageSize,
     );
   }
 
   /// Fetch law firms only
   Future<NearbyLawyersResponse?> fetchNearbyLawFirms({
     double radius = 20,
-    int limit = 50,
+    int page = 1,
+    int pageSize = 20,
   }) {
     return fetchNearbyLawyers(
       radius: radius,
       types: 'law_firm',
-      limit: limit,
+      page: page,
+      pageSize: pageSize,
     );
   }
 }

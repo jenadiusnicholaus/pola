@@ -225,6 +225,9 @@ class LearningMaterial {
   final int downloadsCount;
   final int likesCount;
   final bool isLiked;
+  final bool isPurchased; // Legacy field
+  final bool isPurchasedByUser;
+  final bool canDownload;
   final DateTime createdAt;
   final DateTime lastUpdated;
 
@@ -244,6 +247,9 @@ class LearningMaterial {
     required this.downloadsCount,
     required this.likesCount,
     required this.isLiked,
+    this.isPurchased = false, // Legacy field
+    this.isPurchasedByUser = false,
+    this.canDownload = true,
     required this.createdAt,
     required this.lastUpdated,
   });
@@ -278,6 +284,9 @@ class LearningMaterial {
       downloadsCount: json['downloads_count'] ?? 0,
       likesCount: json['likes_count'] ?? 0,
       isLiked: json['is_liked'] ?? false,
+      isPurchased: json['is_purchased'] ?? false, // Legacy field
+      isPurchasedByUser: json['is_purchased_by_user'] ?? false,
+      canDownload: json['can_download'] ?? true,
       createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
       lastUpdated:
           DateTime.tryParse(json['last_updated'] ?? '') ?? DateTime.now(),

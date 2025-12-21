@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/consultant_models.dart';
 import '../services/call_service.dart';
@@ -10,6 +11,14 @@ class ConsultantController extends GetxController {
   final isLoading = false.obs;
   final error = ''.obs;
 
+  // Pagination
+  final ScrollController scrollController = ScrollController();
+  final isLoadingMore = false.obs;
+  final hasMore = true.obs;
+  int currentPage = 1;
+  final int pageSize = 20;
+  int? totalCount;
+
   // Filters
   final selectedType = 'mobile'.obs; // 'mobile' or 'physical'
   final selectedConsultantType = ''.obs; // 'advocate', 'lawyer', 'paralegal'
@@ -18,27 +27,78 @@ class ConsultantController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    scrollController.addListener(_scrollListener);
     fetchConsultants();
   }
 
-  /// Fetch consultants with current filters
+  @override
+  void onClose() {
+    scrollController.removeListener(_scrollListener);
+    scrollController.dispose();
+    super.onClose();
+  }
+
+  void _scrollListener() {
+    if (scrollController.position.pixels >=
+        scrollController.position.maxScrollExtent - 200) {
+      if (!isLoadingMore.value && hasMore.value) {
+        loadMore();
+      }
+    }
+  }
+
+  /// Fetch consultants with current filters (resets pagination)
   Future<void> fetchConsultants() async {
     try {
       isLoading.value = true;
       error.value = '';
+      currentPage = 1;
+      hasMore.value = true;
 
-      final results = await _service.getConsultants(
+      final response = await _service.getConsultants(
         type: selectedType.value.isNotEmpty ? selectedType.value : null,
         consultantType: selectedConsultantType.value.isNotEmpty
             ? selectedConsultantType.value
             : null,
+        page: currentPage,
+        pageSize: pageSize,
       );
 
-      consultants.value = results;
+      consultants.value = response['results'] as List<Consultant>;
+      totalCount = response['count'] as int?;
+      hasMore.value = response['next'] != null;
     } catch (e) {
       error.value = e.toString();
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /// Load more consultants for pagination
+  Future<void> loadMore() async {
+    if (isLoadingMore.value || !hasMore.value) return;
+
+    try {
+      isLoadingMore.value = true;
+      currentPage++;
+
+      final response = await _service.getConsultants(
+        type: selectedType.value.isNotEmpty ? selectedType.value : null,
+        consultantType: selectedConsultantType.value.isNotEmpty
+            ? selectedConsultantType.value
+            : null,
+        page: currentPage,
+        pageSize: pageSize,
+      );
+
+      final newConsultants = response['results'] as List<Consultant>;
+      consultants.addAll(newConsultants);
+      hasMore.value = response['next'] != null;
+    } catch (e) {
+      debugPrint('Error loading more consultants: $e');
+      currentPage--; // Revert page increment on error
+    } finally {
+      isLoadingMore.value = false;
     }
   }
 

@@ -138,9 +138,19 @@ class MyQuestionsScreen extends StatelessWidget {
               return RefreshIndicator(
                 onRefresh: controller.refresh,
                 child: ListView.builder(
+                  controller: controller.scrollController,
                   padding: const EdgeInsets.all(16),
-                  itemCount: controller.myQuestions.length,
+                  itemCount: controller.myQuestions.length +
+                      (controller.hasMore.value ? 1 : 0),
                   itemBuilder: (context, index) {
+                    if (index == controller.myQuestions.length) {
+                      return Obx(() => controller.isLoadingMore.value
+                          ? const Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Center(child: CircularProgressIndicator()),
+                            )
+                          : const SizedBox.shrink());
+                    }
                     final question = controller.myQuestions[index];
                     return QuestionCard(
                       question: question,

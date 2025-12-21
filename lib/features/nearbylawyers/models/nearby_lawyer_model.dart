@@ -14,6 +14,7 @@ class NearbyLawyer {
   final double? averageRating;
   final int totalReviews;
   final PricingInfo pricing;
+  final bool isOnline;
   final double distanceKm;
   final LocationInfo location;
   final ProfessionalDetails professionalDetails;
@@ -37,6 +38,7 @@ class NearbyLawyer {
     this.averageRating,
     required this.totalReviews,
     required this.pricing,
+    required this.isOnline,
     required this.distanceKm,
     required this.location,
     required this.professionalDetails,
@@ -65,6 +67,7 @@ class NearbyLawyer {
           : null,
       totalReviews: json['total_reviews'] ?? 0,
       pricing: PricingInfo.fromJson(json['pricing']),
+      isOnline: json['is_online'] ?? false,
       distanceKm: (json['distance_km'] as num).toDouble(),
       location: LocationInfo.fromJson(json['location']),
       professionalDetails:
@@ -81,7 +84,7 @@ class NearbyLawyer {
   String? get name => userDetails.fullName;
   String? get email => userDetails.email;
   String? get phone => userDetails.phoneNumber;
-  String? get profilePicture => null; // Not in new API
+  String? get profilePicture => userDetails.profilePicture;
 
   String getUserTypeLabel() {
     switch (consultantType) {
@@ -121,6 +124,7 @@ class UserDetails {
   final String? lastName;
   final String? fullName;
   final String? phoneNumber;
+  final String? profilePicture;
 
   UserDetails({
     required this.id,
@@ -129,6 +133,7 @@ class UserDetails {
     this.lastName,
     this.fullName,
     this.phoneNumber,
+    this.profilePicture,
   });
 
   factory UserDetails.fromJson(Map<String, dynamic> json) {
@@ -139,6 +144,7 @@ class UserDetails {
       lastName: json['last_name'],
       fullName: json['full_name'],
       phoneNumber: json['phone_number'],
+      profilePicture: json['profile_picture'],
     );
   }
 }

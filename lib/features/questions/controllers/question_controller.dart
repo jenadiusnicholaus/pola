@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/question_models.dart';
 import '../services/question_service.dart';
@@ -12,10 +13,34 @@ class QuestionController extends GetxController {
   final error = ''.obs;
   final selectedStatus = 'all'.obs;
 
+  // Pagination
+  final ScrollController scrollController = ScrollController();
+  final isLoadingMore = false.obs;
+  final hasMore = true.obs;
+  int currentPage = 1;
+  final int pageSize = 20;
+
   @override
   void onInit() {
     super.onInit();
+    scrollController.addListener(_scrollListener);
     fetchMyQuestions();
+  }
+
+  @override
+  void onClose() {
+    scrollController.removeListener(_scrollListener);
+    scrollController.dispose();
+    super.onClose();
+  }
+
+  void _scrollListener() {
+    if (scrollController.position.pixels >=
+        scrollController.position.maxScrollExtent - 200) {
+      if (!isLoadingMore.value && hasMore.value) {
+        loadMore();
+      }
+    }
   }
 
   /// Fetch my questions
@@ -23,18 +48,49 @@ class QuestionController extends GetxController {
     try {
       isLoading.value = true;
       error.value = '';
+      currentPage = 1;
+      hasMore.value = true;
 
-      final questions = await _service.getMyQuestions(
+      final response = await _service.getMyQuestions(
         status: status,
         ordering: '-created_at',
+        page: currentPage,
+        pageSize: pageSize,
       );
 
-      myQuestions.value = questions;
+      myQuestions.value = response['results'] as List<Question>;
+      hasMore.value = response['next'] != null;
     } catch (e) {
       error.value = e.toString();
       // Don't show snackbar on initial load, let the UI handle the error display
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /// Load more questions
+  Future<void> loadMore() async {
+    if (isLoadingMore.value || !hasMore.value) return;
+
+    try {
+      isLoadingMore.value = true;
+      currentPage++;
+
+      final response = await _service.getMyQuestions(
+        status: selectedStatus.value == 'all' ? null : selectedStatus.value,
+        ordering: '-created_at',
+        page: currentPage,
+        pageSize: pageSize,
+      );
+
+      final newQuestions = response['results'] as List<Question>;
+      myQuestions.addAll(newQuestions);
+      hasMore.value = response['next'] != null;
+    } catch (e) {
+      debugPrint('Error loading more questions: $e');
+      currentPage--;
+    } finally {
+      isLoadingMore.value = false;
     }
   }
 

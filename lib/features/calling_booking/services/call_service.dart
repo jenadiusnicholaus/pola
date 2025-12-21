@@ -156,13 +156,15 @@ class CallService {
 
   // Consultant Endpoints
 
-  /// Get list of all consultants
-  Future<List<Consultant>> getConsultants({
+  /// Get list of all consultants with pagination
+  Future<Map<String, dynamic>> getConsultants({
     String? type, // 'mobile' or 'physical'
     String? consultantType, // 'advocate', 'lawyer', 'paralegal'
     String? specialization,
     String? city,
     double? minRating,
+    int? page,
+    int? pageSize,
   }) async {
     try {
       final queryParams = <String, dynamic>{};
@@ -174,14 +176,26 @@ class CallService {
         queryParams['specialization'] = specialization;
       if (city != null) queryParams['city'] = city;
       if (minRating != null) queryParams['min_rating'] = minRating;
+      if (page != null) queryParams['page'] = page;
+      if (pageSize != null) queryParams['page_size'] = pageSize;
 
       final response = await _dio.get(
         '/api/v1/subscriptions/calls/consultants/',
         queryParameters: queryParams,
       );
 
-      final consultantsList = response.data['consultants'] as List;
-      return consultantsList.map((json) => Consultant.fromJson(json)).toList();
+      final consultants = (response.data['consultants'] ??
+          response.data['results'] ??
+          []) as List;
+      final consultantsList =
+          consultants.map((json) => Consultant.fromJson(json)).toList();
+
+      return {
+        'count': response.data['count'] ?? consultantsList.length,
+        'next': response.data['next'],
+        'previous': response.data['previous'],
+        'results': consultantsList,
+      };
     } catch (e) {
       throw _handleError(e);
     }

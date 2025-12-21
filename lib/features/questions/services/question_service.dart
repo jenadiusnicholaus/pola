@@ -31,11 +31,13 @@ class QuestionService {
     }
   }
 
-  /// Get my questions
-  Future<List<Question>> getMyQuestions({
+  /// Get my questions with pagination
+  Future<Map<String, dynamic>> getMyQuestions({
     String? status,
     int? materialId,
     String ordering = '-created_at',
+    int? page,
+    int? pageSize,
   }) async {
     try {
       final userId = _tokenService.getUserId();
@@ -47,11 +49,18 @@ class QuestionService {
           if (status != null) 'status': status,
           if (materialId != null) 'material_id': materialId,
           'ordering': ordering,
+          if (page != null) 'page': page,
+          if (pageSize != null) 'page_size': pageSize,
         },
       );
 
       final results = response.data['results'] as List;
-      return results.map((json) => Question.fromJson(json)).toList();
+      return {
+        'count': response.data['count'],
+        'next': response.data['next'],
+        'previous': response.data['previous'],
+        'results': results.map((json) => Question.fromJson(json)).toList(),
+      };
     } catch (e) {
       throw _handleError(e);
     }

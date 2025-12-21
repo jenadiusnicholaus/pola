@@ -68,32 +68,6 @@ class _HomeScreenState extends State<HomeScreen> {
             // Dynamic Sliver App Bar
             _buildDynamicSliverAppBar(context, controller),
 
-            // Subscription Status Banner (reactive)
-            SliverToBoxAdapter(
-              child: Obx(() {
-                final profileService = Get.find<ProfileService>();
-                final subscription =
-                    profileService.currentProfile?.subscription;
-
-                // Only show banner if truly needed
-                if (subscription != null && subscription.isActive) {
-                  // Active subscription - check if expiring soon or trial
-                  if (subscription.daysRemaining > 0 &&
-                      subscription.daysRemaining <= 7) {
-                    return const SubscriptionStatusBanner(); // Expiring soon
-                  }
-                  if (subscription.isTrial) {
-                    return const SubscriptionStatusBanner(); // Trial
-                  }
-                  // Active paid subscription - no banner
-                  return const SizedBox.shrink();
-                }
-
-                // No subscription or inactive - show banner
-                return const SubscriptionStatusBanner();
-              }),
-            ),
-
             // Hubs and Services Content
             const SliverToBoxAdapter(
               child: HubsAndServicesList(),

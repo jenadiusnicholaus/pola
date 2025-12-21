@@ -55,8 +55,12 @@ class DeviceInfoService {
     }
   }
 
-  /// Get device location
-  Future<Position?> getLocation({int maxRetries = 1}) async {
+  /// Get device location (with optional auto-request of permission)
+  /// Set requestPermission=false to only get location if already granted
+  Future<Position?> getLocation({
+    int maxRetries = 1,
+    bool requestPermission = true,
+  }) async {
     try {
       debugPrint('📍 Checking location availability...');
 
@@ -72,12 +76,17 @@ class DeviceInfoService {
       debugPrint('📍 Current permission status: $permission');
 
       if (permission == LocationPermission.denied) {
-        debugPrint('📍 Requesting location permission...');
-        permission = await Geolocator.requestPermission();
-        debugPrint('📍 Permission after request: $permission');
+        if (requestPermission) {
+          debugPrint('📍 Requesting location permission...');
+          permission = await Geolocator.requestPermission();
+          debugPrint('📍 Permission after request: $permission');
 
-        if (permission == LocationPermission.denied) {
-          debugPrint('⚠️ Location permission denied by user');
+          if (permission == LocationPermission.denied) {
+            debugPrint('⚠️ Location permission denied by user');
+            return null;
+          }
+        } else {
+          debugPrint('⚠️ Location permission not granted, skipping request');
           return null;
         }
       }
@@ -89,10 +98,10 @@ class DeviceInfoService {
 
       debugPrint('📍 Fetching current location...');
 
-      // Get current position with 15 second timeout
+      // Get current position with 10 second timeout (reduced for performance)
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.medium,
-        timeLimit: Duration(seconds: 15),
+        timeLimit: Duration(seconds: 10),
       );
 
       debugPrint(

@@ -127,6 +127,10 @@ class _CallScreenState extends State<CallScreen> {
         return false;
       },
       child: Obx(() {
+        // Only show back button if there's an error or call is not connected
+        final bool showBackButton = controller!.error.value.isNotEmpty ||
+            !controller!.isCallConnected.value;
+
         return Scaffold(
           backgroundColor: theme.colorScheme.surface,
           appBar: AppBar(
@@ -137,13 +141,15 @@ class _CallScreenState extends State<CallScreen> {
                       : 'Call Failed')
                   : 'Voice Call',
             ),
-            leading: BackButton(
-              onPressed: () {
-                // Always end the call and go back
-                controller?.endCall();
-                Get.back();
-              },
-            ),
+            automaticallyImplyLeading: showBackButton,
+            leading: showBackButton
+                ? BackButton(
+                    onPressed: () {
+                      controller?.endCall();
+                      Get.back();
+                    },
+                  )
+                : null,
           ),
           body: SafeArea(
             child: Obx(() {

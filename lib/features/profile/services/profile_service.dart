@@ -35,24 +35,8 @@ class ProfileService extends GetxService {
     super.onInit();
     debugPrint('👤 ProfileService initialized');
 
-    // Load cached profile on initialization to avoid unnecessary API calls
-    _loadCachedProfileOnInit();
-  }
-
-  /// Load cached profile during initialization
-  void _loadCachedProfileOnInit() async {
-    try {
-      if (_tokenStorage.isLoggedIn) {
-        final cachedProfile = await loadCachedProfile();
-        if (cachedProfile != null) {
-          // Set cache time to a bit ago so it's valid but will refresh when needed
-          _lastFetchTime = DateTime.now().subtract(const Duration(minutes: 1));
-          debugPrint('📋 Initialized with cached profile');
-        }
-      }
-    } catch (e) {
-      debugPrint('⚠️ Failed to load cached profile on init: $e');
-    }
+    // PERFORMANCE: Don't load cached profile on init - load lazily when first accessed
+    // This avoids blocking the main thread during startup
   }
 
   /// Update profile picture
@@ -150,6 +134,16 @@ class ProfileService extends GetxService {
 
   /// Fetch user profile from API with caching
   Future<UserProfile?> fetchProfile({bool forceRefresh = false}) async {
+    // PERFORMANCE: Try to load from cache first (lazy load on first access)
+    if (_currentProfile.value == null && !forceRefresh) {
+      final cached = await loadCachedProfile();
+      if (cached != null) {
+        _lastFetchTime = DateTime.now().subtract(const Duration(minutes: 1));
+        debugPrint('📋 Loaded cached profile on first access');
+        return cached;
+      }
+    }
+
     // Check if we have a valid cached profile
     if (!forceRefresh && _currentProfile.value != null && _isCacheValid()) {
       debugPrint(

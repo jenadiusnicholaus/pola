@@ -5,6 +5,7 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/legal_education_models.dart';
 import '../../controllers/hub_content_controller.dart';
+import '../../widgets/document_purchase_dialog.dart';
 
 class MaterialViewerScreen extends StatefulWidget {
   const MaterialViewerScreen({super.key});
@@ -87,6 +88,9 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
             ? material.likesCount + 1
             : (material.likesCount > 0 ? material.likesCount - 1 : 0),
         isLiked: newLikeStatus,
+        isPurchased: material.isPurchased,
+        isPurchasedByUser: material.isPurchasedByUser,
+        canDownload: material.canDownload,
         createdAt: material.createdAt,
         lastUpdated: material.lastUpdated,
       );
@@ -96,6 +100,175 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
   bool get _isPaidMaterial {
     final priceValue = double.tryParse(material.price) ?? 0.0;
     return priceValue > 0.0;
+  }
+
+  /// Handle download with payment check
+  Future<void> _handleDownload() async {
+    debugPrint('======================================');
+    debugPrint('🔍 DOWNLOAD BUTTON PRESSED');
+    debugPrint('======================================');
+
+    final theme = Theme.of(context);
+
+    debugPrint('   Is paid material: $_isPaidMaterial');
+    debugPrint('   Price value: ${material.price}');
+    debugPrint('   Can download: ${material.canDownload}');
+    debugPrint('   Is purchased by user: ${material.isPurchasedByUser}');
+
+    // Check if material is paid and user cannot download (not purchased)
+    if (_isPaidMaterial && !material.canDownload) {
+      debugPrint('✅ Condition met - Showing payment dialog');
+      try {
+        // Show payment dialog
+        final result = await showDialog<Map<String, dynamic>>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) {
+            debugPrint('📱 Building DocumentPurchaseDialog...');
+            return DocumentPurchaseDialog(
+              documentId: material.id,
+              documentTitle: material.title,
+              price: material.price,
+              currency: 'TZS',
+              paymentCategory: 'material',
+            );
+          },
+        );
+
+        debugPrint('💬 Dialog closed with result: $result');
+
+        if (result != null && result['success'] == true) {
+          // Payment successful - update material status
+          setState(() {
+            material = LearningMaterial(
+              id: material.id,
+              hubType: material.hubType,
+              contentType: material.contentType,
+              uploaderInfo: material.uploaderInfo,
+              title: material.title,
+              description: material.description,
+              fileUrl: material.fileUrl,
+              language: material.language,
+              price: material.price,
+              isDownloadable: material.isDownloadable,
+              isLectureMaterial: material.isLectureMaterial,
+              isVerified: material.isVerified,
+              downloadsCount: material.downloadsCount + 1,
+              likesCount: material.likesCount,
+              isLiked: material.isLiked,
+              isPurchased: true, // Legacy
+              isPurchasedByUser: true,
+              canDownload: true,
+              createdAt: material.createdAt,
+              lastUpdated: material.lastUpdated,
+            );
+          });
+
+          Get.snackbar(
+            'Success',
+            'Document purchased successfully! You can now download it.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: theme.colorScheme.primaryContainer,
+            colorText: theme.colorScheme.onPrimaryContainer,
+            icon: const Icon(Icons.check_circle),
+          );
+
+          // Proceed with download
+          _downloadMaterial();
+        }
+      } catch (e) {
+        debugPrint('❌ Error showing dialog: $e');
+        Get.snackbar('Error', 'Failed to show payment dialog: $e');
+      }
+    } else if (material.canDownload || !_isPaidMaterial) {
+      debugPrint(
+          '⏩ Material is free or can be downloaded - downloading directly');
+      // Free material or already purchased - proceed with download
+      _downloadMaterial();
+    } else {
+      debugPrint('⚠️ Unknown condition - not showing dialog');
+    }
+    debugPrint('======================================');
+  }
+
+  /// Actually download the material
+  Future<void> _downloadMaterial() async {
+    final theme = Theme.of(context);
+
+    try {
+      if (material.fileUrl.isEmpty) {
+        Get.snackbar(
+          'Error',
+          'No file available for download',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: theme.colorScheme.errorContainer,
+          colorText: theme.colorScheme.onErrorContainer,
+        );
+        return;
+      }
+
+      // Show download started message
+      Get.snackbar(
+        'Opening',
+        'Opening file...',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: theme.colorScheme.primaryContainer,
+        colorText: theme.colorScheme.onPrimaryContainer,
+        duration: const Duration(seconds: 2),
+      );
+
+      final uri = Uri.parse(material.fileUrl);
+      bool launched = false;
+
+      // Try multiple launch modes in order of preference
+      // 1. Try external application first (PDF viewer, etc.)
+      try {
+        launched = await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+      } catch (e) {
+        debugPrint('External application launch failed: $e');
+      }
+
+      // 2. If external app fails, try platform default (usually browser)
+      if (!launched) {
+        try {
+          launched = await launchUrl(
+            uri,
+            mode: LaunchMode.platformDefault,
+          );
+        } catch (e) {
+          debugPrint('Platform default launch failed: $e');
+        }
+      }
+
+      // 3. Last resort: try in-app web view
+      if (!launched) {
+        try {
+          launched = await launchUrl(
+            uri,
+            mode: LaunchMode.inAppWebView,
+          );
+        } catch (e) {
+          debugPrint('In-app web view launch failed: $e');
+        }
+      }
+
+      if (!launched) {
+        throw Exception('Could not open file with any method');
+      }
+    } catch (e) {
+      debugPrint('Download error: $e');
+      Get.snackbar(
+        'Cannot Open File',
+        'Unable to open the file. Try opening the link in your browser manually.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: theme.colorScheme.errorContainer,
+        colorText: theme.colorScheme.onErrorContainer,
+        duration: const Duration(seconds: 4),
+      );
+    }
   }
 
   Widget _buildSocialSidePanel(ThemeData theme) {
@@ -136,18 +309,7 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
             Icons.download_rounded,
             false,
             '${material.downloadsCount}',
-            () {
-              // TODO: Implement download functionality
-              Get.snackbar(
-                'Download',
-                'Download feature will be available soon',
-                snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: theme.colorScheme.primaryContainer,
-                colorText: theme.colorScheme.onPrimaryContainer,
-                margin: const EdgeInsets.all(16),
-                borderRadius: 12,
-              );
-            },
+            () => _handleDownload(),
           ),
         ],
       ),
@@ -297,10 +459,53 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
         slivers: [
           // Simple compact App Bar
           SliverAppBar(
-            title: Text(
-              material.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            title: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    material.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (_isPaidMaterial)
+                  Container(
+                    margin: const EdgeInsets.only(left: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: material.canDownload
+                          ? Colors.green
+                          : theme.colorScheme.secondary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          material.canDownload
+                              ? Icons.check_circle
+                              : Icons.lock,
+                          size: 14,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          material.canDownload
+                              ? 'Purchased'
+                              : 'TZS ${material.price}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
             ),
             backgroundColor: theme.colorScheme.primary,
             foregroundColor: theme.colorScheme.onPrimary,
@@ -651,8 +856,8 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
       child: pdfViewer,
     );
 
-    // For paid materials, apply Medium-style paywall with gradient fade
-    if (isPaid) {
+    // For paid materials that user hasn't purchased, apply Medium-style paywall with gradient fade
+    if (isPaid && !material.canDownload) {
       final screenHeight = MediaQuery.of(context).size.height;
       final previewHeight = screenHeight * 0.7; // Show 70% of screen
 
@@ -840,8 +1045,8 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
                     ),
                   ),
 
-                  // Paywall overlay for paid content (if needed)
-                  if (isPaid)
+                  // Paywall overlay for paid content that user hasn't purchased
+                  if (isPaid && !material.canDownload)
                     Positioned(
                       bottom: 0,
                       left: 0,
@@ -985,8 +1190,8 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
       ),
     );
 
-    // For paid materials, apply Medium-style paywall with gradient fade
-    if (isPaid && material.description.isNotEmpty) {
+    // For paid materials that user hasn't purchased, apply Medium-style paywall with gradient fade
+    if (isPaid && !material.canDownload && material.description.isNotEmpty) {
       final previewHeight = 400.0; // Height for preview content
 
       return Stack(
@@ -1248,14 +1453,7 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
               ),
               const SizedBox(width: 12),
               ElevatedButton(
-                onPressed: () {
-                  // TODO: Implement purchase flow
-                  Get.snackbar(
-                    'Purchase',
-                    'Purchase functionality will be available soon',
-                    snackPosition: SnackPosition.BOTTOM,
-                  );
-                },
+                onPressed: () => _handleDownload(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.colorScheme.primary,
                   foregroundColor: theme.colorScheme.onPrimary,
