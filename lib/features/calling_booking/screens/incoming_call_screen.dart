@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 import '../services/call_service.dart';
 import 'call_screen.dart';
 
@@ -37,7 +38,16 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
   void initState() {
     super.initState();
 
-    // Auto-timeout after 60 seconds
+    debugPrint('📞 IncomingCallScreen initialized for ${widget.callerName}');
+
+    // Start playing device ringtone with slight delay to ensure screen is mounted
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        _playRingtone();
+      }
+    });
+
+    // Auto-timeout after 60 seconds (silently terminate if not answered)
     _timeoutTimer = Timer(const Duration(seconds: 60), () {
       if (mounted && !_isProcessing) {
         _handleTimeout();
@@ -51,8 +61,37 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
     )..repeat(reverse: true);
   }
 
+  /// Play device's default ringtone for incoming call
+  void _playRingtone() {
+    try {
+      debugPrint('🔔 Attempting to play ringtone...');
+      FlutterRingtonePlayer().play(
+        android: AndroidSounds.ringtone,
+        ios: IosSounds.electronic,
+        looping: true,
+        volume: 1.0,
+      );
+      debugPrint(
+          '🔔 Ringtone play() method called successfully with looping: true');
+    } catch (e) {
+      debugPrint('❌ Error playing ringtone: $e');
+      debugPrint('❌ Stack trace: ${StackTrace.current}');
+    }
+  }
+
+  /// Stop ringtone
+  void _stopRingtone() {
+    try {
+      FlutterRingtonePlayer().stop();
+      debugPrint('🔕 Ringtone stopped');
+    } catch (e) {
+      debugPrint('❌ Error stopping ringtone: $e');
+    }
+  }
+
   @override
   void dispose() {
+    _stopRingtone();
     _timeoutTimer.cancel();
     _pulseController.dispose();
     super.dispose();
@@ -86,6 +125,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
     if (_isProcessing) return;
 
     setState(() => _isProcessing = true);
+    _stopRingtone();
     _timeoutTimer.cancel();
 
     try {
@@ -93,7 +133,12 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
 
       final response = await _callService.acceptCall(callId: widget.callId);
 
+      debugPrint('📥 Accept response: $response');
+
       if (response['success'] == true) {
+        debugPrint('✅ Call accepted successfully');
+        debugPrint('📡 Channel name: ${response['channel_name']}');
+
         // Navigate to call screen
         Get.off(
           () => CallScreen(
@@ -106,6 +151,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
           ),
         );
       } else {
+        debugPrint('❌ Accept failed: ${response['message']}');
         Get.snackbar(
           'Error',
           response['message'] ?? 'Failed to accept call',
@@ -137,6 +183,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
     if (_isProcessing) return;
 
     setState(() => _isProcessing = true);
+    _stopRingtone();
     _timeoutTimer.cancel();
 
     try {

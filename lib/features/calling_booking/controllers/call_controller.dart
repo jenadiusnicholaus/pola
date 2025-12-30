@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/consultant_models.dart';
 import '../services/call_service.dart';
-import '../services/agora_call_service.dart';
+import '../services/zego_call_service.dart';
 
 class CallController extends GetxController {
   final CallService _callService = CallService();
-  final AgoraCallService _agoraService = AgoraCallService();
+  final ZegoCallService _zegoService = ZegoCallService();
 
   // Observable state
   var isCheckingCredits = false.obs;
@@ -22,6 +22,7 @@ class CallController extends GetxController {
   var selectedBundleId = Rxn<int>();
 
   Consultant? _currentConsultant;
+  bool _isEndingCall = false; // Prevent multiple simultaneous endCall() calls
 
   // Check if current error is related to insufficient credits
   bool get isInsufficientCreditsError {
@@ -51,17 +52,37 @@ class CallController extends GetxController {
 
   void _setupCallbacks() {
     // Duration update callback
-    _agoraService.onDurationUpdate = (duration) {
+    _zegoService.onDurationUpdate = (duration) {
       callDuration.value = duration;
     };
 
     // Call ended callback
-    _agoraService.onCallEnded = (durationSeconds) {
+    _zegoService.onCallEnded = (durationSeconds) {
       _handleCallEnded(durationSeconds);
     };
 
+    // Other user joined callback
+    _zegoService.onOtherUserJoined = () {
+      print('✅ Other user joined the call, timer started');
+      isConsultantConnected.value = true;
+    };
+
+    // Other user left callback - end call when other party disconnects
+    _zegoService.onOtherUserLeft = () {
+      print('🚪 ❗ OTHER USER LEFT - Triggering endCall IMMEDIATELY');
+      // Small delay to ensure ZegoCloud state is updated
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (!_isEndingCall) {
+          print('🚪 Executing endCall() after other user left');
+          endCall();
+        } else {
+          print('⚠️ endCall already in progress, skipping');
+        }
+      });
+    };
+
     // Error callback
-    _agoraService.onError = (errorMessage) {
+    _zegoService.onError = (errorMessage) {
       error.value = errorMessage;
       if (Get.isRegistered<CallController>()) {
         Get.back();
@@ -82,31 +103,6 @@ class CallController extends GetxController {
         });
       }
     };
-
-    // Join channel callback
-    _agoraService.onJoinChannel = () {
-      isCallConnected.value = true;
-      print('Successfully joined call channel');
-    };
-
-    // Consultant joined callback
-    _agoraService.onConsultantJoined = () {
-      print('👤 Consultant has joined the call');
-      isConsultantConnected.value = true;
-      // TODO: Start call recording here once recording is implemented
-      print('📞 Both parties connected - ready to record');
-    };
-
-    // Consultant left callback
-    _agoraService.onConsultantLeft = () {
-      print('Consultant has left the call');
-      // Auto end call when consultant leaves
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (Get.isRegistered<CallController>()) {
-          endCall();
-        }
-      });
-    };
   }
 
   /// Join an incoming call (when accepting)
@@ -122,35 +118,28 @@ class CallController extends GetxController {
       debugPrint('📞 Joining incoming call: $callId');
       debugPrint('📡 Channel: $channelName');
 
-      // Step 1: Initialize Agora
-      try {
-        await _agoraService.initializeAgora();
-      } catch (agoraError) {
-        debugPrint('Agora initialization failed: $agoraError');
-        isCheckingCredits.value = false;
-        if (Get.context != null) {
-          ScaffoldMessenger.of(Get.context!).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to initialize call. Please try again.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        Get.back();
-        return;
-      }
+      // Initialize ZegoExpressEngine first
+      // TODO: Get actual user info from auth service
+      final userId = callId;
+      final userName = 'User';
+      await _zegoService.initializeZego(userId, userName);
 
-      // Step 2: Check/Request permissions
-      final hasPermission = await _agoraService.requestPermissions();
+      // Check/Request permissions
+      final hasPermission = await _zegoService.requestPermissions();
       if (!hasPermission) {
         debugPrint('⚠️ Microphone permission not granted');
       }
 
-      // Step 3: Join the channel directly (bypass credit check for receiver)
-      await _agoraService.joinChannelDirect(channelName);
-
       isCheckingCredits.value = false;
-      debugPrint('✅ Successfully joined incoming call');
+
+      // Join the Zego room
+      await _zegoService.joinRoom(channelName, userId, userName);
+
+      isCallConnected.value = true;
+      // Note: isConsultantConnected will be set by onOtherUserJoined callback
+
+      debugPrint(
+          '✅ Successfully joined incoming call, waiting for other user...');
     } catch (e) {
       debugPrint('❌ Error joining incoming call: $e');
       isCheckingCredits.value = false;
@@ -218,48 +207,17 @@ class CallController extends GetxController {
       print('✅ Backend notified, FCM sent to consultant');
       print('📡 Channel: ${initiateResult['channel_name']}');
 
-      // Step 3: Initialize Agora (non-blocking)
-      print('Initializing Agora...');
-      try {
-        await _agoraService.initializeAgora();
-      } catch (agoraError) {
-        print('Agora initialization failed: $agoraError');
-        isCheckingCredits.value = false;
-        // Show toast instead of blocking UI
-        if (Get.context != null) {
-          ScaffoldMessenger.of(Get.context!).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to initialize call. Please try again.'),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-        Get.back();
-        return;
-      }
-
-      // Step 4: Check/Request permissions (non-blocking)
-      print('Checking microphone permission...');
-      final hasPermission = await _agoraService.requestPermissions();
+      // Microphone permission should already be granted from ConsultantsScreen
+      // Just verify it's still granted
+      final hasPermission = await _zegoService.requestPermissions();
       if (!hasPermission) {
-        print(
-            '⚠️ Permission not granted, but continuing - Agora will request it');
-        // Don't block - Agora SDK will request permission when joining channel
-      }
-
-      // Step 5: Join call channel using the channel name from backend
-      print('Joining call channel...');
-      try {
-        // Use the channel name returned from backend (same as what we generated)
-        final channelName = initiateResult['channel_name'] as String;
-        await _agoraService.joinChannelDirect(channelName);
-      } catch (joinError) {
-        print('Failed to join channel: $joinError');
+        print('❌ Microphone permission denied');
+        isCheckingCredits.value = false;
         if (Get.context != null) {
           ScaffoldMessenger.of(Get.context!).showSnackBar(
             const SnackBar(
-              content: Text('Could not connect to call. Please try again.'),
+              content:
+                  Text('Microphone permission is required for voice calls'),
               backgroundColor: Colors.red,
               duration: Duration(seconds: 3),
             ),
@@ -269,8 +227,28 @@ class CallController extends GetxController {
         return;
       }
 
+      // Initialize ZegoExpressEngine
+      // TODO: Get actual user info from auth service
+      final userId = 'user_${DateTime.now().millisecondsSinceEpoch}';
+      final userName = 'User';
+      await _zegoService.initializeZego(userId, userName);
+
+      // Set call ID for call recording
+      _zegoService.setCallId(initiateResult['call_id']);
+
+      // Join the Zego room
+      await _zegoService.joinRoom(
+        initiateResult['channel_name'],
+        userId,
+        userName,
+      );
+
+      isCallConnected.value = true;
+      // Note: isConsultantConnected will be set when consultant joins (onOtherUserJoined callback)
       isCheckingCredits.value = false;
-      print('✅ Call initiated successfully - waiting for consultant to join');
+
+      print(
+          '✅ Call initiated and room joined - waiting for consultant to join...');
     } catch (e) {
       print('Error initiating call: $e');
       isCheckingCredits.value = false;
@@ -288,57 +266,85 @@ class CallController extends GetxController {
     }
   }
 
-  void toggleMute() {
-    _agoraService.toggleMute();
-    isMuted.value = _agoraService.isMuted;
-  }
-
-  void toggleSpeaker() {
-    _agoraService.toggleSpeaker();
-    isSpeakerOn.value = _agoraService.isSpeakerOn;
-  }
-
   Future<void> endCall() async {
-    if (_currentConsultant == null) {
-      Get.back();
+    // Prevent multiple simultaneous calls
+    if (_isEndingCall) {
+      print('⚠️ endCall() already in progress, ignoring duplicate call');
       return;
     }
 
+    _isEndingCall = true;
+    print('🔴 endCall() called');
+
+    // IMMEDIATELY stop the timer as first action
+    _zegoService.stopDurationTimer();
+    print('⏱️ Timer stopped immediately');
+
+    Map<String, dynamic>? callSummary;
+
     try {
-      // End call with recording
-      await _agoraService.endCall(recordCall: true);
+      // Leave the room
+      await _zegoService.leaveRoom();
 
-      // Navigate back
-      if (Get.isRegistered<CallController>()) {
-        Get.back();
+      // Always call endCall on the service to stop timer and optionally record
+      // The service will handle recording only if call ID is set (caller side)
+      callSummary = await _zegoService.endCall(recordCall: true);
 
-        // Show completion message after navigation
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (Get.context != null) {
-            Get.snackbar(
-              'Call Ended',
-              'Your call has been recorded and credits have been deducted.',
-              snackPosition: SnackPosition.BOTTOM,
-              duration: const Duration(seconds: 3),
-            );
-          }
+      // Navigate back immediately - try multiple methods to ensure it works
+      print('🔙 Attempting to navigate back...');
+
+      bool navigationSuccess = false;
+
+      // Method 1: Direct Navigator pop (most reliable)
+      if (Get.context != null) {
+        try {
+          Navigator.of(Get.context!).pop();
+          navigationSuccess = true;
+          print('✅ Navigation successful via Navigator.pop()');
+        } catch (e) {
+          print('⚠️ Navigator.pop() failed: $e');
+        }
+      }
+
+      // Method 2: Try GetX navigation if first method failed
+      if (!navigationSuccess && Get.isRegistered<CallController>()) {
+        try {
+          Get.back();
+          navigationSuccess = true;
+          print('✅ Navigation successful via Get.back()');
+        } catch (e) {
+          print('⚠️ Get.back() failed: $e');
+        }
+      }
+
+      if (!navigationSuccess) {
+        print('❌ All navigation methods failed');
+      }
+
+      // Show call summary dialog ONLY on caller side (when we have call summary)
+      if (navigationSuccess &&
+          _currentConsultant != null &&
+          callSummary != null) {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          _showCallSummaryDialog(callSummary!);
         });
       }
     } catch (e) {
-      print('Error ending call: $e');
-      if (Get.isRegistered<CallController>()) {
-        Get.back();
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (Get.context != null) {
-            Get.snackbar(
-              'Error',
-              'Failed to properly end call: ${e.toString()}',
-              snackPosition: SnackPosition.BOTTOM,
-              duration: const Duration(seconds: 3),
-            );
-          }
-        });
+      print('❌ Error ending call: $e');
+      // ALWAYS try to navigate back, even on error
+      try {
+        if (Get.context != null) {
+          Navigator.of(Get.context!).pop();
+          print('✅ Emergency navigation successful');
+        }
+      } catch (navError) {
+        print('❌ Emergency navigation failed: $navError');
       }
+    } finally {
+      // Reset flag after a delay to allow for cleanup
+      Future.delayed(const Duration(milliseconds: 500), () {
+        _isEndingCall = false;
+      });
     }
   }
 
@@ -364,9 +370,110 @@ class CallController extends GetxController {
     }
   }
 
+  /// Show call summary dialog with duration and remaining credits
+  void _showCallSummaryDialog(Map<String, dynamic> callSummary) {
+    final summary = callSummary['call_summary'];
+    if (summary == null) return;
+
+    final durationMinutes = summary['duration_minutes'] ?? 0.0;
+    final creditsDeducted = summary['credits_deducted'] ?? 0.0;
+    final creditsRemaining = summary['credits_remaining'] ?? 0.0;
+    final durationSeconds = summary['duration_seconds'] ?? 0;
+
+    // Format duration
+    final minutes = (durationSeconds ~/ 60).toString().padLeft(2, '0');
+    final seconds = (durationSeconds % 60).toString().padLeft(2, '0');
+    final formattedDuration = '$minutes:$seconds';
+
+    Get.dialog(
+      AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.call_end, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Call Ended'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Call Summary',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildSummaryRow(
+              icon: Icons.timer,
+              label: 'Duration',
+              value: formattedDuration,
+            ),
+            const SizedBox(height: 8),
+            _buildSummaryRow(
+              icon: Icons.remove_circle_outline,
+              label: 'Minutes Used',
+              value: '${creditsDeducted.toStringAsFixed(1)} min',
+              valueColor: Colors.red,
+            ),
+            const SizedBox(height: 8),
+            _buildSummaryRow(
+              icon: Icons.account_balance_wallet,
+              label: 'Remaining Credits',
+              value: '${creditsRemaining.toStringAsFixed(1)} min',
+              valueColor: Colors.green,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+      barrierDismissible: false,
+    );
+  }
+
+  Widget _buildSummaryRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    Color? valueColor,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: Colors.grey[600]),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[600],
+          ),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: valueColor ?? Colors.black87,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   void onClose() {
-    _agoraService.dispose();
+    // Clean up: stop timer and leave room
+    _zegoService.stopDurationTimer();
+    _zegoService.leaveRoom();
+    // Note: We don't destroy the engine - it should persist across calls
     super.onClose();
   }
 }

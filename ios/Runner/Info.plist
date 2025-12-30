@@ -45,5 +45,13 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app needs access to your microphone for voice calls with consultants.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs access to your camera to upload documents and photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to your photo library to select and upload images.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs your location for device registration and security purposes.</string>
 </dict>
 </plist>

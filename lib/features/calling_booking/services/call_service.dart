@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../../config/dio_config.dart';
 import '../models/consultant_models.dart';
-import '../../../config/agora_config.dart';
+import '../../../config/zego_config.dart';
 
 class CallService {
   final Dio _dio = DioConfig.instance;
@@ -15,11 +15,11 @@ class CallService {
     String callType = 'voice',
   }) async {
     try {
-      // Generate channel name in app
-      final channelName = AgoraConfig.generateChannelName(consultantId);
+      // Generate call ID in app
+      final callId = ZegoConfig.generateCallId(consultantId);
 
       debugPrint('📞 Initiating call to consultant $consultantId');
-      debugPrint('📡 Channel: $channelName');
+      debugPrint('📡 Call ID: $callId');
       debugPrint('🌐 Base URL: ${_dio.options.baseUrl}');
       debugPrint(
           '🎯 Full URL: ${_dio.options.baseUrl}/api/v1/subscriptions/calls/initiate/');
@@ -28,7 +28,7 @@ class CallService {
         '/api/v1/subscriptions/calls/initiate/',
         data: {
           'consultant_id': consultantId,
-          'channel_name': channelName,
+          'channel_name': callId,
           'call_type': callType,
         },
       );
@@ -64,13 +64,26 @@ class CallService {
         '/api/v1/subscriptions/calls/$callId/accept/',
       );
 
+      debugPrint('📥 Accept call response: ${response.data}');
+
+      // Check if response has the expected structure
+      if (response.data == null) {
+        debugPrint('⚠️ Response data is null');
+        return {
+          'success': false,
+          'message': 'Invalid response from server',
+        };
+      }
+
       return {
-        'success': true,
+        'success': response.data['success'] ?? true,
         'call_id': response.data['call_id'],
-        'channel_name': response.data['channel_name'],
+        'channel_name': response.data['channel_name'] ?? '',
         'caller': response.data['caller'],
+        'message': response.data['message'] ?? 'Call accepted',
       };
     } catch (e) {
+      debugPrint('❌ Error accepting call: $e');
       return {
         'success': false,
         'message': _handleError(e),
@@ -257,26 +270,6 @@ class CallService {
       );
 
       return CreditCheckResponse.fromJson(response.data);
-    } catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  /// Record call and deduct credits
-  Future<RecordCallResponse> recordCall({
-    required int consultantId,
-    required int durationSeconds,
-  }) async {
-    try {
-      final response = await _dio.post(
-        '/api/v1/subscriptions/calls/record-call/',
-        data: {
-          'consultant_id': consultantId,
-          'duration_seconds': durationSeconds,
-        },
-      );
-
-      return RecordCallResponse.fromJson(response.data);
     } catch (e) {
       throw _handleError(e);
     }

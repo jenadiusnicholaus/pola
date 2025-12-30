@@ -118,13 +118,10 @@ class _CallScreenState extends State<CallScreen> {
 
     return WillPopScope(
       onWillPop: () async {
-        // If there's an error (insufficient credits), allow direct back navigation
-        if (controller!.error.value.isNotEmpty) {
-          return true;
-        }
-        // If call is in progress, show end call dialog
-        _showEndCallDialog();
-        return false;
+        // Call endCall which will handle navigation itself
+        controller?.endCall();
+        // Return true to allow the pop, endCall() will handle cleanup
+        return true;
       },
       child: Obx(() {
         // Only show back button if there's an error or call is not connected
@@ -563,39 +560,18 @@ class _CallScreenState extends State<CallScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            // Mute button
-                            _buildCallButton(
-                              icon: controller!.isMuted.value
-                                  ? Icons.mic_off
-                                  : Icons.mic,
-                              label:
-                                  controller!.isMuted.value ? 'Unmute' : 'Mute',
-                              onPressed: () => controller!.toggleMute(),
-                              backgroundColor:
-                                  theme.colorScheme.surfaceContainerHighest,
-                              iconColor: theme.colorScheme.onSurface,
-                            ),
+                            // Note: With ZegoCloud prebuilt UI, mute/speaker/end call
+                            // buttons are handled by the ZegoUIKitPrebuiltCall widget
+                            // These controls are for reference/fallback only
 
                             // End call button
                             _buildCallButton(
                               icon: Icons.call_end,
                               label: 'End Call',
-                              onPressed: () => _showEndCallDialog(),
+                              onPressed: () => controller?.endCall(),
                               backgroundColor: theme.colorScheme.error,
                               iconColor: theme.colorScheme.onError,
                               size: 70,
-                            ),
-
-                            // Speaker button
-                            _buildCallButton(
-                              icon: controller!.isSpeakerOn.value
-                                  ? Icons.volume_up
-                                  : Icons.volume_down,
-                              label: 'Speaker',
-                              onPressed: () => controller!.toggleSpeaker(),
-                              backgroundColor:
-                                  theme.colorScheme.surfaceContainerHighest,
-                              iconColor: theme.colorScheme.onSurface,
                             ),
                           ],
                         ),
@@ -647,31 +623,9 @@ class _CallScreenState extends State<CallScreen> {
     );
   }
 
-  void _showEndCallDialog() {
-    Get.dialog(
-      AlertDialog(
-        title: const Text('End Call?'),
-        content: const Text('Are you sure you want to end this call?'),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Get.back(); // Close dialog
-              controller?.endCall();
-            },
-            child: const Text('End Call'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   void dispose() {
-    controller?.endCall();
+    // Don't call endCall here as it's already handled by back navigation
     super.dispose();
   }
 }

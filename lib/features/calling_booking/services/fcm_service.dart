@@ -1,10 +1,19 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../screens/incoming_call_screen.dart';
+import '../controllers/call_controller.dart';
+import '../services/zego_call_service.dart';
 import '../../../services/device_registration_service.dart';
 import '../../../config/environment_config.dart';
+import 'dart:io' show Platform;
+
+/// Local notifications plugin instance (must be top-level)
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 
 /// Background FCM message handler (top-level function required)
 @pragma('vm:entry-point')
@@ -14,8 +23,56 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Handle call-related notifications in background
   if (message.data['type'] == 'incoming_call') {
     debugPrint('📞 Incoming call in background: ${message.data}');
-    // The FCM notification itself will wake the app
-    // When app opens, it will be handled by getInitialMessage
+
+    // Show local notification to open the app
+    await _showIncomingCallNotification(message.data);
+  }
+}
+
+/// Show local notification for incoming call (top-level function)
+Future<void> _showIncomingCallNotification(Map<String, dynamic> data) async {
+  try {
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+      'incoming_calls',
+      'Incoming Calls',
+      channelDescription: 'Notifications for incoming voice calls',
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: true,
+      fullScreenIntent: true,
+      category: AndroidNotificationCategory.call,
+      visibility: NotificationVisibility.public,
+      playSound: true,
+      enableVibration: true,
+    );
+
+    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      interruptionLevel: InterruptionLevel.timeSensitive,
+    );
+
+    const NotificationDetails notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    // Encode the data as JSON for proper parsing later
+    final payload = jsonEncode(data);
+
+    await flutterLocalNotificationsPlugin.show(
+      0, // notification id
+      'Incoming Call',
+      '${data['caller_name'] ?? 'Someone'} is calling...',
+      notificationDetails,
+      payload: payload,
+    );
+
+    debugPrint('📱 Local notification shown for incoming call');
+  } catch (e) {
+    debugPrint('❌ Error showing local notification: $e');
   }
 }
 
@@ -23,10 +80,15 @@ class FCMService extends GetxService {
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   final DeviceRegistrationService _deviceService =
       Get.find<DeviceRegistrationService>();
+  final FlutterLocalNotificationsPlugin _localNotifications =
+      flutterLocalNotificationsPlugin;
 
   /// Initialize FCM service
   Future<FCMService> init() async {
     debugPrint('🔔 Initializing FCM Service...');
+
+    // Initialize local notifications
+    await _initializeLocalNotifications();
 
     // Request permissions
     await _requestPermissions();
@@ -45,6 +107,80 @@ class FCMService extends GetxService {
 
     debugPrint('✅ FCM Service initialized');
     return this;
+  }
+
+  /// Initialize local notifications for heads-up notifications
+  Future<void> _initializeLocalNotifications() async {
+    try {
+      // Android initialization
+      const AndroidInitializationSettings androidSettings =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
+
+      // iOS initialization
+      const DarwinInitializationSettings iosSettings =
+          DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
+
+      const InitializationSettings initSettings = InitializationSettings(
+        android: androidSettings,
+        iOS: iosSettings,
+      );
+
+      await _localNotifications.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: _onNotificationTapped,
+      );
+
+      // Create Android notification channel for incoming calls
+      if (Platform.isAndroid) {
+        const AndroidNotificationChannel channel = AndroidNotificationChannel(
+          'incoming_calls',
+          'Incoming Calls',
+          description: 'Notifications for incoming voice calls',
+          importance: Importance.max,
+          playSound: true,
+          enableVibration: true,
+          showBadge: true,
+        );
+
+        await _localNotifications
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>()
+            ?.createNotificationChannel(channel);
+
+        debugPrint('✅ Android notification channel created');
+      }
+
+      debugPrint('✅ Local notifications initialized');
+    } catch (e) {
+      debugPrint('❌ Error initializing local notifications: $e');
+    }
+  }
+
+  /// Handle notification tap
+  void _onNotificationTapped(NotificationResponse response) {
+    debugPrint('📱 Notification tapped: ${response.payload}');
+
+    if (response.payload == null || response.payload!.isEmpty) {
+      debugPrint('⚠️ No payload in notification response');
+      return;
+    }
+
+    try {
+      // Parse the JSON payload
+      final data = jsonDecode(response.payload!) as Map<String, dynamic>;
+      debugPrint('📱 Parsed notification data: $data');
+
+      // Navigate to incoming call screen
+      if (data['type'] == 'incoming_call') {
+        _handleIncomingCall(data);
+      }
+    } catch (e) {
+      debugPrint('❌ Error parsing notification payload: $e');
+    }
   }
 
   /// Request FCM permissions
@@ -102,6 +238,32 @@ class FCMService extends GetxService {
 
     // Check for initial message when app launched from terminated state
     _checkInitialMessage();
+
+    // Check for notification tap when app was in background/terminated
+    _checkInitialNotificationResponse();
+  }
+
+  /// Check if app was launched by tapping a local notification
+  Future<void> _checkInitialNotificationResponse() async {
+    try {
+      final details =
+          await _localNotifications.getNotificationAppLaunchDetails();
+
+      if (details != null && details.didNotificationLaunchApp) {
+        debugPrint('📱 App launched from local notification tap');
+
+        if (details.notificationResponse != null) {
+          final response = details.notificationResponse!;
+          debugPrint('📱 Notification response: ${response.payload}');
+
+          // Handle the notification tap (wait for app to be ready)
+          await Future.delayed(const Duration(milliseconds: 500));
+          _onNotificationTapped(response);
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Error checking initial notification: $e');
+    }
   }
 
   /// Handle foreground FCM messages
@@ -109,6 +271,7 @@ class FCMService extends GetxService {
     debugPrint('📱 FCM message received (foreground): ${message.data}');
 
     final messageType = message.data['type'];
+    debugPrint('📱 Message type: $messageType');
 
     switch (messageType) {
       case 'incoming_call':
@@ -121,6 +284,7 @@ class FCMService extends GetxService {
         _handleCallRejected(message.data);
         break;
       case 'call_ended':
+        debugPrint('📱 ⚡ Routing to _handleCallEnded');
         _handleCallEnded(message.data);
         break;
       case 'missed_call':
@@ -241,11 +405,66 @@ class FCMService extends GetxService {
 
   /// Handle call ended notification
   void _handleCallEnded(Map<String, dynamic> data) {
-    debugPrint('📞 Call ended by other party');
+    debugPrint('📞 ❗ CALL ENDED NOTIFICATION RECEIVED');
+    debugPrint('📥 Call ended data: $data');
+    debugPrint('📥 Duration: ${data['duration_seconds']} seconds');
+    debugPrint('📥 Message: ${data['message']}');
 
-    // Close call screen if open
-    if (Get.currentRoute.contains('call')) {
-      Get.back();
+    // IMMEDIATELY try to stop timer via ZegoService first
+    try {
+      final zegoService = Get.find<ZegoCallService>();
+      zegoService.stopDurationTimer();
+      debugPrint('⏱️ ✅ Timer stopped via ZegoService immediately');
+    } catch (e) {
+      debugPrint('⚠️ Could not access ZegoService to stop timer: $e');
+    }
+
+    // Close the call properly through the controller
+    // This ensures proper cleanup of ZegoCloud resources
+    if (Get.isRegistered<CallController>()) {
+      debugPrint('🎮 Found CallController, triggering endCall()');
+      try {
+        final controller = Get.find<CallController>();
+        // Call endCall to properly cleanup ZegoCloud, stop timer, and close screen
+        controller.endCall();
+        debugPrint('✅ Controller endCall() triggered - window will close');
+      } catch (e) {
+        debugPrint('❌ Error calling controller.endCall(): $e');
+        // Fallback: try to close screen directly
+        _closeCallScreens();
+      }
+    } else {
+      debugPrint('⚠️ CallController not registered, using fallback navigation');
+      // Fallback: Close any call-related screens directly
+      _closeCallScreens();
+    }
+  }
+
+  /// Fallback method to close call screens directly
+  void _closeCallScreens() {
+    debugPrint('🔍 Current route: ${Get.currentRoute}');
+
+    // Try multiple times to ensure we close the screen
+    if (Get.currentRoute.contains('call') ||
+        Get.currentRoute.contains('Call')) {
+      debugPrint('📱 Closing call screen...');
+
+      // Close the screen multiple times if needed
+      int attempts = 0;
+      while (attempts < 3 &&
+          (Get.currentRoute.contains('call') ||
+              Get.currentRoute.contains('Call'))) {
+        try {
+          Get.back();
+          attempts++;
+          debugPrint('✅ Closed call screen (attempt $attempts)');
+        } catch (e) {
+          debugPrint('❌ Error closing call screen: $e');
+          break;
+        }
+      }
+    } else {
+      debugPrint('ℹ️ Not on call screen, no need to close');
     }
   }
 

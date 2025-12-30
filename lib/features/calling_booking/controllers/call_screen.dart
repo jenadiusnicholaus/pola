@@ -529,18 +529,8 @@ class _CallScreenState extends State<CallScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            // Mute button
-                            _buildCallButton(
-                              icon: controller!.isMuted.value
-                                  ? Icons.mic_off
-                                  : Icons.mic,
-                              label:
-                                  controller!.isMuted.value ? 'Unmute' : 'Mute',
-                              onPressed: () => controller!.toggleMute(),
-                              backgroundColor:
-                                  theme.colorScheme.surfaceContainerHighest,
-                              iconColor: theme.colorScheme.onSurface,
-                            ),
+                            // Note: With ZegoCloud prebuilt UI, mute/speaker/end call
+                            // buttons are handled by the ZegoUIKitPrebuiltCall widget
 
                             // End call button
                             _buildCallButton(
@@ -550,18 +540,6 @@ class _CallScreenState extends State<CallScreen> {
                               backgroundColor: theme.colorScheme.error,
                               iconColor: theme.colorScheme.onError,
                               size: 70,
-                            ),
-
-                            // Speaker button
-                            _buildCallButton(
-                              icon: controller!.isSpeakerOn.value
-                                  ? Icons.volume_up
-                                  : Icons.volume_down,
-                              label: 'Speaker',
-                              onPressed: () => controller!.toggleSpeaker(),
-                              backgroundColor:
-                                  theme.colorScheme.surfaceContainerHighest,
-                              iconColor: theme.colorScheme.onSurface,
                             ),
                           ],
                         ),

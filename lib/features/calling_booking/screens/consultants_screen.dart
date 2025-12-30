@@ -1,15 +1,83 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../controllers/consultant_controller.dart';
 import '../models/consultant_models.dart';
 import '../../../widgets/profile_avatar.dart';
+import '../../../services/permission_service.dart';
 
-class ConsultantsScreen extends StatelessWidget {
+class ConsultantsScreen extends StatefulWidget {
   const ConsultantsScreen({super.key});
+
+  @override
+  State<ConsultantsScreen> createState() => _ConsultantsScreenState();
+}
+
+class _ConsultantsScreenState extends State<ConsultantsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Request microphone permission when entering this screen
+    _requestMicrophonePermission();
+  }
+
+  Future<void> _requestMicrophonePermission() async {
+    try {
+      debugPrint('🎤 Pre-requesting microphone permission for calls...');
+      final status = await Permission.microphone.status;
+
+      if (status.isDenied) {
+        debugPrint('🎤 Microphone permission denied, requesting...');
+        final result = await Permission.microphone.request();
+
+        if (result.isGranted) {
+          debugPrint('✅ Microphone permission granted');
+        } else if (result.isPermanentlyDenied) {
+          debugPrint('❌ Microphone permission permanently denied');
+          // Show dialog to open settings
+          if (mounted) {
+            _showPermissionDialog();
+          }
+        } else {
+          debugPrint('⚠️ Microphone permission denied');
+        }
+      } else if (status.isGranted) {
+        debugPrint('✅ Microphone permission already granted');
+      }
+    } catch (e) {
+      debugPrint('❌ Error requesting microphone permission: $e');
+    }
+  }
+
+  void _showPermissionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Microphone Permission Required'),
+        content: const Text(
+          'Voice calling requires microphone access. Please enable it in app settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              openAppSettings();
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(ConsultantController());
+    final permissionService = Get.find<PermissionService>();
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -301,8 +369,13 @@ class ConsultantsScreen extends StatelessWidget {
                         ),
                       ),
 
-                    // Physical consultation button
-                    if (consultant.offersPhysicalConsultations) ...[
+                    // Physical consultation button - ONLY for law_firm users
+                    // Individual professionals (advocate, lawyer, paralegal) cannot book
+                    if (consultant.offersPhysicalConsultations &&
+                        Get.find<PermissionService>()
+                                .userRoleName
+                                ?.toLowerCase() ==
+                            'law_firm') ...[
                       if (consultant.offersMobileConsultations)
                         const SizedBox(width: 8),
                       Expanded(
