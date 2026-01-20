@@ -9,6 +9,7 @@ import '../../features/consultation/screens/consultant_profile_screen.dart';
 import '../../features/subscription/screens/subscription_plans_screen.dart';
 import '../../routes/app_routes.dart';
 import '../../features/navigation/controllers/main_navigation_controller.dart';
+import '../../features/hubs_and_services/hub_content/utils/user_role_manager.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -253,12 +254,10 @@ class AppDrawer extends StatelessWidget {
     final tokenStorage = Get.find<TokenStorageService>();
     final userRole = tokenStorage.getUserRole()?.toLowerCase() ?? '';
     final isVerified = tokenStorage.isUserVerified();
+    final isAdmin = UserRoleManager.isAdmin();
 
     // Check role eligibility for different professional features
-    final isAdvocateOrLawyerOrFirm = isVerified &&
-        (userRole.contains('advocate') ||
-            userRole.contains('lawyer') ||
-            userRole.contains('law_firm'));
+    final isAdvocate = isVerified && userRole.contains('advocate');
     final isLegalProfessional = isVerified &&
         ['advocate', 'lawyer', 'paralegal', 'law_firm']
             .any((role) => userRole.contains(role));
@@ -274,8 +273,8 @@ class AppDrawer extends StatelessWidget {
       children: [
         _buildSectionHeader('Professional', theme),
 
-        // Advocate Hub - for advocates, lawyers, and law firms
-        if (isAdvocateOrLawyerOrFirm)
+        // Advocate Hub - Only advocates can access
+        if (isAdvocate || isAdmin)
           _buildDrawerItem(
             context: context,
             icon: Icons.gavel_outlined,

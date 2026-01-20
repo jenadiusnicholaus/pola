@@ -425,10 +425,10 @@ class HubsAndServicesList extends StatelessWidget {
     bool hasAccess = false;
     switch (hubKey) {
       case 'advocates':
-        // Advocates, lawyers, and law firms can access
-        hasAccess = ['advocate', 'lawyer', 'law_firm', 'admin'].contains(role);
+        // Only advocates can access advocate hub
+        hasAccess = ['advocate'].contains(role);
         debugPrint(
-            '🔍 ACCESS CHECK: Advocates hub - checking if role "$role" in [advocate, lawyer, law_firm, admin]: $hasAccess');
+            '🔍 ACCESS CHECK: Advocates hub - checking if role "$role" is advocate: $hasAccess');
         break;
       case 'students':
         hasAccess = ['law_student', 'lecturer', 'admin'].contains(role);

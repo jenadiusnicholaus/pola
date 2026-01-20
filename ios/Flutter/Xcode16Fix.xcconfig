@@ -1,0 +1,29 @@
+// Xcode 16+ compatibility fixes for BoringSSL-GRPC and Firebase
+// This file overrides problematic compiler settings
+
+// Completely disable problematic optimization flags
+GCC_OPTIMIZATION_LEVEL = 0
+SWIFT_OPTIMIZATION_LEVEL = -Onone
+
+// Clear all potentially problematic C/C++ flags
+OTHER_CFLAGS = 
+OTHER_CPLUSPLUSFLAGS = 
+OTHER_LDFLAGS = 
+
+// Disable bitcode which can interfere
+ENABLE_BITCODE = NO
+
+// Architecture-specific overrides for simulator
+EXCLUDED_ARCHS[sdk=iphonesimulator*] = arm64
+VALID_ARCHS[sdk=iphonesimulator*] = x86_64
+
+// Disable problematic warnings and validations
+GCC_TREAT_WARNINGS_AS_ERRORS = NO
+CLANG_WARN_STRICT_PROTOTYPES = NO
+GCC_WARN_INHIBIT_ALL_WARNINGS = YES
+COMPILER_INDEX_STORE_ENABLE = NO
+VALIDATE_PRODUCT = NO
+
+// C++ standard settings
+CLANG_CXX_LANGUAGE_STANDARD = gnu++17
+CLANG_CXX_LIBRARY = libc++

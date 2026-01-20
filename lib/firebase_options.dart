@@ -88,4 +88,5 @@ class DefaultFirebaseOptions {
     databaseURL: 'https://website-192723.firebaseio.com',
     storageBucket: 'website-192723.appspot.com',
   );
+
 }

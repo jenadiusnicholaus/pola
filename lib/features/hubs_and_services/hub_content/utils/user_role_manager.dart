@@ -126,12 +126,10 @@ class UserRoleManager {
     // Check hub-specific access permissions
     switch (hubType) {
       case 'advocates':
-        // Advocates hub - only advocates and law firms can access
-        // NOT lawyers/paralegals (they only get legal_ed and forum)
-        final hasDocPerm = hasPermission('can_generate_documents');
-        final result = hasDocPerm || isAdvocate || isLawFirm;
+        // Advocates hub - ONLY advocates can access (not lawyers, law firms, or others)
+        final result = isAdvocate;
         print(
-            '🔍 canAccessHub: Advocates - userRole: "$userRole", hasDocPerm: $hasDocPerm, isAdvocate: $isAdvocate, isLawFirm: $isLawFirm, result: $result');
+            '🔍 canAccessHub: Advocates - userRole: "$userRole", isAdvocate: $isAdvocate, result: $result');
         return result;
 
       case 'students':

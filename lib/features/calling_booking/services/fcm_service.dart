@@ -386,6 +386,7 @@ class FCMService extends GetxService {
   /// Handle call rejected notification
   void _handleCallRejected(Map<String, dynamic> data) {
     debugPrint('❌ Call rejected by consultant');
+    debugPrint('📍 Current route: ${Get.currentRoute}');
 
     Get.snackbar(
       'Call Declined',
@@ -397,10 +398,33 @@ class FCMService extends GetxService {
       duration: const Duration(seconds: 3),
     );
 
-    // Close call screen if open
-    if (Get.currentRoute.contains('call')) {
-      Get.back();
-    }
+    // Delay closing the screen so user can see the rejection message
+    Future.delayed(const Duration(milliseconds: 500), () {
+      debugPrint('🚪 Attempting to close call screens...');
+
+      // Try to end the call via CallController first (proper cleanup)
+      if (Get.isRegistered<CallController>()) {
+        try {
+          final controller = Get.find<CallController>();
+          debugPrint('🚪 Ending call via CallController');
+          controller.endCall();
+          return; // Controller will handle screen closure
+        } catch (e) {
+          debugPrint('⚠️ Error accessing CallController: $e');
+        }
+      }
+
+      // Fallback: Close screens directly
+      // Use until() to close until we're not on a call-related screen
+      Get.until((route) {
+        final routeName = route.settings.name ?? '';
+        final shouldStop = !routeName.contains('Call') &&
+            !routeName.contains('call') &&
+            !routeName.contains('Incoming');
+        debugPrint('🚪 Route: $routeName, stopping: $shouldStop');
+        return shouldStop;
+      });
+    });
   }
 
   /// Handle call ended notification

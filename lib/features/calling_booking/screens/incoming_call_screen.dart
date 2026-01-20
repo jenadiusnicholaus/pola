@@ -33,6 +33,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
   late Timer _timeoutTimer;
   late AnimationController _pulseController;
   bool _isProcessing = false;
+  String _processingAction = ''; // Track which action is being processed
 
   @override
   void initState() {
@@ -124,7 +125,10 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
   Future<void> _acceptCall() async {
     if (_isProcessing) return;
 
-    setState(() => _isProcessing = true);
+    setState(() {
+      _isProcessing = true;
+      _processingAction = 'accept';
+    });
     _stopRingtone();
     _timeoutTimer.cancel();
 
@@ -182,27 +186,69 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
   Future<void> _rejectCall() async {
     if (_isProcessing) return;
 
-    setState(() => _isProcessing = true);
+    setState(() {
+      _isProcessing = true;
+      _processingAction = 'reject';
+    });
     _stopRingtone();
     _timeoutTimer.cancel();
 
     try {
       debugPrint('❌ Rejecting call: ${widget.callId}');
 
-      await _callService.rejectCall(callId: widget.callId, reason: 'busy');
-
-      Get.snackbar(
-        'Call Declined',
-        'You declined the call from ${widget.callerName}',
-        icon: const Icon(Icons.call_end, color: Colors.white),
-        backgroundColor: Colors.grey[800],
-        colorText: Colors.white,
+      await _callService.rejectCall(
+        callId: widget.callId,
+        reason: 'declined',
       );
 
-      Get.back();
+      debugPrint('✅ Call rejected successfully');
+
+      // Close screen first, then show snackbar so it doesn't block
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Show snackbar after closing
+      Future.delayed(const Duration(milliseconds: 100), () {
+        Get.snackbar(
+          'Call Declined',
+          'You declined the call from ${widget.callerName}',
+          icon: const Icon(Icons.call_end, color: Colors.white),
+          backgroundColor: Colors.grey[800],
+          colorText: Colors.white,
+          duration: const Duration(seconds: 2),
+        );
+      });
     } catch (e) {
       debugPrint('❌ Error rejecting call: $e');
-      Get.back();
+
+      // Check if call was already rejected/ended (graceful handling)
+      if (e.toString().contains('invalid_status') ||
+          e.toString().contains('already') ||
+          e.toString().contains('rejected') ||
+          e.toString().contains('ended') ||
+          e.toString().contains('400')) {
+        debugPrint('ℹ️ Call already ended/rejected, closing screen gracefully');
+        // Just close the screen without showing error
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      } else {
+        // Show error for other types of failures
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+        Future.delayed(const Duration(milliseconds: 100), () {
+          Get.snackbar(
+            'Error',
+            'Failed to decline call',
+            icon: const Icon(Icons.error, color: Colors.white),
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 2),
+          );
+        });
+      }
     } finally {
       if (mounted) {
         setState(() => _isProcessing = false);
@@ -213,47 +259,58 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return WillPopScope(
-      onWillPop: () async {
-        // Prevent back button, must explicitly reject
-        return false;
-      },
+      onWillPop: () async => false, // Prevent back button
       child: Scaffold(
-        backgroundColor: theme.brightness == Brightness.dark
-            ? Colors.black87
-            : theme.colorScheme.surface,
+        backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
         body: SafeArea(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Top section - Call type
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  children: [
-                    Text(
-                      'Incoming ${widget.callType == 'video' ? 'Video' : 'Voice'} Call',
-                      style: TextStyle(
-                        color: theme.brightness == Brightness.dark
-                            ? Colors.white70
-                            : theme.colorScheme.onSurface.withOpacity(0.7),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Top section - Call type badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        widget.callType == 'video'
+                            ? Icons.videocam
+                            : Icons.phone,
+                        color: theme.colorScheme.onPrimaryContainer,
+                        size: 18,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      Text(
+                        'Incoming ${widget.callType == 'video' ? 'Video' : 'Voice'} Call',
+                        style: TextStyle(
+                          color: theme.colorScheme.onPrimaryContainer,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-              // Middle section - Caller info
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                const Spacer(),
+
+                // Middle section - Animated caller avatar
+                Column(
                   children: [
-                    // Animated caller avatar
                     ScaleTransition(
-                      scale: Tween<double>(begin: 1.0, end: 1.1).animate(
+                      scale: Tween<double>(begin: 1.0, end: 1.08).animate(
                         CurvedAnimation(
                           parent: _pulseController,
                           curve: Curves.easeInOut,
@@ -264,162 +321,198 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: theme.colorScheme.primary.withOpacity(0.3),
-                              blurRadius: 20,
-                              spreadRadius: 5,
+                              color: theme.colorScheme.primary.withOpacity(0.4),
+                              blurRadius: 30,
+                              spreadRadius: 10,
                             ),
                           ],
                         ),
-                        child: CircleAvatar(
-                          radius: 70,
-                          backgroundColor: theme.colorScheme.primaryContainer,
-                          backgroundImage: widget.callerPhoto.isNotEmpty
-                              ? NetworkImage(widget.callerPhoto)
-                              : null,
-                          child: widget.callerPhoto.isEmpty
-                              ? Icon(
-                                  Icons.person,
-                                  size: 70,
-                                  color: theme.colorScheme.onPrimaryContainer,
-                                )
-                              : null,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [
+                                theme.colorScheme.primary,
+                                theme.colorScheme.primary.withOpacity(0.6),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          child: CircleAvatar(
+                            radius: 80,
+                            backgroundColor: theme.colorScheme.surface,
+                            backgroundImage: widget.callerPhoto.isNotEmpty
+                                ? NetworkImage(widget.callerPhoto)
+                                : null,
+                            child: widget.callerPhoto.isEmpty
+                                ? Icon(
+                                    Icons.person,
+                                    size: 80,
+                                    color: theme.colorScheme.primary,
+                                  )
+                                : null,
+                          ),
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 40),
 
                     // Caller name
                     Text(
                       widget.callerName,
                       style: TextStyle(
-                        color: theme.brightness == Brightness.dark
-                            ? Colors.white
-                            : theme.colorScheme.onSurface,
-                        fontSize: 28,
+                        color: isDark ? Colors.white : Colors.black87,
+                        fontSize: 32,
                         fontWeight: FontWeight.bold,
+                        letterSpacing: -0.5,
                       ),
                       textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
 
-                    // Ringing text
-                    Text(
-                      'Ringing...',
-                      style: TextStyle(
-                        color: theme.brightness == Brightness.dark
-                            ? Colors.white70
-                            : theme.colorScheme.onSurface.withOpacity(0.6),
-                        fontSize: 18,
-                      ),
+                    // Ringing indicator with animation
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.green,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Ringing...',
+                          style: TextStyle(
+                            color: isDark ? Colors.white70 : Colors.black54,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ),
 
-              // Bottom section - Action buttons
-              Padding(
-                padding: const EdgeInsets.all(40.0),
-                child: Row(
+                const Spacer(flex: 2),
+
+                // Processing indicator above buttons
+                if (_isProcessing)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 4,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              _processingAction == 'accept'
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _processingAction == 'accept'
+                              ? 'Connecting...'
+                              : 'Declining...',
+                          style: TextStyle(
+                            color: isDark ? Colors.white70 : Colors.black54,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                // Bottom section - Action buttons
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     // Reject button
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Material(
-                          elevation: 8,
-                          shape: const CircleBorder(),
-                          color: Colors.red,
-                          child: InkWell(
-                            onTap: _isProcessing ? null : _rejectCall,
-                            customBorder: const CircleBorder(),
-                            child: Container(
-                              width: 70,
-                              height: 70,
-                              alignment: Alignment.center,
-                              child: _isProcessing
-                                  ? const SizedBox(
-                                      width: 24,
-                                      height: 24,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Icon(
-                                      Icons.call_end,
-                                      color: Colors.white,
-                                      size: 32,
-                                    ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Decline',
-                          style: TextStyle(
-                            color: theme.brightness == Brightness.dark
-                                ? Colors.white70
-                                : theme.colorScheme.onSurface.withOpacity(0.7),
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
+                    _buildActionButton(
+                      icon: Icons.call_end_rounded,
+                      label: 'Decline',
+                      color: Colors.red,
+                      onTap: _isProcessing ? null : _rejectCall,
                     ),
 
+                    const SizedBox(width: 60),
+
                     // Accept button
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Material(
-                          elevation: 8,
-                          shape: const CircleBorder(),
-                          color: Colors.green,
-                          child: InkWell(
-                            onTap: _isProcessing ? null : _acceptCall,
-                            customBorder: const CircleBorder(),
-                            child: Container(
-                              width: 70,
-                              height: 70,
-                              alignment: Alignment.center,
-                              child: _isProcessing
-                                  ? const SizedBox(
-                                      width: 24,
-                                      height: 24,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Icon(
-                                      Icons.call,
-                                      color: Colors.white,
-                                      size: 32,
-                                    ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Accept',
-                          style: TextStyle(
-                            color: theme.brightness == Brightness.dark
-                                ? Colors.white70
-                                : theme.colorScheme.onSurface.withOpacity(0.7),
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
+                    _buildActionButton(
+                      icon: Icons.phone_rounded,
+                      label: 'Accept',
+                      color: Colors.green,
+                      onTap: _isProcessing ? null : _acceptCall,
                     ),
                   ],
                 ),
-              ),
-            ],
+
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback? onTap,
+  }) {
+    final isDisabled = onTap == null;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Material(
+          elevation: 12,
+          shadowColor: color.withOpacity(0.4),
+          shape: const CircleBorder(),
+          color: isDisabled ? color.withOpacity(0.5) : color,
+          child: InkWell(
+            onTap: onTap,
+            customBorder: const CircleBorder(),
+            child: Container(
+              width: 76,
+              height: 76,
+              alignment: Alignment.center,
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 36,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          label,
+          style: TextStyle(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white.withOpacity(isDisabled ? 0.4 : 0.8)
+                : Colors.black87.withOpacity(isDisabled ? 0.4 : 1.0),
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }
