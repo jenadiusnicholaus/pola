@@ -28,6 +28,7 @@ class RegistrationData {
   String? officeAddress;
   List<int>? operatingRegions;
   List<int>? operatingDistricts;
+  int? associatedLawFirm; // Law firm affiliation for advocate/lawyer/paralegal
 
   // Law Firm Fields
   String? firmName;
@@ -69,6 +70,7 @@ class RegistrationData {
     this.officeAddress,
     this.operatingRegions,
     this.operatingDistricts,
+    this.associatedLawFirm,
     this.firmName,
     this.managingPartner,
     this.numberOfLawyers,
@@ -145,6 +147,8 @@ class RegistrationData {
       data['practice_status'] = practiceStatus;
     if (specializations?.isNotEmpty == true)
       data['specializations'] = specializations;
+    if (associatedLawFirm != null)
+      data['associated_law_firm'] = associatedLawFirm;
 
     // Law firm fields
     if (firmName?.isNotEmpty == true) data['firm_name'] = firmName;

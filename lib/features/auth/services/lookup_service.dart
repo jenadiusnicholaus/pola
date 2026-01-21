@@ -14,6 +14,7 @@ class LookupService extends GetxService {
   final RxList<Workplace> _workplaces = <Workplace>[].obs;
   final RxList<Chapter> _chapters = <Chapter>[].obs;
   final RxList<Advocate> _advocates = <Advocate>[].obs;
+  final RxList<LawFirm> _lawFirms = <LawFirm>[].obs;
 
   // Loading states
   final RxBool _isLoadingRoles = false.obs;
@@ -23,6 +24,7 @@ class LookupService extends GetxService {
   final RxBool _isLoadingWorkplaces = false.obs;
   final RxBool _isLoadingChapters = false.obs;
   final RxBool _isLoadingAdvocates = false.obs;
+  final RxBool _isLoadingLawFirms = false.obs;
 
   // Getters
   List<UserRole> get userRoles => _userRoles;
@@ -32,6 +34,7 @@ class LookupService extends GetxService {
   List<Workplace> get workplaces => _workplaces;
   List<Chapter> get chapters => _chapters;
   List<Advocate> get advocates => _advocates;
+  List<LawFirm> get lawFirms => _lawFirms;
 
   bool get isLoadingRoles => _isLoadingRoles.value;
   bool get isLoadingRegions => _isLoadingRegions.value;
@@ -40,6 +43,7 @@ class LookupService extends GetxService {
   bool get isLoadingWorkplaces => _isLoadingWorkplaces.value;
   bool get isLoadingChapters => _isLoadingChapters.value;
   bool get isLoadingAdvocates => _isLoadingAdvocates.value;
+  bool get isLoadingLawFirms => _isLoadingLawFirms.value;
 
   // Fetch user roles
   Future<List<UserRole>> fetchUserRoles() async {
@@ -123,7 +127,7 @@ class LookupService extends GetxService {
       _isLoadingDistricts.value = true;
       String url = EnvironmentConfig.districtsUrl;
       if (regionId != null) {
-        url += '?region_id=$regionId';
+        url += '?region=$regionId';
       }
 
       final response = await _apiService.get(url);
@@ -143,8 +147,12 @@ class LookupService extends GetxService {
 
         final districts = data.map((json) => District.fromJson(json)).toList();
 
-        if (regionId == null) {
-          _districts.value = districts;
+        // Always update cache - merge with existing districts to keep all loaded
+        for (final district in districts) {
+          final existingIndex = _districts.indexWhere((d) => d.id == district.id);
+          if (existingIndex == -1) {
+            _districts.add(district);
+          }
         }
 
         return districts;
@@ -297,6 +305,38 @@ class LookupService extends GetxService {
     }
   }
 
+  // Fetch law firms
+  Future<List<LawFirm>> fetchLawFirms() async {
+    if (_lawFirms.isNotEmpty) return _lawFirms;
+
+    try {
+      _isLoadingLawFirms.value = true;
+      final response = await _apiService.get(EnvironmentConfig.lawFirmsUrl);
+
+      if (response.data != null) {
+        List<dynamic> data;
+        // Check if the response is a paginated response with 'results' array
+        if (response.data is Map && response.data['results'] != null) {
+          data = response.data['results'] as List<dynamic>;
+        }
+        // Check if the response is directly a list (for backwards compatibility)
+        else if (response.data is List) {
+          data = response.data as List<dynamic>;
+        } else {
+          throw Exception('Invalid API response format for law firms');
+        }
+        _lawFirms.value = data.map((json) => LawFirm.fromJson(json)).toList();
+      }
+
+      return _lawFirms;
+    } catch (e) {
+      print('Error fetching law firms: $e');
+      throw Exception('Failed to fetch law firms from API: $e');
+    } finally {
+      _isLoadingLawFirms.value = false;
+    }
+  }
+
   // Clear cache (useful for refresh)
   void clearCache() {
     _userRoles.clear();
@@ -306,5 +346,6 @@ class LookupService extends GetxService {
     _workplaces.clear();
     _chapters.clear();
     _advocates.clear();
+    _lawFirms.clear();
   }
 }

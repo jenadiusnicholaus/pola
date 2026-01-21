@@ -85,7 +85,9 @@ class ReviewSubmitPage extends StatelessWidget {
                 child: Text(
                   'Please carefully review all information below before submitting your registration.',
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    color: Theme.of(context).brightness == Brightness.dark 
+                        ? Colors.white 
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -162,9 +164,9 @@ class ReviewSubmitPage extends StatelessWidget {
                     ? data.phoneNumber
                     : 'Not provided'),
             if (data.region != null)
-              _buildInfoRow('Region ID', data.region.toString()),
+              _buildInfoRow('Region', _getRegionName(controller, data.region)),
             if (data.district != null)
-              _buildInfoRow('District ID', data.district.toString()),
+              _buildInfoRow('District', _getDistrictName(controller, data.district)),
             if (data.ward?.isNotEmpty == true)
               _buildInfoRow('Ward', data.ward!),
           ],
@@ -178,7 +180,7 @@ class ReviewSubmitPage extends StatelessWidget {
             4,
             'Professional Information',
             Icons.work_outline,
-            _buildProfessionalInfo(data),
+            _buildProfessionalInfo(data, controller),
             null,
           ),
 
@@ -274,11 +276,12 @@ class ReviewSubmitPage extends StatelessWidget {
 
   Widget _buildSubmitInstructions(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainer,
+          color: isDark ? colorScheme.surfaceContainerHighest : colorScheme.surfaceContainer,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: colorScheme.outline.withOpacity(0.5)),
         ),
@@ -287,21 +290,21 @@ class ReviewSubmitPage extends StatelessWidget {
             Icon(
               Icons.send_outlined,
               size: 32,
-              color: colorScheme.onSurfaceVariant,
+              color: isDark ? Colors.white : colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 8),
             Text(
               'Ready to Submit?',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
+                    color: isDark ? Colors.white : colorScheme.onSurface,
                   ),
             ),
             const SizedBox(height: 4),
             Text(
               'Click the Submit button below to create your account',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
+                    color: isDark ? Colors.white : colorScheme.onSurfaceVariant,
                     fontStyle: FontStyle.italic,
                   ),
               textAlign: TextAlign.center,
@@ -385,6 +388,7 @@ class ReviewSubmitPage extends StatelessWidget {
 
   Widget _buildInfoRow(String label, String value) {
     return Builder(builder: (context) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
@@ -396,7 +400,9 @@ class ReviewSubmitPage extends StatelessWidget {
                 '$label:',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w500,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      color: isDark 
+                          ? Colors.white 
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
               ),
             ),
@@ -405,7 +411,9 @@ class ReviewSubmitPage extends StatelessWidget {
                 value,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
+                      color: isDark 
+                          ? Colors.white 
+                          : Theme.of(context).colorScheme.onSurface,
                     ),
               ),
             ),
@@ -446,8 +454,8 @@ class ReviewSubmitPage extends StatelessWidget {
                     : 'You must agree to the $label',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: isAgreed
-                          ? colorScheme.onPrimaryContainer
-                          : colorScheme.onErrorContainer,
+                          ? (Theme.of(context).brightness == Brightness.dark ? Colors.white : colorScheme.onPrimaryContainer)
+                          : (Theme.of(context).brightness == Brightness.dark ? Colors.white : colorScheme.onErrorContainer),
                       fontWeight: FontWeight.w500,
                     ),
               ),
@@ -571,7 +579,7 @@ class ReviewSubmitPage extends StatelessWidget {
     return roleString != 'citizen';
   }
 
-  List<Widget> _buildProfessionalInfo(data) {
+  List<Widget> _buildProfessionalInfo(data, RegistrationController controller) {
     List<Widget> info = [];
 
     // Handle both int and String types for userRole
@@ -589,16 +597,14 @@ class ReviewSubmitPage extends StatelessWidget {
     if (isLawyer) {
       info.add(_buildInfoRow('Professional Type', 'Lawyer'));
       if (data.placeOfWork != null) {
-        info.add(
-            _buildInfoRow('Place of Work ID', data.placeOfWork.toString()));
+        info.add(_buildInfoRow('Place of Work', _getWorkplaceName(controller, data.placeOfWork)));
       }
       if (data.yearsOfExperience != null) {
         info.add(_buildInfoRow(
             'Years of Experience', data.yearsOfExperience.toString()));
       }
       if (data.specializations?.isNotEmpty == true) {
-        info.add(
-            _buildInfoRow('Specializations', data.specializations!.join(', ')));
+        info.add(_buildInfoRow('Specializations', _getSpecializationNames(controller, data.specializations)));
       }
     } else if (isAdvocate) {
       info.add(_buildInfoRow('Professional Type', 'Advocate'));
@@ -606,8 +612,7 @@ class ReviewSubmitPage extends StatelessWidget {
         info.add(_buildInfoRow('TLS Roll Number', data.rollNumber!));
       }
       if (data.regionalChapter != null) {
-        info.add(_buildInfoRow(
-            'Regional Chapter ID', data.regionalChapter.toString()));
+        info.add(_buildInfoRow('Regional Chapter', _getChapterName(controller, data.regionalChapter)));
       }
       if (data.yearOfAdmissionToBar != null) {
         info.add(_buildInfoRow(
@@ -617,14 +622,12 @@ class ReviewSubmitPage extends StatelessWidget {
         info.add(_buildInfoRow('Practice Status', data.practiceStatus!));
       }
       if (data.specializations?.isNotEmpty == true) {
-        info.add(
-            _buildInfoRow('Specializations', data.specializations!.join(', ')));
+        info.add(_buildInfoRow('Specializations', _getSpecializationNames(controller, data.specializations)));
       }
     } else if (isParalegal) {
       info.add(_buildInfoRow('Professional Type', 'Paralegal'));
       if (data.placeOfWork != null) {
-        info.add(
-            _buildInfoRow('Place of Work ID', data.placeOfWork.toString()));
+        info.add(_buildInfoRow('Place of Work', _getWorkplaceName(controller, data.placeOfWork)));
       }
       if (data.yearsOfExperience != null) {
         info.add(_buildInfoRow(
@@ -648,8 +651,7 @@ class ReviewSubmitPage extends StatelessWidget {
         info.add(_buildInfoRow('Firm Name', data.firmName!));
       }
       if (data.managingPartner != null) {
-        info.add(_buildInfoRow(
-            'Managing Partner ID', data.managingPartner.toString()));
+        info.add(_buildInfoRow('Managing Partner', _getAdvocateName(controller, data.managingPartner)));
       }
       if (data.numberOfLawyers != null) {
         info.add(_buildInfoRow(
@@ -685,5 +687,73 @@ class ReviewSubmitPage extends StatelessWidget {
     }
 
     return info;
+  }
+
+  /// Get region name from ID using lookup service
+  String _getRegionName(RegistrationController controller, int? regionId) {
+    if (regionId == null) return 'Not selected';
+    
+    final regions = controller.lookupService.regions;
+    final region = regions.firstWhereOrNull((r) => r.id == regionId);
+    return region?.name ?? 'Unknown Region';
+  }
+
+  /// Get district name from ID using lookup service
+  String _getDistrictName(RegistrationController controller, int? districtId) {
+    if (districtId == null) return 'Not selected';
+    
+    // First check cached districts
+    final districts = controller.lookupService.districts;
+    var district = districts.firstWhereOrNull((d) => d.id == districtId);
+    
+    // If not found in cache, it might have been loaded for a specific region
+    // Return a readable fallback
+    return district?.name ?? 'Unknown District';
+  }
+
+  /// Get specialization names from IDs
+  String _getSpecializationNames(RegistrationController controller, List<dynamic>? specializationIds) {
+    if (specializationIds == null || specializationIds.isEmpty) {
+      return 'None selected';
+    }
+    
+    final specializations = controller.lookupService.specializations;
+    final names = <String>[];
+    
+    for (var id in specializationIds) {
+      final spec = specializations.firstWhereOrNull((s) => s.id == id);
+      if (spec != null) {
+        names.add(spec.name);
+      }
+    }
+    
+    return names.isNotEmpty ? names.join(', ') : 'Unknown Specializations';
+  }
+
+  /// Get chapter name from ID
+  String _getChapterName(RegistrationController controller, int? chapterId) {
+    if (chapterId == null) return 'Not selected';
+    
+    final chapters = controller.lookupService.chapters;
+    final chapter = chapters.firstWhereOrNull((c) => c.id == chapterId);
+    return chapter?.name ?? 'Unknown Chapter';
+  }
+
+  /// Get workplace name from ID
+  String _getWorkplaceName(RegistrationController controller, int? workplaceId) {
+    if (workplaceId == null) return 'Not selected';
+    
+    final workplaces = controller.lookupService.workplaces;
+    final workplace = workplaces.firstWhereOrNull((w) => w.id == workplaceId);
+    return workplace?.name ?? 'Unknown Workplace';
+  }
+
+  /// Get advocate name from ID (for managing partner)
+  String _getAdvocateName(RegistrationController controller, int? advocateId) {
+    if (advocateId == null) return 'Not selected';
+    
+    final advocates = controller.lookupService.advocates;
+    final advocate = advocates.firstWhereOrNull((a) => a.id == advocateId);
+    return advocate?.fullName ?? 'Unknown Advocate';
   }
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../hubs_and_services/legal_education/models/legal_education_models.dart';
-import '../../hubs_and_services/hub_content/screens/messages_inbox_screen.dart';
 
 class PublicProfileScreen extends StatelessWidget {
   final UploaderInfo user;
@@ -323,11 +322,6 @@ class PublicProfileScreen extends StatelessWidget {
                   colorText: Colors.white,
                   duration: const Duration(seconds: 2),
                 );
-
-                // Navigate to messages screen after a short delay
-                Future.delayed(const Duration(milliseconds: 500), () {
-                  Get.to(() => const MessagesInboxScreen());
-                });
               }
             },
             icon: const Icon(Icons.send),

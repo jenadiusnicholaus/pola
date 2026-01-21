@@ -137,6 +137,8 @@ class EnvironmentConfig {
       dotenv.env['CHAPTERS_ENDPOINT'] ?? '/chapters';
   static String get advocatesEndpoint =>
       dotenv.env['ADVOCATES_ENDPOINT'] ?? '/advocates';
+  static String get lawFirmsEndpoint =>
+      dotenv.env['LAW_FIRMS_ENDPOINT'] ?? '/law-firms';
   static String get userListEndpoint =>
       dotenv.env['USER_LIST_ENDPOINT'] ?? '/api/v1.0/user/user-list/';
 
@@ -150,6 +152,7 @@ class EnvironmentConfig {
       '$baseUrl$lookupsBaseUrl$workplacesEndpoint';
   static String get chaptersUrl => '$baseUrl$lookupsBaseUrl$chaptersEndpoint';
   static String get advocatesUrl => '$baseUrl$lookupsBaseUrl$advocatesEndpoint';
+  static String get lawFirmsUrl => '$baseUrl$lookupsBaseUrl$lawFirmsEndpoint';
   static String get userListUrl => '$baseUrl$userListEndpoint';
 
   // Hub Content endpoints
@@ -292,7 +295,7 @@ class EnvironmentConfig {
   // Consultation booking creation endpoint
   static String get consultationCreateEndpoint =>
       dotenv.env['CONSULTATION_CREATE_ENDPOINT'] ??
-      '/api/v1/consultations/bookings/';
+      '/api/v1/consultations/book/';
 
   // Complete consultation create URL
   static String get consultationCreateUrl =>

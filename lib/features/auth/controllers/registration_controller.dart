@@ -187,14 +187,7 @@ class RegistrationController extends GetxController {
       debugPrint('🚨 Unexpected error during registration: $e');
       debugPrint('📚 Stack trace: ${StackTrace.current}');
 
-      Get.snackbar(
-        'Error',
-        'Registration failed: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 5),
-      );
+      _showErrorDialog('Error', 'Registration failed: ${e.toString()}');
     } finally {
       _isSubmitting.value = false;
     }
@@ -341,11 +334,6 @@ class RegistrationController extends GetxController {
     }
   }
 
-  // Debug helper method
-  void _debugLog(String message) {
-    debugPrint('🔍 [RegistrationController] $message');
-  }
-
   // Handle registration response errors
   void _handleRegistrationError(dio.Response<dynamic> response) {
     debugPrint('❌ Registration failed with status: ${response.statusCode}');
@@ -353,45 +341,82 @@ class RegistrationController extends GetxController {
     debugPrint('📄 Response data: ${response.data}');
 
     String errorMessage = 'Registration failed';
+    List<String> fieldErrors = [];
 
     if (response.data != null) {
       try {
         final errorData = response.data as Map<String, dynamic>;
 
-        // Handle validation errors (422 status usually)
-        if (errorData.containsKey('errors') || response.statusCode == 422) {
-          final errors = <String>[];
-
-          errorData.forEach((key, value) {
-            if (value is List) {
-              errors.addAll(value.map((e) => '$key: $e').cast<String>());
-            } else if (value is String) {
-              errors.add('$key: $value');
+        // Parse field-level errors (e.g., {"email": ["user with this email already exists."]})
+        errorData.forEach((key, value) {
+          if (value is List) {
+            for (var error in value) {
+              fieldErrors.add('${_formatFieldName(key)}: $error');
             }
-          });
+          } else if (value is String) {
+            fieldErrors.add('${_formatFieldName(key)}: $value');
+          } else if (value is Map && value.containsKey('message')) {
+            fieldErrors.add('${_formatFieldName(key)}: ${value['message']}');
+          }
+        });
 
-          errorMessage = errors.isNotEmpty
-              ? errors.join('\n')
-              : 'Validation errors occurred';
-        } else if (errorData.containsKey('message')) {
-          errorMessage = errorData['message'].toString();
-        } else if (errorData.containsKey('detail')) {
-          errorMessage = errorData['detail'].toString();
+        // Check for common error message patterns
+        if (fieldErrors.isEmpty) {
+          if (errorData.containsKey('message')) {
+            errorMessage = errorData['message'].toString();
+          } else if (errorData.containsKey('detail')) {
+            errorMessage = errorData['detail'].toString();
+          } else if (errorData.containsKey('error')) {
+            errorMessage = errorData['error'].toString();
+          }
+        } else {
+          errorMessage = fieldErrors.join('\n');
         }
       } catch (e) {
+        debugPrint('Error parsing response: $e');
         errorMessage =
             'Registration failed with status: ${response.statusCode}';
       }
     }
 
-    Get.snackbar(
-      'Registration Error',
-      errorMessage,
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.red,
-      colorText: Colors.white,
-      duration: const Duration(seconds: 8),
-      maxWidth: 400,
+    // Show error dialog instead of snackbar to avoid Overlay issues
+    _showErrorDialog('Registration Error', errorMessage);
+  }
+
+  // Format field name for display
+  String _formatFieldName(String fieldName) {
+    // Convert snake_case to Title Case
+    return fieldName
+        .split('_')
+        .map((word) => word.isEmpty ? '' : '${word[0].toUpperCase()}${word.substring(1)}')
+        .join(' ');
+  }
+
+  // Show error dialog
+  void _showErrorDialog(String title, String message) {
+    Get.dialog(
+      AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red),
+            const SizedBox(width: 8),
+            Expanded(child: Text(title)),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Text(
+            message,
+            style: const TextStyle(fontSize: 14),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+      barrierDismissible: true,
     );
   }
 
@@ -407,6 +432,13 @@ class RegistrationController extends GetxController {
     }
 
     String errorMessage;
+
+    // Check if it's a bad response with error data
+    if (error.type == dio.DioExceptionType.badResponse && error.response != null) {
+      // Handle the response error using our existing method
+      _handleRegistrationError(error.response!);
+      return;
+    }
 
     switch (error.type) {
       case dio.DioExceptionType.connectionTimeout:
@@ -433,14 +465,8 @@ class RegistrationController extends GetxController {
         errorMessage = 'Network error occurred. Please try again.';
     }
 
-    Get.snackbar(
-      'Network Error',
-      errorMessage,
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.orange,
-      colorText: Colors.white,
-      duration: const Duration(seconds: 6),
-    );
+    // Use dialog instead of snackbar to avoid Overlay issues
+    _showErrorDialog('Network Error', errorMessage);
   }
 
   void _showRegistrationSuccessDialog() {

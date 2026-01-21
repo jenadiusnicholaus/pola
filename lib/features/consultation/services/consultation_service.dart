@@ -304,25 +304,34 @@ class ConsultationService extends GetxService {
     }
   }
 
-  /// Create a new booking for a consultant
+  /// Create a new physical consultation booking (Law Firms only)
+  /// API: POST /api/v1/consultations/book/
+  /// Note: Only Law Firms can be booked for physical consultations
   Future<ConsultationBooking?> createBooking({
-    required int consultantId,
-    required String bookingType, // 'mobile' or 'physical'
+    required int consultantProfileId,
+    required String topic,
+    required String description,
     required DateTime scheduledDate,
-    String? topic,
-    double? amount,
+    required String scheduledTime,
+    required String location,
+    required String phoneNumber,
+    int durationMinutes = 60,
+    String paymentMethod = 'mobile_money',
   }) async {
     try {
-      debugPrint('📤 Creating booking for consultant $consultantId');
+      debugPrint('📤 Creating physical consultation booking for law firm profile $consultantProfileId');
 
       final data = <String, dynamic>{
-        'consultant_id': consultantId,
-        'booking_type': bookingType,
-        'scheduled_date': scheduledDate.toIso8601String(),
+        'consultant_profile_id': consultantProfileId,
+        'topic': topic,
+        'description': description,
+        'scheduled_date': scheduledDate.toIso8601String().split('T')[0], // YYYY-MM-DD
+        'scheduled_time': scheduledTime, // HH:MM:SS
+        'duration_minutes': durationMinutes,
+        'location': location,
+        'payment_method': paymentMethod,
+        'phone_number': phoneNumber,
       };
-
-      if (topic != null) data['topic'] = topic;
-      if (amount != null) data['amount'] = amount.toString();
 
       final response = await _apiService.post(
         EnvironmentConfig.consultationCreateUrl,
@@ -332,10 +341,15 @@ class ConsultationService extends GetxService {
       debugPrint('📥 Create booking response: ${response.statusCode}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
+        // Handle the new response format with booking and payment info
+        if (response.data is Map && response.data['booking'] != null) {
+          return ConsultationBooking.fromJson(response.data['booking']);
+        }
         return ConsultationBooking.fromJson(response.data);
       }
 
       debugPrint('⚠️ Failed to create booking: ${response.statusCode}');
+      debugPrint('⚠️ Response: ${response.data}');
       return null;
     } catch (e) {
       debugPrint('❌ Error creating booking: $e');

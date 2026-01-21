@@ -238,14 +238,6 @@ class AppDrawer extends StatelessWidget {
           subtitle: 'Saved content',
           onTap: () => _navigateToTab(context, 3),
         ),
-        _buildDrawerItem(
-          context: context,
-          icon: Icons.message_outlined,
-          activeIcon: Icons.message,
-          title: 'Messages',
-          subtitle: 'Chat & conversations',
-          onTap: () => _navigateToTab(context, 4),
-        ),
       ],
     );
   }

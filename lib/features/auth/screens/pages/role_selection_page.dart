@@ -154,12 +154,13 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   child: Card(
-                    elevation: isSelected ? 4 : 1,
-                    color: isSelected
-                        ? (isDark
-                            ? primaryColor.withOpacity(0.15)
-                            : primaryColor.withOpacity(0.08))
-                        : null,
+                    elevation: isSelected ? 2 : 1,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: isSelected
+                          ? BorderSide(color: primaryColor, width: 2)
+                          : BorderSide.none,
+                    ),
                     child: InkWell(
                       onTap: () => _selectRole(role.roleName),
                       borderRadius: BorderRadius.circular(12),
@@ -173,7 +174,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                               height: 48,
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? primaryColor
+                                    ? primaryColor.withOpacity(0.15)
                                     : (isDark
                                         ? Theme.of(context)
                                             .colorScheme
@@ -188,7 +189,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                               child: Icon(
                                 _getRoleIcon(role.roleName),
                                 color: isSelected
-                                    ? (isDark ? Colors.white : Colors.white)
+                                    ? primaryColor
                                     : (isDark
                                         ? Theme.of(context)
                                             .colorScheme

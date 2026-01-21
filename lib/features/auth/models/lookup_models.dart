@@ -235,3 +235,31 @@ class Advocate {
     };
   }
 }
+
+class LawFirm {
+  final int id;
+  final String firmName;
+  final String? email;
+
+  LawFirm({
+    required this.id,
+    required this.firmName,
+    this.email,
+  });
+
+  factory LawFirm.fromJson(Map<String, dynamic> json) {
+    return LawFirm(
+      id: json['id'] as int,
+      firmName: json['firm_name'] as String? ?? 'Unknown Firm',
+      email: json['email'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'firm_name': firmName,
+      'email': email,
+    };
+  }
+}

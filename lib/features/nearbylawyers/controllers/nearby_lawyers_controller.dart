@@ -35,8 +35,8 @@ class NearbyLawyersController extends GetxController {
   void onInit() {
     super.onInit();
     scrollController.addListener(_scrollListener);
-    // PERFORMANCE: Don't auto-fetch on init - let the screen trigger it when ready
-    // fetchNearbyLawyers();
+    // Auto-fetch on init to show lawyers immediately
+    fetchNearbyLawyers();
   }
 
   @override

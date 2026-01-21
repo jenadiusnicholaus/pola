@@ -240,8 +240,9 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
             ),
             const SizedBox(height: 16),
 
-            // Office Address (for professionals)
-            if (controller.registrationData.userRole != 6) // Not citizen
+            // Office Address (for professionals only - not for citizens or students)
+            if (controller.registrationData.userRole != 'citizen' &&
+                controller.registrationData.userRole != 'law_student')
               TextFormField(
                 controller: _addressController,
                 maxLines: 3,

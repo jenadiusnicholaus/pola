@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:io';
 import '../controllers/generated_documents_controller.dart';
 import '../models/generated_document_model.dart';
+import '../../../config/dio_config.dart';
 
 class GeneratedDocumentsScreen extends StatelessWidget {
   const GeneratedDocumentsScreen({Key? key}) : super(key: key);
@@ -276,51 +281,176 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
-class _DownloadButton extends StatelessWidget {
+class _DownloadButton extends StatefulWidget {
   final GeneratedDocument document;
 
   const _DownloadButton({required this.document});
 
+  @override
+  State<_DownloadButton> createState() => _DownloadButtonState();
+}
+
+class _DownloadButtonState extends State<_DownloadButton> {
+  bool _isDownloading = false;
+  double _progress = 0;
+
+  Future<String> _getDownloadPath() async {
+    Directory? directory;
+    
+    if (Platform.isAndroid) {
+      // Try to use external storage Downloads folder for Android
+      directory = Directory('/storage/emulated/0/Download');
+      if (!await directory.exists()) {
+        // Fallback to app's external storage
+        directory = await getExternalStorageDirectory();
+      }
+    } else if (Platform.isIOS) {
+      // Use documents directory for iOS
+      directory = await getApplicationDocumentsDirectory();
+    } else {
+      directory = await getDownloadsDirectory() ?? await getApplicationDocumentsDirectory();
+    }
+    
+    return directory?.path ?? (await getApplicationDocumentsDirectory()).path;
+  }
+
+  Future<bool> _requestStoragePermission() async {
+    if (Platform.isAndroid) {
+      // Check Android version - Android 10+ has scoped storage
+      final status = await Permission.storage.status;
+      if (status.isGranted) return true;
+      
+      // For Android 13+, we need different permissions
+      if (await Permission.manageExternalStorage.isGranted) return true;
+      
+      // Request permission
+      final result = await Permission.storage.request();
+      if (result.isGranted) return true;
+      
+      // Try manage external storage for Android 11+
+      final manageResult = await Permission.manageExternalStorage.request();
+      return manageResult.isGranted;
+    }
+    return true; // iOS doesn't need explicit permission for app documents
+  }
+
   Future<void> _downloadDocument(BuildContext context) async {
-    if (document.downloadUrl == null) return;
+    if (widget.document.downloadUrl == null) {
+      _showError(context, 'Download URL not available');
+      return;
+    }
+
+    // Request permission first
+    final hasPermission = await _requestStoragePermission();
+    if (!hasPermission) {
+      _showError(context, 'Storage permission is required to download files');
+      return;
+    }
+
+    setState(() {
+      _isDownloading = true;
+      _progress = 0;
+    });
 
     try {
-      final url = Uri.parse(document.downloadUrl!);
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Opening document...'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        throw Exception('Could not launch URL');
-      }
-    } catch (e) {
+      final dio = DioConfig.instance;
+      final downloadPath = await _getDownloadPath();
+      
+      // Create filename from document title or use a default
+      final fileName = '${widget.document.documentTitle.replaceAll(RegExp(r'[^\w\s-]'), '_')}.pdf';
+      final filePath = '$downloadPath/$fileName';
+      
+      debugPrint('📥 Downloading to: $filePath');
+      debugPrint('📥 From URL: ${widget.document.downloadUrl}');
+
+      await dio.download(
+        widget.document.downloadUrl!,
+        filePath,
+        onReceiveProgress: (received, total) {
+          if (total != -1) {
+            setState(() {
+              _progress = received / total;
+            });
+          }
+        },
+      );
+
+      setState(() {
+        _isDownloading = false;
+        _progress = 0;
+      });
+
+      if (!context.mounted) return;
+
+      // Show success and offer to open
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to download: $e'),
-          backgroundColor: Colors.red,
+          content: Text('Downloaded: $fileName'),
+          backgroundColor: Colors.green,
+          action: SnackBarAction(
+            label: 'OPEN',
+            textColor: Colors.white,
+            onPressed: () async {
+              final result = await OpenFilex.open(filePath);
+              if (result.type != ResultType.done) {
+                debugPrint('❌ Could not open file: ${result.message}');
+              }
+            },
+          ),
+          duration: const Duration(seconds: 5),
         ),
       );
+    } on DioException catch (e) {
+      setState(() {
+        _isDownloading = false;
+        _progress = 0;
+      });
+      debugPrint('❌ Dio error downloading: ${e.message}');
+      _showError(context, 'Download failed: ${e.message}');
+    } catch (e) {
+      setState(() {
+        _isDownloading = false;
+        _progress = 0;
+      });
+      debugPrint('❌ Error downloading: $e');
+      _showError(context, 'Download failed: $e');
     }
+  }
+
+  void _showError(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () => _downloadDocument(context),
-        icon: const Icon(Icons.download),
-        label: const Text('Download FREE'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-        ),
-      ),
+      child: _isDownloading
+          ? Column(
+              children: [
+                LinearProgressIndicator(value: _progress),
+                const SizedBox(height: 8),
+                Text(
+                  'Downloading... ${(_progress * 100).toStringAsFixed(0)}%',
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ],
+            )
+          : ElevatedButton.icon(
+              onPressed: () => _downloadDocument(context),
+              icon: const Icon(Icons.download),
+              label: const Text('Download FREE'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
     );
   }
 }

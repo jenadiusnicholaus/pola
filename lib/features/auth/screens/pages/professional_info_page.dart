@@ -32,6 +32,7 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
   int? _selectedNumberOfLawyers;
   int? _selectedYearEstablished;
   int? _selectedManagingPartner;
+  int? _selectedLawFirm;
   String? _selectedPracticeStatus;
   List<int> _selectedSpecializations = [];
 
@@ -63,6 +64,7 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
     _selectedYearEstablished = data.yearEstablished;
     _selectedPracticeStatus = data.practiceStatus;
     _selectedSpecializations = data.specializations ?? [];
+    _selectedLawFirm = data.associatedLawFirm;
   }
 
   void _loadLookupData() async {
@@ -73,6 +75,11 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
       // Load advocates for law firm managing partner selection
       if (controller.registrationData.userRole == 'law_firm') {
         await controller.lookupService.fetchAdvocates();
+      }
+      // Load law firms for professional affiliation
+      final role = controller.registrationData.userRole;
+      if (role == 'advocate' || role == 'lawyer' || role == 'paralegal') {
+        await controller.lookupService.fetchLawFirms();
       }
     } catch (e) {
       print('Error loading lookup data: $e');
@@ -127,6 +134,7 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
     data.practiceStatus = _selectedPracticeStatus;
     data.specializations =
         _selectedSpecializations.isNotEmpty ? _selectedSpecializations : null;
+    data.associatedLawFirm = _selectedLawFirm;
 
     controller.updateRegistrationData(data);
   }
@@ -298,6 +306,10 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
       ),
       const SizedBox(height: 16),
 
+      // Associated Law Firm (Optional)
+      _buildLawFirmDropdown(),
+      const SizedBox(height: 16),
+
       ..._buildCommonProfessionalFields(),
     ];
   }
@@ -380,6 +392,10 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
           _saveData();
         },
       ),
+      const SizedBox(height: 16),
+
+      // Associated Law Firm (Optional)
+      _buildLawFirmDropdown(),
       const SizedBox(height: 16),
 
       ..._buildCommonProfessionalFields(),
@@ -673,6 +689,61 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
       ),
       const SizedBox(height: 16),
     ];
+  }
+
+  // Build Law Firm dropdown for professional affiliation
+  Widget _buildLawFirmDropdown() {
+    return Obx(() {
+      final lawFirms = controller.lookupService.lawFirms;
+      final isLoadingLawFirms = controller.lookupService.isLoadingLawFirms;
+
+      return DropdownButtonFormField<int?>(
+        value: _selectedLawFirm,
+        decoration: InputDecoration(
+          labelText: 'Associated Law Firm (Optional)',
+          border: const OutlineInputBorder(),
+          helperText: isLoadingLawFirms
+              ? 'Loading law firms...'
+              : lawFirms.isEmpty
+                  ? 'No law firms available'
+                  : 'Select your law firm if employed. Leave empty if independent.',
+          suffixIcon: isLoadingLawFirms
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: Padding(
+                    padding: EdgeInsets.all(12.0),
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              : null,
+        ),
+        items: [
+          // Add "None / Independent" option
+          const DropdownMenuItem<int?>(
+            value: null,
+            child: Text('None (Independent Practitioner)'),
+          ),
+          ...lawFirms.map((LawFirm lawFirm) {
+            return DropdownMenuItem<int?>(
+              value: lawFirm.id,
+              child: Text(
+                lawFirm.firmName,
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
+          }),
+        ],
+        onChanged: isLoadingLawFirms
+            ? null
+            : (value) {
+                setState(() {
+                  _selectedLawFirm = value;
+                });
+                _saveData();
+              },
+      );
+    });
   }
 
   List<Widget> _buildCommonProfessionalFields() {

@@ -8,7 +8,7 @@ class ApiService {
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
   ApiService._internal() {
-    _dio = DioConfig.initialize();
+    _dio = DioConfig.instance;
   }
 
   // Generic GET request

@@ -110,23 +110,7 @@ void main() async {
     print('Environment file loaded successfully');
   } catch (e) {
     print('Warning: Could not load .env file: $e');
-    // Set default values if .env file is not found
-    if (!dotenv.isInitialized) {
-      dotenv.testLoad(fileInput: '''
-APP_ENV=development
-BASE_URL=http://192.168.1.181:8000
-API_VERSION=v1
-CONNECTION_TIMEOUT=30000
-RECEIVE_TIMEOUT=30000
-SEND_TIMEOUT=30000
-API_KEY=your_api_key_here
-ENABLE_LOGGING=true
-LOGIN_ENDPOINT=/api/v1/authentication/login/
-REGISTER_ENDPOINT=/api/v1/authentication/register/
-REFRESH_TOKEN_ENDPOINT=/api/v1/authentication/refresh/
-LOGOUT_ENDPOINT=/api/v1/authentication/logout/
-''');
-    }
+   
   }
 
   // Initialize Dio configuration after environment is loaded

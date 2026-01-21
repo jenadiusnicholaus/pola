@@ -141,8 +141,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                     const SizedBox(height: 16),
                     _buildVideoUrlField(),
                     const SizedBox(height: 24),
-                    _buildLanguageSelector(),
-                    const SizedBox(height: 24),
+                    // Language is defaulted to 'en' (English)
                     if (hubType == 'students') _buildStudentOptions(),
                   ],
                 ),
@@ -642,30 +641,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
     );
   }
 
-  Widget _buildLanguageSelector() {
-    return Obx(() => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Language',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'en', label: Text('English')),
-                ButtonSegment(value: 'sw', label: Text('Swahili')),
-              ],
-              selected: {controller.selectedLanguage.value},
-              onSelectionChanged: (Set<String> selection) {
-                controller.setLanguage(selection.first);
-              },
-            ),
-          ],
-        ));
-  }
+  // Language selector removed - defaulting to 'en' (English)
 
   Widget _buildStudentOptions() {
     return Obx(() => Column(
