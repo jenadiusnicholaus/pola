@@ -4,6 +4,8 @@ import '../services/hub_content_service.dart';
 import '../models/hub_content_models.dart';
 import '../utils/user_role_manager.dart';
 import '../../legal_education/models/legal_education_models.dart';
+import '../../../../services/permission_service.dart';
+import '../../../../utils/navigation_helper.dart';
 
 class HubContentController extends GetxController {
   final String hubType;
@@ -1031,7 +1033,37 @@ class HubContentController extends GetxController {
 
   /// Add a new comment to a content item
   Future<void> addComment(int contentId,
-      {int? parentCommentId, String? customText}) async {
+      {int? parentCommentId, String? customText, BuildContext? context}) async {
+    // Check forum comment/reply permission
+    try {
+      final permissionService = Get.find<PermissionService>();
+      final feature = parentCommentId != null
+          ? PermissionFeature.forumReply
+          : PermissionFeature.forumComment;
+
+      if (!permissionService.canAccess(feature)) {
+        if (context != null) {
+          NavigationHelper.checkPermissionOrShowUpgrade(context, feature);
+        } else {
+          Get.snackbar(
+            'Upgrade Required',
+            permissionService.getPermissionDeniedMessage(feature),
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.orange,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 4),
+            mainButton: TextButton(
+              onPressed: () => Get.toNamed('/subscription'),
+              child: const Text('Upgrade', style: TextStyle(color: Colors.white)),
+            ),
+          );
+        }
+        return;
+      }
+    } catch (e) {
+      debugPrint('⚠️ Permission check failed: $e');
+    }
+
     try {
       initializeCommentController(contentId);
       final controller = commentControllers[contentId]!;

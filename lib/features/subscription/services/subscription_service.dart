@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../../services/api_service.dart';
@@ -56,6 +57,8 @@ class SubscriptionService extends GetxService {
       debugPrint('   Phone: $phoneNumber');
       debugPrint('   Provider: $paymentMethod');
 
+      // Use a longer timeout for payment requests (5 minutes)
+      // Payment APIs may take longer due to external provider communication
       final response = await _apiService.post(
         '/api/v1/subscriptions/unified-payments/initiate/',
         data: {
@@ -65,6 +68,10 @@ class SubscriptionService extends GetxService {
           'payment_method': 'mobile_money',
           'provider': paymentMethod,
         },
+        options: Options(
+          receiveTimeout: const Duration(minutes: 5),
+          sendTimeout: const Duration(minutes: 5),
+        ),
       );
 
       debugPrint('💳 Payment Response: ${response.statusCode}');
@@ -72,10 +79,19 @@ class SubscriptionService extends GetxService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
+        
+        // Handle different response formats from backend
+        // Backend may return transactionId directly or nested in transaction object
+        String? transactionId = data['transactionId']?.toString() 
+            ?? data['transaction_id']?.toString()
+            ?? data['transaction']?['id']?.toString();
+        
+        debugPrint('💳 Parsed transactionId: $transactionId');
+        
         return SubscriptionResult(
           success: data['success'] ?? true,
           message: data['message'] ?? 'Payment initiated',
-          transactionId: data['transaction']?['id']?.toString(),
+          transactionId: transactionId,
         );
       }
 

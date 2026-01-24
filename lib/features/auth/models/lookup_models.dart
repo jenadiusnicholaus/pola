@@ -1,22 +1,52 @@
 class UserRole {
   final int id;
   final String roleName;
-  final String getRoleDisplay;
+  final String displayName; // Bilingual: "Mwananchi | Citizen"
+  final String nameEn;
+  final String nameSw;
   final String? description;
+  final String? descriptionEn;
+  final String? descriptionSw;
 
   UserRole({
     required this.id,
     required this.roleName,
-    required this.getRoleDisplay,
+    required this.displayName,
+    required this.nameEn,
+    required this.nameSw,
     this.description,
+    this.descriptionEn,
+    this.descriptionSw,
   });
 
+  /// Returns the bilingual display name (Swahili first, then English)
+  String get getRoleDisplay => displayName;
+
+  /// Returns the description in Swahili first, then English if available
+  String get bilingualDescription {
+    if (descriptionSw != null && descriptionEn != null) {
+      return '$descriptionSw | $descriptionEn';
+    }
+    return descriptionSw ?? descriptionEn ?? description ?? '';
+  }
+
   factory UserRole.fromJson(Map<String, dynamic> json) {
+    // Handle both old and new API formats
+    final displayName = json['display_name'] as String? ??
+        json['get_role_display'] as String? ??
+        json['role_name'] as String;
+    final nameEn = json['name_en'] as String? ?? json['role_name'] as String;
+    final nameSw = json['name_sw'] as String? ?? nameEn;
+
     return UserRole(
       id: json['id'] as int,
       roleName: json['role_name'] as String,
-      getRoleDisplay: json['get_role_display'] as String,
+      displayName: displayName,
+      nameEn: nameEn,
+      nameSw: nameSw,
       description: json['description'] as String?,
+      descriptionEn: json['description_en'] as String?,
+      descriptionSw: json['description_sw'] as String?,
     );
   }
 
@@ -24,8 +54,12 @@ class UserRole {
     return {
       'id': id,
       'role_name': roleName,
-      'get_role_display': getRoleDisplay,
+      'display_name': displayName,
+      'name_en': nameEn,
+      'name_sw': nameSw,
       'description': description,
+      'description_en': descriptionEn,
+      'description_sw': descriptionSw,
     };
   }
 }

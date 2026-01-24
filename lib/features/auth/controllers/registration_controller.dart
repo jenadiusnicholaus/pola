@@ -224,7 +224,7 @@ class RegistrationController extends GetxController {
   String getPageTitle() {
     switch (_currentPage.value) {
       case 0:
-        return 'Select Your Role';
+        return 'Chagua Wadhifa Wako | Select Your Role';
       case 1:
         return 'Basic Information';
       case 2:

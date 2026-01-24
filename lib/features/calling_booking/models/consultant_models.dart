@@ -37,6 +37,8 @@ class Consultant {
     // Debug logging
     final userDetails = json['user_details'] ?? {};
     print('📋 Parsing consultant: ${userDetails['full_name']}');
+    print('   Raw JSON id: ${json['id']}');
+    print('   Raw JSON user: ${json['user']}');
     print('   Profile Picture: ${userDetails['profile_picture']}');
     print('   Is Online: ${json['is_online']}');
 

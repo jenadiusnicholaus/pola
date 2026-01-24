@@ -87,8 +87,7 @@ class PermissionGate extends StatelessWidget {
                       ElevatedButton.icon(
                         onPressed: onUpgradePressed ??
                             () {
-                              Get.toNamed(AppRoutes.comingSoon,
-                                  arguments: 'Subscription Plans');
+                              Get.toNamed(AppRoutes.subscriptionPlans);
                             },
                         icon: const Icon(Icons.arrow_upward),
                         label: const Text('Upgrade Now'),
@@ -180,8 +179,7 @@ class PermissionMenuItem extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Get.toNamed(AppRoutes.comingSoon,
-                  arguments: 'Subscription Plans');
+              Get.toNamed(AppRoutes.subscriptionPlans);
             },
             child: const Text('Upgrade'),
           ),

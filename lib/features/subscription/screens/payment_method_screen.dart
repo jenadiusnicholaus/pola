@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../models/subscription_models.dart';
 import '../services/subscription_service.dart';
 import 'payment_status_screen.dart';
+import '../../../utils/navigation_helper.dart';
 
 class PaymentMethodScreen extends StatefulWidget {
   final SubscriptionPlan plan;
@@ -335,12 +336,10 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     }
 
     if (selectedProvider == null) {
-      Get.snackbar(
+      _showErrorDialog(
         'Payment Method Required',
         'Please select a payment method to continue',
-        icon: const Icon(Icons.warning_amber, color: Colors.white),
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
+        isWarning: true,
       );
       return;
     }
@@ -366,27 +365,53 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           ),
         );
       } else {
-        Get.snackbar(
-          'Payment Failed',
-          result.message,
-          icon: const Icon(Icons.error_outline, color: Colors.white),
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 5),
-        );
+        _showErrorDialog('Payment Failed', result.message);
       }
     } catch (e) {
       setState(() => isProcessing = false);
 
       debugPrint('Payment error: $e');
-      Get.snackbar(
-        'Error',
-        'An error occurred while processing your payment. Please try again.',
-        icon: const Icon(Icons.error_outline, color: Colors.white),
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 5),
-      );
+      
+      // Extract meaningful error message
+      String errorMessage = 'An error occurred while processing your payment. Please try again.';
+      if (e.toString().contains('timeout') || e.toString().contains('receiveTimeout')) {
+        errorMessage = 'The server took too long to respond. Please check your internet connection and try again.';
+      } else if (e.toString().contains('connectionTimeout') || e.toString().contains('No route to host')) {
+        errorMessage = 'Unable to connect to the server. Please check your internet connection.';
+      }
+      
+      _showErrorDialog('Payment Error', errorMessage);
     }
+  }
+
+  void _showErrorDialog(String title, String message, {bool isWarning = false}) {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(
+              isWarning ? Icons.warning_amber : Icons.error_outline,
+              color: isWarning ? Colors.orange : Colors.red,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => NavigationHelper.closeDialog(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+      barrierDismissible: true,
+    );
   }
 }

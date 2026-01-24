@@ -276,8 +276,8 @@ class AppDrawer extends StatelessWidget {
             onTap: () => _navigateAndClose(context, AppRoutes.advocatesHub),
           ),
 
-        // Students Hub - for law students and lecturers
-        if (isStudent)
+        // Students Hub - for law students, lecturers, and advocates
+        if (isStudent || isAdvocate)
           _buildDrawerItem(
             context: context,
             icon: Icons.school_outlined,

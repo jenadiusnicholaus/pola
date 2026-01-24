@@ -5,6 +5,7 @@ import '../controllers/consultant_controller.dart';
 import '../models/consultant_models.dart';
 import '../../../widgets/profile_avatar.dart';
 import '../../../services/permission_service.dart';
+import '../../../utils/navigation_helper.dart';
 
 class ConsultantsScreen extends StatefulWidget {
   const ConsultantsScreen({super.key});
@@ -348,7 +349,7 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
                     if (consultant.offersMobileConsultations)
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: () => _handleCallConsultant(consultant),
+                          onPressed: () => _handleCallConsultant(context, consultant),
                           icon: Icon(Icons.phone,
                               size: 15, color: theme.colorScheme.primary),
                           label: Text('Call',
@@ -369,18 +370,16 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
                         ),
                       ),
 
-                    // Physical consultation button - ONLY for law_firm users
-                    // Individual professionals (advocate, lawyer, paralegal) cannot book
+                    // Physical consultation button - ONLY for law_firm consultants
+                    // Individual professionals (advocate, lawyer, paralegal) cannot be booked
                     if (consultant.offersPhysicalConsultations &&
-                        Get.find<PermissionService>()
-                                .userRoleName
-                                ?.toLowerCase() ==
+                        consultant.consultantType.toLowerCase() ==
                             'law_firm') ...[
                       if (consultant.offersMobileConsultations)
                         const SizedBox(width: 8),
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: () => _handleBookConsultation(consultant),
+                          onPressed: () => _handleBookConsultation(context, consultant),
                           icon: Icon(Icons.calendar_today,
                               size: 15, color: theme.colorScheme.primary),
                           label: Text(
@@ -414,7 +413,13 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
     );
   }
 
-  void _handleCallConsultant(Consultant consultant) {
+  void _handleCallConsultant(BuildContext context, Consultant consultant) {
+    // Check permission to talk to lawyer
+    if (!NavigationHelper.checkPermissionOrShowUpgrade(
+        context, PermissionFeature.talkToLawyer)) {
+      return;
+    }
+
     // Navigate to call screen
     Get.toNamed(
       '/call',
@@ -424,7 +429,13 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
     );
   }
 
-  void _handleBookConsultation(Consultant consultant) {
+  void _handleBookConsultation(BuildContext context, Consultant consultant) {
+    // Check permission to book consultation
+    if (!NavigationHelper.checkPermissionOrShowUpgrade(
+        context, PermissionFeature.bookConsultation)) {
+      return;
+    }
+
     // Navigate to booking screen - Book button is for physical consultations
     Get.toNamed('/book-consultation', arguments: {
       'consultant': consultant,

@@ -13,8 +13,8 @@ class AppTheme {
     colorScheme: const ColorScheme.light(
       primary: AppColors.primaryAmber,
       primaryContainer: AppColors.primaryAmberLight,
-      secondary: AppColors.buttonBlue,
-      secondaryContainer: AppColors.buttonBlueDark,
+      secondary: AppColors.buttonAmber,
+      secondaryContainer: AppColors.buttonAmberDark,
       surface: AppColors.lightSurface,
       error: AppColors.error,
       onPrimary: AppColors.white,
@@ -79,7 +79,7 @@ class AppTheme {
     // Text Button Theme
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: AppColors.buttonBlue,
+        foregroundColor: AppColors.buttonAmber,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         textStyle: const TextStyle(
           fontSize: 14,
@@ -91,8 +91,8 @@ class AppTheme {
     // Outlined Button Theme
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.buttonBlue,
-        side: const BorderSide(color: AppColors.buttonBlue, width: 1.5),
+        foregroundColor: AppColors.buttonAmber,
+        side: const BorderSide(color: AppColors.buttonAmber, width: 1.5),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
@@ -200,8 +200,8 @@ class AppTheme {
     colorScheme: const ColorScheme.dark(
       primary: AppColors.primaryAmber,
       primaryContainer: AppColors.primaryAmberDark,
-      secondary: AppColors.buttonBlue,
-      secondaryContainer: AppColors.buttonBlueDark,
+      secondary: AppColors.buttonAmber,
+      secondaryContainer: AppColors.buttonAmberDark,
       surface: AppColors.darkSurface,
       error: AppColors.error,
       onPrimary: AppColors.black,
@@ -266,7 +266,7 @@ class AppTheme {
     // Text Button Theme
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: AppColors.buttonBlue,
+        foregroundColor: AppColors.buttonAmber,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         textStyle: const TextStyle(
           fontSize: 14,
@@ -278,8 +278,8 @@ class AppTheme {
     // Outlined Button Theme
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.buttonBlue,
-        side: const BorderSide(color: AppColors.buttonBlue, width: 1.5),
+        foregroundColor: AppColors.buttonAmber,
+        side: const BorderSide(color: AppColors.buttonAmber, width: 1.5),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),

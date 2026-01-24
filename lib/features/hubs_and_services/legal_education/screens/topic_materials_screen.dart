@@ -7,6 +7,7 @@ import '../widgets/material_card.dart';
 import 'material_viewer_screen.dart';
 import '../../hub_content/widgets/content_creation_fab.dart';
 import '../../hub_content/utils/user_role_manager.dart';
+import '../../../../services/permission_service.dart';
 
 class TopicMaterialsScreen extends StatefulWidget {
   final Topic? topic;
@@ -312,6 +313,21 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
   }
 
   void _openMaterial(BuildContext context, LearningMaterial material) {
+    // Check if user has permission to read legal education content
+    try {
+      final permissionService = Get.find<PermissionService>();
+      
+      // Check if user can read legal education content
+      if (!permissionService.canReadLegalEducation) {
+        // Show limit reached dialog
+        _showLimitReachedDialog(context, permissionService);
+        return;
+      }
+    } catch (e) {
+      debugPrint('⚠️ Permission check failed: $e');
+      // If permission service not available, allow access (fallback)
+    }
+
     // Always open the material - MaterialViewerScreen handles both file and text-only content
     if (material.fileUrl.isNotEmpty || material.description.isNotEmpty) {
       Get.to(
@@ -326,5 +342,97 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
         ),
       );
     }
+  }
+
+  void _showLimitReachedDialog(BuildContext context, PermissionService permissionService) {
+    final theme = Theme.of(context);
+    final isTrial = permissionService.isTrialSubscription;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.lock_outline,
+              color: theme.colorScheme.error,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                isTrial ? 'Trial Limit Reached' : 'Reading Limit Reached',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              isTrial
+                  ? 'You have used all ${permissionService.legalEducationLimit} free reads available in your trial period.'
+                  : 'You have reached your legal education reading limit for this period.',
+              style: theme.textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.star,
+                    color: theme.colorScheme.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Upgrade to Premium for unlimited access to all legal education materials!',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'Later',
+              style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // Navigate to subscription page
+              Get.toNamed('/subscription');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+            ),
+            child: const Text('Upgrade Now'),
+          ),
+        ],
+      ),
+    );
   }
 }

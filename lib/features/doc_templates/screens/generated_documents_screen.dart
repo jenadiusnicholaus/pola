@@ -8,6 +8,8 @@ import 'dart:io';
 import '../controllers/generated_documents_controller.dart';
 import '../models/generated_document_model.dart';
 import '../../../config/dio_config.dart';
+import '../../../services/permission_service.dart';
+import '../../../utils/navigation_helper.dart';
 
 class GeneratedDocumentsScreen extends StatelessWidget {
   const GeneratedDocumentsScreen({Key? key}) : super(key: key);
@@ -335,6 +337,12 @@ class _DownloadButtonState extends State<_DownloadButton> {
   }
 
   Future<void> _downloadDocument(BuildContext context) async {
+    // Check permission to download templates
+    if (!NavigationHelper.checkPermissionOrShowUpgrade(
+        context, PermissionFeature.downloadTemplates)) {
+      return;
+    }
+
     if (widget.document.downloadUrl == null) {
       _showError(context, 'Download URL not available');
       return;

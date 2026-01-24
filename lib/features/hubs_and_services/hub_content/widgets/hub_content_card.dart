@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/hub_content_models.dart';
 import '../controllers/hub_content_controller.dart';
 import '../../legal_education/screens/material_viewer_screen.dart';
+import '../../../../services/permission_service.dart';
 
 class HubContentCard extends StatelessWidget {
   final HubContentItem content;
@@ -1060,12 +1061,116 @@ class HubContentCard extends StatelessWidget {
   }
 
   void _openPdfViewer(BuildContext context) {
+    // Check permission for legal education content
+    if (hubType == 'legal_ed') {
+      try {
+        final permissionService = Get.find<PermissionService>();
+        if (!permissionService.canReadLegalEducation) {
+          _showLimitReachedDialog(context, permissionService);
+          return;
+        }
+      } catch (e) {
+        debugPrint('⚠️ Permission check failed: $e');
+      }
+    }
+
     // Navigate to material viewer for PDF preview
     Get.to(
       () => const MaterialViewerScreen(),
       arguments: {
         'material': content.toLearningMaterial(),
       },
+    );
+  }
+
+  void _showLimitReachedDialog(BuildContext context, PermissionService permissionService) {
+    final theme = Theme.of(context);
+    final isTrial = permissionService.isTrialSubscription;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.lock_outline,
+              color: theme.colorScheme.error,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                isTrial ? 'Trial Limit Reached' : 'Reading Limit Reached',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              isTrial
+                  ? 'You have used all ${permissionService.legalEducationLimit} free reads available in your trial period.'
+                  : 'You have reached your legal education reading limit for this period.',
+              style: theme.textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.star,
+                    color: theme.colorScheme.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Upgrade to Premium for unlimited access to all legal education materials!',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'Later',
+              style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Get.toNamed('/subscription');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+            ),
+            child: const Text('Upgrade Now'),
+          ),
+        ],
+      ),
     );
   }
 

@@ -196,7 +196,7 @@ class LandingScreen extends StatelessWidget {
 
                       const SizedBox(height: 8),
 
-                      // Sign Up Button (Blue) - compact but readable
+                      // Sign Up Button (Amber) - compact but readable
                       SizedBox(
                         width: double.infinity,
                         height: 44,
@@ -206,7 +206,7 @@ class LandingScreen extends StatelessWidget {
                             Get.toNamed('/registration');
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.buttonBlue,
+                            backgroundColor: AppColors.buttonAmber,
                             foregroundColor: AppColors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),

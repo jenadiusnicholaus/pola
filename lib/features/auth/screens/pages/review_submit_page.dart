@@ -9,6 +9,7 @@ class ReviewSubmitPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<RegistrationController>();
     final data = controller.registrationData;
+    final isCitizen = data.userRole == 'citizen';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -16,23 +17,23 @@ class ReviewSubmitPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Enhanced Header with Step Indicator
-          _buildEnhancedHeader(context, controller),
+          _buildEnhancedHeader(context, controller, isCitizen),
           const SizedBox(height: 24),
 
           // Comprehensive Review Sections
-          _buildComprehensiveReview(context, data, controller),
+          _buildComprehensiveReview(context, data, controller, isCitizen),
 
           const SizedBox(height: 32),
 
           // Final Submit Instructions
-          _buildSubmitInstructions(context),
+          _buildSubmitInstructions(context, isCitizen),
         ],
       ),
     );
   }
 
   Widget _buildEnhancedHeader(
-      BuildContext context, RegistrationController controller) {
+      BuildContext context, RegistrationController controller, bool isCitizen) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -49,14 +50,16 @@ class ReviewSubmitPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Final Review & Submit',
+                    isCitizen ? 'Kagua na Wasilisha | Review & Submit' : 'Final Review & Submit',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Step ${controller.currentPage + 1} of ${controller.totalPages} - Registration Summary',
+                    isCitizen 
+                        ? 'Hatua ${controller.currentPage + 1} ya ${controller.totalPages}'
+                        : 'Step ${controller.currentPage + 1} of ${controller.totalPages} - Registration Summary',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -83,7 +86,9 @@ class ReviewSubmitPage extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Please carefully review all information below before submitting your registration.',
+                  isCitizen 
+                      ? 'Kagua taarifa zote kabla ya kuwasilisha.'
+                      : 'Please carefully review all information below before submitting your registration.',
                   style: TextStyle(
                     color: Theme.of(context).brightness == Brightness.dark 
                         ? Colors.white 
@@ -100,19 +105,19 @@ class ReviewSubmitPage extends StatelessWidget {
   }
 
   Widget _buildComprehensiveReview(
-      BuildContext context, dynamic data, RegistrationController controller) {
+      BuildContext context, dynamic data, RegistrationController controller, bool isCitizen) {
     return Column(
       children: [
         // Step 1: User Role Selection
         _buildStepSection(
           context,
           1,
-          'User Role Selection',
+          isCitizen ? 'Aina ya Mtumiaji | User Role' : 'User Role Selection',
           Icons.person_outline,
           [
-            _buildInfoRow('Selected Role', _getRoleDisplay(data.userRole)),
+            _buildInfoRow(isCitizen ? 'Jukumu | Role' : 'Selected Role', _getRoleDisplay(data.userRole)),
             _buildInfoRow(
-                'Role Description', _getRoleDescription(data.userRole)),
+                isCitizen ? 'Maelezo | Description' : 'Role Description', _getRoleDescription(data.userRole)),
           ],
           null,
         ),
@@ -122,14 +127,14 @@ class ReviewSubmitPage extends StatelessWidget {
           _buildStepSection(
             context,
             2,
-            'Basic Information',
+            isCitizen ? 'Taarifa Binafsi | Basic Info' : 'Basic Information',
             Icons.badge_outlined,
             [
-              _buildInfoRow('Full Name', '${data.firstName} ${data.lastName}'),
-              _buildInfoRow('Email Address', data.email),
-              _buildInfoRow('Date of Birth',
+              _buildInfoRow(isCitizen ? 'Jina | Name' : 'Full Name', '${data.firstName} ${data.lastName}'),
+              _buildInfoRow(isCitizen ? 'Barua pepe | Email' : 'Email Address', data.email),
+              _buildInfoRow(isCitizen ? 'Tarehe | DOB' : 'Date of Birth',
                   data.dateOfBirth?.toString().split(' ')[0] ?? 'Not provided'),
-              _buildInfoRow('Gender', _getGenderDisplay(data.gender)),
+              _buildInfoRow(isCitizen ? 'Jinsia | Gender' : 'Gender', _getGenderDisplay(data.gender)),
             ],
             null,
           ),
@@ -155,20 +160,23 @@ class ReviewSubmitPage extends StatelessWidget {
         _buildStepSection(
           context,
           3,
-          'Contact & Location Information',
+          isCitizen ? 'Mawasiliano | Contact' : 'Contact & Location Information',
           Icons.location_on_outlined,
           [
             _buildInfoRow(
-                'Phone Number',
+                isCitizen ? 'Simu | Phone' : 'Phone Number',
                 data.phoneNumber.isNotEmpty
                     ? data.phoneNumber
                     : 'Not provided'),
             if (data.region != null)
-              _buildInfoRow('Region', _getRegionName(controller, data.region)),
+              _buildInfoRow(isCitizen ? 'Mkoa | Region' : 'Region', _getRegionName(controller, data.region)),
             if (data.district != null)
-              _buildInfoRow('District', _getDistrictName(controller, data.district)),
+              _buildInfoRow(isCitizen ? 'Wilaya | District' : 'District', _getDistrictName(controller, data.district)),
             if (data.ward?.isNotEmpty == true)
-              _buildInfoRow('Ward', data.ward!),
+              _buildInfoRow(isCitizen ? 'Kata | Ward' : 'Ward', data.ward!),
+            // Show occupation for citizens
+            if (data.userRole == 'citizen' && data.occupation?.isNotEmpty == true)
+              _buildInfoRow('Kazi | Occupation', data.occupation!),
           ],
           null,
         ),
@@ -188,10 +196,10 @@ class ReviewSubmitPage extends StatelessWidget {
         _buildStepSection(
           context,
           _shouldShowProfessionalInfo(data.userRole) ? 5 : 4,
-          'Terms & Conditions Agreement',
+          isCitizen ? 'Masharti | Terms' : 'Terms & Conditions Agreement',
           Icons.assignment_outlined,
           [
-            _buildAgreementStatus('Terms and Conditions', data.agreedToTerms),
+            _buildAgreementStatus(isCitizen ? 'Masharti | Terms' : 'Terms and Conditions', data.agreedToTerms),
           ],
           null,
         ),
@@ -229,13 +237,13 @@ class ReviewSubmitPage extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         errors.isEmpty
-                            ? 'Ready to Submit'
-                            : 'Please Fix Errors',
+                            ? (isCitizen ? 'Tayari | Ready' : 'Ready to Submit')
+                            : (isCitizen ? 'Rekebisha | Fix Errors' : 'Please Fix Errors'),
                         style:
                             Theme.of(context).textTheme.titleMedium?.copyWith(
                                   color: errors.isEmpty
-                                      ? colorScheme.onPrimaryContainer
-                                      : colorScheme.onErrorContainer,
+                                      ? (Theme.of(context).brightness == Brightness.dark ? Colors.green.shade300 : Colors.green.shade800)
+                                      : (Theme.of(context).brightness == Brightness.dark ? Colors.red.shade300 : Colors.red.shade800),
                                   fontWeight: FontWeight.bold,
                                 ),
                       ),
@@ -274,7 +282,7 @@ class ReviewSubmitPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSubmitInstructions(BuildContext context) {
+  Widget _buildSubmitInstructions(BuildContext context, bool isCitizen) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
@@ -294,7 +302,7 @@ class ReviewSubmitPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Ready to Submit?',
+              isCitizen ? 'Uko tayari? | Ready?' : 'Ready to Submit?',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: isDark ? Colors.white : colorScheme.onSurface,
@@ -302,7 +310,9 @@ class ReviewSubmitPage extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Click the Submit button below to create your account',
+              isCitizen 
+                  ? 'Bonyeza Wasilisha | Click Submit'
+                  : 'Click the Submit button below to create your account',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: isDark ? Colors.white : colorScheme.onSurfaceVariant,
                     fontStyle: FontStyle.italic,
@@ -454,8 +464,8 @@ class ReviewSubmitPage extends StatelessWidget {
                     : 'You must agree to the $label',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: isAgreed
-                          ? (Theme.of(context).brightness == Brightness.dark ? Colors.white : colorScheme.onPrimaryContainer)
-                          : (Theme.of(context).brightness == Brightness.dark ? Colors.white : colorScheme.onErrorContainer),
+                          ? (Theme.of(context).brightness == Brightness.dark ? Colors.green.shade300 : Colors.green.shade800)
+                          : (Theme.of(context).brightness == Brightness.dark ? Colors.red.shade300 : Colors.red.shade800),
                       fontWeight: FontWeight.w500,
                     ),
               ),

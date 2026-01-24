@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 import '../models/subscription_models.dart';
 import '../services/subscription_service.dart';
 import '../../../features/profile/services/profile_service.dart';
+import '../../../features/home/controllers/home_controller.dart';
+import '../../../services/permission_service.dart';
 
 class PaymentStatusScreen extends StatefulWidget {
   final String transactionId;
@@ -100,7 +102,25 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen>
     // Refresh profile to get updated subscription
     try {
       final profileService = Get.find<ProfileService>();
-      profileService.fetchProfile(forceRefresh: true);
+      profileService.fetchProfile(forceRefresh: true).then((_) {
+        // Debug the new subscription status
+        try {
+          final permissionService = Get.find<PermissionService>();
+          permissionService.debugSubscriptionStatus();
+          debugPrint('🔐 canViewNearbyLawyers: ${permissionService.canViewNearbyLawyers}');
+          debugPrint('🔐 isSubscriptionActive: ${permissionService.isSubscriptionActive}');
+        } catch (e) {
+          debugPrint('Error debugging permissions: $e');
+        }
+        
+        // Refresh home controller to rebuild UI
+        try {
+          final homeController = Get.find<HomeController>();
+          homeController.update();
+        } catch (e) {
+          debugPrint('Home controller not available: $e');
+        }
+      });
     } catch (e) {
       debugPrint('Error refreshing profile: $e');
     }
@@ -447,7 +467,19 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen>
           ),
           actions: [
             ElevatedButton.icon(
-              onPressed: () {
+              onPressed: () async {
+                // Refresh profile one more time before going home
+                try {
+                  final profileService = Get.find<ProfileService>();
+                  await profileService.fetchProfile(forceRefresh: true);
+                  
+                  // Refresh home controller
+                  final homeController = Get.find<HomeController>();
+                  homeController.update();
+                } catch (e) {
+                  debugPrint('Error refreshing before navigation: $e');
+                }
+                
                 Get.until((route) => route.isFirst); // Go back to home
               },
               icon: const Icon(Icons.arrow_forward),

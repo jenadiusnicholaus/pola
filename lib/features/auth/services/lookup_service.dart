@@ -45,6 +45,31 @@ class LookupService extends GetxService {
   bool get isLoadingAdvocates => _isLoadingAdvocates.value;
   bool get isLoadingLawFirms => _isLoadingLawFirms.value;
 
+  // Role order priority - arranged by expected user significance
+  // Swahili first: Mwananchi, Wakili, Mwanasheria, Msaidizi wa Kisheria, Ofisi ya Mawakili, Mwanafunzi wa Sheria, Mhadhiri
+  static const List<String> _roleOrder = [
+    'citizen',      // Mwananchi | Citizen
+    'advocate',     // Wakili | Advocate
+    'lawyer',       // Mwanasheria | Lawyer
+    'paralegal',    // Msaidizi wa Kisheria | Paralegal
+    'law_firm',     // Ofisi ya Mawakili | Law Firm
+    'law_student',  // Mwanafunzi wa Sheria | Law Student
+    'lecturer',     // Mhadhiri | Lecturer
+  ];
+
+  /// Sort roles by significance order
+  List<UserRole> _sortRolesBySignificance(List<UserRole> roles) {
+    roles.sort((a, b) {
+      final indexA = _roleOrder.indexOf(a.roleName);
+      final indexB = _roleOrder.indexOf(b.roleName);
+      // If role not in order list, put at end
+      final orderA = indexA == -1 ? _roleOrder.length : indexA;
+      final orderB = indexB == -1 ? _roleOrder.length : indexB;
+      return orderA.compareTo(orderB);
+    });
+    return roles;
+  }
+
   // Fetch user roles
   Future<List<UserRole>> fetchUserRoles() async {
     if (_userRoles.isNotEmpty) return _userRoles;
@@ -57,25 +82,38 @@ class LookupService extends GetxService {
       print('Response type: ${response.data.runtimeType}');
 
       if (response.data != null) {
-        // Check if the response is a paginated response with 'results' array
-        if (response.data is Map && response.data['results'] != null) {
-          final List<dynamic> data = response.data['results'] as List<dynamic>;
-          _userRoles.value =
-              data.map((json) => UserRole.fromJson(json)).toList();
-          print(
-              'Successfully parsed ${_userRoles.length} user roles from paginated response');
+        List<dynamic>? data;
+
+        // NEW FORMAT: Response with 'roles' key containing paginated data
+        // Example: {"ui": {...}, "roles": {"count": 7, "results": [...]}}
+        if (response.data is Map && response.data['roles'] != null) {
+          final rolesData = response.data['roles'];
+          if (rolesData is Map && rolesData['results'] != null) {
+            data = rolesData['results'] as List<dynamic>;
+            print('Successfully parsed roles from nested roles.results format');
+          }
         }
-        // Check if the response is directly a list (for backwards compatibility)
+        // OLD FORMAT: Direct paginated response with 'results' array
+        // Example: {"count": 7, "results": [...]}
+        else if (response.data is Map && response.data['results'] != null) {
+          data = response.data['results'] as List<dynamic>;
+          print('Successfully parsed roles from direct paginated response');
+        }
+        // OLD FORMAT: Direct list (for backwards compatibility)
+        // Example: [{...}, {...}]
         else if (response.data is List) {
-          final List<dynamic> data = response.data as List<dynamic>;
-          _userRoles.value =
-              data.map((json) => UserRole.fromJson(json)).toList();
-          print(
-              'Successfully parsed ${_userRoles.length} user roles from direct list response');
+          data = response.data as List<dynamic>;
+          print('Successfully parsed roles from direct list response');
+        }
+
+        if (data != null) {
+          final parsedRoles = data.map((json) => UserRole.fromJson(json)).toList();
+          // Sort roles by significance order
+          _userRoles.value = _sortRolesBySignificance(parsedRoles);
+          print('Successfully loaded ${_userRoles.length} user roles (sorted by significance)');
         } else {
           // API might be returning an error or different format
-          print(
-              'Expected paginated response or List but got: ${response.data}');
+          print('Expected paginated response or List but got: ${response.data}');
           throw Exception('Invalid API response format for user roles');
         }
       }

@@ -21,8 +21,8 @@ class AppColors {
   // Button Colors
   static const Color buttonYellow = Color(0xFFFFEB3B);
   static const Color buttonYellowDark = Color(0xFFFBC02D);
-  static const Color buttonBlue = Color(0xFF2196F3);
-  static const Color buttonBlueDark = Color(0xFF1976D2);
+  static const Color buttonAmber = Color(0xFFFF8F00);
+  static const Color buttonAmberDark = Color(0xFFE65100);
 
   // Text Colors
   static const Color textPrimary = Color(0xFF212121);

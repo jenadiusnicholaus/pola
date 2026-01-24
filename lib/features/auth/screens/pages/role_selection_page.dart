@@ -47,14 +47,14 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Select Your Role',
+            'Chagua Wadhifa Wako | Select Your Role',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Please select which category best describes you. This will determine what information we need to collect.',
+            'Tafadhali chagua wadhifa unaokufaa zaidi. Hii itaamua upatikanaji wako wa huduma na vipengele.\n\nPlease select the role that best describes you. This will determine your access to features and services.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -356,7 +356,8 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
     final roles = controller.lookupService.userRoles;
     try {
       final role = roles.firstWhere((role) => role.roleName == roleName);
-      return role.description ?? 'No description available';
+      // Prefer Swahili description, fall back to English or general description
+      return role.descriptionSw ?? role.descriptionEn ?? role.description ?? 'No description available';
     } catch (e) {
       print('Role not found for name: $roleName');
       return 'Role description not available';

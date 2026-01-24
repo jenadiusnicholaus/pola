@@ -5,6 +5,9 @@ import '../../home/screens/home_screen.dart';
 import '../../posts/screens/posts_screen.dart';
 import '../../help/screens/help_support_screen.dart';
 import '../../bookmarks/screens/bookmark_screen.dart';
+import '../../consultation/screens/my_bookings_screen.dart';
+import '../../consultation/screens/my_consultations_screen.dart';
+import '../../../services/permission_service.dart';
 
 class MainNavigationScreen extends StatelessWidget {
   const MainNavigationScreen({super.key});
@@ -12,10 +15,17 @@ class MainNavigationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(MainNavigationController());
+    final permissionService = Get.find<PermissionService>();
+
+    // Determine which bookings screen to show based on role
+    final Widget bookingsScreen = permissionService.isProfessional
+        ? const MyConsultationsScreen()
+        : const MyBookingsScreen();
 
     final List<Widget> screens = [
       const HomeScreen(),
       const PostsScreen(),
+      bookingsScreen,
       const HelpSupportScreen(),
       const BookmarkScreen(),
     ];
@@ -41,23 +51,28 @@ class MainNavigationScreen extends StatelessWidget {
             selectedFontSize: 12,
             unselectedFontSize: 12,
             elevation: 8,
-            items: const [
-              BottomNavigationBarItem(
+            items: [
+              const BottomNavigationBarItem(
                 icon: Icon(Icons.home_outlined),
                 activeIcon: Icon(Icons.home),
                 label: 'Home',
               ),
-              BottomNavigationBarItem(
+              const BottomNavigationBarItem(
                 icon: Icon(Icons.article_outlined),
                 activeIcon: Icon(Icons.article),
                 label: 'Posts',
               ),
               BottomNavigationBarItem(
+                icon: const Icon(Icons.calendar_today_outlined),
+                activeIcon: const Icon(Icons.calendar_today),
+                label: permissionService.isProfessional ? 'Consultations' : 'Bookings',
+              ),
+              const BottomNavigationBarItem(
                 icon: Icon(Icons.help_outline),
                 activeIcon: Icon(Icons.help),
                 label: 'Help & Support',
               ),
-              BottomNavigationBarItem(
+              const BottomNavigationBarItem(
                 icon: Icon(Icons.bookmark_outline),
                 activeIcon: Icon(Icons.bookmark),
                 label: 'Bookmarks',

@@ -17,6 +17,7 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _occupationController = TextEditingController();
 
   DateTime? _selectedDate;
   String? _selectedGender;
@@ -34,6 +35,7 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
     _emailController.text = data.email;
     _passwordController.text = data.password;
     _confirmPasswordController.text = data.passwordConfirm;
+    _occupationController.text = data.occupation ?? '';
     _selectedDate = data.dateOfBirth;
     _selectedGender = data.gender.isEmpty ? null : data.gender;
   }
@@ -94,6 +96,11 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
     data.dateOfBirth = _selectedDate;
     if (_selectedGender != null) {
       data.gender = _selectedGender!;
+    }
+
+    // Save occupation for citizens
+    if (data.userRole == 'citizen') {
+      data.occupation = _occupationController.text;
     }
 
     // Email and password are required for all roles
@@ -209,7 +216,9 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
               ...[
                 // Name Section
                 Text(
-                  'Personal Details',
+                  controller.registrationData.userRole == 'citizen'
+                      ? 'Maelezo ya Kibinafsi | Personal Details'
+                      : 'Personal Details',
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 16),
@@ -219,15 +228,20 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'First Name',
+                      controller.registrationData.userRole == 'citizen'
+                          ? 'Jina la Kwanza | First Name'
+                          : 'First Name',
                       style: Theme.of(context).textTheme.labelLarge,
                     ),
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _firstNameController,
                       style: Theme.of(context).textTheme.bodyLarge,
-                      decoration: const InputDecoration(
-                        hintText: 'Enter your first name',
+                      decoration: InputDecoration(
+                        hintText: controller.registrationData.userRole == 'citizen'
+                            ? 'Jina | Name'
+                            : 'First name',
+                        hintStyle: TextStyle(color: Colors.grey),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -246,15 +260,20 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Last Name',
+                      controller.registrationData.userRole == 'citizen'
+                          ? 'Jina la Mwisho | Last Name'
+                          : 'Last Name',
                       style: Theme.of(context).textTheme.labelLarge,
                     ),
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _lastNameController,
                       style: Theme.of(context).textTheme.bodyLarge,
-                      decoration: const InputDecoration(
-                        hintText: 'Enter your last name',
+                      decoration: InputDecoration(
+                        hintText: controller.registrationData.userRole == 'citizen'
+                            ? 'Jina | Name'
+                            : 'Last name',
+                        hintStyle: TextStyle(color: Colors.grey),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -271,7 +290,9 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
 
               // Contact Information Section
               Text(
-                'Contact Information',
+                controller.registrationData.userRole == 'citizen'
+                    ? 'Mawasiliano | Contact Information'
+                    : 'Contact Information',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 16),
@@ -281,7 +302,9 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Email Address',
+                    controller.registrationData.userRole == 'citizen'
+                        ? 'Barua pepe | Email Address'
+                        : 'Email Address',
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   const SizedBox(height: 6),
@@ -290,7 +313,10 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                     keyboardType: TextInputType.emailAddress,
                     style: Theme.of(context).textTheme.bodyLarge,
                     decoration: InputDecoration(
-                      hintText: 'Enter your email address',
+                      hintText: controller.registrationData.userRole == 'citizen'
+                          ? 'Barua pepe | Email'
+                          : 'Email address',
+                      hintStyle: TextStyle(color: Colors.grey),
                       prefixIcon: Icon(
                         Icons.email_outlined,
                         size: 20,
@@ -318,7 +344,9 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Date of Birth',
+                      controller.registrationData.userRole == 'citizen'
+                          ? 'Tarehe ya Kuzaliwa | Date of Birth'
+                          : 'Date of Birth',
                       style: Theme.of(context).textTheme.labelLarge,
                     ),
                     const SizedBox(height: 6),
@@ -359,7 +387,9 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                               child: Text(
                                 _selectedDate != null
                                     ? '${_selectedDate!.day.toString().padLeft(2, '0')}/${_selectedDate!.month.toString().padLeft(2, '0')}/${_selectedDate!.year}'
-                                    : 'Select your date of birth',
+                                    : (controller.registrationData.userRole == 'citizen'
+                                        ? 'Chagua tarehe | Select date'
+                                        : 'Select date'),
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodyLarge
@@ -383,7 +413,9 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Gender',
+                      controller.registrationData.userRole == 'citizen'
+                          ? 'Jinsia | Gender'
+                          : 'Gender',
                       style: Theme.of(context).textTheme.labelLarge,
                     ),
                     const SizedBox(height: 12),
@@ -427,7 +459,9 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
-                                      'Male',
+                                      controller.registrationData.userRole == 'citizen'
+                                          ? 'Me | Male'
+                                          : 'Male',
                                       style: Theme.of(context)
                                           .textTheme
                                           .labelLarge
@@ -462,6 +496,10 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                                   color: _selectedGender == 'F'
                                       ? colorScheme.primary
                                       : Colors.transparent,
+                                  borderRadius: const BorderRadius.only(
+                                    topRight: Radius.circular(7),
+                                    bottomRight: Radius.circular(7),
+                                  ),
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -475,64 +513,14 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
-                                      'Female',
+                                      controller.registrationData.userRole == 'citizen'
+                                          ? 'Ke | Female'
+                                          : 'Female',
                                       style: Theme.of(context)
                                           .textTheme
                                           .labelLarge
                                           ?.copyWith(
                                             color: _selectedGender == 'F'
-                                                ? colorScheme.onPrimary
-                                                : colorScheme.onSurface,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          Container(
-                            width: 1,
-                            height: 42,
-                            color: colorScheme.outline,
-                          ),
-                          Expanded(
-                            child: InkWell(
-                              onTap: () {
-                                setState(() {
-                                  _selectedGender = 'O';
-                                });
-                                _saveData();
-                              },
-                              child: Container(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: _selectedGender == 'O'
-                                      ? colorScheme.primary
-                                      : Colors.transparent,
-                                  borderRadius: const BorderRadius.only(
-                                    topRight: Radius.circular(7),
-                                    bottomRight: Radius.circular(7),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.person_outline,
-                                      color: _selectedGender == 'O'
-                                          ? colorScheme.onPrimary
-                                          : colorScheme.onSurfaceVariant,
-                                      size: 18,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'Other',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelLarge
-                                          ?.copyWith(
-                                            color: _selectedGender == 'O'
                                                 ? colorScheme.onPrimary
                                                 : colorScheme.onSurface,
                                           ),
@@ -550,9 +538,39 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                 const SizedBox(height: 24),
               ],
 
+              // Occupation field for citizens only
+              if (controller.registrationData.userRole == 'citizen') ...[                
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Kazi | Occupation',
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      controller: _occupationController,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                      decoration: InputDecoration(
+                        hintText: 'Kazi yako | Your occupation',
+                        hintStyle: TextStyle(color: Colors.grey),
+                        prefixIcon: Icon(
+                          Icons.work_outline,
+                          size: 20,
+                        ),
+                      ),
+                      onChanged: (value) => _saveData(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+              ],
+
               // Security Section
               Text(
-                'Security',
+                controller.registrationData.userRole == 'citizen'
+                    ? 'Usalama | Security'
+                    : 'Security',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 16),
@@ -562,7 +580,9 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Password',
+                    controller.registrationData.userRole == 'citizen'
+                        ? 'Neno la Siri | Password'
+                        : 'Password',
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   const SizedBox(height: 6),
@@ -570,8 +590,11 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                     controller: _passwordController,
                     obscureText: true,
                     style: Theme.of(context).textTheme.bodyLarge,
-                    decoration: const InputDecoration(
-                      hintText: 'Create a strong password',
+                    decoration: InputDecoration(
+                      hintText: controller.registrationData.userRole == 'citizen'
+                          ? 'Neno la siri | Password'
+                          : 'Password',
+                      hintStyle: TextStyle(color: Colors.grey),
                       prefixIcon: Icon(Icons.lock_outline),
                     ),
                     validator: (value) {
@@ -587,7 +610,9 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Minimum 8 characters',
+                    controller.registrationData.userRole == 'citizen'
+                        ? 'Angalau herufi 8 | Minimum 8 characters'
+                        : 'Minimum 8 characters',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
@@ -599,7 +624,9 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Confirm Password',
+                    controller.registrationData.userRole == 'citizen'
+                        ? 'Thibitisha Neno la Siri | Confirm Password'
+                        : 'Confirm Password',
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   const SizedBox(height: 6),
@@ -607,8 +634,11 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                     controller: _confirmPasswordController,
                     obscureText: true,
                     style: Theme.of(context).textTheme.bodyLarge,
-                    decoration: const InputDecoration(
-                      hintText: 'Confirm your password',
+                    decoration: InputDecoration(
+                      hintText: controller.registrationData.userRole == 'citizen'
+                          ? 'Thibitisha | Confirm'
+                          : 'Confirm password',
+                      hintStyle: TextStyle(color: Colors.grey),
                       prefixIcon: Icon(Icons.lock_outline),
                     ),
                     validator: (value) {
@@ -814,6 +844,7 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _occupationController.dispose();
     super.dispose();
   }
 }

@@ -400,10 +400,12 @@ class _LawyersMapScreenState extends State<LawyersMapScreen> {
                           ),
                         ),
                       if (lawyer.offersMobileConsultations &&
-                          lawyer.offersPhysicalConsultations)
+                          lawyer.offersPhysicalConsultations &&
+                          lawyer.consultantType.toLowerCase() == 'law_firm')
                         SizedBox(width: 10),
-                      // Book button - only show if physical consultations offered
-                      if (lawyer.offersPhysicalConsultations)
+                      // Book button - only show for LAW FIRMS that offer physical consultations
+                      if (lawyer.offersPhysicalConsultations &&
+                          lawyer.consultantType.toLowerCase() == 'law_firm')
                         Expanded(
                           child: ElevatedButton.icon(
                             onPressed: () => _bookConsultation(lawyer),
@@ -418,7 +420,8 @@ class _LawyersMapScreenState extends State<LawyersMapScreen> {
                           ),
                         ),
                       if (lawyer.offersMobileConsultations ||
-                          lawyer.offersPhysicalConsultations)
+                          (lawyer.offersPhysicalConsultations &&
+                              lawyer.consultantType.toLowerCase() == 'law_firm'))
                         SizedBox(width: 10),
                       ElevatedButton(
                         onPressed: () => _openInMaps(lawyer),

@@ -397,7 +397,20 @@ class HubsAndServicesList extends StatelessWidget {
       return 'citizen';
     }
 
-    final normalized = userRole.toLowerCase().trim();
+    // Convert to lowercase and trim whitespace
+    var normalized = userRole.toLowerCase().trim();
+    
+    // Handle variations of role names
+    if (normalized == 'advocates' || normalized == 'wakili') {
+      normalized = 'advocate';
+    } else if (normalized == 'lawyers' || normalized == 'mwanasheria') {
+      normalized = 'lawyer';
+    } else if (normalized == 'students' || normalized == 'mwanafunzi') {
+      normalized = 'law_student';
+    } else if (normalized == 'lecturers' || normalized == 'mhadhiri') {
+      normalized = 'lecturer';
+    }
+    
     debugPrint('🔍 NORMALIZE ROLE: "$userRole" → "$normalized"');
     return normalized;
   }
@@ -413,17 +426,23 @@ class HubsAndServicesList extends StatelessWidget {
       return true;
     }
 
-    if (userRole == null) {
-      debugPrint('🔍 ACCESS CHECK: No user role - only forum access');
-      // Only forum access for non-logged-in users
-      return hubKey == 'forum';
-    }
-
     final role = _normalizeRole(userRole);
     debugPrint('🔍 ACCESS CHECK: Normalized role: "$role"');
 
     bool hasAccess = false;
     switch (hubKey) {
+      case 'legal_ed':
+        // Legal Education is accessible to ALL users (including non-logged in)
+        hasAccess = true;
+        debugPrint(
+            '🔍 ACCESS CHECK: Legal Ed hub - accessible to all users: $hasAccess');
+        break;
+      case 'forum':
+        // Community Forum is accessible to ALL users (including non-logged in)
+        hasAccess = true;
+        debugPrint(
+            '🔍 ACCESS CHECK: Forum hub - accessible to all users: $hasAccess');
+        break;
       case 'advocates':
         // Only advocates can access advocate hub
         hasAccess = ['advocate'].contains(role);
@@ -431,19 +450,10 @@ class HubsAndServicesList extends StatelessWidget {
             '🔍 ACCESS CHECK: Advocates hub - checking if role "$role" is advocate: $hasAccess');
         break;
       case 'students':
-        hasAccess = ['law_student', 'lecturer', 'admin'].contains(role);
+        // Students, lecturers, advocates, and lawyers can access student hub
+        hasAccess = ['law_student', 'lecturer', 'advocate', 'lawyer'].contains(role);
         debugPrint(
-            '🔍 ACCESS CHECK: Students hub - checking if role "$role" in [law_student, lecturer, admin]: $hasAccess');
-        break;
-      case 'forum':
-        hasAccess = true; // Forum is accessible to all
-        debugPrint(
-            '🔍 ACCESS CHECK: Forum hub - accessible to all: $hasAccess');
-        break;
-      case 'legal_ed':
-        hasAccess = true; // Legal Education is now accessible to all users
-        debugPrint(
-            '🔍 ACCESS CHECK: Legal Ed hub - accessible to all users: $hasAccess');
+            '🔍 ACCESS CHECK: Students hub - checking if role "$role" in [law_student, lecturer, advocate, lawyer]: $hasAccess');
         break;
       default:
         hasAccess = false;
@@ -521,21 +531,9 @@ class HubsAndServicesList extends StatelessWidget {
       return hubs; // Return all hubs for admin
     }
 
-    // If user is not logged in, only show forum
-    if (userRole == null || userRole.isEmpty) {
-      print('DEBUG FILTER: No user role - showing only forum');
-      return hubs.where((hub) => hub['key'] == 'forum').toList();
-    }
-
     // Convert role to normalized string for comparison
     final normalizedRole = _normalizeRole(userRole);
     print('DEBUG FILTER: Normalized role: "$normalizedRole"');
-
-    // If normalization failed, show only forum
-    if (normalizedRole.isEmpty) {
-      print('DEBUG FILTER: Role normalization failed - showing only forum');
-      return hubs.where((hub) => hub['key'] == 'forum').toList();
-    }
 
     // Filter hubs based on role access
     final filteredHubs = hubs.where((hub) {

@@ -274,6 +274,43 @@ class ConsultationService extends GetxService {
     }
   }
 
+  /// Get my bookings as a CLIENT (physical consultations I've booked)
+  /// API: GET /api/v1/subscriptions/physical-consultations/
+  Future<MyBookingsResponse?> getMyBookings({
+    int page = 1,
+    int pageSize = 20,
+    String? status, // 'pending', 'confirmed', 'completed', 'cancelled'
+  }) async {
+    try {
+      debugPrint('📋 Fetching my bookings as client...');
+
+      final queryParams = <String, dynamic>{
+        'page': page,
+        'page_size': pageSize,
+      };
+
+      if (status != null && status.isNotEmpty) {
+        queryParams['status'] = status;
+      }
+
+      final response = await _apiService.get(
+        '/api/v1/subscriptions/physical-consultations/',
+        queryParameters: queryParams,
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint('✅ My bookings fetched: ${response.data['count']} total');
+        return MyBookingsResponse.fromJson(response.data);
+      }
+
+      debugPrint('⚠️ Failed to fetch my bookings: ${response.statusCode}');
+      return null;
+    } catch (e) {
+      debugPrint('❌ Error fetching my bookings: $e');
+      return null;
+    }
+  }
+
   /// Update consultation status (accept, reject, complete)
   Future<bool> updateConsultationStatus({
     required int consultationId,
@@ -322,7 +359,8 @@ class ConsultationService extends GetxService {
       debugPrint('📤 Creating physical consultation booking for law firm profile $consultantProfileId');
 
       final data = <String, dynamic>{
-        'consultant_profile_id': consultantProfileId,
+        'consultant_id': consultantProfileId,  // API expects consultant_id
+        'booking_type': 'physical',  // API requires booking_type
         'topic': topic,
         'description': description,
         'scheduled_date': scheduledDate.toIso8601String().split('T')[0], // YYYY-MM-DD
@@ -355,6 +393,242 @@ class ConsultationService extends GetxService {
       debugPrint('❌ Error creating booking: $e');
       return null;
     }
+  }
+
+  /// Step 1: Create a physical booking (pending status)
+  /// API: POST /api/v1/subscriptions/physical-consultations/book/
+  Future<PhysicalBookingResponse?> createPhysicalBooking({
+    required int consultantId,
+    required DateTime scheduledDate,
+    required int durationMinutes,
+    required String meetingLocation,
+    String? clientNotes,
+  }) async {
+    try {
+      debugPrint('');
+      debugPrint('========== PHYSICAL BOOKING REQUEST ==========');
+      debugPrint('📤 Consultant ID being sent: $consultantId');
+      debugPrint('📤 Scheduled Date: ${scheduledDate.toUtc().toIso8601String()}');
+      debugPrint('📤 Duration: $durationMinutes minutes');
+      debugPrint('📤 Location: $meetingLocation');
+      debugPrint('📤 Notes: $clientNotes');
+
+      final data = <String, dynamic>{
+        'consultant_id': consultantId,
+        'scheduled_date': scheduledDate.toUtc().toIso8601String(),
+        'scheduled_duration_minutes': durationMinutes,
+        'meeting_location': meetingLocation,
+        'booking_type': 'physical',
+        if (clientNotes != null && clientNotes.isNotEmpty)
+          'client_notes': clientNotes,
+      };
+
+      debugPrint('📤 Full Request Body: $data');
+      debugPrint('📤 Endpoint: /api/v1/subscriptions/physical-consultations/book/');
+      debugPrint('===============================================');
+      debugPrint('');
+
+      final response = await _apiService.post(
+        '/api/v1/subscriptions/physical-consultations/book/',
+        data: data,
+      );
+
+      debugPrint('📥 Create booking response: ${response.statusCode}');
+      debugPrint('📥 Response data: ${response.data}');
+      
+      // Debug: Print booking details
+      if (response.data is Map) {
+        final bookingData = response.data['booking'];
+        if (bookingData != null) {
+          debugPrint('📥 Booking data:');
+          debugPrint('   total_amount: ${bookingData['total_amount']}');
+          debugPrint('   platform_commission: ${bookingData['platform_commission']}');
+          debugPrint('   consultant_earnings: ${bookingData['consultant_earnings']}');
+        }
+        debugPrint('📥 payment_info: ${response.data['payment_info']}');
+      }
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return PhysicalBookingResponse.fromJson(response.data);
+      }
+
+      // Handle error response
+      if (response.data is Map) {
+        final errors = <String>[];
+        response.data.forEach((key, value) {
+          if (value is List) {
+            errors.addAll(value.map((e) => '$key: $e'));
+          } else {
+            errors.add('$key: $value');
+          }
+        });
+        return PhysicalBookingResponse(
+          success: false,
+          message: errors.join(', '),
+        );
+      }
+
+      return PhysicalBookingResponse(
+        success: false,
+        message: 'Failed to create booking: ${response.statusCode}',
+      );
+    } catch (e) {
+      debugPrint('❌ Error creating physical booking: $e');
+      return PhysicalBookingResponse(
+        success: false,
+        message: 'Error: $e',
+      );
+    }
+  }
+
+  /// Step 2: Initiate payment for a booking via Unified Payment API
+  /// API: POST /api/v1/subscriptions/unified-payments/initiate/
+  Future<Map<String, dynamic>?> initiateBookingPayment({
+    required int bookingId,
+    required String phoneNumber,
+    String provider = 'Mpesa',
+  }) async {
+    try {
+      debugPrint('📤 Initiating payment for booking $bookingId');
+
+      final data = <String, dynamic>{
+        'payment_category': 'consultation',
+        'item_id': bookingId,
+        'phone_number': phoneNumber,
+        'payment_method': 'mobile_money',
+        'provider': provider,
+      };
+
+      debugPrint('📤 Payment request: $data');
+
+      final response = await _apiService.post(
+        '/api/v1/subscriptions/unified-payments/initiate/',
+        data: data,
+      );
+
+      debugPrint('📥 Payment response: ${response.statusCode}');
+      debugPrint('📥 Response data: ${response.data}');
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return {
+          'success': true,
+          ...response.data,
+        };
+      }
+
+      return {
+        'success': false,
+        'error': response.data['error'] ?? 'Payment initiation failed',
+      };
+    } catch (e) {
+      debugPrint('❌ Error initiating payment: $e');
+      return {
+        'success': false,
+        'error': 'Error: $e',
+      };
+    }
+  }
+
+  /// Check booking status
+  /// API: GET /api/v1/subscriptions/physical-consultations/{booking_id}/
+  Future<String> checkBookingStatus(int bookingId) async {
+    try {
+      final response = await _apiService.get(
+        '/api/v1/subscriptions/physical-consultations/$bookingId/',
+      );
+
+      if (response.statusCode == 200 && response.data is Map) {
+        return response.data['status'] ?? 'pending';
+      }
+      return 'pending';
+    } catch (e) {
+      debugPrint('❌ Error checking booking status: $e');
+      return 'pending';
+    }
+  }
+}
+
+/// Response from creating a physical booking
+class PhysicalBookingResponse {
+  final bool success;
+  final String? message;
+  final PhysicalBooking? booking;
+  final Map<String, dynamic>? paymentInfo;
+  final Map<String, dynamic>? nextStep;
+
+  PhysicalBookingResponse({
+    required this.success,
+    this.message,
+    this.booking,
+    this.paymentInfo,
+    this.nextStep,
+  });
+
+  factory PhysicalBookingResponse.fromJson(Map<String, dynamic> json) {
+    return PhysicalBookingResponse(
+      success: json['success'] ?? true,
+      message: json['message'],
+      booking: json['booking'] != null
+          ? PhysicalBooking.fromJson(json['booking'])
+          : null,
+      paymentInfo: json['payment_info'],
+      nextStep: json['next_step'],
+    );
+  }
+}
+
+/// Physical booking model
+class PhysicalBooking {
+  final int id;
+  final int client;
+  final int consultant;
+  final String bookingType;
+  final String status;
+  final DateTime? scheduledDate;
+  final int scheduledDurationMinutes;
+  final String totalAmount;
+  final String platformCommission;
+  final String consultantEarnings;
+  final String? meetingLocation;
+  final String? clientNotes;
+  final DateTime createdAt;
+
+  PhysicalBooking({
+    required this.id,
+    required this.client,
+    required this.consultant,
+    required this.bookingType,
+    required this.status,
+    this.scheduledDate,
+    required this.scheduledDurationMinutes,
+    required this.totalAmount,
+    required this.platformCommission,
+    required this.consultantEarnings,
+    this.meetingLocation,
+    this.clientNotes,
+    required this.createdAt,
+  });
+
+  factory PhysicalBooking.fromJson(Map<String, dynamic> json) {
+    return PhysicalBooking(
+      id: json['id'] ?? 0,
+      client: json['client'] ?? 0,
+      consultant: json['consultant'] ?? 0,
+      bookingType: json['booking_type'] ?? 'physical',
+      status: json['status'] ?? 'pending',
+      scheduledDate: json['scheduled_date'] != null
+          ? DateTime.tryParse(json['scheduled_date'])
+          : null,
+      scheduledDurationMinutes: json['scheduled_duration_minutes'] ?? 60,
+      totalAmount: json['total_amount']?.toString() ?? '0',
+      platformCommission: json['platform_commission']?.toString() ?? '0',
+      consultantEarnings: json['consultant_earnings']?.toString() ?? '0',
+      meetingLocation: json['meeting_location'],
+      clientNotes: json['client_notes'],
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : DateTime.now(),
+    );
   }
 }
 
@@ -594,6 +868,108 @@ class MyConsultationsResponse {
 
   // Legacy compatibility - map consultations to results
   List<ConsultationBooking> get results => consultations;
+}
+
+/// Response for client's own bookings (physical consultations)
+class MyBookingsResponse {
+  final int count;
+  final String? next;
+  final String? previous;
+  final List<ClientBooking> results;
+
+  MyBookingsResponse({
+    required this.count,
+    this.next,
+    this.previous,
+    required this.results,
+  });
+
+  factory MyBookingsResponse.fromJson(Map<String, dynamic> json) {
+    return MyBookingsResponse(
+      count: json['count'] ?? 0,
+      next: json['next'],
+      previous: json['previous'],
+      results: (json['results'] as List<dynamic>? ?? [])
+          .map((item) => ClientBooking.fromJson(item))
+          .toList(),
+    );
+  }
+
+  int get totalPages => (count / 20).ceil();
+}
+
+/// Booking model for client view
+class ClientBooking {
+  final int id;
+  final int clientId;
+  final Map<String, dynamic> clientDetails;
+  final int consultantId;
+  final Map<String, dynamic> consultantDetails;
+  final String bookingType;
+  final String status;
+  final DateTime? scheduledDate;
+  final int scheduledDurationMinutes;
+  final String totalAmount;
+  final String platformCommission;
+  final String consultantEarnings;
+  final String? meetingLocation;
+  final String? clientNotes;
+  final String? consultantNotes;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  ClientBooking({
+    required this.id,
+    required this.clientId,
+    required this.clientDetails,
+    required this.consultantId,
+    required this.consultantDetails,
+    required this.bookingType,
+    required this.status,
+    this.scheduledDate,
+    required this.scheduledDurationMinutes,
+    required this.totalAmount,
+    required this.platformCommission,
+    required this.consultantEarnings,
+    this.meetingLocation,
+    this.clientNotes,
+    this.consultantNotes,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory ClientBooking.fromJson(Map<String, dynamic> json) {
+    return ClientBooking(
+      id: json['id'] ?? 0,
+      clientId: json['client'] ?? 0,
+      clientDetails: json['client_details'] ?? {},
+      consultantId: json['consultant'] ?? 0,
+      consultantDetails: json['consultant_details'] ?? {},
+      bookingType: json['booking_type'] ?? 'physical',
+      status: json['status'] ?? 'pending',
+      scheduledDate: json['scheduled_date'] != null
+          ? DateTime.tryParse(json['scheduled_date'])
+          : null,
+      scheduledDurationMinutes: json['scheduled_duration_minutes'] ?? 60,
+      totalAmount: json['total_amount']?.toString() ?? '0',
+      platformCommission: json['platform_commission']?.toString() ?? '0',
+      consultantEarnings: json['consultant_earnings']?.toString() ?? '0',
+      meetingLocation: json['meeting_location'],
+      clientNotes: json['client_notes'],
+      consultantNotes: json['consultant_notes'],
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'])
+          : DateTime.now(),
+    );
+  }
+
+  // Convenience getters
+  String get consultantName => consultantDetails['full_name'] ?? 'Unknown';
+  String get consultantEmail => consultantDetails['email'] ?? '';
+  String get consultantPhone => consultantDetails['phone_number'] ?? '';
 }
 
 class ConsultationSummary {

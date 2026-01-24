@@ -45,6 +45,9 @@ class RegistrationData {
   String? employerInstitution;
   String? areaOfLaw;
 
+  // Citizen Fields
+  String? occupation; // Occupation/profession for citizens
+
   RegistrationData({
     this.email = '',
     this.password = '',
@@ -82,6 +85,7 @@ class RegistrationData {
     this.qualification,
     this.employerInstitution,
     this.areaOfLaw,
+    this.occupation,
   });
 
   // Helper method to convert role name to role ID
@@ -168,6 +172,9 @@ class RegistrationData {
     if (employerInstitution?.isNotEmpty == true)
       data['employer_institution'] = employerInstitution;
     if (areaOfLaw?.isNotEmpty == true) data['area_of_law'] = areaOfLaw;
+
+    // Citizen fields
+    if (occupation?.isNotEmpty == true) data['occupation'] = occupation;
 
     return data;
   }

@@ -12,7 +12,7 @@ class MainNavigationController extends GetxController {
   // Navigate to specific page programmatically
   void navigateToHome() => changePage(0);
   void navigateToPosts() => changePage(1);
-  void navigateToHelp() => changePage(2);
-  void navigateToBookmarks() => changePage(3);
-  void navigateToMessages() => changePage(4);
+  void navigateToBookings() => changePage(2);
+  void navigateToHelp() => changePage(3);
+  void navigateToBookmarks() => changePage(4);
 }

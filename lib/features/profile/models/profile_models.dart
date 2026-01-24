@@ -228,6 +228,7 @@ class SubscriptionInfo {
 // Subscription permissions
 class SubscriptionPermissions {
   final bool isActive;
+  final bool isTrial;
   final bool canAccessLegalLibrary;
   final bool canAskQuestions;
   final int questionsLimit;
@@ -242,12 +243,35 @@ class SubscriptionPermissions {
   final bool canPurchaseDocuments;
   final bool canPurchaseLearningMaterials;
 
+  // Forum permissions
+  final bool canCommentForum;
+  final bool canReplyForum;
+
+  // Feature access permissions
+  final bool canDownloadTemplates;
+  final bool canTalkToLawyer;
+  final bool canAskQuestion;
+  final bool canBookConsultation;
+
+  // Legal education
+  final int legalEducationLimit;
+  final int legalEducationReads;
+  final double legalEducationRemaining;
+
   // Role-specific permissions
   final bool canViewTalkToLawyer;
   final bool canViewNearbyLawyers;
+  final bool canViewOwnConsultations;
+
+  // User info
+  final String userRole;
+  final bool isProfessional;
+  final int daysRemaining;
+  final String endDate;
 
   SubscriptionPermissions({
     required this.isActive,
+    required this.isTrial,
     required this.canAccessLegalLibrary,
     required this.canAskQuestions,
     required this.questionsLimit,
@@ -261,13 +285,28 @@ class SubscriptionPermissions {
     required this.canPurchaseConsultations,
     required this.canPurchaseDocuments,
     required this.canPurchaseLearningMaterials,
+    required this.canCommentForum,
+    required this.canReplyForum,
+    required this.canDownloadTemplates,
+    required this.canTalkToLawyer,
+    required this.canAskQuestion,
+    required this.canBookConsultation,
+    required this.legalEducationLimit,
+    required this.legalEducationReads,
+    required this.legalEducationRemaining,
     required this.canViewTalkToLawyer,
     required this.canViewNearbyLawyers,
+    required this.canViewOwnConsultations,
+    required this.userRole,
+    required this.isProfessional,
+    required this.daysRemaining,
+    required this.endDate,
   });
 
   factory SubscriptionPermissions.fromJson(Map<String, dynamic> json) {
     return SubscriptionPermissions(
       isActive: json['is_active'] ?? false,
+      isTrial: json['is_trial'] ?? false,
       canAccessLegalLibrary: json['can_access_legal_library'] ?? false,
       canAskQuestions: json['can_ask_questions'] ?? false,
       questionsLimit: json['questions_limit'] ?? 0,
@@ -282,8 +321,23 @@ class SubscriptionPermissions {
       canPurchaseDocuments: json['can_purchase_documents'] ?? false,
       canPurchaseLearningMaterials:
           json['can_purchase_learning_materials'] ?? false,
-      canViewTalkToLawyer: json['can_view_talk_to_lawyer'] ?? true,
+      canCommentForum: json['can_comment_forum'] ?? false,
+      canReplyForum: json['can_reply_forum'] ?? false,
+      canDownloadTemplates: json['can_download_templates'] ?? false,
+      canTalkToLawyer: json['can_talk_to_lawyer'] ?? false,
+      canAskQuestion: json['can_ask_question'] ?? false,
+      canBookConsultation: json['can_book_consultation'] ?? false,
+      legalEducationLimit: json['legal_education_limit'] ?? 0,
+      legalEducationReads: json['legal_education_reads'] ?? 0,
+      legalEducationRemaining:
+          (json['legal_education_remaining'] ?? 0).toDouble(),
+      canViewTalkToLawyer: json['can_view_talk_to_lawyer'] ?? false,
       canViewNearbyLawyers: json['can_view_nearby_lawyers'] ?? false,
+      canViewOwnConsultations: json['can_view_own_consultations'] ?? false,
+      userRole: json['user_role'] ?? '',
+      isProfessional: json['is_professional'] ?? false,
+      daysRemaining: json['days_remaining'] ?? 0,
+      endDate: json['end_date'] ?? '',
     );
   }
 }

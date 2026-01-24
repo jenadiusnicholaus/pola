@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/question_models.dart';
 import '../services/question_service.dart';
+import '../../../services/permission_service.dart';
 
 class QuestionController extends GetxController {
   final QuestionService _service = QuestionService();
@@ -98,7 +99,32 @@ class QuestionController extends GetxController {
   Future<bool> askQuestion({
     required String questionText,
     int? materialId,
+    BuildContext? context,
   }) async {
+    // Check permission to ask questions
+    try {
+      final permissionService = Get.find<PermissionService>();
+      if (!permissionService.canAccess(PermissionFeature.askQuestions)) {
+        final message = permissionService.getPermissionDeniedMessage(
+            PermissionFeature.askQuestions);
+        Get.snackbar(
+          'Upgrade Required',
+          message,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 4),
+          mainButton: TextButton(
+            onPressed: () => Get.toNamed('/subscription'),
+            child: const Text('Upgrade', style: TextStyle(color: Colors.white)),
+          ),
+        );
+        return false;
+      }
+    } catch (e) {
+      debugPrint('⚠️ Permission check failed: $e');
+    }
+
     try {
       isSubmitting.value = true;
       error.value = '';

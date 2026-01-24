@@ -131,7 +131,7 @@ class ProfileHeader extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      profile.displayRole,
+                      _getDisplayRole(),
                       style: TextStyle(
                         color: theme.colorScheme.onPrimaryContainer,
                         fontWeight: FontWeight.w600,
@@ -236,6 +236,28 @@ class ProfileHeader extends StatelessWidget {
       return parts[0].isNotEmpty ? parts[0][0].toUpperCase() : 'U';
     }
     return '${parts[0][0]}${parts[parts.length - 1][0]}'.toUpperCase();
+  }
+
+  /// Returns the display role with fallback if empty
+  String _getDisplayRole() {
+    // Try displayRole first
+    if (profile.displayRole.isNotEmpty) {
+      return profile.displayRole;
+    }
+
+    // Fallback to formatting roleName
+    final roleName = profile.userRole.roleName;
+    if (roleName.isEmpty) {
+      return 'User';
+    }
+
+    // Convert role_name to display format (e.g., "law_student" -> "Law Student")
+    return roleName
+        .split('_')
+        .map((word) => word.isNotEmpty
+            ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
+            : '')
+        .join(' ');
   }
 
   void _showImageSourceDialog(BuildContext context) {

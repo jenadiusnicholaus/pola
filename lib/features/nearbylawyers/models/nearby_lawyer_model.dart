@@ -48,6 +48,12 @@ class NearbyLawyer {
   });
 
   factory NearbyLawyer.fromJson(Map<String, dynamic> json) {
+    // Debug logging to see what IDs are coming from API
+    print('🗺️ NearbyLawyer parsing:');
+    print('   Name: ${json['user_details']?['full_name']}');
+    print('   json[id] (profile ID): ${json['id']}');
+    print('   json[user] (user ID): ${json['user']}');
+    
     return NearbyLawyer(
       id: json['id'],
       userId: json['user'],

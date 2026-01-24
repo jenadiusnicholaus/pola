@@ -4,6 +4,8 @@ import '../controllers/nearby_lawyers_controller.dart';
 import '../models/nearby_lawyer_model.dart';
 import '../../calling_booking/models/consultant_models.dart' as calling;
 import '../../../widgets/profile_avatar.dart';
+import '../../../services/permission_service.dart';
+import '../../../utils/navigation_helper.dart';
 
 class NearbyLawyersScreen extends StatelessWidget {
   const NearbyLawyersScreen({super.key});
@@ -252,6 +254,12 @@ class NearbyLawyersScreen extends StatelessWidget {
   }
 
   static calling.Consultant _convertToConsultant(NearbyLawyer lawyer) {
+    debugPrint('🔄 Converting NearbyLawyer to Consultant:');
+    debugPrint('   lawyer.id (profile ID): ${lawyer.id}');
+    debugPrint('   lawyer.userId: ${lawyer.userId}');
+    debugPrint('   lawyer.userDetails.id: ${lawyer.userDetails.id}');
+    debugPrint('   lawyer.name: ${lawyer.userDetails.fullName}');
+    
     return calling.Consultant(
       id: lawyer.id,
       userDetails: calling.UserDetails(
@@ -569,7 +577,7 @@ class _LawyerCard extends StatelessWidget {
                     // Call button - only show if mobile consultations offered
                     if (lawyer.offersMobileConsultations) ...[
                       OutlinedButton.icon(
-                        onPressed: () => _callLawyer(lawyer),
+                        onPressed: () => _callLawyer(context, lawyer),
                         icon: Icon(Icons.phone, size: 15),
                         label: Text('Call',
                             style: TextStyle(
@@ -587,10 +595,11 @@ class _LawyerCard extends StatelessWidget {
                       ),
                       SizedBox(width: 8),
                     ],
-                    // Book button - only show if physical consultations offered
-                    if (lawyer.offersPhysicalConsultations) ...[
+                    // Book button - only show for LAW FIRMS that offer physical consultations
+                    if (lawyer.offersPhysicalConsultations &&
+                        lawyer.consultantType.toLowerCase() == 'law_firm') ...[
                       OutlinedButton.icon(
-                        onPressed: () => _bookConsultation(lawyer),
+                        onPressed: () => _bookConsultation(context, lawyer),
                         icon: Icon(Icons.calendar_today,
                             size: 15, color: theme.colorScheme.primary),
                         label: Text('Book',
@@ -619,12 +628,24 @@ class _LawyerCard extends StatelessWidget {
     );
   }
 
-  void _callLawyer(NearbyLawyer lawyer) async {
+  void _callLawyer(BuildContext context, NearbyLawyer lawyer) async {
+    // Check permission to talk to lawyer
+    if (!NavigationHelper.checkPermissionOrShowUpgrade(
+        context, PermissionFeature.talkToLawyer)) {
+      return;
+    }
+
     final consultant = NearbyLawyersScreen._convertToConsultant(lawyer);
     Get.toNamed('/call', arguments: {'consultant': consultant});
   }
 
-  void _bookConsultation(NearbyLawyer lawyer) {
+  void _bookConsultation(BuildContext context, NearbyLawyer lawyer) {
+    // Check permission to book consultation
+    if (!NavigationHelper.checkPermissionOrShowUpgrade(
+        context, PermissionFeature.bookConsultation)) {
+      return;
+    }
+
     final consultant = NearbyLawyersScreen._convertToConsultant(lawyer);
     // Book button is for physical consultations
     Get.toNamed('/book-consultation', arguments: {

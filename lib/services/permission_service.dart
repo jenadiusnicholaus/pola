@@ -61,6 +61,15 @@ class PermissionService extends GetxService {
 
   /// Check if user is a professional (advocate, lawyer, paralegal, law_firm)
   bool get isProfessional {
+    // Use backend permission if available
+    try {
+      if (permissions != null) {
+        return permissions!.isProfessional;
+      }
+    } catch (e) {
+      debugPrint('⚠️ Error checking isProfessional from permissions: $e');
+    }
+    // Fallback to role check
     final role = userRoleName?.toLowerCase();
     if (role == null) return false;
     return role == 'advocate' ||
@@ -71,9 +80,7 @@ class PermissionService extends GetxService {
 
   /// Check if user is a client (citizen, law_student, lecturer)
   bool get isClient {
-    final role = userRoleName?.toLowerCase();
-    if (role == null) return false;
-    return role == 'citizen' || role == 'law_student' || role == 'lecturer';
+    return !isProfessional;
   }
 
   // ============ Global CRUD Permissions ============
@@ -173,49 +180,102 @@ class PermissionService extends GetxService {
   bool get canReceiveLegalUpdates =>
       permissions?.canReceiveLegalUpdates ?? false;
 
+  // ============ Forum Permissions ============
+
   /// Check if user can access forum
   bool get canAccessForum => permissions?.canAccessForum ?? false;
 
+  /// Check if user can comment on forum posts
+  bool get canCommentForum => permissions?.canCommentForum ?? false;
+
+  /// Check if user can reply to forum posts
+  bool get canReplyForum => permissions?.canReplyForum ?? false;
+
   /// Check if user can access student hub
   bool get canAccessStudentHub {
-    // Professionals cannot access student hub
-    if (isProfessional) return false;
-
-    // Students and lecturers need PAID subscription
-    final role = userRoleName?.toLowerCase();
-    if (role == 'law_student' || role == 'lecturer') {
-      // Must have active paid subscription (not trial)
-      return isSubscriptionActive &&
-          !isTrialSubscription &&
-          (permissions?.canAccessStudentHub ?? false);
-    }
-
-    // Other clients with permission
+    // Use backend permission directly
     return permissions?.canAccessStudentHub ?? false;
   }
+
+  // ============ Legal Education Permissions ============
+
+  /// Get legal education read limit
+  int get legalEducationLimit => permissions?.legalEducationLimit ?? 0;
+
+  /// Get current legal education reads count
+  int get legalEducationReads => permissions?.legalEducationReads ?? 0;
+
+  /// Get remaining legal education reads
+  double get legalEducationRemaining =>
+      permissions?.legalEducationRemaining ?? 0;
+
+  /// Check if user has legal education reads remaining
+  bool get hasLegalEducationRemaining => legalEducationRemaining > 0;
+
+  /// Check if user can read legal education content
+  bool get canReadLegalEducation {
+    // If limit is 0, unlimited access (premium)
+    if (legalEducationLimit == 0 && isSubscriptionActive && !isTrialSubscription) {
+      return true;
+    }
+    // Otherwise check remaining reads
+    return hasLegalEducationRemaining;
+  }
+
+  // ============ Template & Consultation Permissions ============
+
+  /// Check if user can download templates
+  bool get canDownloadTemplates => permissions?.canDownloadTemplates ?? false;
+
+  /// Check if user can talk to lawyer (action permission)
+  bool get canTalkToLawyerAction => permissions?.canTalkToLawyer ?? false;
+
+  /// Check if user can ask question (action permission)
+  bool get canAskQuestionAction => permissions?.canAskQuestion ?? false;
+
+  /// Check if user can book consultation
+  bool get canBookConsultation => permissions?.canBookConsultation ?? false;
+
+  /// Check if user can view own consultations
+  bool get canViewOwnConsultations =>
+      permissions?.canViewOwnConsultations ?? false;
 
   // ============ Role-Specific Permissions ============
 
   /// Check if user can view "Talk to Lawyer" page
-  /// Professionals (lawyers) cannot view this - they ARE the lawyers
-  /// Clients can view this - it's a PUBLIC page
+  /// Uses backend permission directly
   bool get canViewTalkToLawyer {
-    // Professionals cannot view (they are the service providers)
-    if (isProfessional) return false;
+    try {
+      // Professionals cannot view (they are the service providers)
+      if (isProfessional) return false;
 
-    // Clients can always view (PUBLIC page)
-    return permissions?.canViewTalkToLawyer ?? true;
+      // Use backend permission
+      return permissions?.canViewTalkToLawyer ?? false;
+    } catch (e) {
+      debugPrint('⚠️ Error checking canViewTalkToLawyer: $e');
+      return false;
+    }
   }
 
-  /// Check if user can view "Nearby Lawyers" directory
-  /// Professionals cannot view (they are in the directory)
-  /// Clients need active subscription to view
+  /// Check if user can view "Nearby Lawyers" service in the menu
+  /// Uses backend permission directly
   bool get canViewNearbyLawyers {
-    // Professionals cannot view (they are the service providers)
-    if (isProfessional) return false;
+    try {
+      // Professionals cannot view (they are the service providers)
+      if (isProfessional) return false;
 
-    // Clients need active subscription
-    return isSubscriptionActive && (permissions?.canViewNearbyLawyers ?? false);
+      // Use backend permission
+      return permissions?.canViewNearbyLawyers ?? false;
+    } catch (e) {
+      debugPrint('⚠️ Error checking canViewNearbyLawyers: $e');
+      return false;
+    }
+  }
+
+  /// Check if user can actually ACCESS nearby lawyers feature (requires subscription)
+  bool get canAccessNearbyLawyers {
+    if (isProfessional) return false;
+    return permissions?.canViewNearbyLawyers ?? false;
   }
 
   // ============ Purchase Permissions ============
@@ -241,32 +301,36 @@ class PermissionService extends GetxService {
       return false;
     }
 
-    // Check both subscription.isActive AND permissions.isActive
+    // Primary check: subscription.isActive from backend
     final subscriptionActive = sub.isActive;
-    final permissionsActive = sub.permissions.isActive;
-
-    // Both should be true for active subscription
-    final result = subscriptionActive && permissionsActive;
+    
+    // Secondary check: status field
+    final statusActive = sub.status.toLowerCase() == 'active' || 
+                         sub.status.toLowerCase() == 'completed';
+    
+    // Consider active if either isActive flag is true OR status is active
+    final result = subscriptionActive || statusActive;
 
     if (kDebugMode) {
-      if (!result) {
-        debugPrint(
-            '🔐 Subscription inactive: sub.isActive=$subscriptionActive, permissions.isActive=$permissionsActive');
-        debugPrint(
-            '   Plan: ${sub.planName}, Status: ${sub.status}, Days: ${sub.daysRemaining}');
-      } else {
-        debugPrint('✅ Subscription is ACTIVE: ${sub.planName}');
-      }
+      debugPrint('🔐 Subscription check:');
+      debugPrint('   Plan: ${sub.planName}');
+      debugPrint('   Status: ${sub.status}');
+      debugPrint('   isActive flag: $subscriptionActive');
+      debugPrint('   Status active: $statusActive');
+      debugPrint('   Days Remaining: ${sub.daysRemaining}');
+      debugPrint('   Result: ${result ? "✅ ACTIVE" : "❌ INACTIVE"}');
     }
 
     return result;
   }
 
   /// Check if subscription is trial
-  bool get isTrialSubscription => subscription?.isTrial ?? false;
+  bool get isTrialSubscription =>
+      subscription?.isTrial ?? permissions?.isTrial ?? false;
 
   /// Get days remaining in subscription
-  int get daysRemaining => subscription?.daysRemaining ?? 0;
+  int get daysRemaining =>
+      permissions?.daysRemaining ?? subscription?.daysRemaining ?? 0;
 
   /// Check if subscription is expiring soon (less than 7 days)
   bool get isExpiringSoon => daysRemaining > 0 && daysRemaining <= 7;
@@ -298,6 +362,10 @@ class PermissionService extends GetxService {
         return canReceiveLegalUpdates;
       case PermissionFeature.forum:
         return canAccessForum;
+      case PermissionFeature.forumComment:
+        return canCommentForum;
+      case PermissionFeature.forumReply:
+        return canReplyForum;
       case PermissionFeature.studentHub:
         return canAccessStudentHub;
       case PermissionFeature.purchaseConsultations:
@@ -307,9 +375,15 @@ class PermissionService extends GetxService {
       case PermissionFeature.purchaseLearningMaterials:
         return canPurchaseLearningMaterials;
       case PermissionFeature.talkToLawyer:
-        return canViewTalkToLawyer;
+        return canViewTalkToLawyer && canTalkToLawyerAction;
       case PermissionFeature.nearbyLawyers:
         return canViewNearbyLawyers;
+      case PermissionFeature.downloadTemplates:
+        return canDownloadTemplates;
+      case PermissionFeature.bookConsultation:
+        return canBookConsultation;
+      case PermissionFeature.legalEducation:
+        return canReadLegalEducation;
     }
   }
 
@@ -317,6 +391,28 @@ class PermissionService extends GetxService {
   String getPermissionDeniedMessage(PermissionFeature feature) {
     if (!isSubscriptionActive) {
       return 'You need an active subscription to access this feature. Please subscribe to continue.';
+    }
+
+    if (isTrialSubscription) {
+      // Trial-specific messages
+      switch (feature) {
+        case PermissionFeature.talkToLawyer:
+          return 'Talk to Lawyer is not available during your free trial. Upgrade to a paid plan to connect with legal professionals.';
+        case PermissionFeature.bookConsultation:
+          return 'Booking consultations is not available during your free trial. Upgrade to schedule appointments with lawyers.';
+        case PermissionFeature.downloadTemplates:
+          return 'Template downloads are not available during your free trial. Upgrade to download legal document templates.';
+        case PermissionFeature.legalEducation:
+          if (!hasLegalEducationRemaining) {
+            return 'You have reached your free trial limit of $legalEducationLimit legal education reads. Upgrade for unlimited access.';
+          }
+          break;
+        case PermissionFeature.forumComment:
+        case PermissionFeature.forumReply:
+          return 'Commenting on forum posts is limited during your free trial. Upgrade to participate in discussions.';
+        default:
+          break;
+      }
     }
 
     switch (feature) {
@@ -342,6 +438,10 @@ class PermissionService extends GetxService {
         return 'Your current plan does not include legal updates. Upgrade to stay informed about legal changes.';
       case PermissionFeature.forum:
         return 'Your current plan does not include forum access. Upgrade to join discussions with legal professionals.';
+      case PermissionFeature.forumComment:
+        return 'Your current plan does not allow commenting on forum posts. Upgrade to participate in discussions.';
+      case PermissionFeature.forumReply:
+        return 'Your current plan does not allow replying to forum posts. Upgrade to participate in discussions.';
       case PermissionFeature.studentHub:
         if (isProfessional) {
           return 'Student Hub is not available for legal professionals. This feature is designed for students and lecturers.';
@@ -351,18 +451,27 @@ class PermissionService extends GetxService {
         if (isProfessional) {
           return 'As a legal professional, you are the service provider. This page is for clients seeking legal assistance.';
         }
-        return 'Talk to Lawyer feature is available to all clients.';
+        return 'Your current plan does not include Talk to Lawyer. Upgrade to connect with legal professionals.';
       case PermissionFeature.nearbyLawyers:
         if (isProfessional) {
           return 'As a legal professional, you are listed in the directory. This feature is for clients seeking lawyers.';
         }
-        return 'You need an active subscription to view nearby lawyers. Upgrade to find legal professionals in your area.';
+        return 'Your current plan does not include viewing nearby lawyers. Upgrade to find legal professionals in your area.';
       case PermissionFeature.purchaseConsultations:
         return 'Your current plan does not allow purchasing consultations. Upgrade to book consultations with lawyers.';
       case PermissionFeature.purchaseDocuments:
         return 'Your current plan does not allow purchasing documents. Upgrade to access premium legal documents.';
       case PermissionFeature.purchaseLearningMaterials:
         return 'Your current plan does not allow purchasing learning materials. Upgrade to access educational content.';
+      case PermissionFeature.downloadTemplates:
+        return 'Your current plan does not include template downloads. Upgrade to download legal document templates.';
+      case PermissionFeature.bookConsultation:
+        return 'Your current plan does not include booking consultations. Upgrade to schedule appointments with lawyers.';
+      case PermissionFeature.legalEducation:
+        if (!hasLegalEducationRemaining) {
+          return 'You have used all your legal education reads for this period. Upgrade for unlimited access.';
+        }
+        return 'Your current plan does not include legal education content.';
     }
   }
 
@@ -391,6 +500,14 @@ class PermissionService extends GetxService {
       return true;
     }
 
+    // Show prompt for legal education if running low (less than 2 remaining)
+    if (feature == PermissionFeature.legalEducation &&
+        legalEducationLimit > 0 &&
+        legalEducationRemaining > 0 &&
+        legalEducationRemaining <= 2) {
+      return true;
+    }
+
     return false;
   }
 
@@ -406,6 +523,16 @@ class PermissionService extends GetxService {
   String get documentsQuotaText {
     if (!canGenerateDocuments) return 'Not available';
     return '$documentsRemaining/$freeDocumentsLimit remaining';
+  }
+
+  /// Get quota display text for legal education
+  String get legalEducationQuotaText {
+    // Premium users have unlimited access
+    if (legalEducationLimit == 0 && isSubscriptionActive && !isTrialSubscription) {
+      return 'Unlimited';
+    }
+    if (legalEducationLimit == 0) return 'Not available';
+    return '${legalEducationRemaining.toInt()}/$legalEducationLimit remaining';
   }
 
   /// Get subscription status badge text
@@ -453,7 +580,7 @@ class PermissionService extends GetxService {
     debugPrint('   Days Remaining: $daysRemaining');
     debugPrint('');
     debugPrint(
-        '   � Role: $userRoleName (Professional: $isProfessional, Client: $isClient)');
+        '   👤 Role: $userRoleName (Professional: $isProfessional, Client: $isClient)');
     debugPrint('');
     debugPrint('   📚 Legal Library: $canAccessLegalLibrary');
     debugPrint('   ❓ Ask Questions: $canAskQuestions ($questionsQuotaText)');
@@ -461,9 +588,15 @@ class PermissionService extends GetxService {
         '   📄 Generate Documents: $canGenerateDocuments ($documentsQuotaText)');
     debugPrint('   📰 Legal Updates: $canReceiveLegalUpdates');
     debugPrint('   💬 Forum Access: $canAccessForum');
+    debugPrint('   💬 Forum Comment: $canCommentForum');
+    debugPrint('   💬 Forum Reply: $canReplyForum');
     debugPrint('   🎓 Student Hub: $canAccessStudentHub');
     debugPrint('   👨‍⚖️ View Talk to Lawyer: $canViewTalkToLawyer');
+    debugPrint('   👨‍⚖️ Can Talk to Lawyer: $canTalkToLawyerAction');
     debugPrint('   📍 View Nearby Lawyers: $canViewNearbyLawyers');
+    debugPrint('   📥 Download Templates: $canDownloadTemplates');
+    debugPrint('   📅 Book Consultation: $canBookConsultation');
+    debugPrint('   📖 Legal Education: $canReadLegalEducation ($legalEducationReads/$legalEducationLimit used)');
     debugPrint('   📞 Purchase Consultations: $canPurchaseConsultations');
     debugPrint('   📋 Purchase Documents: $canPurchaseDocuments');
     debugPrint(
@@ -495,12 +628,17 @@ enum PermissionFeature {
   generateDocuments,
   legalUpdates,
   forum,
+  forumComment,
+  forumReply,
   studentHub,
   purchaseConsultations,
   purchaseDocuments,
   purchaseLearningMaterials,
   talkToLawyer,
   nearbyLawyers,
+  downloadTemplates,
+  bookConsultation,
+  legalEducation,
 }
 
 /// Enum for global user permissions (CRUD operations)

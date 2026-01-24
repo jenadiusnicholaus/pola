@@ -21,6 +21,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
   bool isLoading = true;
   String? errorMessage;
   String? currentPlanType;
+  bool isSubscriptionActive = false;
 
   @override
   void initState() {
@@ -34,7 +35,8 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
       final profile = _profileService.currentProfile;
       if (profile != null) {
         currentPlanType = profile.subscription.planType;
-        debugPrint('📋 Current subscription plan type: $currentPlanType');
+        isSubscriptionActive = profile.subscription.isActive;
+        debugPrint('📋 Current subscription plan type: $currentPlanType, active: $isSubscriptionActive');
       }
     } catch (e) {
       debugPrint('⚠️ Error loading current subscription: $e');
@@ -124,16 +126,19 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
                       itemCount: plans.length,
                       itemBuilder: (context, index) {
                         final plan = plans[index];
-                        return _buildPlanCard(plan, theme);
+                        return _buildPlanCard(plan, theme, isSubscriptionActive);
                       },
                     ),
     );
   }
 
-  Widget _buildPlanCard(SubscriptionPlan plan, ThemeData theme) {
+  Widget _buildPlanCard(SubscriptionPlan plan, ThemeData theme, bool isSubscriptionActive) {
     final isPopular = plan.isPopular;
     final isDark = theme.brightness == Brightness.dark;
     final isCurrentPlan = plan.planType == currentPlanType;
+    // Allow resubscribing if subscription is expired (not active)
+    final canSubscribe = !isCurrentPlan || !isSubscriptionActive;
+    final isExpiredCurrentPlan = isCurrentPlan && !isSubscriptionActive;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -141,7 +146,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: isCurrentPlan
-            ? const BorderSide(color: Colors.green, width: 2)
+            ? BorderSide(color: isExpiredCurrentPlan ? Colors.red : Colors.green, width: 2)
             : (isPopular
                 ? const BorderSide(color: Colors.amber, width: 2)
                 : BorderSide.none),
@@ -155,21 +160,25 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: const BoxDecoration(
-                  color: Colors.green,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: isExpiredCurrentPlan ? Colors.red : Colors.green,
+                  borderRadius: const BorderRadius.only(
                     topRight: Radius.circular(14),
                     bottomLeft: Radius.circular(14),
                   ),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.check_circle, color: Colors.white, size: 16),
-                    SizedBox(width: 6),
+                    Icon(
+                      isExpiredCurrentPlan ? Icons.warning_amber : Icons.check_circle,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
                     Text(
-                      'CURRENT PLAN',
-                      style: TextStyle(
+                      isExpiredCurrentPlan ? 'EXPIRED' : 'CURRENT PLAN',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
@@ -332,36 +341,44 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
                   height: 50,
                   child: ElevatedButton(
                     onPressed:
-                        isCurrentPlan ? null : () => _handleSubscribe(plan),
+                        canSubscribe ? () => _handleSubscribe(plan) : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isCurrentPlan
+                      backgroundColor: !canSubscribe
                           ? Colors.grey.shade400
-                          : (isPopular
-                              ? Colors.amber
-                              : theme.colorScheme.primary),
-                      foregroundColor: isCurrentPlan
+                          : (isExpiredCurrentPlan
+                              ? Colors.red
+                              : (isPopular
+                                  ? Colors.amber
+                                  : theme.colorScheme.primary)),
+                      foregroundColor: !canSubscribe
                           ? Colors.grey.shade700
                           : (isPopular ? Colors.black : Colors.white),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      elevation: isCurrentPlan ? 0 : (isPopular ? 4 : 2),
+                      elevation: !canSubscribe ? 0 : (isPopular ? 4 : 2),
                       disabledBackgroundColor: Colors.grey.shade300,
                       disabledForegroundColor: Colors.grey.shade600,
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        if (isCurrentPlan) ...[
+                        if (!canSubscribe) ...[
                           const Icon(Icons.check_circle, size: 20),
                           const SizedBox(width: 8),
                         ],
+                        if (isExpiredCurrentPlan) ...[
+                          const Icon(Icons.refresh, size: 20),
+                          const SizedBox(width: 8),
+                        ],
                         Text(
-                          isCurrentPlan
+                          !canSubscribe
                               ? 'Current Plan'
-                              : (plan.price == 0
-                                  ? 'Start Free Trial'
-                                  : 'Subscribe Now'),
+                              : (isExpiredCurrentPlan
+                                  ? 'Renew Subscription'
+                                  : (plan.price == 0
+                                      ? 'Start Free Trial'
+                                      : 'Subscribe Now')),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,

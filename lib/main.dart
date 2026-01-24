@@ -325,7 +325,7 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Justice scale icon
-                    Text(
+                     const Text(
                       '⚖️',
                       style: TextStyle(
                         fontSize: 80,
