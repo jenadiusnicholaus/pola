@@ -1033,7 +1033,10 @@ class HubContentController extends GetxController {
 
   /// Add a new comment to a content item
   Future<void> addComment(int contentId,
-      {int? parentCommentId, String? customText, BuildContext? context}) async {
+      {int? parentCommentId,
+      String? customText,
+      BuildContext? context,
+      List<int>? mentionedUserIds}) async {
     // Check forum comment/reply permission
     try {
       final permissionService = Get.find<PermissionService>();
@@ -1075,6 +1078,7 @@ class HubContentController extends GetxController {
           'Adding comment - Content ID: $contentId, Parent ID: $parentCommentId');
       print('Comment text: "$commentText"');
       print('Is reply: ${parentCommentId != null}');
+      print('Mentioned user IDs: $mentionedUserIds');
 
       if (commentText.isEmpty) {
         Get.snackbar('Error', 'Comment cannot be empty');
@@ -1095,6 +1099,7 @@ class HubContentController extends GetxController {
         comment: commentText,
         hubType: hubType,
         parentCommentId: parentCommentId,
+        mentionedUserIds: mentionedUserIds ?? [],
       );
 
       final newComment = await _service.addComment(
@@ -1502,6 +1507,19 @@ class HubContentController extends GetxController {
       print('Error loading more comments: $e');
     } finally {
       isLoadingComments.value = false;
+    }
+  }
+
+  /// Search users for mentions
+  Future<List<Map<String, dynamic>>> searchUsersForMentions(String query) async {
+    try {
+      return await _service.searchUsersForMentions(
+        query: query,
+        hubType: hubType,
+      );
+    } catch (e) {
+      debugPrint('Error searching users for mentions: $e');
+      return [];
     }
   }
 }

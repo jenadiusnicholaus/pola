@@ -12,21 +12,21 @@ class DioConfig {
   static Dio initialize() {
     _dio = Dio();
 
-    // Use no timeout for sandbox/development, normal timeout for production
+    // Use very long timeout for sandbox/development, normal timeout for production
     final isSandbox =
         EnvironmentConfig.currentEnvironment != Environment.production;
     
-    // No timeout for sandbox (0 = no timeout), configured timeout for production
-    final connectTimeoutMs = isSandbox ? 0 : EnvironmentConfig.connectionTimeout;
-    final receiveTimeoutMs = isSandbox ? 0 : EnvironmentConfig.receiveTimeout;
-    final sendTimeoutMs = isSandbox ? 0 : EnvironmentConfig.sendTimeout;
+    // 5 minutes timeout for sandbox, configured timeout for production
+    final connectTimeoutMs = isSandbox ? 300000 : EnvironmentConfig.connectionTimeout;
+    final receiveTimeoutMs = isSandbox ? 300000 : EnvironmentConfig.receiveTimeout;
+    final sendTimeoutMs = isSandbox ? 300000 : EnvironmentConfig.sendTimeout;
 
     // Base configuration
     _dio.options = BaseOptions(
       baseUrl: EnvironmentConfig.baseUrl,
-      connectTimeout: connectTimeoutMs > 0 ? Duration(milliseconds: connectTimeoutMs) : null,
-      receiveTimeout: receiveTimeoutMs > 0 ? Duration(milliseconds: receiveTimeoutMs) : null,
-      sendTimeout: sendTimeoutMs > 0 ? Duration(milliseconds: sendTimeoutMs) : null,
+      connectTimeout: Duration(milliseconds: connectTimeoutMs),
+      receiveTimeout: Duration(milliseconds: receiveTimeoutMs),
+      sendTimeout: Duration(milliseconds: sendTimeoutMs),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',

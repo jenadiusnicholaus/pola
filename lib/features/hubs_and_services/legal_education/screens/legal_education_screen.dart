@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/legal_education_controller.dart';
 import '../widgets/common_sliver_widgets.dart';
-import '../widgets/professional_search_bar.dart';
 import '../widgets/topic_card.dart';
 import 'topic_materials_screen.dart';
+import 'legal_education_search_screen.dart';
 import '../../../../services/token_storage_service.dart';
 
 class LegalEducationScreen extends StatelessWidget {
@@ -70,7 +70,7 @@ class LegalEducationScreen extends StatelessWidget {
               parent: BouncingScrollPhysics(),
             ),
             slivers: [
-              // Simple compact SliverAppBar with search
+              // Simple compact SliverAppBar with search icon
               SliverAppBar(
                 title: const Text('Legal Education'),
                 backgroundColor: Theme.of(context).colorScheme.primary,
@@ -78,16 +78,18 @@ class LegalEducationScreen extends StatelessWidget {
                 floating: true,
                 pinned: true,
                 elevation: 0,
-                bottom: PreferredSize(
-                  preferredSize: const Size.fromHeight(60),
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                    child: ProfessionalSearchBar(
-                      controller: controller,
-                      hintText: 'Search legal topics...',
-                    ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.search),
+                    onPressed: () {
+                      Get.to(
+                        () => const LegalEducationSearchScreen(),
+                        transition: Transition.cupertino,
+                      );
+                    },
+                    tooltip: 'Search legal topics',
                   ),
-                ),
+                ],
               ),
 
               // Statistics Section

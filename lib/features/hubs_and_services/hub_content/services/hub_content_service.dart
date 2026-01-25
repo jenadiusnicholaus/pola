@@ -358,6 +358,32 @@ class HubContentService extends GetxService {
     }
   }
 
+  /// Search users for mentions
+  Future<List<Map<String, dynamic>>> searchUsersForMentions({
+    required String query,
+    required String hubType,
+  }) async {
+    try {
+      final response = await _apiService.get<Map<String, dynamic>>(
+        EnvironmentConfig.hubMentionSearchUrl,
+        queryParameters: {
+          'q': query,
+        },
+        options: _defaultOptions,
+      );
+
+      if (response.statusCode == 200) {
+        final results = response.data?['results'] as List<dynamic>? ?? [];
+        return results.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Failed to search users: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error searching users for mentions: $e');
+      return [];
+    }
+  }
+
   /// Get content analytics
   Future<ContentAnalytics> getContentAnalytics(int contentId) async {
     try {
@@ -794,3 +820,4 @@ class UpdateContentRequest {
     };
   }
 }
+

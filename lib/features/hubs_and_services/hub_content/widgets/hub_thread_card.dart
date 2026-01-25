@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/hub_content_models.dart';
 import '../controllers/hub_content_controller.dart';
+import '../utils/mention_parser.dart';
 import 'enhanced_comment_thread.dart';
+import 'mention_text_field.dart';
 
 class HubThreadCard extends StatefulWidget {
   final HubContentItem content;
@@ -23,6 +25,28 @@ class HubThreadCard extends StatefulWidget {
 class _HubThreadCardState extends State<HubThreadCard> {
   bool _isDescriptionExpanded = false;
   bool _hasTrackedView = false;
+
+  /// Extract unique users from existing comments to use as fallback suggestions
+  List<MentionSuggestion> _getFallbackUsersFromComments() {
+    final comments = widget.controller.contentComments[widget.content.id] ??
+        <HubComment>[].obs;
+    final Map<int, MentionSuggestion> uniqueUsers = {};
+
+    for (final comment in comments) {
+      final author = comment.author;
+      if (!uniqueUsers.containsKey(author.id) && author.username.isNotEmpty) {
+        uniqueUsers[author.id] = MentionSuggestion(
+          userId: author.id,
+          username: author.username,
+          displayName:
+              author.fullName.isNotEmpty ? author.fullName : author.username,
+          avatarUrl: author.avatarUrl,
+        );
+      }
+    }
+
+    return uniqueUsers.values.toList();
+  }
 
   @override
   void initState() {
@@ -682,6 +706,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
 
   void _showTikTokCommentsModal(BuildContext context) {
     final theme = Theme.of(context);
+    List<int> mentionedUserIds = []; // Track mentioned user IDs
 
     // Load comments when opening modal
     widget.controller.initializeCommentController(widget.content.id);
@@ -818,7 +843,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
                 }),
               ),
 
-              // Fixed comment input at bottom (TikTok style)
+              // Fixed comment input at bottom (Instagram/Twitter style)
               SafeArea(
                 top: false,
                 child: Container(
@@ -827,7 +852,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
                     color: theme.colorScheme.surface,
                     border: Border(
                       top: BorderSide(
-                        color: theme.colorScheme.outline.withOpacity(0.2),
+                        color: theme.colorScheme.outline.withOpacity(0.1),
                         width: 1,
                       ),
                     ),
@@ -836,48 +861,48 @@ class _HubThreadCardState extends State<HubThreadCard> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       // User avatar
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: CircleAvatar(
-                          radius: 16,
-                          backgroundColor: theme.colorScheme.primaryContainer,
-                          child: Icon(
-                            Icons.person_outline,
-                            size: 16,
-                            color: theme.colorScheme.onPrimaryContainer,
-                          ),
+                      CircleAvatar(
+                        radius: 16,
+                        backgroundColor: theme.colorScheme.primaryContainer,
+                        child: Icon(
+                          Icons.person_outline,
+                          size: 16,
+                          color: theme.colorScheme.onPrimaryContainer,
                         ),
                       ),
                       const SizedBox(width: 12),
 
-                      // Comment input
+                      // Comment input - clean and simple
                       Expanded(
                         child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: theme.colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: theme.colorScheme.outline.withOpacity(0.3),
-                            ),
                           ),
-                          child: TextField(
+                          child: MentionTextField(
                             controller: widget.controller
                                 .commentControllers[widget.content.id]!,
-                            decoration: InputDecoration(
-                              hintText: 'Add a comment...',
-                              hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurface
-                                    .withOpacity(0.5),
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                            ),
-                            maxLines: 5,
-                            minLines: 1,
-                            textInputAction: TextInputAction.newline,
+                            hintText:
+                                'Add a comment... use @ to mention someone',
+                            maxLines: 2,
+                            fallbackUsers: _getFallbackUsersFromComments(),
+                            onMentionsChanged: (userIds) {
+                              mentionedUserIds = userIds;
+                            },
+                            onSearchMentions: (query) async {
+                              debugPrint('🔍 Searching for: "$query"');
+                              final results = await widget.controller
+                                  .searchUsersForMentions(query);
+                              debugPrint('🔍 Found ${results.length} users');
+                              return results
+                                  .map((user) =>
+                                      MentionSuggestion.fromJson(user))
+                                  .toList();
+                            },
                           ),
                         ),
                       ),
@@ -893,8 +918,10 @@ class _HubThreadCardState extends State<HubThreadCard> {
                           child: GestureDetector(
                             onTap: isAdding
                                 ? null
-                                : () => widget.controller
-                                    .addComment(widget.content.id),
+                                : () => widget.controller.addComment(
+                                      widget.content.id,
+                                      mentionedUserIds: mentionedUserIds,
+                                    ),
                             child: Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
@@ -1056,20 +1083,25 @@ class _HubThreadCardState extends State<HubThreadCard> {
                       color: theme.colorScheme.outline.withOpacity(0.1),
                     ),
                   ),
-                  child: Text(
-                    comment.comment.isNotEmpty
-                        ? comment.comment
-                        : 'No comment text available',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      height: 1.4,
-                      color: comment.comment.isNotEmpty
-                          ? theme.colorScheme.onSurface
-                          : theme.colorScheme.onSurface.withOpacity(0.5),
-                      fontStyle: comment.comment.isNotEmpty
-                          ? FontStyle.normal
-                          : FontStyle.italic,
-                    ),
-                  ),
+                  child: comment.comment.isNotEmpty
+                      ? RichText(
+                          text: MentionParser.buildMentionTextSpan(
+                            text: comment.comment,
+                            baseStyle: theme.textTheme.bodyMedium!.copyWith(
+                              height: 1.4,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                            mentionColor: theme.colorScheme.primary,
+                          ),
+                        )
+                      : Text(
+                          'No comment text available',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            height: 1.4,
+                            color: theme.colorScheme.onSurface.withOpacity(0.5),
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
                 ),
 
                 const SizedBox(height: 8),
@@ -1190,35 +1222,18 @@ class _HubThreadCardState extends State<HubThreadCard> {
 
           // Comment input
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: theme.colorScheme.outline.withOpacity(0.3),
-                  width: 1,
-                ),
-              ),
-              child: TextField(
-                controller: textController,
-                decoration: InputDecoration(
-                  hintText: 'Share your thoughts...',
-                  hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
-                    fontStyle: FontStyle.italic,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  isDense: true,
-                ),
-                style: theme.textTheme.bodyMedium,
-                maxLines: 3,
-                minLines: 1,
-                textCapitalization: TextCapitalization.sentences,
-              ),
+            child: MentionTextField(
+              controller: textController,
+              hintText: 'Share your thoughts... Use @ to mention',
+              maxLines: 3,
+              fallbackUsers: _getFallbackUsersFromComments(),
+              onSearchMentions: (query) async {
+                final results =
+                    await widget.controller.searchUsersForMentions(query);
+                return results
+                    .map((user) => MentionSuggestion.fromJson(user))
+                    .toList();
+              },
             ),
           ),
 
@@ -1618,6 +1633,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
     final replyController = TextEditingController();
     final replyFocusNode = FocusNode();
     final ValueNotifier<bool> isSubmitting = ValueNotifier(false);
+    List<int> mentionedUserIds = []; // Track mentioned user IDs
 
     Get.bottomSheet(
       Container(
@@ -1773,10 +1789,21 @@ class _HubThreadCardState extends State<HubThreadCard> {
                                 ],
                               ),
                               const SizedBox(height: 8),
-                              Text(
-                                parentComment.comment,
-                                style:
-                                    Theme.of(Get.context!).textTheme.bodyMedium,
+                              RichText(
+                                text: MentionParser.buildMentionTextSpan(
+                                  text: parentComment.comment,
+                                  baseStyle: Theme.of(Get.context!)
+                                      .textTheme
+                                      .bodyMedium!
+                                      .copyWith(
+                                        color: Theme.of(Get.context!)
+                                            .colorScheme
+                                            .onSurface,
+                                      ),
+                                  mentionColor: Theme.of(Get.context!)
+                                      .colorScheme
+                                      .primary,
+                                ),
                                 maxLines: 3,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -1797,42 +1824,21 @@ class _HubThreadCardState extends State<HubThreadCard> {
                               ),
                         ),
                         const SizedBox(height: 8),
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Theme.of(Get.context!)
-                                  .colorScheme
-                                  .outline
-                                  .withOpacity(0.3),
-                            ),
-                          ),
-                          child: TextField(
-                            controller: replyController,
-                            focusNode: replyFocusNode,
-                            maxLines: 5,
-                            minLines: 3,
-                            autofocus: true,
-                            textCapitalization: TextCapitalization.sentences,
-                            decoration: InputDecoration(
-                              hintText: 'Write a thoughtful reply...',
-                              hintStyle: Theme.of(Get.context!)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color: Theme.of(Get.context!)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.all(16),
-                              counterText: '',
-                            ),
-                            maxLength: 1000,
-                            onChanged: (value) {
-                              // This will trigger rebuild to update character count
-                            },
-                          ),
+                        MentionTextField(
+                          controller: replyController,
+                          hintText: 'Write a reply... Use @ to mention',
+                          maxLines: 5,
+                          fallbackUsers: _getFallbackUsersFromComments(),
+                          onMentionsChanged: (userIds) {
+                            mentionedUserIds = userIds;
+                          },
+                          onSearchMentions: (query) async {
+                            final results = await widget.controller
+                                .searchUsersForMentions(query);
+                            return results
+                                .map((user) => MentionSuggestion.fromJson(user))
+                                .toList();
+                          },
                         ),
 
                         const SizedBox(height: 8),
@@ -1938,6 +1944,8 @@ class _HubThreadCardState extends State<HubThreadCard> {
                                               parentCommentId: parentComment.id,
                                               customText:
                                                   replyController.text.trim(),
+                                              mentionedUserIds:
+                                                  mentionedUserIds,
                                             );
                                             Get.back();
                                             Get.snackbar(

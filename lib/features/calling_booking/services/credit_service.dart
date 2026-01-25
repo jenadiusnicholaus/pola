@@ -6,23 +6,33 @@ import 'package:flutter/foundation.dart';
 class CreditService {
   final Dio _dio = DioConfig.instance;
 
-  /// Get available credit bundles
+  /// Get available credit bundles using check-credits API
+  /// This API returns bundles even when user has no credits (402 status)
   Future<List<CreditBundle>> getAvailableBundles() async {
     try {
-      debugPrint('📦 Fetching credit bundles...');
+      debugPrint('📦 Fetching credit bundles via check-credits...');
 
-      final response = await _dio.get(
-        '/api/v1/subscriptions/credit-bundles/',
+      // Use correct check-credits endpoint
+      final response = await _dio.post(
+        '/api/v1/subscriptions/call-history/check-credits/',
+        data: {'consultant_id': 1}, // Use a placeholder consultant ID
+        options: Options(
+          validateStatus: (status) => status != null && status < 500, // Accept 402
+        ),
       );
 
       debugPrint('📦 Bundles Response: ${response.statusCode}');
 
-      if (response.statusCode == 200) {
+      // Both 200 and 402 contain available_bundles
+      if (response.statusCode == 200 || response.statusCode == 402) {
         final data = response.data as Map<String, dynamic>;
-        final bundles = (data['bundles'] as List?)
-                ?.map((item) => CreditBundle.fromJson(item))
-                .toList() ??
-            [];
+        
+        // Get bundles from available_bundles in check-credits response
+        final bundlesList = data['available_bundles'] as List? ?? [];
+        
+        final bundles = bundlesList
+            .map((item) => CreditBundle.fromJson(item))
+            .toList();
 
         debugPrint('✅ Loaded ${bundles.length} credit bundles');
         return bundles;
@@ -40,8 +50,9 @@ class CreditService {
     try {
       debugPrint('💰 Fetching user credits...');
 
+      // Use correct my-credits endpoint
       final response = await _dio.get(
-        '/api/v1/subscriptions/my-credits/',
+        '/api/v1/subscriptions/call-history/my-credits/',
       );
 
       debugPrint('💰 Credits Response: ${response.statusCode}');
@@ -49,12 +60,13 @@ class CreditService {
       if (response.statusCode == 200) {
         final data = response.data as Map<String, dynamic>;
 
-        debugPrint('✅ User has ${data['total_minutes']} minutes');
+        final totalMinutes = data['total_minutes'] ?? 0;
+        debugPrint('✅ User has $totalMinutes minutes');
 
         return {
-          'totalMinutes': data['total_minutes'] ?? 0,
+          'totalMinutes': totalMinutes,
           'expiringMinutes': data['expiring_soon'] ?? 0,
-          'credits': (data['credits'] as List?)
+          'credits': (data['active_credits'] as List?)
                   ?.map((item) => CreditEntry.fromJson(item))
                   .toList() ??
               [],

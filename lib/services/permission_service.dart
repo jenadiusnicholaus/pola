@@ -78,6 +78,12 @@ class PermissionService extends GetxService {
         role == 'law_firm';
   }
 
+  /// Check if user is a law firm
+  bool get isLawFirm {
+    final role = userRoleName?.toLowerCase();
+    return role == 'law_firm';
+  }
+
   /// Check if user is a client (citizen, law_student, lecturer)
   bool get isClient {
     return !isProfessional;

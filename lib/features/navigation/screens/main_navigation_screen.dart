@@ -8,6 +8,7 @@ import '../../bookmarks/screens/bookmark_screen.dart';
 import '../../consultation/screens/my_bookings_screen.dart';
 import '../../consultation/screens/my_consultations_screen.dart';
 import '../../../services/permission_service.dart';
+import '../../profile/services/profile_service.dart';
 
 class MainNavigationScreen extends StatelessWidget {
   const MainNavigationScreen({super.key});
@@ -16,22 +17,25 @@ class MainNavigationScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.put(MainNavigationController());
     final permissionService = Get.find<PermissionService>();
+    final profileService = Get.find<ProfileService>();
 
-    // Determine which bookings screen to show based on role
-    final Widget bookingsScreen = permissionService.isProfessional
-        ? const MyConsultationsScreen()
-        : const MyBookingsScreen();
+    return Obx(() {
+      // React to profile changes
+      final profile = profileService.currentProfile;
+      final isProfessional = permissionService.isProfessional;
+      
+      debugPrint('🔄 Navigation rebuild - Profile: ${profile?.fullName}, Role: ${profile?.userRole.roleName}, isProfessional: $isProfessional');
 
-    final List<Widget> screens = [
-      const HomeScreen(),
-      const PostsScreen(),
-      bookingsScreen,
-      const HelpSupportScreen(),
-      const BookmarkScreen(),
-    ];
+      // Build screens list with the correct bookings screen based on role
+      final List<Widget> screens = [
+        const HomeScreen(),
+        const PostsScreen(),
+        isProfessional ? const MyConsultationsScreen() : const MyBookingsScreen(),
+        const HelpSupportScreen(),
+        const BookmarkScreen(),
+      ];
 
-    return Obx(
-      () => Scaffold(
+      return Scaffold(
         body: IndexedStack(
           index: controller.currentIndex.value,
           children: screens,
@@ -65,7 +69,7 @@ class MainNavigationScreen extends StatelessWidget {
               BottomNavigationBarItem(
                 icon: const Icon(Icons.calendar_today_outlined),
                 activeIcon: const Icon(Icons.calendar_today),
-                label: permissionService.isProfessional ? 'Consultations' : 'Bookings',
+                label: isProfessional ? 'Consultations' : 'Bookings',
               ),
               const BottomNavigationBarItem(
                 icon: Icon(Icons.help_outline),
@@ -80,7 +84,7 @@ class MainNavigationScreen extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 }

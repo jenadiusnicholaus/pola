@@ -214,7 +214,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
         prefixIcon: Icon(Icons.description),
       ),
       maxLines: 3,
-      maxLength: 500,
+      maxLength: 1000,
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
           return 'Description is required';
@@ -926,13 +926,15 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
   }
 
   String _getContentTypeDisplayName(String type) {
+    // Get current locale (you can enhance this by using actual locale detection)
+    // For now, we'll show both English and Kiswahili
     switch (type) {
       case 'discussion':
-        return 'Discussion';
+        return 'Discussion / Mjadala';
       case 'article':
         return 'Article';
       case 'news':
-        return 'News';
+        return 'News / Habari';
       case 'case_study':
         return 'Case Study';
       case 'legal_update':
@@ -944,11 +946,11 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
       case 'assignment':
         return 'Assignment';
       case 'question':
-        return 'Question';
+        return 'Question / Swali';
       case 'tutorial':
         return 'Tutorial';
       case 'general':
-        return 'General';
+        return 'General / Jumla';
       case 'lecture':
         return 'Lecture';
       default:

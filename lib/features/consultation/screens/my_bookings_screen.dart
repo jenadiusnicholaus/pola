@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../services/consultation_service.dart';
 
-/// Screen for clients to view their consultation bookings
+/// Screen for clients to view their consultation bookings and call history
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key});
 
@@ -15,100 +15,178 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
     with SingleTickerProviderStateMixin {
   final ConsultationService _service = Get.find<ConsultationService>();
 
-  late TabController _tabController;
-  bool _isLoading = true;
+  late TabController _mainTabController;
+  
+  // Bookings state
+  bool _isLoadingBookings = true;
   MyBookingsResponse? _bookings;
-  String _selectedStatus = 'all';
+  String _selectedBookingStatus = 'all';
+  
+  // Calls state
+  bool _isLoadingCalls = true;
+  CallHistoryResponse? _callHistory;
+  CallCreditsResponse? _callCredits;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    _tabController.addListener(_onTabChanged);
+    _mainTabController = TabController(length: 2, vsync: this);
+    _mainTabController.addListener(_onMainTabChanged);
     _loadBookings();
+    _loadCallData();
   }
 
   @override
   void dispose() {
-    _tabController.removeListener(_onTabChanged);
-    _tabController.dispose();
+    _mainTabController.removeListener(_onMainTabChanged);
+    _mainTabController.dispose();
     super.dispose();
   }
 
-  void _onTabChanged() {
-    if (!_tabController.indexIsChanging) {
-      setState(() {
-        switch (_tabController.index) {
-          case 0:
-            _selectedStatus = 'all';
-            break;
-          case 1:
-            _selectedStatus = 'pending';
-            break;
-          case 2:
-            _selectedStatus = 'confirmed';
-            break;
-          case 3:
-            _selectedStatus = 'completed';
-            break;
-        }
-      });
-      _loadBookings();
+  void _onMainTabChanged() {
+    if (!_mainTabController.indexIsChanging) {
+      setState(() {});
     }
   }
 
   Future<void> _loadBookings() async {
-    setState(() => _isLoading = true);
+    setState(() => _isLoadingBookings = true);
 
-    final status = _selectedStatus == 'all' ? null : _selectedStatus;
+    final status = _selectedBookingStatus == 'all' ? null : _selectedBookingStatus;
     final response = await _service.getMyBookings(status: status);
 
     setState(() {
       _bookings = response;
-      _isLoading = false;
+      _isLoadingBookings = false;
+    });
+  }
+
+  Future<void> _loadCallData() async {
+    setState(() => _isLoadingCalls = true);
+
+    final historyFuture = _service.getMyCallHistory();
+    final creditsFuture = _service.getMyCallCredits();
+
+    final results = await Future.wait([historyFuture, creditsFuture]);
+
+    setState(() {
+      _callHistory = results[0] as CallHistoryResponse?;
+      _callCredits = results[1] as CallCreditsResponse?;
+      _isLoadingCalls = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('My Bookings'),
+        backgroundColor: theme.colorScheme.surface,
+        foregroundColor: theme.colorScheme.onSurface,
+        elevation: 0,
+        title: Text(
+          'My Bookings',
+          style: TextStyle(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         bottom: TabBar(
-          controller: _tabController,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          indicatorColor: Colors.white,
+          controller: _mainTabController,
+          labelColor: theme.colorScheme.primary,
+          unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+          indicatorColor: theme.colorScheme.primary,
           indicatorWeight: 3,
           tabs: const [
-            Tab(text: 'All'),
-            Tab(text: 'Pending'),
-            Tab(text: 'Confirmed'),
-            Tab(text: 'Completed'),
+            Tab(
+              icon: Icon(Icons.calendar_today, size: 20),
+              text: 'Bookings',
+            ),
+            Tab(
+              icon: Icon(Icons.phone, size: 20),
+              text: 'Call History',
+            ),
           ],
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _bookings == null || _bookings!.results.isEmpty
-              ? _buildEmptyState()
-              : RefreshIndicator(
-                  onRefresh: _loadBookings,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _bookings!.results.length,
-                    itemBuilder: (context, index) {
-                      return _buildBookingCard(theme, _bookings!.results[index]);
-                    },
-                  ),
-                ),
+      body: TabBarView(
+        controller: _mainTabController,
+        children: [
+          _buildBookingsTab(theme),
+          _buildCallHistoryTab(theme),
+        ],
+      ),
     );
   }
 
-  Widget _buildEmptyState() {
+  // ============ BOOKINGS TAB ============
+  Widget _buildBookingsTab(ThemeData theme) {
+    return Column(
+      children: [
+        // Status filter chips
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          color: Colors.white,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildFilterChip('All', 'all'),
+                const SizedBox(width: 8),
+                _buildFilterChip('Pending', 'pending'),
+                const SizedBox(width: 8),
+                _buildFilterChip('Confirmed', 'confirmed'),
+                const SizedBox(width: 8),
+                _buildFilterChip('Completed', 'completed'),
+              ],
+            ),
+          ),
+        ),
+        const Divider(height: 1),
+        
+        // Bookings list
+        Expanded(
+          child: _isLoadingBookings
+              ? const Center(child: CircularProgressIndicator())
+              : _bookings == null || _bookings!.results.isEmpty
+                  ? _buildEmptyBookingsState()
+                  : RefreshIndicator(
+                      onRefresh: _loadBookings,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _bookings!.results.length,
+                        itemBuilder: (context, index) {
+                          return _buildBookingCard(theme, _bookings!.results[index]);
+                        },
+                      ),
+                    ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterChip(String label, String status) {
+    final isSelected = _selectedBookingStatus == status;
+    return FilterChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        setState(() => _selectedBookingStatus = status);
+        _loadBookings();
+      },
+      selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
+      checkmarkColor: Theme.of(context).primaryColor,
+      labelStyle: TextStyle(
+        color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade700,
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+      ),
+    );
+  }
+
+  Widget _buildEmptyBookingsState() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -125,9 +203,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            _selectedStatus == 'all'
+            _selectedBookingStatus == 'all'
                 ? 'You haven\'t made any consultation bookings yet'
-                : 'No ${_selectedStatus} bookings',
+                : 'No ${_selectedBookingStatus} bookings',
             style: TextStyle(color: Colors.grey.shade500),
           ),
           const SizedBox(height: 24),
@@ -167,15 +245,18 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: Text(
-                      booking.consultantName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                  Row(
+                    children: [
+                      Icon(Icons.location_on, size: 18, color: theme.primaryColor),
+                      const SizedBox(width: 6),
+                      Text(
+                        booking.consultantName,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    ],
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -265,6 +346,274 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
     );
   }
 
+  // ============ CALL HISTORY TAB ============
+  Widget _buildCallHistoryTab(ThemeData theme) {
+    if (_isLoadingCalls) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadCallData,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Credits card
+            if (_callCredits != null) _buildCreditsCard(theme),
+            
+            // Call history
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Recent Calls',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (_callHistory != null)
+                    Text(
+                      '${_callHistory!.totalMinutesUsed} min used',
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
+                ],
+              ),
+            ),
+            
+            if (_callHistory == null || _callHistory!.calls.isEmpty)
+              _buildEmptyCallsState()
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: _callHistory!.calls.length,
+                itemBuilder: (context, index) {
+                  return _buildCallCard(theme, _callHistory!.calls[index]);
+                },
+              ),
+            
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCreditsCard(ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [theme.primaryColor, theme.primaryColor.withOpacity(0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: theme.primaryColor.withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Call Credits',
+                style: TextStyle(
+                  color: Colors.black54,
+                  fontSize: 14,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add_circle_outline, color: Colors.black87),
+                onPressed: () => Get.toNamed('/buy-credits'),
+                tooltip: 'Buy More Credits',
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${_callCredits!.totalMinutes}',
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(bottom: 8, left: 4),
+                child: Text(
+                  'minutes',
+                  style: TextStyle(
+                    color: Colors.black54,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_callCredits!.activeCredits.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Divider(color: Colors.black26),
+            const SizedBox(height: 8),
+            ...(_callCredits!.activeCredits.take(2).map((credit) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      credit.bundleName,
+                      style: const TextStyle(color: Colors.black54, fontSize: 12),
+                    ),
+                    Text(
+                      '${credit.remainingMinutes} min${credit.expiresAt != null ? ' • Exp: ${DateFormat('d MMM').format(credit.expiresAt!)}' : ''}',
+                      style: const TextStyle(color: Colors.black87, fontSize: 12),
+                    ),
+                  ],
+                ),
+              );
+            })),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyCallsState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          children: [
+            Icon(Icons.phone_missed, size: 60, color: Colors.grey.shade300),
+            const SizedBox(height: 16),
+            Text(
+              'No call history',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Your call history will appear here',
+              style: TextStyle(color: Colors.grey.shade500),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: () => Get.toNamed('/consultants'),
+              icon: const Icon(Icons.phone),
+              label: const Text('Call a Lawyer'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCallCard(ThemeData theme, ClientCallRecord call) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            // Call icon
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.call, color: Colors.green, size: 22),
+            ),
+            const SizedBox(width: 12),
+            
+            // Call info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    call.consultantName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    call.startTime != null
+                        ? DateFormat('d MMM yyyy • h:mm a').format(call.startTime!)
+                        : call.date,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Duration
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '${call.durationMinutes} min',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: theme.primaryColor,
+                  ),
+                ),
+                if (call.callQualityRating != null) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: List.generate(5, (index) {
+                      return Icon(
+                        index < call.callQualityRating! ? Icons.star : Icons.star_border,
+                        size: 12,
+                        color: Colors.amber,
+                      );
+                    }),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============ HELPERS ============
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'pending':
@@ -342,9 +691,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
 
             // Consultant info
             _buildDetailRow(Icons.person, 'Consultant', booking.consultantName),
-            _buildDetailRow(Icons.email_outlined, 'Email', booking.consultantEmail),
-            if (booking.consultantPhone.isNotEmpty)
-              _buildDetailRow(Icons.phone_outlined, 'Phone', booking.consultantPhone),
+            if (booking.reference != null)
+              _buildDetailRow(Icons.receipt_outlined, 'Reference', booking.reference!),
             
             const Divider(height: 24),
 
@@ -421,8 +769,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    // TODO: Add to calendar or call consultant
                     Navigator.pop(context);
+                    // Navigate to call or contact
                   },
                   icon: const Icon(Icons.phone),
                   label: const Text('Contact Consultant'),

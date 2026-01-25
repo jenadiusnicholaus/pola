@@ -282,7 +282,7 @@ class ConsultationService extends GetxService {
     String? status, // 'pending', 'confirmed', 'completed', 'cancelled'
   }) async {
     try {
-      debugPrint('📋 Fetching my bookings as client...');
+      debugPrint('📋 Fetching my bookings as client... status filter: $status');
 
       final queryParams = <String, dynamic>{
         'page': page,
@@ -293,13 +293,15 @@ class ConsultationService extends GetxService {
         queryParams['status'] = status;
       }
 
+      debugPrint('📤 Query params: $queryParams');
+
       final response = await _apiService.get(
         '/api/v1/subscriptions/physical-consultations/',
         queryParameters: queryParams,
       );
 
       if (response.statusCode == 200) {
-        debugPrint('✅ My bookings fetched: ${response.data['count']} total');
+        debugPrint('✅ My bookings fetched: ${response.data['count']} total (filter: $status)');
         return MyBookingsResponse.fromJson(response.data);
       }
 
@@ -307,6 +309,59 @@ class ConsultationService extends GetxService {
       return null;
     } catch (e) {
       debugPrint('❌ Error fetching my bookings: $e');
+      return null;
+    }
+  }
+
+  /// Get client's call history
+  /// API: GET /api/v1/subscriptions/call-history/my-history/
+  Future<CallHistoryResponse?> getMyCallHistory({
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    try {
+      debugPrint('📞 Fetching my call history...');
+
+      final response = await _apiService.get(
+        '/api/v1/subscriptions/call-history/my-history/',
+        queryParameters: {
+          'limit': limit,
+          'offset': offset,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint('✅ Call history fetched: ${response.data['count']} calls');
+        return CallHistoryResponse.fromJson(response.data);
+      }
+
+      debugPrint('⚠️ Failed to fetch call history: ${response.statusCode}');
+      return null;
+    } catch (e) {
+      debugPrint('❌ Error fetching call history: $e');
+      return null;
+    }
+  }
+
+  /// Get client's call credits
+  /// API: GET /api/v1/subscriptions/call-history/my-credits/
+  Future<CallCreditsResponse?> getMyCallCredits() async {
+    try {
+      debugPrint('💳 Fetching my call credits...');
+
+      final response = await _apiService.get(
+        '/api/v1/subscriptions/call-history/my-credits/',
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint('✅ Call credits fetched: ${response.data['total_minutes']} minutes');
+        return CallCreditsResponse.fromJson(response.data);
+      }
+
+      debugPrint('⚠️ Failed to fetch call credits: ${response.statusCode}');
+      return null;
+    } catch (e) {
+      debugPrint('❌ Error fetching call credits: $e');
       return null;
     }
   }
@@ -901,75 +956,76 @@ class MyBookingsResponse {
 /// Booking model for client view
 class ClientBooking {
   final int id;
-  final int clientId;
-  final Map<String, dynamic> clientDetails;
-  final int consultantId;
-  final Map<String, dynamic> consultantDetails;
-  final String bookingType;
+  final String? reference;
   final String status;
+  final String bookingType;
   final DateTime? scheduledDate;
-  final int scheduledDurationMinutes;
-  final String totalAmount;
-  final String platformCommission;
-  final String consultantEarnings;
   final String? meetingLocation;
+  final String totalAmount;
+  final int? consultantId;
+  final Map<String, dynamic>? consultantDetails;
+  final int scheduledDurationMinutes;
   final String? clientNotes;
-  final String? consultantNotes;
   final DateTime createdAt;
-  final DateTime updatedAt;
 
   ClientBooking({
     required this.id,
-    required this.clientId,
-    required this.clientDetails,
-    required this.consultantId,
-    required this.consultantDetails,
-    required this.bookingType,
+    this.reference,
     required this.status,
+    required this.bookingType,
     this.scheduledDate,
-    required this.scheduledDurationMinutes,
-    required this.totalAmount,
-    required this.platformCommission,
-    required this.consultantEarnings,
     this.meetingLocation,
+    required this.totalAmount,
+    this.consultantId,
+    this.consultantDetails,
+    required this.scheduledDurationMinutes,
     this.clientNotes,
-    this.consultantNotes,
     required this.createdAt,
-    required this.updatedAt,
   });
 
   factory ClientBooking.fromJson(Map<String, dynamic> json) {
+    // Handle consultant field - can be int ID or Map object
+    int? consultantId;
+    Map<String, dynamic>? consultantDetails;
+    
+    final consultantData = json['consultant'];
+    if (consultantData is int) {
+      consultantId = consultantData;
+    } else if (consultantData is Map<String, dynamic>) {
+      consultantDetails = consultantData;
+      consultantId = consultantData['id'];
+    }
+    
+    // Also check consultant_details field
+    if (consultantDetails == null && json['consultant_details'] != null) {
+      consultantDetails = json['consultant_details'];
+    }
+
     return ClientBooking(
       id: json['id'] ?? 0,
-      clientId: json['client'] ?? 0,
-      clientDetails: json['client_details'] ?? {},
-      consultantId: json['consultant'] ?? 0,
-      consultantDetails: json['consultant_details'] ?? {},
-      bookingType: json['booking_type'] ?? 'physical',
+      reference: json['reference'],
       status: json['status'] ?? 'pending',
+      bookingType: json['booking_type'] ?? 'physical',
       scheduledDate: json['scheduled_date'] != null
           ? DateTime.tryParse(json['scheduled_date'])
           : null,
-      scheduledDurationMinutes: json['scheduled_duration_minutes'] ?? 60,
-      totalAmount: json['total_amount']?.toString() ?? '0',
-      platformCommission: json['platform_commission']?.toString() ?? '0',
-      consultantEarnings: json['consultant_earnings']?.toString() ?? '0',
       meetingLocation: json['meeting_location'],
+      totalAmount: json['total_amount']?.toString() ?? '0',
+      consultantId: consultantId,
+      consultantDetails: consultantDetails,
+      scheduledDurationMinutes: json['scheduled_duration_minutes'] ?? 
+          json['duration_minutes'] ?? 60,
       clientNotes: json['client_notes'],
-      consultantNotes: json['consultant_notes'],
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
-          : DateTime.now(),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'])
           : DateTime.now(),
     );
   }
 
   // Convenience getters
-  String get consultantName => consultantDetails['full_name'] ?? 'Unknown';
-  String get consultantEmail => consultantDetails['email'] ?? '';
-  String get consultantPhone => consultantDetails['phone_number'] ?? '';
+  String get consultantName => consultantDetails?['name'] ?? 
+      consultantDetails?['full_name'] ?? 
+      'Consultant #$consultantId';
 }
 
 class ConsultationSummary {
@@ -1161,4 +1217,118 @@ class ConsultationBooking {
 
   @deprecated
   String? get notes => topic;
+}
+
+/// Response for client's call history
+class CallHistoryResponse {
+  final int count;
+  final int limit;
+  final int offset;
+  final int totalMinutesUsed;
+  final List<ClientCallRecord> calls;
+
+  CallHistoryResponse({
+    required this.count,
+    required this.limit,
+    required this.offset,
+    required this.totalMinutesUsed,
+    required this.calls,
+  });
+
+  factory CallHistoryResponse.fromJson(Map<String, dynamic> json) {
+    return CallHistoryResponse(
+      count: json['count'] ?? 0,
+      limit: json['limit'] ?? 20,
+      offset: json['offset'] ?? 0,
+      totalMinutesUsed: json['total_minutes_used'] ?? 0,
+      calls: (json['calls'] as List<dynamic>? ?? [])
+          .map((item) => ClientCallRecord.fromJson(item))
+          .toList(),
+    );
+  }
+}
+
+/// Call record model for client view
+class ClientCallRecord {
+  final int id;
+  final Map<String, dynamic>? consultant;
+  final int durationMinutes;
+  final DateTime? startTime;
+  final DateTime? endTime;
+  final String date;
+  final int? callQualityRating;
+
+  ClientCallRecord({
+    required this.id,
+    this.consultant,
+    required this.durationMinutes,
+    this.startTime,
+    this.endTime,
+    required this.date,
+    this.callQualityRating,
+  });
+
+  factory ClientCallRecord.fromJson(Map<String, dynamic> json) {
+    return ClientCallRecord(
+      id: json['id'] ?? 0,
+      consultant: json['consultant'],
+      durationMinutes: json['duration_minutes'] ?? 0,
+      startTime: json['start_time'] != null
+          ? DateTime.tryParse(json['start_time'])
+          : null,
+      endTime: json['end_time'] != null
+          ? DateTime.tryParse(json['end_time'])
+          : null,
+      date: json['date'] ?? '',
+      callQualityRating: json['call_quality_rating'],
+    );
+  }
+
+  String get consultantName => consultant?['name'] ?? 'Unknown Consultant';
+}
+
+/// Response for client's call credits
+class CallCreditsResponse {
+  final int totalMinutes;
+  final List<ActiveCredit> activeCredits;
+
+  CallCreditsResponse({
+    required this.totalMinutes,
+    required this.activeCredits,
+  });
+
+  factory CallCreditsResponse.fromJson(Map<String, dynamic> json) {
+    return CallCreditsResponse(
+      totalMinutes: json['total_minutes'] ?? 0,
+      activeCredits: (json['active_credits'] as List<dynamic>? ?? [])
+          .map((item) => ActiveCredit.fromJson(item))
+          .toList(),
+    );
+  }
+}
+
+/// Active credit bundle for client
+class ActiveCredit {
+  final int id;
+  final String bundleName;
+  final int remainingMinutes;
+  final DateTime? expiresAt;
+
+  ActiveCredit({
+    required this.id,
+    required this.bundleName,
+    required this.remainingMinutes,
+    this.expiresAt,
+  });
+
+  factory ActiveCredit.fromJson(Map<String, dynamic> json) {
+    return ActiveCredit(
+      id: json['id'] ?? 0,
+      bundleName: json['bundle_name'] ?? 'Bundle',
+      remainingMinutes: json['remaining_minutes'] ?? 0,
+      expiresAt: json['expires_at'] != null
+          ? DateTime.tryParse(json['expires_at'])
+          : null,
+    );
+  }
 }

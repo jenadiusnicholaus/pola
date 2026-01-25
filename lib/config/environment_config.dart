@@ -183,6 +183,9 @@ class EnvironmentConfig {
   static String get hubCommentLikeEndpoint =>
       dotenv.env['HUB_COMMENT_LIKE_ENDPOINT'] ??
       '/api/v1/hubs/comments/{id}/like/';
+  static String get hubMentionSearchEndpoint =>
+      dotenv.env['HUB_MENTION_SEARCH_ENDPOINT'] ??
+      '/api/v1/hubs/mentions/users/search/';
 
   // Complete Hub Content URLs
   static String get hubContentUrl => '$baseUrl$hubContentEndpoint';
@@ -204,6 +207,7 @@ class EnvironmentConfig {
   static String get hubCommentsUrl => '$baseUrl$hubCommentsEndpoint';
   static String hubCommentLikeUrl(int commentId) =>
       '$baseUrl${hubCommentLikeEndpoint.replaceAll('{id}', commentId.toString())}';
+  static String get hubMentionSearchUrl => '$baseUrl$hubMentionSearchEndpoint';
 
   // User Verification endpoints
   static String get verificationStatusEndpoint =>

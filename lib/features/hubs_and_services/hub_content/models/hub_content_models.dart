@@ -582,6 +582,7 @@ class HubComment {
   final bool isDeleted;
   final int depth; // For tracking nesting level (max 3)
   final String hubType; // Track which hub this comment belongs to
+  final List<int> mentionedUserIds; // User IDs mentioned with @ symbol
 
   HubComment({
     required this.id,
@@ -599,6 +600,7 @@ class HubComment {
     this.isDeleted = false,
     this.depth = 0,
     this.hubType = '',
+    this.mentionedUserIds = const [],
   });
 
   factory HubComment.fromJson(Map<String, dynamic> json) {
@@ -622,6 +624,9 @@ class HubComment {
       isDeleted: json['is_deleted'] ?? json['is_active'] == false,
       depth: json['depth'] ?? 0,
       hubType: json['hub_type']?.toString() ?? '',
+      mentionedUserIds: (json['mentioned_users'] as List<dynamic>? ?? [])
+          .map((id) => id as int)
+          .toList(),
     );
   }
 
@@ -642,6 +647,7 @@ class HubComment {
       'is_deleted': isDeleted,
       'depth': depth,
       'hub_type': hubType,
+      'mentioned_users': mentionedUserIds,
     };
   }
 
@@ -661,6 +667,7 @@ class HubComment {
     bool? isDeleted,
     int? depth,
     String? hubType,
+    List<int>? mentionedUserIds,
   }) {
     return HubComment(
       id: id ?? this.id,
@@ -678,6 +685,7 @@ class HubComment {
       isDeleted: isDeleted ?? this.isDeleted,
       depth: depth ?? this.depth,
       hubType: hubType ?? this.hubType,
+      mentionedUserIds: mentionedUserIds ?? this.mentionedUserIds,
     );
   }
 }
@@ -712,12 +720,14 @@ class CreateCommentRequest {
   final String comment;
   final String hubType;
   final int? parentCommentId;
+  final List<int> mentionedUserIds;
 
   CreateCommentRequest({
     required this.contentId,
     required this.comment,
     required this.hubType,
     this.parentCommentId,
+    this.mentionedUserIds = const [],
   });
 
   Map<String, dynamic> toJson() {
@@ -726,6 +736,7 @@ class CreateCommentRequest {
       'comment_text': comment,
       'hub_type': hubType,
       if (parentCommentId != null) 'parent_comment': parentCommentId,
+      if (mentionedUserIds.isNotEmpty) 'mentioned_users': mentionedUserIds,
     };
   }
 }

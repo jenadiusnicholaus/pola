@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../services/consultation_service.dart';
+import '../../../services/permission_service.dart';
 
 class MyConsultationsScreen extends StatefulWidget {
   const MyConsultationsScreen({super.key});
@@ -13,20 +14,26 @@ class _MyConsultationsScreenState extends State<MyConsultationsScreen>
     with SingleTickerProviderStateMixin {
   final ConsultationService _consultationService =
       Get.find<ConsultationService>();
+  final PermissionService _permissionService = Get.find<PermissionService>();
+  
+  late bool _isLawFirm;
 
   late TabController _tabController;
   late ScrollController _scrollController;
   bool _isLoading = true;
   bool _isLoadingMore = false;
   MyConsultationsResponse? _consultations;
-  String _selectedStatus = 'all';
+  String? _selectedType; // null = all, 'call', 'physical'
   int _currentPage = 1;
   bool _hasMore = true;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _isLawFirm = _permissionService.isLawFirm;
+    // Physical consultations only for law firms
+    final tabCount = _isLawFirm ? 3 : 2;
+    _tabController = TabController(length: tabCount, vsync: this);
     _scrollController = ScrollController();
     _tabController.addListener(_onTabChanged);
     _scrollController.addListener(_scrollListener);
@@ -56,19 +63,29 @@ class _MyConsultationsScreenState extends State<MyConsultationsScreen>
       _currentPage = 1;
       _hasMore = true;
       setState(() {
-        switch (_tabController.index) {
-          case 0:
-            _selectedStatus = 'all';
-            break;
-          case 1:
-            _selectedStatus = 'pending';
-            break;
-          case 2:
-            _selectedStatus = 'confirmed';
-            break;
-          case 3:
-            _selectedStatus = 'completed';
-            break;
+        if (_isLawFirm) {
+          // Law firms: All, Calls, Physical
+          switch (_tabController.index) {
+            case 0:
+              _selectedType = null; // All
+              break;
+            case 1:
+              _selectedType = 'call'; // Calls only
+              break;
+            case 2:
+              _selectedType = 'physical'; // Physical bookings only
+              break;
+          }
+        } else {
+          // Others: All, Calls (no Physical)
+          switch (_tabController.index) {
+            case 0:
+              _selectedType = null; // All
+              break;
+            case 1:
+              _selectedType = 'call'; // Calls only
+              break;
+          }
         }
       });
       _loadConsultations();
@@ -82,9 +99,8 @@ class _MyConsultationsScreenState extends State<MyConsultationsScreen>
       _hasMore = true;
     });
 
-    final status = _selectedStatus == 'all' ? null : _selectedStatus;
     final response = await _consultationService.getMyConsultations(
-      status: status,
+      type: _selectedType,
       page: _currentPage,
     );
 
@@ -102,9 +118,8 @@ class _MyConsultationsScreenState extends State<MyConsultationsScreen>
 
     try {
       _currentPage++;
-      final status = _selectedStatus == 'all' ? null : _selectedStatus;
       final response = await _consultationService.getMyConsultations(
-        status: status,
+        type: _selectedType,
         page: _currentPage,
       );
 
@@ -190,19 +205,33 @@ class _MyConsultationsScreenState extends State<MyConsultationsScreen>
     final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('My Consultations'),
+        backgroundColor: theme.colorScheme.surface,
+        foregroundColor: theme.colorScheme.onSurface,
+        elevation: 0,
+        title: Text(
+          'My Consultations',
+          style: TextStyle(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white.withOpacity(0.6),
-          tabs: const [
-            Tab(text: 'All'),
-            Tab(text: 'Pending'),
-            Tab(text: 'Confirmed'),
-            Tab(text: 'Completed'),
-          ],
+          indicatorColor: theme.colorScheme.primary,
+          labelColor: theme.colorScheme.primary,
+          unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+          tabs: _isLawFirm
+              ? const [
+                  Tab(icon: Icon(Icons.list_alt, size: 20), text: 'All'),
+                  Tab(icon: Icon(Icons.phone, size: 20), text: 'Calls'),
+                  Tab(icon: Icon(Icons.location_on, size: 20), text: 'Physical'),
+                ]
+              : const [
+                  Tab(icon: Icon(Icons.list_alt, size: 20), text: 'All'),
+                  Tab(icon: Icon(Icons.phone, size: 20), text: 'Calls'),
+                ],
         ),
       ),
       body: _isLoading
@@ -214,15 +243,15 @@ class _MyConsultationsScreenState extends State<MyConsultationsScreen>
                   child: ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.all(16),
-                    itemCount:
-                        _consultations!.results.length + (_hasMore ? 1 : 0),
+                    itemCount: _consultations!.results.length +
+                        (_hasMore ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index == _consultations!.results.length) {
                         return _isLoadingMore
                             ? const Padding(
                                 padding: EdgeInsets.all(16.0),
-                                child:
-                                    Center(child: CircularProgressIndicator()),
+                                child: Center(
+                                    child: CircularProgressIndicator()),
                               )
                             : const SizedBox.shrink();
                       }
@@ -235,25 +264,40 @@ class _MyConsultationsScreenState extends State<MyConsultationsScreen>
   }
 
   Widget _buildEmptyState(ThemeData theme) {
+    String typeLabel = '';
+    if (_selectedType == 'call') {
+      typeLabel = 'call ';
+    } else if (_selectedType == 'physical') {
+      typeLabel = 'physical ';
+    }
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.event_busy,
+            _selectedType == 'call'
+                ? Icons.phone_disabled
+                : _selectedType == 'physical'
+                    ? Icons.location_off
+                    : Icons.event_busy,
             size: 64,
             color: theme.colorScheme.onSurface.withOpacity(0.3),
           ),
           const SizedBox(height: 16),
           Text(
-            'No ${_selectedStatus == 'all' ? '' : _selectedStatus} consultations',
+            'No ${typeLabel}consultations',
             style: theme.textTheme.titleMedium?.copyWith(
               color: theme.colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Consultations from clients will appear here',
+            _selectedType == 'call'
+                ? 'Call consultations from clients will appear here'
+                : _selectedType == 'physical'
+                    ? 'Physical booking requests will appear here'
+                    : 'All consultations from clients will appear here',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurface.withOpacity(0.5),
             ),
@@ -265,65 +309,48 @@ class _MyConsultationsScreenState extends State<MyConsultationsScreen>
   }
 
   Widget _buildConsultationCard(ConsultationBooking booking, ThemeData theme) {
-    final isDark = theme.brightness == Brightness.dark;
-
     Color statusColor;
     IconData statusIcon;
 
     if (booking.isPending) {
-      statusColor = Colors.orange;
+      statusColor = Colors.orange.shade700;
       statusIcon = Icons.schedule;
     } else if (booking.isConfirmed) {
-      statusColor = Colors.blue;
+      statusColor = Colors.blue.shade700;
       statusIcon = Icons.check_circle;
     } else if (booking.isCompleted) {
-      statusColor = Colors.green;
+      statusColor = Colors.green.shade700;
       statusIcon = Icons.done_all;
     } else {
-      statusColor = Colors.red;
+      statusColor = Colors.red.shade700;
       statusIcon = Icons.cancel;
     }
 
-    return Container(
+    return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: isDark
-            ? theme.colorScheme.surfaceContainerHighest
-            : theme.colorScheme.surfaceContainer,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+        side: BorderSide(
+          color: theme.colorScheme.outlineVariant,
+          width: 1,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with Client Info
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            child: Row(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header: Client name and status
+            Row(
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: theme.colorScheme.primaryContainer,
-                  ),
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: theme.colorScheme.primaryContainer,
                   child: Icon(
-                    booking.isCall
-                        ? (booking.callType == 'video'
-                            ? Icons.videocam
-                            : Icons.phone)
-                        : (booking.bookingType == 'physical'
-                            ? Icons.location_on
-                            : Icons.chat),
-                    color: theme.colorScheme.onPrimaryContainer,
+                    booking.isCall ? Icons.phone : Icons.event,
+                    color: theme.colorScheme.primary,
+                    size: 20,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -334,37 +361,35 @@ class _MyConsultationsScreenState extends State<MyConsultationsScreen>
                       Text(
                         booking.clientName,
                         style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         booking.clientEmail,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
                   ),
                 ),
+                // Status badge
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
+                    horizontal: 12,
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: statusColor.withOpacity(0.3),
-                    ),
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         statusIcon,
-                        size: 14,
+                        size: 12,
                         color: statusColor,
                       ),
                       const SizedBox(width: 4),
@@ -372,7 +397,7 @@ class _MyConsultationsScreenState extends State<MyConsultationsScreen>
                         booking.status.toUpperCase(),
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: statusColor,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
@@ -380,241 +405,135 @@ class _MyConsultationsScreenState extends State<MyConsultationsScreen>
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 16),
 
-          // Consultation Details
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Date and Time (for bookings) or Call info (for calls)
-                if (booking.isBooking) ...[
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today,
-                        size: 16,
-                        color: theme.colorScheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _formatDate(booking.scheduledDate),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Icon(
-                        Icons.access_time,
-                        size: 16,
-                        color: theme.colorScheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        booking.scheduledTime,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ] else ...[
-                  // Call information
-                  Row(
-                    children: [
-                      Icon(
-                        booking.callType == 'video'
-                            ? Icons.videocam
-                            : Icons.phone,
-                        size: 16,
-                        color: theme.colorScheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        booking.callType == 'video'
-                            ? 'Video Call'
-                            : 'Voice Call',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      if (booking.durationMinutes != null) ...[
-                        const SizedBox(width: 16),
-                        Icon(
-                          Icons.timer,
-                          size: 16,
-                          color: theme.colorScheme.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${booking.durationMinutes} min',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-                const SizedBox(height: 12),
-
-                // Type and Price/Credits
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            theme.colorScheme.primaryContainer.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            booking.isCall
-                                ? (booking.callType == 'video'
-                                    ? Icons.videocam
-                                    : Icons.phone)
-                                : (booking.bookingType == 'physical'
-                                    ? Icons.business
-                                    : Icons.phone_android),
-                            size: 14,
-                            color: theme.colorScheme.onPrimaryContainer,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            booking.isCall
-                                ? 'INSTANT ${booking.callType?.toUpperCase() ?? 'CALL'}'
-                                : booking.consultationType.toUpperCase(),
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onPrimaryContainer,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (booking.amount != null) ...[
-                      const SizedBox(width: 12),
-                      Text(
-                        'TZS ${booking.amount!.toStringAsFixed(0)}',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: Colors.green,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ] else if (booking.creditsDeducted != null) ...[
-                      const SizedBox(width: 12),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.account_balance_wallet,
-                            size: 16,
-                            color: Colors.orange,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${booking.creditsDeducted!.toStringAsFixed(0)} credits',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              color: Colors.orange,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
+            // Details
+            if (booking.isBooking) ...[
+              _buildDetailRow(
+                theme,
+                Icons.calendar_today,
+                _formatDate(booking.scheduledDate),
+              ),
+              const SizedBox(height: 8),
+              _buildDetailRow(
+                theme,
+                Icons.access_time,
+                booking.scheduledTime,
+              ),
+            ] else ...[
+              _buildDetailRow(
+                theme,
+                booking.callType == 'video' ? Icons.videocam : Icons.phone,
+                '${booking.callType == 'video' ? 'Video' : 'Voice'} Call',
+              ),
+              if (booking.durationMinutes != null) ...[
+                const SizedBox(height: 8),
+                _buildDetailRow(
+                  theme,
+                  Icons.timer,
+                  '${booking.durationMinutes} minutes',
                 ),
+              ],
+            ],
 
-                // Notes/Topic
-                if (booking.topic != null && booking.topic!.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest
-                          .withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          booking.isBooking ? 'Topic:' : 'Notes:',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          booking.topic!,
-                          style: theme.textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+            // Amount/Credits
+            if (booking.amount != null || booking.creditsDeducted != null) ...[
+              const SizedBox(height: 8),
+              _buildDetailRow(
+                theme,
+                booking.amount != null ? Icons.payment : Icons.account_balance_wallet,
+                booking.amount != null
+                    ? 'TZS ${booking.amount!.toStringAsFixed(0)}'
+                    : '${booking.creditsDeducted!.toStringAsFixed(0)} credits',
+              ),
+            ],
 
-                // Actions
-                if (booking.isPending) ...[
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => _updateConsultationStatus(
-                            consultationId: booking.id,
-                            status: 'rejected',
-                          ),
-                          icon: const Icon(Icons.close, size: 18),
-                          label: const Text('Reject'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.red,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () => _updateConsultationStatus(
-                            consultationId: booking.id,
-                            status: 'confirmed',
-                          ),
-                          icon: const Icon(Icons.check, size: 18),
-                          label: const Text('Accept'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+            // Notes/Topic
+            if (booking.topic != null && booking.topic!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  booking.topic!,
+                  style: theme.textTheme.bodySmall,
+                ),
+              ),
+            ],
 
-                if (booking.isConfirmed) ...[
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
+            // Actions
+            if (booking.isPending) ...[
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
                       onPressed: () => _updateConsultationStatus(
                         consultationId: booking.id,
-                        status: 'completed',
+                        status: 'rejected',
                       ),
-                      icon: const Icon(Icons.done_all, size: 18),
-                      label: const Text('Mark as Completed'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                      ),
+                      child: const Text('Reject'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => _updateConsultationStatus(
+                        consultationId: booking.id,
+                        status: 'confirmed',
+                      ),
+                      child: const Text('Accept'),
                     ),
                   ),
                 ],
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+
+            if (booking.isConfirmed) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => _updateConsultationStatus(
+                    consultationId: booking.id,
+                    status: 'completed',
+                  ),
+                  child: const Text('Mark as Completed'),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
+
+  Widget _buildDetailRow(ThemeData theme, IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 16,
+          color: theme.colorScheme.primary,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          text,
+          style: theme.textTheme.bodyMedium,
+        ),
+      ],
+    );
+  }
+
 
   String _formatDate(DateTime? date) {
     if (date == null) return 'N/A';

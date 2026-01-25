@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/hub_content_models.dart';
 import '../controllers/hub_content_controller.dart';
+import '../utils/mention_parser.dart';
 import 'comment_actions_widget.dart';
+import 'mention_text_field.dart';
 import '../../legal_education/models/legal_education_models.dart';
 import '../../../profile/screens/public_profile_screen.dart';
 
@@ -157,9 +159,14 @@ class _EnhancedCommentThreadState extends State<EnhancedCommentThread> {
   }
 
   Widget _buildCommentContent(ThemeData theme) {
-    return Text(
-      widget.comment.comment,
-      style: theme.textTheme.bodyMedium,
+    return RichText(
+      text: MentionParser.buildMentionTextSpan(
+        text: widget.comment.comment,
+        baseStyle: theme.textTheme.bodyMedium!.copyWith(
+          color: theme.colorScheme.onSurface,
+        ),
+        mentionColor: theme.colorScheme.primary,
+      ),
     );
   }
 
@@ -347,6 +354,7 @@ class _EnhancedCommentThreadState extends State<EnhancedCommentThread> {
     final replyFocusNode = FocusNode();
     final hubController = widget.controller ?? Get.find<HubContentController>();
     final ValueNotifier<bool> isSubmitting = ValueNotifier(false);
+    List<int> mentionedUserIds = []; // Track mentioned user IDs
 
     showModalBottomSheet(
       context: context,
@@ -521,39 +529,20 @@ class _EnhancedCommentThreadState extends State<EnhancedCommentThread> {
                                   ),
                         ),
                         const SizedBox(height: 8),
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .outline
-                                  .withOpacity(0.3),
-                            ),
-                          ),
-                          child: TextField(
-                            controller: replyController,
-                            focusNode: replyFocusNode,
-                            maxLines: 5,
-                            minLines: 3,
-                            autofocus: true,
-                            textCapitalization: TextCapitalization.sentences,
-                            decoration: InputDecoration(
-                              hintText: 'Write a thoughtful reply...',
-                              hintStyle: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.all(16),
-                              counterText: '',
-                            ),
-                            maxLength: 1000,
-                          ),
+                        MentionTextField(
+                          controller: replyController,
+                          hintText: 'Write a reply... Use @ to mention',
+                          maxLines: 5,
+                          onMentionsChanged: (userIds) {
+                            mentionedUserIds = userIds;
+                          },
+                          onSearchMentions: (query) async {
+                            final results = await hubController
+                                .searchUsersForMentions(query);
+                            return results
+                                .map((user) => MentionSuggestion.fromJson(user))
+                                .toList();
+                          },
                         ),
 
                         const SizedBox(height: 8),
@@ -659,6 +648,8 @@ class _EnhancedCommentThreadState extends State<EnhancedCommentThread> {
                                                   widget.comment.id,
                                               customText:
                                                   replyController.text.trim(),
+                                              mentionedUserIds:
+                                                  mentionedUserIds,
                                             );
                                             Navigator.of(context).pop();
                                             if (context.mounted) {

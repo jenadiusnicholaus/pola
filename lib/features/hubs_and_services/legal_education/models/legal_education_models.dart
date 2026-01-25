@@ -258,6 +258,7 @@ class LearningMaterial {
     // Create uploader info from flat structure
     final uploaderInfo = UploaderInfo(
       id: json['uploader'] ?? 0,
+      username: json['uploader_username'] ?? '',
       email: json['uploader_email'] ?? '',
       fullName: json['uploader_name'] ?? '',
       userRole: json['uploader_type'] ?? '',
@@ -346,6 +347,7 @@ class LearningMaterial {
 // Uploader info model
 class UploaderInfo {
   final int id;
+  final String username;
   final String email;
   final String fullName;
   final String userRole;
@@ -354,6 +356,7 @@ class UploaderInfo {
 
   UploaderInfo({
     required this.id,
+    required this.username,
     required this.email,
     required this.fullName,
     required this.userRole,
@@ -364,6 +367,7 @@ class UploaderInfo {
   factory UploaderInfo.fromJson(Map<String, dynamic> json) {
     return UploaderInfo(
       id: json['id'] ?? 0,
+      username: json['username']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
       fullName: json['full_name']?.toString() ?? '',
       userRole: json['user_role']?.toString() ?? '',
@@ -375,6 +379,7 @@ class UploaderInfo {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'username': username,
       'email': email,
       'full_name': fullName,
       'user_role': userRole,
