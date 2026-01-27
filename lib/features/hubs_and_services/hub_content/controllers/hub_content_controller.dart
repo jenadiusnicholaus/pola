@@ -1094,6 +1094,13 @@ class HubContentController extends GetxController {
 
       addingComment[contentId]!.value = true;
 
+      debugPrint('📤 ====== CREATING COMMENT REQUEST ======');
+      debugPrint('📤 Content ID: $contentId');
+      debugPrint('📤 Comment text: "$commentText"');
+      debugPrint('📤 Hub type: $hubType');
+      debugPrint('📤 Parent comment ID: $parentCommentId');
+      debugPrint('📤 Mentioned user IDs: $mentionedUserIds');
+
       final commentRequest = CreateCommentRequest(
         contentId: contentId,
         comment: commentText,
@@ -1102,10 +1109,14 @@ class HubContentController extends GetxController {
         mentionedUserIds: mentionedUserIds ?? [],
       );
 
+      debugPrint('📤 Request JSON: ${commentRequest.toJson()}');
+
       final newComment = await _service.addComment(
         contentId: contentId,
         commentRequest: commentRequest,
       );
+
+      debugPrint('📤 ====== COMMENT CREATED SUCCESSFULLY ======');
 
       // Add comment to the list
       if (parentCommentId == null) {

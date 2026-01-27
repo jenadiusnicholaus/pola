@@ -27,6 +27,7 @@ class ZegoCallService extends GetxService {
   bool get isMuted => _isMuted;
   bool get isSpeakerOn => _isSpeakerOn;
   int get callDuration => _callDuration;
+  int? get callId => _callId; // Expose call ID for checking
 
   /// Initialize ZegoCloud Express Engine
   Future<void> initializeZego(String userId, String userName) async {
@@ -389,6 +390,13 @@ class ZegoCallService extends GetxService {
   void setCallId(int callId) {
     _callId = callId;
     print('📞 Call ID set: $callId');
+  }
+
+  /// Clear call ID (used when call is cancelled)
+  void clearCallId() {
+    _callId = null;
+    _callDuration = 0;
+    print('📞 Call ID cleared');
   }
 
   /// Get formatted duration as MM:SS

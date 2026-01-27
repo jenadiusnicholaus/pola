@@ -5,6 +5,7 @@ import '../controllers/hub_content_controller.dart';
 import '../utils/mention_parser.dart';
 import 'enhanced_comment_thread.dart';
 import 'mention_text_field.dart';
+import '../../../profile/services/profile_service.dart';
 
 class HubThreadCard extends StatefulWidget {
   final HubContentItem content;
@@ -46,6 +47,58 @@ class _HubThreadCardState extends State<HubThreadCard> {
     }
 
     return uniqueUsers.values.toList();
+  }
+
+  /// Build the current user's avatar for the comment input
+  Widget _buildUserAvatar(ThemeData theme) {
+    final profileService = Get.find<ProfileService>();
+    return Obx(() {
+      final profile = profileService.currentProfile;
+      final profilePicture = profile?.profilePicture;
+      final firstName = profile?.firstName ?? '';
+      
+      return Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: theme.colorScheme.primaryContainer,
+          border: Border.all(
+            color: theme.colorScheme.outline.withOpacity(0.1),
+            width: 1,
+          ),
+        ),
+        child: profilePicture != null && profilePicture.isNotEmpty
+            ? ClipOval(
+                child: Image.network(
+                  profilePicture,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Center(
+                      child: Text(
+                        firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U',
+                        style: TextStyle(
+                          color: theme.colorScheme.onPrimaryContainer,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              )
+            : Center(
+                child: Text(
+                  firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U',
+                  style: TextStyle(
+                    color: theme.colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+      );
+    });
   }
 
   @override
@@ -581,6 +634,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
     widget.controller.initializeCommentController(widget.content.id);
     final textController =
         widget.controller.commentControllers[widget.content.id]!;
+    List<int> mentionedUserIds = []; // Track mentioned user IDs
 
     showModalBottomSheet(
       context: context,
@@ -634,20 +688,24 @@ class _HubThreadCardState extends State<HubThreadCard> {
                       color: theme.colorScheme.outline.withOpacity(0.2),
                     ),
                   ),
-                  child: TextField(
-                    controller: textController,
-                    maxLines: 6,
-                    minLines: 3,
-                    autofocus: true,
-                    decoration: InputDecoration(
-                      hintText: 'Share your thoughts...',
-                      hintStyle: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.5),
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.all(16),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: MentionTextField(
+                      controller: textController,
+                      maxLines: 6,
+                      hintText: 'Share your thoughts... Use @ to mention',
+                      fallbackUsers: _getFallbackUsersFromComments(),
+                      onMentionsChanged: (userIds) {
+                        mentionedUserIds = userIds;
+                      },
+                      onSearchMentions: (query) async {
+                        final results = await widget.controller
+                            .searchUsersForMentions(query);
+                        return results
+                            .map((user) => MentionSuggestion.fromJson(user))
+                            .toList();
+                      },
                     ),
-                    style: theme.textTheme.bodyLarge,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -676,8 +734,9 @@ class _HubThreadCardState extends State<HubThreadCard> {
                         onPressed: isAdding
                             ? null
                             : () async {
-                                await widget.controller
-                                    .addComment(widget.content.id);
+                                await widget.controller.addComment(
+                                    widget.content.id,
+                                    mentionedUserIds: mentionedUserIds);
                                 if (context.mounted &&
                                     textController.text.isEmpty) {
                                   Navigator.pop(context);
@@ -852,7 +911,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
                     color: theme.colorScheme.surface,
                     border: Border(
                       top: BorderSide(
-                        color: theme.colorScheme.outline.withOpacity(0.1),
+                        color: theme.colorScheme.outline.withOpacity(0.08),
                         width: 1,
                       ),
                     ),
@@ -860,35 +919,34 @@ class _HubThreadCardState extends State<HubThreadCard> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      // User avatar
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundColor: theme.colorScheme.primaryContainer,
-                        child: Icon(
-                          Icons.person_outline,
-                          size: 16,
-                          color: theme.colorScheme.onPrimaryContainer,
-                        ),
+                      // User profile picture
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: _buildUserAvatar(theme),
                       ),
                       const SizedBox(width: 12),
-
-                      // Comment input - clean and simple
+                      // Comment input field
                       Expanded(
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 6,
+                            horizontal: 16,
+                            vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(20),
+                            color: theme.brightness == Brightness.dark
+                                ? theme.colorScheme.surfaceContainerHighest
+                                : Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: theme.colorScheme.outline.withOpacity(0.15),
+                              width: 1,
+                            ),
                           ),
                           child: MentionTextField(
                             controller: widget.controller
                                 .commentControllers[widget.content.id]!,
-                            hintText:
-                                'Add a comment... use @ to mention someone',
-                            maxLines: 2,
+                            hintText: 'Write a comment...',
+                            maxLines: 3,
                             fallbackUsers: _getFallbackUsersFromComments(),
                             onMentionsChanged: (userIds) {
                               mentionedUserIds = userIds;
@@ -906,16 +964,15 @@ class _HubThreadCardState extends State<HubThreadCard> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-
+                      const SizedBox(width: 10),
                       // Send button
-                      Obx(() {
-                        final isAdding = widget.controller
-                                .addingComment[widget.content.id]?.value ??
-                            false;
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 4),
-                          child: GestureDetector(
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Obx(() {
+                          final isAdding = widget.controller
+                                  .addingComment[widget.content.id]?.value ??
+                              false;
+                          return GestureDetector(
                             onTap: isAdding
                                 ? null
                                 : () => widget.controller.addComment(
@@ -923,15 +980,15 @@ class _HubThreadCardState extends State<HubThreadCard> {
                                       mentionedUserIds: mentionedUserIds,
                                     ),
                             child: Container(
-                              padding: const EdgeInsets.all(10),
+                              width: 36,
+                              height: 36,
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.primary,
-                                borderRadius: BorderRadius.circular(18),
+                                shape: BoxShape.circle,
                               ),
                               child: isAdding
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(8),
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
                                         color: Colors.white,
@@ -943,9 +1000,9 @@ class _HubThreadCardState extends State<HubThreadCard> {
                                       color: theme.colorScheme.onPrimary,
                                     ),
                             ),
-                          ),
-                        );
-                      }),
+                          );
+                        }),
+                      ),
                     ],
                   ),
                 ),
@@ -1187,6 +1244,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
     widget.controller.initializeCommentController(widget.content.id);
     final textController =
         widget.controller.commentControllers[widget.content.id]!;
+    List<int> mentionedUserIds = []; // Track mentioned user IDs
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1227,6 +1285,9 @@ class _HubThreadCardState extends State<HubThreadCard> {
               hintText: 'Share your thoughts... Use @ to mention',
               maxLines: 3,
               fallbackUsers: _getFallbackUsersFromComments(),
+              onMentionsChanged: (userIds) {
+                mentionedUserIds = userIds;
+              },
               onSearchMentions: (query) async {
                 final results =
                     await widget.controller.searchUsersForMentions(query);
@@ -1259,7 +1320,10 @@ class _HubThreadCardState extends State<HubThreadCard> {
               child: IconButton(
                 onPressed: isAdding
                     ? null
-                    : () => widget.controller.addComment(widget.content.id),
+                    : () => widget.controller.addComment(
+                          widget.content.id,
+                          mentionedUserIds: mentionedUserIds,
+                        ),
                 icon: isAdding
                     ? SizedBox(
                         width: 16,
@@ -1288,6 +1352,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
     widget.controller.initializeCommentController(widget.content.id);
     final textController =
         widget.controller.commentControllers[widget.content.id]!;
+    List<int> mentionedUserIds = []; // Track mentioned user IDs
 
     return Positioned(
       bottom: 0,
@@ -1352,25 +1417,21 @@ class _HubThreadCardState extends State<HubThreadCard> {
                       ),
                     ],
                   ),
-                  child: TextField(
+                  child: MentionTextField(
                     controller: textController,
-                    decoration: InputDecoration(
-                      hintText: 'Share your thoughts...',
-                      hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
-                        fontStyle: FontStyle.italic,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      isDense: true,
-                    ),
-                    style: theme.textTheme.bodyMedium,
+                    hintText: 'Share your thoughts... Use @ to mention',
                     maxLines: 3,
-                    minLines: 1,
-                    textCapitalization: TextCapitalization.sentences,
+                    fallbackUsers: _getFallbackUsersFromComments(),
+                    onMentionsChanged: (userIds) {
+                      mentionedUserIds = userIds;
+                    },
+                    onSearchMentions: (query) async {
+                      final results = await widget.controller
+                          .searchUsersForMentions(query);
+                      return results
+                          .map((user) => MentionSuggestion.fromJson(user))
+                          .toList();
+                    },
                   ),
                 ),
               ),
@@ -1397,7 +1458,10 @@ class _HubThreadCardState extends State<HubThreadCard> {
                   child: IconButton(
                     onPressed: isAdding
                         ? null
-                        : () => widget.controller.addComment(widget.content.id),
+                        : () => widget.controller.addComment(
+                              widget.content.id,
+                              mentionedUserIds: mentionedUserIds,
+                            ),
                     icon: isAdding
                         ? SizedBox(
                             width: 16,
@@ -1428,6 +1492,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
     widget.controller.initializeCommentController(widget.content.id);
     final textController =
         widget.controller.commentControllers[widget.content.id]!;
+    List<int> mentionedUserIds = []; // Track mentioned user IDs
 
     return Positioned(
       bottom: 0,
@@ -1492,25 +1557,21 @@ class _HubThreadCardState extends State<HubThreadCard> {
                       ),
                     ],
                   ),
-                  child: TextField(
+                  child: MentionTextField(
                     controller: textController,
-                    decoration: InputDecoration(
-                      hintText: 'Share your thoughts...',
-                      hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
-                        fontStyle: FontStyle.italic,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 14,
-                      ),
-                      isDense: true,
-                    ),
-                    style: theme.textTheme.bodyMedium,
+                    hintText: 'Share your thoughts... Use @ to mention',
                     maxLines: 4,
-                    minLines: 1,
-                    textCapitalization: TextCapitalization.sentences,
+                    fallbackUsers: _getFallbackUsersFromComments(),
+                    onMentionsChanged: (userIds) {
+                      mentionedUserIds = userIds;
+                    },
+                    onSearchMentions: (query) async {
+                      final results = await widget.controller
+                          .searchUsersForMentions(query);
+                      return results
+                          .map((user) => MentionSuggestion.fromJson(user))
+                          .toList();
+                    },
                   ),
                 ),
               ),
@@ -1537,7 +1598,10 @@ class _HubThreadCardState extends State<HubThreadCard> {
                   child: IconButton(
                     onPressed: isAdding
                         ? null
-                        : () => widget.controller.addComment(widget.content.id),
+                        : () => widget.controller.addComment(
+                              widget.content.id,
+                              mentionedUserIds: mentionedUserIds,
+                            ),
                     icon: isAdding
                         ? SizedBox(
                             width: 18,

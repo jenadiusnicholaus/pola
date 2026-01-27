@@ -111,6 +111,28 @@ class CallService {
     }
   }
 
+  /// Cancel a call before it's answered (caller hangs up during ringing)
+  Future<Map<String, dynamic>> cancelCall({required String callId}) async {
+    try {
+      debugPrint('📵 Cancelling call: $callId');
+
+      final response = await _dio.post(
+        '/api/v1/subscriptions/calls/$callId/cancel/',
+      );
+
+      return {
+        'success': true,
+        'message': response.data['message'] ?? 'Call cancelled',
+      };
+    } catch (e) {
+      debugPrint('❌ Error cancelling call: $e');
+      return {
+        'success': false,
+        'message': _handleError(e),
+      };
+    }
+  }
+
   /// End an active call
   Future<Map<String, dynamic>> endCall({
     required String callId,
@@ -262,15 +284,42 @@ class CallService {
   /// Check if user has credits before calling
   Future<CreditCheckResponse> checkCredits(int consultantId) async {
     try {
+      debugPrint('💳 ====== CHECKING CREDITS ======');
+      debugPrint('💳 consultant_id being sent: $consultantId');
+      debugPrint('💳 Endpoint: /api/v1/subscriptions/call-history/check-credits/');
+      
       final response = await _dio.post(
-        '/api/v1/subscriptions/calls/check-credits/',
+        '/api/v1/subscriptions/call-history/check-credits/',
         data: {
           'consultant_id': consultantId,
         },
+        options: Options(
+          // Accept 402 and 404 as valid responses to handle them properly
+          validateStatus: (status) => status != null && status < 500,
+        ),
       );
 
+      debugPrint('💳 Credit check response status: ${response.statusCode}');
+      debugPrint('💳 Credit check response: ${response.data}');
+
+      // Handle 404 - consultant not found in subscriptions system
+      if (response.statusCode == 404) {
+        debugPrint('❌ 404 Error: Consultant ID $consultantId not found in subscriptions system');
+        debugPrint('   This may indicate an ID mismatch between Nearby Lawyers and Subscriptions APIs');
+        return CreditCheckResponse(
+          hasCredits: false,
+          availableMinutes: 0,
+          activeCreditsCount: 0,
+          creditsBreakdown: [],
+          availableBundles: [],
+          message: 'Consultant not found. Please try from Talk to Lawyer section.',
+        );
+      }
+
+      // Both 200 (has credits) and 402 (no credits but has bundles) are valid
       return CreditCheckResponse.fromJson(response.data);
     } catch (e) {
+      debugPrint('❌ Error checking credits: $e');
       throw _handleError(e);
     }
   }

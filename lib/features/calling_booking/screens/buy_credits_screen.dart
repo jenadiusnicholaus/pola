@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../services/credit_service.dart';
@@ -33,22 +34,31 @@ class _BuyCreditsScreenState extends State<BuyCreditsScreen> {
     });
 
     try {
-      // Load bundles and credits in parallel
-      final results = await Future.wait([
-        _creditService.getAvailableBundles(),
-        _creditService.getUserCredits(),
-      ]);
+      // Load credits first
+      final credits = await _creditService.getUserCredits();
+      
+      setState(() {
+        _currentBalance = credits['totalMinutes'] ?? 0;
+        _expiringMinutes = credits['expiringMinutes'] ?? 0;
+      });
 
-      final bundles = results[0] as List<CreditBundle>;
-      final credits = results[1] as Map<String, dynamic>;
+      // Try to get bundles from credits response first
+      List<CreditBundle> bundles = credits['bundles'] as List<CreditBundle>? ?? [];
+      
+      // If no bundles in credits response, fetch them separately
+      if (bundles.isEmpty) {
+        debugPrint('📦 No bundles in credits response, fetching separately...');
+        bundles = await _creditService.getAvailableBundles();
+      }
 
       setState(() {
         _bundles = bundles;
-        _currentBalance = credits['totalMinutes'] ?? 0;
-        _expiringMinutes = credits['expiringMinutes'] ?? 0;
         _isLoading = false;
       });
+      
+      debugPrint('✅ Loaded ${_bundles.length} bundles, balance: $_currentBalance minutes');
     } catch (e) {
+      debugPrint('❌ Error loading data: $e');
       setState(() {
         _error = 'Failed to load data: $e';
         _isLoading = false;
@@ -102,35 +112,53 @@ class _BuyCreditsScreenState extends State<BuyCreditsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildBalanceCard(theme),
-                        const SizedBox(height: 24),
                         if (_expiringMinutes > 0) ...[
+                          const SizedBox(height: 12),
                           _buildExpiringWarning(theme),
-                          const SizedBox(height: 24),
                         ],
-                        Text(
-                          'Available Bundles',
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Text(
+                              'Choose a Package',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '${_bundles.length} options',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         if (_bundles.isEmpty)
                           Center(
                             child: Padding(
                               padding: const EdgeInsets.all(32),
-                              child: Text(
-                                'No bundles available at the moment',
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.inventory_2_outlined,
+                                    size: 48,
+                                    color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'No packages available',
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           )
                         else
-                          ..._bundles.map((bundle) => Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: _buildBundleCard(bundle, theme),
-                              )),
+                        ..._bundles.map((bundle) => _buildBundleCard(bundle, theme)),
                       ],
                     ),
                   ),
@@ -139,73 +167,73 @@ class _BuyCreditsScreenState extends State<BuyCreditsScreen> {
   }
 
   Widget _buildBalanceCard(ThemeData theme) {
-    final isLowBalance = _currentBalance < 10;
-
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
-            theme.colorScheme.primaryContainer,
-            theme.colorScheme.primaryContainer.withOpacity(0.7),
+            theme.colorScheme.primary,
+            theme.colorScheme.primary.withOpacity(0.85),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Column(
+      child: Row(
         children: [
-          Row(
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.phone_in_talk,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.access_time,
-                  color: theme.colorScheme.onPrimaryContainer, size: 32),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Your Balance',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$_currentBalance minutes',
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onPrimaryContainer,
-                      ),
-                    ),
-                  ],
+              Text(
+                'Available Balance',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: Colors.white.withOpacity(0.9),
                 ),
               ),
-            ],
-          ),
-          if (isLowBalance) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.errorContainer,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
+              const SizedBox(height: 4),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
                 children: [
-                  Icon(Icons.warning, color: theme.colorScheme.error, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Low balance! Buy more minutes to make calls',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onErrorContainer,
-                      ),
+                  Text(
+                    '$_currentBalance',
+                    style: theme.textTheme.headlineLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'minutes',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: Colors.white.withOpacity(0.9),
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
+            ],
+          ),
         ],
       ),
     );
@@ -213,37 +241,22 @@ class _BuyCreditsScreenState extends State<BuyCreditsScreen> {
 
   Widget _buildExpiringWarning(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.tertiaryContainer,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.colorScheme.tertiary.withOpacity(0.3),
-        ),
+        color: Colors.amber.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.amber.shade200),
       ),
       child: Row(
         children: [
-          Icon(Icons.schedule,
-              color: theme.colorScheme.onTertiaryContainer, size: 24),
-          const SizedBox(width: 12),
+          Icon(Icons.info_outline, color: Colors.amber.shade800, size: 20),
+          const SizedBox(width: 10),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Expiring Soon',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onTertiaryContainer,
-                  ),
-                ),
-                Text(
-                  '$_expiringMinutes minutes will expire in the next 7 days',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onTertiaryContainer,
-                  ),
-                ),
-              ],
+            child: Text(
+              '$_expiringMinutes minutes expiring soon',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: Colors.amber.shade900,
+              ),
             ),
           ),
         ],
@@ -252,142 +265,118 @@ class _BuyCreditsScreenState extends State<BuyCreditsScreen> {
   }
 
   Widget _buildBundleCard(CreditBundle bundle, ThemeData theme) {
-    // Determine if this is a recommended bundle based on best value
-    final isRecommended = bundle.minutes >= 60 && bundle.minutes <= 120;
+    // Determine if this is the best value bundle
+    final pricePerMin = bundle.price / bundle.minutes;
+    final isBestValue = bundle.minutes >= 20;
 
-    return Card(
-      elevation: isRecommended ? 4 : 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: isRecommended
-            ? BorderSide(color: theme.colorScheme.primary, width: 2)
-            : BorderSide.none,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isBestValue 
+              ? theme.colorScheme.primary.withOpacity(0.5)
+              : theme.colorScheme.outline.withOpacity(0.2),
+          width: isBestValue ? 1.5 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: InkWell(
-        onTap: () => _selectBundle(bundle),
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      bundle.name,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  if (isRecommended)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.star, color: Colors.white, size: 16),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Best Value',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(Icons.access_time,
-                      color: theme.colorScheme.primary, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${bundle.minutes} minutes',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(Icons.calendar_today,
-                      color: theme.colorScheme.onSurfaceVariant, size: 16),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Valid for ${bundle.validityDays} days',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _selectBundle(bundle),
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Left: Package info
+                Expanded(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        bundle.priceFormatted,
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                        ),
+                      // Package name with badge
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              bundle.name.toUpperCase(),
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.5,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (isBestValue) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primary,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'POPULAR',
+                                style: TextStyle(
+                                  color: theme.colorScheme.onPrimary,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
+                      const SizedBox(height: 8),
+                      // Minutes and validity
                       Text(
-                        'TZS ${(bundle.price / bundle.minutes).toStringAsFixed(0)}/min',
-                        style: theme.textTheme.bodySmall?.copyWith(
+                        '${bundle.minutes} min • ${bundle.validityDays} days',
+                        style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
                   ),
-                  if (bundle.minutes >= 120)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.secondaryContainer,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        'Best Value',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.onSecondaryContainer,
-                          fontWeight: FontWeight.bold,
-                        ),
+                ),
+                // Right: Price and action
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'TSh ${bundle.price.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.primary,
                       ),
                     ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => _selectBundle(bundle),
-                  icon: const Icon(Icons.shopping_cart),
-                  label: const Text('Buy Now'),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'TSh ${pricePerMin.toInt()}/min',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(width: 12),
+                // Arrow indicator
+                Icon(
+                  Icons.chevron_right,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
           ),
         ),
       ),

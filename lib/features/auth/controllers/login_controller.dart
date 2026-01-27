@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../../services/api_service.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/device_registration_service.dart';
@@ -470,9 +471,18 @@ class LoginController extends GetxController {
       debugPrint('📱 Registering device after login...');
       final deviceRegistrationService = Get.find<DeviceRegistrationService>();
 
-      // Register device with all available info
-      await deviceRegistrationService.registerDevice();
-      debugPrint('✅ Device registration completed');
+      // Get FCM token to register with device
+      String? fcmToken;
+      try {
+        fcmToken = await FirebaseMessaging.instance.getToken();
+        debugPrint('🔑 FCM Token obtained: ${fcmToken?.substring(0, 20)}...');
+      } catch (e) {
+        debugPrint('⚠️ Failed to get FCM token: $e');
+      }
+
+      // Register device with FCM token
+      await deviceRegistrationService.registerDevice(fcmToken: fcmToken);
+      debugPrint('✅ Device registration completed with FCM token');
     } catch (e) {
       debugPrint('⚠️ Device registration failed (non-blocking): $e');
       // Don't show error to user - this is a background operation

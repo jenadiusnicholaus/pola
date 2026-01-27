@@ -162,12 +162,24 @@ class CallController extends GetxController {
 
     try {
       // Step 1: Check if user has credits
-      print('Checking credits for consultant: ${consultant.id}');
+      print('💳 ====== INITIATING CALL ======');
+      print('💳 Consultant ID (profile): ${consultant.id}');
+      print('💳 Consultant name: ${consultant.userDetails.fullName}');
+      print('💳 Consultant user ID: ${consultant.userDetails.id}');
+      
       final creditCheck = await _callService.checkCredits(consultant.id);
+
+      print('💳 Credit check result:');
+      print('   hasCredits: ${creditCheck.hasCredits}');
+      print('   availableMinutes: ${creditCheck.availableMinutes}');
+      print('   availableBundles count: ${creditCheck.availableBundles.length}');
+      print('   message: ${creditCheck.message}');
 
       if (!creditCheck.hasCredits) {
         // Store available bundles for display
         availableBundles.value = creditCheck.availableBundles;
+        print('📦 Stored ${availableBundles.length} bundles for display');
+        
         error.value = creditCheck.message.isNotEmpty
             ? creditCheck.message
             : 'You don\'t have enough credits to make this call.';
@@ -199,6 +211,11 @@ class CallController extends GetxController {
               duration: const Duration(seconds: 3),
             ),
           );
+        }
+        // Delay before going back to avoid snackbar controller issues
+        await Future.delayed(const Duration(milliseconds: 100));
+        if (Get.isSnackbarOpen) {
+          Get.closeCurrentSnackbar();
         }
         Get.back();
         return;
@@ -280,15 +297,33 @@ class CallController extends GetxController {
     _zegoService.stopDurationTimer();
     print('⏱️ Timer stopped immediately');
 
+    // Check if the call was actually connected (consultant joined)
+    final wasConnected = isConsultantConnected.value;
+    final callId = _zegoService.callId;
+    print('📞 Was consultant connected: $wasConnected, Call ID: $callId');
+
     Map<String, dynamic>? callSummary;
 
     try {
       // Leave the room
       await _zegoService.leaveRoom();
 
-      // Always call endCall on the service to stop timer and optionally record
-      // The service will handle recording only if call ID is set (caller side)
-      callSummary = await _zegoService.endCall(recordCall: true);
+      // Notify backend based on call state
+      if (callId != null) {
+        if (wasConnected) {
+          // Call was connected - use endCall to record duration
+          print('📞 Call was connected, recording duration...');
+          callSummary = await _zegoService.endCall(recordCall: true);
+        } else {
+          // Call was not answered - cancel it so callee gets notified
+          print('📵 Call was not answered, cancelling...');
+          await _callService.cancelCall(callId: callId.toString());
+          // Clear call ID since we cancelled
+          _zegoService.clearCallId();
+        }
+      } else {
+        print('⚠️ No call ID available');
+      }
 
       // Navigate back immediately - try multiple methods to ensure it works
       print('🔙 Attempting to navigate back...');

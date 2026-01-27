@@ -157,30 +157,83 @@ class DeviceRegistrationService extends GetxService {
     }
   }
 
-  /// Update FCM token for the current device
-  Future<void> updateFcmToken() async {
+  /// Update FCM token for the current device using PATCH endpoint
+  /// Uses /api/v1/security/devices/update_current_device_token/ which is simpler
+  /// as it automatically finds the current device based on the authenticated user
+  Future<bool> updateFcmToken({String? fcmToken}) async {
     try {
-      debugPrint('🔔 Updating FCM token...');
+      debugPrint('🔔 Updating FCM token via PATCH...');
 
-      final deviceId = await _deviceInfoService.getDeviceId();
-      final fcmToken = await _deviceInfoService.getFcmToken();
+      final token = fcmToken ?? await _deviceInfoService.getFcmToken();
 
-      if (fcmToken == null) {
+      if (token == null) {
         debugPrint('⚠️ No FCM token available');
-        return;
+        return false;
       }
 
-      await _apiService.post(
-        EnvironmentConfig.deviceRegistrationUrl,
+      debugPrint('🔑 FCM Token: ${token.substring(0, 20)}...');
+
+      // Use the update_current_device_token endpoint - simpler, no device_id needed
+      final response = await _apiService.patch(
+        EnvironmentConfig.deviceUpdateCurrentFcmTokenUrl,
         data: {
-          'device_id': deviceId,
+          'fcm_token': token,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint('✅ FCM token updated successfully via PATCH');
+        return true;
+      } else if (response.statusCode == 404) {
+        // Device not registered yet, do full registration
+        debugPrint('⚠️ No current device found, doing full registration...');
+        final result = await registerDevice(fcmToken: token);
+        return result != null;
+      } else {
+        debugPrint('⚠️ FCM token PATCH failed: ${response.statusCode}');
+        // Fall back to full device registration
+        debugPrint('🔄 Falling back to full device registration...');
+        final result = await registerDevice(fcmToken: token);
+        return result != null;
+      }
+    } catch (e) {
+      debugPrint('❌ Error updating FCM token: $e');
+      // Fall back to full device registration on error
+      try {
+        final token = fcmToken ?? await _deviceInfoService.getFcmToken();
+        if (token != null) {
+          debugPrint('🔄 Falling back to full device registration...');
+          final result = await registerDevice(fcmToken: token);
+          return result != null;
+        }
+      } catch (_) {}
+      return false;
+    }
+  }
+  
+  /// Update FCM token for a specific device by device_id
+  /// Uses /api/v1/security/devices/{id}/update_fcm_token/
+  Future<bool> updateFcmTokenForDevice(String deviceId, String fcmToken) async {
+    try {
+      debugPrint('🔔 Updating FCM token for device $deviceId...');
+
+      final response = await _apiService.patch(
+        EnvironmentConfig.getDeviceUpdateFcmTokenUrl(deviceId),
+        data: {
           'fcm_token': fcmToken,
         },
       );
 
-      debugPrint('✅ FCM token updated successfully');
+      if (response.statusCode == 200) {
+        debugPrint('✅ FCM token updated for device $deviceId');
+        return true;
+      } else {
+        debugPrint('⚠️ FCM token update failed: ${response.statusCode}');
+        return false;
+      }
     } catch (e) {
-      debugPrint('❌ Error updating FCM token: $e');
+      debugPrint('❌ Error updating FCM token for device: $e');
+      return false;
     }
   }
 

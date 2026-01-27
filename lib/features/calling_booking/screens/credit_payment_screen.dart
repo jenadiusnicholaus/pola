@@ -54,17 +54,28 @@ class _CreditPaymentScreenState extends State<CreditPaymentScreen> {
     super.dispose();
   }
 
+  void _showSnackBar(String message, {bool isError = true}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   Future<void> _initiatePayment() async {
     final phone = _phoneController.text.trim();
 
     if (phone.isEmpty) {
-      Get.snackbar('Error', 'Please enter your phone number');
+      _showSnackBar('Please enter your phone number');
       return;
     }
 
     final formattedPhone = _formatPhoneNumber(phone);
     if (!_validatePhoneNumber(formattedPhone)) {
-      Get.snackbar('Error', 'Invalid phone number format');
+      _showSnackBar('Invalid phone number format');
       return;
     }
 
@@ -85,12 +96,7 @@ class _CreditPaymentScreenState extends State<CreditPaymentScreen> {
         // Show next steps to user
         final nextSteps = result['nextSteps'] as List<String>? ?? [];
         if (nextSteps.isNotEmpty) {
-          Get.snackbar(
-            'Payment Initiated',
-            nextSteps.join('\n'),
-            duration: const Duration(seconds: 5),
-            snackPosition: SnackPosition.BOTTOM,
-          );
+          _showSnackBar('Payment Initiated: ${nextSteps.join(', ')}', isError: false);
         }
 
         // Start polling for payment status
@@ -99,13 +105,13 @@ class _CreditPaymentScreenState extends State<CreditPaymentScreen> {
         setState(() {
           _paymentStatus = 'failed';
         });
-        Get.snackbar('Error', result['message'] ?? 'Payment failed');
+        _showSnackBar(result['message'] ?? 'Payment failed');
       }
     } catch (e) {
       setState(() {
         _paymentStatus = 'failed';
       });
-      Get.snackbar('Error', 'Failed to initiate payment: $e');
+      _showSnackBar('Failed to initiate payment: $e');
     }
   }
 
@@ -117,7 +123,7 @@ class _CreditPaymentScreenState extends State<CreditPaymentScreen> {
         setState(() {
           _paymentStatus = 'failed';
         });
-        Get.snackbar('Timeout', 'Payment verification timed out');
+        _showSnackBar('Payment verification timed out');
         return;
       }
 
@@ -167,6 +173,12 @@ class _CreditPaymentScreenState extends State<CreditPaymentScreen> {
       return phone;
     }
 
+    // If phone is just the local number (9 digits starting with 6, 7, or 8)
+    // prepend 255 country code
+    if (phone.length == 9 && RegExp(r'^[6-8]\d{8}$').hasMatch(phone)) {
+      return '255$phone';
+    }
+
     return phone;
   }
 
@@ -201,131 +213,115 @@ class _CreditPaymentScreenState extends State<CreditPaymentScreen> {
 
   Widget _buildPaymentForm(ThemeData theme) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Bundle Summary
+          // Bundle Summary - Clean card
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  theme.colorScheme.primaryContainer,
-                  theme.colorScheme.primaryContainer.withOpacity(0.7),
-                ],
+              color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: theme.colorScheme.outline.withOpacity(0.1),
               ),
-              borderRadius: BorderRadius.circular(16),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Text(
-                  _bundle!.name,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onPrimaryContainer,
+                // Package details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _bundle!.name,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${_bundle!.minutes} min • Valid ${_bundle!.validityDays} days',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${_bundle!.minutes} minutes',
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.onPrimaryContainer,
-                          ),
-                        ),
-                        Text(
-                          'Valid for ${_bundle!.validityDays} days',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onPrimaryContainer
-                                .withOpacity(0.8),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      _bundle!.priceFormatted,
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onPrimaryContainer,
-                      ),
-                    ),
-                  ],
+                // Price
+                Text(
+                  'TSh ${_bundle!.price.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
 
           // Payment Provider Selection
           Text(
-            'Select Payment Provider',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+            'Payment Method',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           ..._providers.map((provider) {
             final isSelected = _selectedProvider == provider['value'];
             return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: 8),
               child: InkWell(
                 onTap: () {
                   setState(() {
                     _selectedProvider = provider['value'];
                   });
                 },
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 child: Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? theme.colorScheme.primaryContainer
-                        : theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
+                        ? theme.colorScheme.primary.withOpacity(0.08)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: isSelected
                           ? theme.colorScheme.primary
                           : theme.colorScheme.outline.withOpacity(0.2),
-                      width: isSelected ? 2 : 1,
+                      width: isSelected ? 1.5 : 1,
                     ),
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        provider['icon'],
-                        color: isSelected
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Text(
-                          provider['label'],
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
+                      Container(
+                        width: 20,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
                             color: isSelected
-                                ? theme.colorScheme.onPrimaryContainer
-                                : theme.colorScheme.onSurface,
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.outline.withOpacity(0.5),
+                            width: isSelected ? 6 : 2,
                           ),
                         ),
                       ),
-                      if (isSelected)
-                        Icon(
-                          Icons.check_circle,
-                          color: theme.colorScheme.primary,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Text(
+                          provider['label'],
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                          ),
                         ),
+                      ),
                     ],
                   ),
                 ),
@@ -338,8 +334,9 @@ class _CreditPaymentScreenState extends State<CreditPaymentScreen> {
           // Phone Number Input
           Text(
             'Phone Number',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 8),
@@ -350,60 +347,74 @@ class _CreditPaymentScreenState extends State<CreditPaymentScreen> {
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(12),
             ],
+            style: theme.textTheme.bodyLarge,
             decoration: InputDecoration(
-              hintText: '0712345678',
-              prefixText: '+255 ',
-              prefixIcon: const Icon(Icons.phone),
+              hintText: '712 345 678',
+              hintStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.4)),
+              prefixText: '+255  ',
+              prefixStyle: theme.textTheme.bodyLarge,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: theme.colorScheme.outline.withOpacity(0.2)),
               ),
-              helperText: 'Enter your mobile money number',
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: theme.colorScheme.outline.withOpacity(0.2)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
+              ),
             ),
           ),
 
           const SizedBox(height: 32),
 
-          // Pay Button
+          // Pay Button - Subtle but clear
           SizedBox(
             width: double.infinity,
-            child: FilledButton.icon(
+            height: 52,
+            child: FilledButton(
               onPressed: _initiatePayment,
-              icon: const Icon(Icons.payment),
-              label: Text('Pay ${_bundle!.priceFormatted}'),
               style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                backgroundColor: theme.colorScheme.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Text(
+                'Pay TSh ${_bundle!.price.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
 
           const SizedBox(height: 16),
 
-          // Info Notice
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.secondaryContainer.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  color: theme.colorScheme.secondary,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'You will receive a payment prompt on your phone. Enter your PIN to complete the transaction.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSecondaryContainer,
-                    ),
+          // Info Notice - Subtle
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.info_outline,
+                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
+                size: 18,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'You\'ll receive a prompt on your phone. Enter your PIN to confirm.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant.withOpacity(0.8),
+                    height: 1.4,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
@@ -418,59 +429,27 @@ class _CreditPaymentScreenState extends State<CreditPaymentScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SizedBox(
-              width: 80,
-              height: 80,
+              width: 56,
+              height: 56,
               child: CircularProgressIndicator(
-                strokeWidth: 6,
+                strokeWidth: 3,
                 color: theme.colorScheme.primary,
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 28),
             Text(
               'Processing Payment',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
-              'Check your phone for the payment prompt',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Enter your PIN to complete the transaction',
+              'Check your phone for the payment prompt.\nEnter your PIN to complete.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 32),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.secondaryContainer.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.timer,
-                    color: theme.colorScheme.secondary,
-                    size: 32,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Please wait while we verify your payment',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSecondaryContainer,
-                    ),
-                  ),
-                ],
+                height: 1.5,
               ),
             ),
           ],
@@ -487,76 +466,43 @@ class _CreditPaymentScreenState extends State<CreditPaymentScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 100,
-              height: 100,
+              width: 72,
+              height: 72,
               decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
+                color: Colors.green.shade50,
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.check_circle,
-                size: 64,
-                color: theme.colorScheme.primary,
+                Icons.check_rounded,
+                size: 40,
+                color: Colors.green.shade600,
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
             Text(
-              'Payment Successful!',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.primary,
+              'Payment Successful',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
               ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Credits Added Successfully',
-              style: theme.textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
             Text(
-              '+${_bundle!.minutes} minutes',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 32),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.access_time,
-                    color: theme.colorScheme.primary,
-                    size: 32,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Your credits are now available',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                  Text(
-                    'You can start making calls!',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                ],
+              '+${_bundle!.minutes} minutes added',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
+              height: 48,
               child: FilledButton(
                 onPressed: () => Get.back(result: {'success': true}),
+                style: FilledButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
                 child: const Text('Done'),
               ),
             ),
@@ -574,51 +520,62 @@ class _CreditPaymentScreenState extends State<CreditPaymentScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 100,
-              height: 100,
+              width: 72,
+              height: 72,
               decoration: BoxDecoration(
-                color: theme.colorScheme.errorContainer,
+                color: Colors.red.shade50,
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.error_outline,
-                size: 64,
-                color: theme.colorScheme.error,
+                Icons.close_rounded,
+                size: 40,
+                color: Colors.red.shade600,
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
             Text(
               'Payment Failed',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.error,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             Text(
               'Unable to complete the transaction',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyLarge?.copyWith(
+              style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
+              height: 48,
               child: FilledButton(
                 onPressed: () {
                   setState(() {
                     _paymentStatus = 'idle';
                   });
                 },
+                style: FilledButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
                 child: const Text('Try Again'),
               ),
             ),
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
+              height: 48,
               child: OutlinedButton(
                 onPressed: () => Get.back(),
+                style: OutlinedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
                 child: const Text('Cancel'),
               ),
             ),

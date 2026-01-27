@@ -55,10 +55,10 @@ class NearbyLawyer {
     print('   json[user] (user ID): ${json['user']}');
     
     return NearbyLawyer(
-      id: json['id'],
-      userId: json['user'],
-      userDetails: UserDetails.fromJson(json['user_details']),
-      consultantType: json['consultant_type'],
+      id: json['id'] ?? 0,
+      userId: json['user'] ?? json['user_details']?['id'] ?? 0,
+      userDetails: UserDetails.fromJson(json['user_details'] ?? {}),
+      consultantType: json['consultant_type'] ?? '',
       specialization: json['specialization'],
       yearsOfExperience: json['years_of_experience'],
       offersMobileConsultations: json['offers_mobile_consultations'] ?? false,
@@ -72,12 +72,12 @@ class NearbyLawyer {
           ? (json['average_rating'] as num).toDouble()
           : null,
       totalReviews: json['total_reviews'] ?? 0,
-      pricing: PricingInfo.fromJson(json['pricing']),
+      pricing: PricingInfo.fromJson(json['pricing'] ?? {}),
       isOnline: json['is_online'] ?? false,
-      distanceKm: (json['distance_km'] as num).toDouble(),
-      location: LocationInfo.fromJson(json['location']),
+      distanceKm: (json['distance_km'] as num?)?.toDouble() ?? 0.0,
+      location: LocationInfo.fromJson(json['location'] ?? {}),
       professionalDetails:
-          ProfessionalDetails.fromJson(json['professional_details']),
+          ProfessionalDetails.fromJson(json['professional_details'] ?? {}),
       firmInfo: json['firm_info'] != null
           ? FirmInfo.fromJson(json['firm_info'])
           : null,
@@ -144,7 +144,7 @@ class UserDetails {
 
   factory UserDetails.fromJson(Map<String, dynamic> json) {
     return UserDetails(
-      id: json['id'],
+      id: json['id'] ?? 0,
       email: json['email'],
       firstName: json['first_name'],
       lastName: json['last_name'],
@@ -162,7 +162,7 @@ class PricingInfo {
 
   factory PricingInfo.fromJson(Map<String, dynamic> json) {
     return PricingInfo(
-      mobile: MobilePricing.fromJson(json['mobile']),
+      mobile: MobilePricing.fromJson(json['mobile'] ?? {}),
     );
   }
 }
@@ -180,9 +180,9 @@ class MobilePricing {
 
   factory MobilePricing.fromJson(Map<String, dynamic> json) {
     return MobilePricing(
-      price: (json['price'] as num).toDouble(),
-      consultantShare: (json['consultant_share'] as num).toDouble(),
-      platformShare: (json['platform_share'] as num).toDouble(),
+      price: (json['price'] as num?)?.toDouble() ?? 0.0,
+      consultantShare: (json['consultant_share'] as num?)?.toDouble() ?? 0.0,
+      platformShare: (json['platform_share'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }
@@ -206,8 +206,8 @@ class LocationInfo {
 
   factory LocationInfo.fromJson(Map<String, dynamic> json) {
     return LocationInfo(
-      latitude: (json['latitude'] as num).toDouble(),
-      longitude: (json['longitude'] as num).toDouble(),
+      latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
+      longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
       officeAddress: json['office_address'],
       ward: json['ward'],
       district: json['district'],

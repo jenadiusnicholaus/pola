@@ -9,6 +9,7 @@ import '../controllers/call_controller.dart';
 import '../services/zego_call_service.dart';
 import '../../../services/device_registration_service.dart';
 import '../../../config/environment_config.dart';
+import '../../notifications/controllers/notification_controller.dart';
 import 'dart:io' show Platform;
 
 /// Local notifications plugin instance (must be top-level)
@@ -20,12 +21,76 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('📱 Background FCM message: ${message.data}');
 
-  // Handle call-related notifications in background
-  if (message.data['type'] == 'incoming_call') {
-    debugPrint('📞 Incoming call in background: ${message.data}');
+  final messageType = message.data['type'];
 
-    // Show local notification to open the app
+  // Handle call-related notifications in background
+  if (messageType == 'incoming_call') {
+    debugPrint('📞 Incoming call in background: ${message.data}');
     await _showIncomingCallNotification(message.data);
+  } else {
+    // Handle general notifications in background
+    debugPrint('🔔 General notification in background: ${message.data}');
+    await _showBackgroundNotification(message);
+  }
+}
+
+/// Show local notification for general messages in background (top-level function)
+Future<void> _showBackgroundNotification(RemoteMessage message) async {
+  try {
+    final notification = message.notification;
+    final data = message.data;
+    
+    String title = notification?.title ?? data['title'] ?? 'New Notification';
+    String body = notification?.body ?? data['body'] ?? '';
+    final messageType = data['type'] ?? 'system';
+    
+    // Determine notification channel based on type
+    String channelId = 'general_notifications';
+    String channelName = 'General Notifications';
+    if (messageType == 'payment_received') {
+      channelId = 'payment_notifications';
+      channelName = 'Payment Notifications';
+    }
+    
+    AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      channelId,
+      channelName,
+      channelDescription: 'App notifications',
+      importance: Importance.high,
+      priority: Priority.high,
+      showWhen: true,
+      enableVibration: true,
+      playSound: true,
+    );
+    
+    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+    
+    NotificationDetails notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+    
+    // Generate unique notification ID
+    final notificationId = message.messageId?.hashCode ?? DateTime.now().millisecondsSinceEpoch;
+    
+    // Encode data for payload
+    final payload = jsonEncode(data);
+    
+    await flutterLocalNotificationsPlugin.show(
+      notificationId,
+      title,
+      body,
+      notificationDetails,
+      payload: payload,
+    );
+    
+    debugPrint('✅ Background notification shown: $title');
+  } catch (e) {
+    debugPrint('❌ Error showing background notification: $e');
   }
 }
 
@@ -62,30 +127,84 @@ Future<void> _showIncomingCallNotification(Map<String, dynamic> data) async {
     // Encode the data as JSON for proper parsing later
     final payload = jsonEncode(data);
 
+    // Mark call as pending
+    final callId = data['call_id']?.toString() ?? '';
+    if (callId.isNotEmpty) {
+      _markCallPending(callId);
+    }
+
     await flutterLocalNotificationsPlugin.show(
-      0, // notification id
+      _incomingCallNotificationId, // Use constant ID for cancellation
       'Incoming Call',
       '${data['caller_name'] ?? 'Someone'} is calling...',
       notificationDetails,
       payload: payload,
     );
 
-    debugPrint('📱 Local notification shown for incoming call');
+    debugPrint(
+        '📱 Local notification shown for incoming call (id: $_incomingCallNotificationId)');
   } catch (e) {
     debugPrint('❌ Error showing local notification: $e');
   }
 }
 
+/// Notification ID for incoming calls (used to cancel it later)
+const int _incomingCallNotificationId = 1001;
+
+/// Track pending incoming calls to prevent duplicate handling
+/// Key: callId, Value: timestamp when call started
+final Map<String, DateTime> _pendingCalls = {};
+
+/// Check if a call is still pending (not yet accepted/rejected/ended)
+bool _isCallPending(String callId) {
+  if (!_pendingCalls.containsKey(callId)) return false;
+
+  // Consider call expired after 60 seconds
+  final startTime = _pendingCalls[callId]!;
+  final isExpired = DateTime.now().difference(startTime).inSeconds > 60;
+  if (isExpired) {
+    _pendingCalls.remove(callId);
+    return false;
+  }
+  return true;
+}
+
+/// Mark a call as pending
+void _markCallPending(String callId) {
+  _pendingCalls[callId] = DateTime.now();
+}
+
+/// Clear a pending call (when accepted, rejected, or ended)
+void _clearPendingCall(String callId) {
+  _pendingCalls.remove(callId);
+}
+
+/// Cancel the incoming call notification
+Future<void> _cancelIncomingCallNotification() async {
+  try {
+    await flutterLocalNotificationsPlugin.cancel(_incomingCallNotificationId);
+    debugPrint('🔕 Cancelled incoming call notification');
+  } catch (e) {
+    debugPrint('⚠️ Error cancelling notification: $e');
+  }
+}
+
 class FCMService extends GetxService {
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
-  final DeviceRegistrationService _deviceService =
-      Get.find<DeviceRegistrationService>();
+  late final DeviceRegistrationService _deviceService;
   final FlutterLocalNotificationsPlugin _localNotifications =
       flutterLocalNotificationsPlugin;
+  
+  Timer? _tokenRefreshTimer;
+  static const Duration _tokenRefreshInterval = Duration(hours: 12); // Refresh token every 12 hours
 
   /// Initialize FCM service
   Future<FCMService> init() async {
     debugPrint('🔔 Initializing FCM Service...');
+    
+    // Get device service (must be registered before FCM service)
+    _deviceService = Get.find<DeviceRegistrationService>();
+    debugPrint('📱 DeviceRegistrationService found');
 
     // Initialize local notifications
     await _initializeLocalNotifications();
@@ -101,12 +220,76 @@ class FCMService extends GetxService {
 
     // Listen for token refresh
     _firebaseMessaging.onTokenRefresh.listen((newToken) {
-      debugPrint('🔄 FCM token refreshed: $newToken');
-      registerDeviceToken();
+      debugPrint('🔄 FCM token refreshed automatically: ${newToken.substring(0, 20)}...');
+      _registerTokenWithBackend(newToken, isUpdate: true);
     });
+    
+    // Start periodic token refresh to ensure backend always has valid token
+    _startPeriodicTokenRefresh();
 
     debugPrint('✅ FCM Service initialized');
     return this;
+  }
+  
+  /// Start periodic token refresh
+  void _startPeriodicTokenRefresh() {
+    _tokenRefreshTimer?.cancel();
+    _tokenRefreshTimer = Timer.periodic(_tokenRefreshInterval, (_) {
+      debugPrint('🔄 Periodic FCM token refresh...');
+      refreshAndRegisterToken();
+    });
+  }
+  
+  /// Force refresh FCM token and register with backend
+  Future<void> refreshAndRegisterToken() async {
+    try {
+      debugPrint('🔄 Force refreshing FCM token...');
+      
+      // Delete the old token first
+      await _firebaseMessaging.deleteToken();
+      debugPrint('🗑️ Old FCM token deleted');
+      
+      // Get a new token
+      final newToken = await _firebaseMessaging.getToken();
+      
+      if (newToken != null) {
+        debugPrint('🔑 New FCM Token: ${newToken.substring(0, 20)}...');
+        await _registerTokenWithBackend(newToken, isUpdate: true);
+      } else {
+        debugPrint('❌ Failed to get new FCM token');
+      }
+    } catch (e) {
+      debugPrint('❌ Error refreshing FCM token: $e');
+    }
+  }
+  
+  /// Register token with backend via device registration
+  /// For initial registration, uses full device registration
+  /// For token updates, uses the more efficient PATCH endpoint
+  Future<void> _registerTokenWithBackend(String token, {bool isUpdate = false}) async {
+    try {
+      if (isUpdate) {
+        // Use PATCH endpoint for token updates - more efficient
+        final success = await _deviceService.updateFcmToken(fcmToken: token);
+        if (success) {
+          debugPrint('✅ FCM token updated with backend (PATCH)');
+        } else {
+          debugPrint('⚠️ FCM token update failed, already fell back to full registration');
+        }
+      } else {
+        // Use full device registration for initial setup
+        await _deviceService.registerDevice(fcmToken: token);
+        debugPrint('✅ FCM token registered with backend (full registration)');
+      }
+    } catch (e) {
+      debugPrint('❌ Error registering FCM token with backend: $e');
+    }
+  }
+  
+  @override
+  void onClose() {
+    _tokenRefreshTimer?.cancel();
+    super.onClose();
   }
 
   /// Initialize local notifications for heads-up notifications
@@ -134,9 +317,15 @@ class FCMService extends GetxService {
         onDidReceiveNotificationResponse: _onNotificationTapped,
       );
 
-      // Create Android notification channel for incoming calls
+      // Create Android notification channels
       if (Platform.isAndroid) {
-        const AndroidNotificationChannel channel = AndroidNotificationChannel(
+        final androidPlugin =
+            _localNotifications.resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>();
+
+        // Channel for incoming calls (high priority)
+        const AndroidNotificationChannel callChannel =
+            AndroidNotificationChannel(
           'incoming_calls',
           'Incoming Calls',
           description: 'Notifications for incoming voice calls',
@@ -146,12 +335,35 @@ class FCMService extends GetxService {
           showBadge: true,
         );
 
-        await _localNotifications
-            .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin>()
-            ?.createNotificationChannel(channel);
+        // Channel for general notifications
+        const AndroidNotificationChannel generalChannel =
+            AndroidNotificationChannel(
+          'general_notifications',
+          'General Notifications',
+          description: 'Mentions, replies, updates, and other notifications',
+          importance: Importance.high,
+          playSound: true,
+          enableVibration: true,
+          showBadge: true,
+        );
 
-        debugPrint('✅ Android notification channel created');
+        // Channel for payment notifications
+        const AndroidNotificationChannel paymentChannel =
+            AndroidNotificationChannel(
+          'payment_notifications',
+          'Payment Notifications',
+          description: 'Payment received and transaction updates',
+          importance: Importance.high,
+          playSound: true,
+          enableVibration: true,
+          showBadge: true,
+        );
+
+        await androidPlugin?.createNotificationChannel(callChannel);
+        await androidPlugin?.createNotificationChannel(generalChannel);
+        await androidPlugin?.createNotificationChannel(paymentChannel);
+
+        debugPrint('✅ Android notification channels created');
       }
 
       debugPrint('✅ Local notifications initialized');
@@ -174,9 +386,19 @@ class FCMService extends GetxService {
       final data = jsonDecode(response.payload!) as Map<String, dynamic>;
       debugPrint('📱 Parsed notification data: $data');
 
-      // Navigate to incoming call screen
+      // Navigate based on notification type
       if (data['type'] == 'incoming_call') {
+        // For notification taps on call notifications, check if call is still pending
+        final callId = data['call_id']?.toString() ?? '';
+        if (callId.isNotEmpty && !_isCallPending(callId)) {
+          debugPrint('⚠️ Call $callId is no longer pending, ignoring notification tap');
+          _cancelIncomingCallNotification();
+          return;
+        }
         _handleIncomingCall(data);
+      } else {
+        // Handle general notifications
+        _navigateFromNotification(data);
       }
     } catch (e) {
       debugPrint('❌ Error parsing notification payload: $e');
@@ -268,7 +490,9 @@ class FCMService extends GetxService {
 
   /// Handle foreground FCM messages
   void _handleForegroundMessage(RemoteMessage message) {
-    debugPrint('📱 FCM message received (foreground): ${message.data}');
+    debugPrint('📱 ====== FCM MESSAGE RECEIVED ======');
+    debugPrint('📱 FCM data: ${message.data}');
+    debugPrint('📱 FCM notification: ${message.notification?.title} - ${message.notification?.body}');
 
     final messageType = message.data['type'];
     debugPrint('📱 Message type: $messageType');
@@ -290,8 +514,99 @@ class FCMService extends GetxService {
       case 'missed_call':
         _handleMissedCall(message.data);
         break;
+      // Handle general notifications (mentions, replies, etc.)
+      case 'mention':
+      case 'reply':
+      case 'consultation_request':
+      case 'consultation_status':
+      case 'payment_received':
+      case 'document_ready':
+      case 'system':
+        _handleGeneralNotification(message);
+        break;
       default:
         debugPrint('⚠️ Unknown FCM message type: $messageType');
+        // Still show notification for unknown types if there's a notification payload
+        if (message.notification != null) {
+          _handleGeneralNotification(message);
+        }
+    }
+  }
+
+  /// Handle general notifications (mentions, replies, payments, etc.)
+  Future<void> _handleGeneralNotification(RemoteMessage message) async {
+    try {
+      final notification = message.notification;
+      final data = message.data;
+      
+      String title = notification?.title ?? data['title'] ?? 'New Notification';
+      String body = notification?.body ?? data['body'] ?? '';
+      final messageType = data['type'] ?? 'system';
+      
+      debugPrint('🔔 Showing notification: $title - $body');
+      
+      // Determine notification channel based on type
+      String channelId = 'general_notifications';
+      if (messageType == 'payment_received') {
+        channelId = 'payment_notifications';
+      }
+      
+      // Android notification details
+      AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+        channelId,
+        channelId == 'payment_notifications' ? 'Payment Notifications' : 'General Notifications',
+        channelDescription: 'App notifications',
+        importance: Importance.high,
+        priority: Priority.high,
+        showWhen: true,
+        enableVibration: true,
+        playSound: true,
+      );
+      
+      // iOS notification details
+      const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
+      
+      NotificationDetails notificationDetails = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
+      
+      // Generate unique notification ID from message data
+      final notificationId = message.messageId?.hashCode ?? DateTime.now().millisecondsSinceEpoch;
+      
+      // Encode data for payload
+      final payload = jsonEncode(data);
+      
+      await _localNotifications.show(
+        notificationId,
+        title,
+        body,
+        notificationDetails,
+        payload: payload,
+      );
+      
+      // Refresh notification count in the app
+      _refreshNotificationCount();
+      
+      debugPrint('✅ Local notification shown: $title');
+    } catch (e) {
+      debugPrint('❌ Error showing general notification: $e');
+    }
+  }
+  
+  /// Refresh notification count in the app
+  void _refreshNotificationCount() {
+    try {
+      // Try to refresh notification controller if it exists
+      if (Get.isRegistered<NotificationController>()) {
+        Get.find<NotificationController>().refreshUnreadCount();
+      }
+    } catch (e) {
+      debugPrint('⚠️ Could not refresh notification count: $e');
     }
   }
 
@@ -299,8 +614,57 @@ class FCMService extends GetxService {
   void _handleMessageOpenedApp(RemoteMessage message) {
     debugPrint('📱 App opened from notification: ${message.data}');
 
-    if (message.data['type'] == 'incoming_call') {
+    final messageType = message.data['type'];
+    
+    if (messageType == 'incoming_call') {
       _handleIncomingCall(message.data);
+    } else {
+      // Navigate based on notification type
+      _navigateFromNotification(message.data);
+    }
+  }
+  
+  /// Navigate to appropriate screen based on notification data
+  void _navigateFromNotification(Map<String, dynamic> data) {
+    final actionType = data['action_type'];
+    
+    debugPrint('🔔 Navigating for action: $actionType');
+    
+    switch (actionType) {
+      case 'open_comment':
+        final hubType = data['hub_type']?.toString() ?? 'forum';
+        String route;
+        switch (hubType.toLowerCase()) {
+          case 'forum':
+            route = '/forum-hub';
+            break;
+          case 'advocates':
+            route = '/advocates-hub';
+            break;
+          case 'students':
+            route = '/students-hub';
+            break;
+          default:
+            route = '/forum-hub';
+        }
+        Get.toNamed(route);
+        break;
+        
+      case 'open_consultation':
+        Get.toNamed('/my-consultations');
+        break;
+        
+      case 'open_earnings':
+        Get.toNamed('/my-consultations');
+        break;
+        
+      case 'open_document':
+        Get.toNamed('/my-documents');
+        break;
+        
+      default:
+        // Open notifications screen
+        Get.toNamed('/notifications');
     }
   }
 
@@ -329,6 +693,32 @@ class FCMService extends GetxService {
       final callType = data['call_type']?.toString() ?? 'voice';
       final callerId = data['caller_id']?.toString() ?? '';
 
+      if (callId.isEmpty || channelName.isEmpty) {
+        debugPrint('❌ Invalid incoming call data: $data');
+        return;
+      }
+
+      // Mark this call as pending (for new incoming calls)
+      // If call already exists, this just updates the timestamp
+      _markCallPending(callId);
+
+      // Check if we're already on a call screen
+      final currentRoute = Get.currentRoute;
+      if (currentRoute.contains('Call') || currentRoute.contains('call')) {
+        debugPrint(
+            '⚠️ Already on a call screen, ignoring duplicate incoming call');
+        return;
+      }
+
+      // Check if call controller exists and is in a call
+      if (Get.isRegistered<CallController>()) {
+        final controller = Get.find<CallController>();
+        if (controller.isCallConnected.value) {
+          debugPrint('⚠️ Already connected to a call, ignoring incoming call');
+          return;
+        }
+      }
+
       // Convert relative/file URLs to absolute URLs
       if (callerPhoto.isNotEmpty) {
         // Check if it's already an absolute URL (starts with http:// or https://)
@@ -344,12 +734,7 @@ class FCMService extends GetxService {
         }
       }
 
-      if (callId.isEmpty || channelName.isEmpty) {
-        debugPrint('❌ Invalid incoming call data: $data');
-        return;
-      }
-
-      debugPrint('📞 Incoming call from $callerName');
+      debugPrint('📞 Incoming call from $callerName (call pending)');
 
       // Navigate to incoming call screen
       Get.to(
@@ -372,6 +757,13 @@ class FCMService extends GetxService {
   void _handleCallAccepted(Map<String, dynamic> data) {
     debugPrint('✅ Call accepted by consultant');
 
+    // Cancel the incoming call notification and clear pending state
+    final callId = data['call_id']?.toString() ?? '';
+    if (callId.isNotEmpty) {
+      _clearPendingCall(callId);
+    }
+    _cancelIncomingCallNotification();
+
     Get.snackbar(
       'Call Accepted',
       'Consultant is joining the call...',
@@ -387,6 +779,13 @@ class FCMService extends GetxService {
   void _handleCallRejected(Map<String, dynamic> data) {
     debugPrint('❌ Call rejected by consultant');
     debugPrint('📍 Current route: ${Get.currentRoute}');
+
+    // Cancel the incoming call notification and clear pending state
+    final callId = data['call_id']?.toString() ?? '';
+    if (callId.isNotEmpty) {
+      _clearPendingCall(callId);
+    }
+    _cancelIncomingCallNotification();
 
     Get.snackbar(
       'Call Declined',
@@ -433,6 +832,13 @@ class FCMService extends GetxService {
     debugPrint('📥 Call ended data: $data');
     debugPrint('📥 Duration: ${data['duration_seconds']} seconds');
     debugPrint('📥 Message: ${data['message']}');
+
+    // Cancel the incoming call notification and clear pending state
+    final callId = data['call_id']?.toString() ?? '';
+    if (callId.isNotEmpty) {
+      _clearPendingCall(callId);
+    }
+    _cancelIncomingCallNotification();
 
     // IMMEDIATELY try to stop timer via ZegoService first
     try {
@@ -495,6 +901,13 @@ class FCMService extends GetxService {
   /// Handle missed call notification
   void _handleMissedCall(Map<String, dynamic> data) {
     debugPrint('📵 Missed call notification');
+
+    // Cancel the incoming call notification and clear pending state
+    final callId = data['call_id']?.toString() ?? '';
+    if (callId.isNotEmpty) {
+      _clearPendingCall(callId);
+    }
+    _cancelIncomingCallNotification();
 
     final callerName = data['caller_name']?.toString() ?? 'Someone';
 

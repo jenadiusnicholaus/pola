@@ -2,8 +2,25 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../services/call_service.dart';
 import 'call_screen.dart';
+
+/// Notification ID for incoming calls (must match fcm_service.dart)
+const int _incomingCallNotificationId = 1001;
+
+/// Cancel the incoming call notification when call is handled
+Future<void> _cancelIncomingCallNotification() async {
+  try {
+    final FlutterLocalNotificationsPlugin plugin =
+        FlutterLocalNotificationsPlugin();
+    await plugin.cancel(_incomingCallNotificationId);
+    debugPrint(
+        '🔕 Cancelled incoming call notification from IncomingCallScreen');
+  } catch (e) {
+    debugPrint('⚠️ Error cancelling notification: $e');
+  }
+}
 
 class IncomingCallScreen extends StatefulWidget {
   final String callId;
@@ -34,6 +51,42 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
   late AnimationController _pulseController;
   bool _isProcessing = false;
   String _processingAction = ''; // Track which action is being processed
+
+  /// Show snackbar safely without overlay issues
+  void _showSnackBar(String title, String message,
+      {Color? backgroundColor, IconData? icon}) {
+    // Use a global key or delayed execution to avoid overlay issues
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (Get.context != null) {
+        ScaffoldMessenger.of(Get.context!).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, color: Colors.white, size: 20),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(message, style: const TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: backgroundColor ?? Colors.grey[800],
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -109,12 +162,11 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
     }
 
     if (mounted) {
-      Get.snackbar(
+      _showSnackBar(
         'Missed Call',
         'You missed a call from ${widget.callerName}',
-        icon: const Icon(Icons.phone_missed, color: Colors.white),
         backgroundColor: Colors.orange,
-        colorText: Colors.white,
+        icon: Icons.phone_missed,
       );
 
       Get.back();
@@ -131,6 +183,9 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
     });
     _stopRingtone();
     _timeoutTimer.cancel();
+
+    // Cancel the notification immediately
+    _cancelIncomingCallNotification();
 
     try {
       debugPrint('✅ Accepting call: ${widget.callId}');
@@ -156,23 +211,21 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
         );
       } else {
         debugPrint('❌ Accept failed: ${response['message']}');
-        Get.snackbar(
+        _showSnackBar(
           'Error',
           response['message'] ?? 'Failed to accept call',
-          icon: const Icon(Icons.error, color: Colors.white),
           backgroundColor: Colors.red,
-          colorText: Colors.white,
+          icon: Icons.error,
         );
         Get.back();
       }
     } catch (e) {
       debugPrint('❌ Error accepting call: $e');
-      Get.snackbar(
+      _showSnackBar(
         'Error',
         'Failed to accept call. Please try again.',
-        icon: const Icon(Icons.error, color: Colors.white),
         backgroundColor: Colors.red,
-        colorText: Colors.white,
+        icon: Icons.error,
       );
       Get.back();
     } finally {
@@ -193,6 +246,9 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
     _stopRingtone();
     _timeoutTimer.cancel();
 
+    // Cancel the notification immediately
+    _cancelIncomingCallNotification();
+
     try {
       debugPrint('❌ Rejecting call: ${widget.callId}');
 
@@ -209,16 +265,12 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
       }
 
       // Show snackbar after closing
-      Future.delayed(const Duration(milliseconds: 100), () {
-        Get.snackbar(
-          'Call Declined',
-          'You declined the call from ${widget.callerName}',
-          icon: const Icon(Icons.call_end, color: Colors.white),
-          backgroundColor: Colors.grey[800],
-          colorText: Colors.white,
-          duration: const Duration(seconds: 2),
-        );
-      });
+      _showSnackBar(
+        'Call Declined',
+        'You declined the call from ${widget.callerName}',
+        backgroundColor: Colors.grey[800],
+        icon: Icons.call_end,
+      );
     } catch (e) {
       debugPrint('❌ Error rejecting call: $e');
 
@@ -238,16 +290,12 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
         if (mounted) {
           Navigator.of(context).pop();
         }
-        Future.delayed(const Duration(milliseconds: 100), () {
-          Get.snackbar(
-            'Error',
-            'Failed to decline call',
-            icon: const Icon(Icons.error, color: Colors.white),
-            backgroundColor: Colors.red,
-            colorText: Colors.white,
-            duration: const Duration(seconds: 2),
-          );
-        });
+        _showSnackBar(
+          'Error',
+          'Failed to decline call',
+          backgroundColor: Colors.red,
+          icon: Icons.error,
+        );
       }
     } finally {
       if (mounted) {

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart' as dio;
 import 'package:get/get.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import '../../../../services/api_service.dart';
 import '../../../../config/environment_config.dart';
@@ -322,11 +323,18 @@ class HubContentService extends GetxService {
         'content_id': contentId,
       };
 
+      debugPrint('🌐 ====== SENDING COMMENT TO API ======');
+      debugPrint('🌐 URL: ${EnvironmentConfig.hubCommentsUrl}');
+      debugPrint('🌐 Request data: $requestData');
+
       final response = await _apiService.post<Map<String, dynamic>>(
         EnvironmentConfig.hubCommentsUrl,
         data: requestData,
         options: _defaultOptions,
       );
+
+      debugPrint('🌐 Response status: ${response.statusCode}');
+      debugPrint('🌐 Response data: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return HubComment.fromJson(response.data!);

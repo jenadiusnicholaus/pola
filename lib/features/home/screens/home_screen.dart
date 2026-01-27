@@ -8,6 +8,7 @@ import '../../../constants/app_strings.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/permission_gate.dart';
 import '../../profile/services/profile_service.dart';
+import '../../notifications/widgets/notification_badge.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -218,43 +219,10 @@ class _HomeScreenState extends State<HomeScreen> {
             )
           : const SizedBox.shrink()),
 
-      // Notifications button with badge
-      Stack(
-        children: [
-          IconButton(
-            onPressed: () => _showNotifications(context, controller),
-            icon: const Icon(
-              Icons.notifications_outlined,
-              color: Colors.black87,
-            ),
-            tooltip: 'Notifications',
-          ),
-          // Notification badge
-          Positioned(
-            right: 8,
-            top: 8,
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                color: Colors.red,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              constraints: const BoxConstraints(
-                minWidth: 14,
-                minHeight: 14,
-              ),
-              child: const Text(
-                '3',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 8,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-        ],
+      // Notifications button with dynamic badge
+      const NotificationBadge(
+        iconColor: Colors.black87,
+        iconSize: 24,
       ),
 
       // User profile button with picture
@@ -317,120 +285,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showUserProfile(BuildContext context, HomeController controller) {
     // Navigate to profile page
     Get.toNamed('/profile');
-  }
-
-  void _showNotifications(BuildContext context, HomeController controller) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.notifications, color: AppColors.primaryAmber),
-            SizedBox(width: 8),
-            Text('Notifications'),
-          ],
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView(
-            shrinkWrap: true,
-            children: [
-              _buildNotificationItem(
-                icon: Icons.gavel,
-                title: 'New Case Assignment',
-                message: 'You have been assigned to case #2024-001',
-                time: '2 hours ago',
-                isRead: false,
-              ),
-              const Divider(),
-              _buildNotificationItem(
-                icon: Icons.schedule,
-                title: 'Court Hearing Reminder',
-                message: 'Court hearing scheduled for tomorrow at 10:00 AM',
-                time: '1 day ago',
-                isRead: false,
-              ),
-              const Divider(),
-              _buildNotificationItem(
-                icon: Icons.document_scanner,
-                title: 'Document Review',
-                message: 'New documents uploaded for case #2024-002',
-                time: '3 days ago',
-                isRead: true,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Mark All as Read'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNotificationItem({
-    required IconData icon,
-    required String title,
-    required String message,
-    required String time,
-    required bool isRead,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: isRead ? null : AppColors.primaryAmber.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: AppColors.primaryAmber.withOpacity(0.2),
-          child: Icon(icon, color: AppColors.primaryAmber),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              message,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 13,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              time,
-              style: TextStyle(
-                color: Colors.grey[500],
-                fontSize: 11,
-              ),
-            ),
-          ],
-        ),
-        trailing: !isRead
-            ? Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: AppColors.primaryAmber,
-                  shape: BoxShape.circle,
-                ),
-              )
-            : null,
-      ),
-    );
   }
 
   void _showLogoutConfirmation(

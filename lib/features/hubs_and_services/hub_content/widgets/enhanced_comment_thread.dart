@@ -41,6 +41,41 @@ class _EnhancedCommentThreadState extends State<EnhancedCommentThread> {
     _showReplies = false;
   }
 
+  /// Extract users from the comment and its replies for fallback mention suggestions
+  List<MentionSuggestion> _getFallbackUsersFromComment() {
+    final Map<int, MentionSuggestion> uniqueUsers = {};
+
+    // Add the comment author
+    final author = widget.comment.author;
+    if (author.username.isNotEmpty) {
+      uniqueUsers[author.id] = MentionSuggestion(
+        userId: author.id,
+        username: author.username,
+        displayName:
+            author.fullName.isNotEmpty ? author.fullName : author.username,
+        avatarUrl: author.avatarUrl,
+      );
+    }
+
+    // Add authors from replies
+    for (final reply in widget.comment.replies) {
+      final replyAuthor = reply.author;
+      if (!uniqueUsers.containsKey(replyAuthor.id) &&
+          replyAuthor.username.isNotEmpty) {
+        uniqueUsers[replyAuthor.id] = MentionSuggestion(
+          userId: replyAuthor.id,
+          username: replyAuthor.username,
+          displayName: replyAuthor.fullName.isNotEmpty
+              ? replyAuthor.fullName
+              : replyAuthor.username,
+          avatarUrl: replyAuthor.avatarUrl,
+        );
+      }
+    }
+
+    return uniqueUsers.values.toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -533,6 +568,7 @@ class _EnhancedCommentThreadState extends State<EnhancedCommentThread> {
                           controller: replyController,
                           hintText: 'Write a reply... Use @ to mention',
                           maxLines: 5,
+                          fallbackUsers: _getFallbackUsersFromComment(),
                           onMentionsChanged: (userIds) {
                             mentionedUserIds = userIds;
                           },

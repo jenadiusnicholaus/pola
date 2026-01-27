@@ -159,6 +159,12 @@ class _MentionTextFieldState extends State<MentionTextField> {
       debugPrint('🔍 Calling API with query: "$query"');
       final suggestions = await widget.onSearchMentions!(query);
       debugPrint('🔍 API returned ${suggestions.length} users');
+      
+      // Store all returned users in the mapping (so manual typing works)
+      for (final suggestion in suggestions) {
+        _usernamesToIds[suggestion.username] = suggestion.userId;
+        debugPrint('🔍 Cached user: ${suggestion.username} -> ${suggestion.userId}');
+      }
 
       if (mounted) {
         setState(() {
@@ -238,11 +244,53 @@ class _MentionTextFieldState extends State<MentionTextField> {
   void _notifyMentionsChanged() {
     if (widget.onMentionsChanged == null) return;
 
+    debugPrint('🔔 _notifyMentionsChanged called');
+    debugPrint('🔔 Text: "${widget.controller.text}"');
+    
+    // First, try to resolve any unresolved mentions from fallback users
+    _resolveUnresolvedMentions();
+    
+    debugPrint('🔔 Username -> ID map: $_usernamesToIds');
+
     final userIds = MentionParser.extractMentionedUserIds(
       widget.controller.text,
       _usernamesToIds,
     );
+    
+    debugPrint('🔔 Extracted user IDs: $userIds');
     widget.onMentionsChanged!(userIds);
+  }
+  
+  /// Try to resolve any mentions in text that aren't in the mapping yet
+  void _resolveUnresolvedMentions() {
+    final mentions = MentionParser.extractMentions(widget.controller.text);
+    debugPrint('🔍 Found mentions in text: $mentions');
+    
+    for (final username in mentions) {
+      // Skip if already resolved
+      if (_usernamesToIds.containsKey(username)) {
+        debugPrint('🔍 "$username" already resolved to ID ${_usernamesToIds[username]}');
+        continue;
+      }
+      
+      // Try to find in fallback users (case-insensitive)
+      for (final user in widget.fallbackUsers) {
+        if (user.username.toLowerCase() == username.toLowerCase()) {
+          _usernamesToIds[username] = user.userId;
+          debugPrint('🔍 Resolved "$username" from fallback users -> ID ${user.userId}');
+          break;
+        }
+      }
+      
+      // If still not resolved, check recent suggestions
+      for (final suggestion in _suggestions) {
+        if (suggestion.username.toLowerCase() == username.toLowerCase()) {
+          _usernamesToIds[username] = suggestion.userId;
+          debugPrint('🔍 Resolved "$username" from suggestions -> ID ${suggestion.userId}');
+          break;
+        }
+      }
+    }
   }
 
   @override
@@ -394,19 +442,26 @@ class _MentionTextFieldState extends State<MentionTextField> {
         TextField(
           controller: widget.controller,
           maxLines: widget.maxLines,
+          minLines: 1,
           onChanged: (value) {
             _onTextChanged();
           },
           decoration: InputDecoration(
             hintText: widget.hintText,
             hintStyle: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
             ),
             border: InputBorder.none,
-            contentPadding: EdgeInsets.zero,
+            contentPadding: const EdgeInsets.symmetric(vertical: 10),
             isDense: true,
           ),
-          style: Theme.of(context).textTheme.bodyMedium,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontSize: 14,
+            height: 1.4,
+          ),
+          textCapitalization: TextCapitalization.sentences,
         ),
       ],
     );

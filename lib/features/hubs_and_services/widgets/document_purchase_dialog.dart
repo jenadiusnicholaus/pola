@@ -230,6 +230,12 @@ class _DocumentPurchaseDialogState extends State<DocumentPurchaseDialog> {
       return phone;
     }
 
+    // If phone is just the local number (9 digits starting with 6, 7, or 8)
+    // prepend 255 country code
+    if (phone.length == 9 && RegExp(r'^[6-8]\d{8}$').hasMatch(phone)) {
+      return '255$phone';
+    }
+
     return phone;
   }
 

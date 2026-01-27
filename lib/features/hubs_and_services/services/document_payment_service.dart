@@ -30,18 +30,27 @@ class DocumentPaymentService {
       );
 
       debugPrint('💳 Payment Response: ${response.statusCode}');
+      debugPrint('💳 Payment Response Data: ${response.data}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = response.data as Map<String, dynamic>;
         debugPrint('✅ Payment initiated successfully');
-        debugPrint('   Transaction ID: ${data['transaction']?['id']}');
+        
+        // Handle both response formats:
+        // Format 1: { "transaction": { "id": "..." } }
+        // Format 2: { "transactionId": "..." } (AzamPay direct response)
+        final transactionId = data['transaction']?['id'] ?? 
+                              data['transactionId'] ?? 
+                              data['transaction_id'];
+        
+        debugPrint('   Transaction ID: $transactionId');
 
         return {
           'success': true,
-          'transactionId': data['transaction']?['id'],
+          'transactionId': transactionId,
           'message': data['message'] ?? 'Payment initiated',
           'nextSteps': (data['next_steps'] as List?)?.cast<String>() ?? [],
-          'transaction': data['transaction'],
+          'transaction': data['transaction'] ?? data,
         };
       }
 

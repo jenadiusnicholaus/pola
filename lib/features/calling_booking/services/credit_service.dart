@@ -6,13 +6,50 @@ import 'package:flutter/foundation.dart';
 class CreditService {
   final Dio _dio = DioConfig.instance;
 
-  /// Get available credit bundles using check-credits API
-  /// This API returns bundles even when user has no credits (402 status)
+  /// Get available credit bundles
+  /// First tries the dedicated bundles endpoint, falls back to check-credits
   Future<List<CreditBundle>> getAvailableBundles() async {
     try {
-      debugPrint('📦 Fetching credit bundles via check-credits...');
+      debugPrint('📦 Fetching credit bundles...');
 
-      // Use correct check-credits endpoint
+      // Try dedicated bundles endpoint first
+      try {
+        final bundlesResponse = await _dio.get(
+          '/api/v1/subscriptions/call-history/bundles/',
+          options: Options(
+            validateStatus: (status) => status != null && status < 500,
+          ),
+        );
+        
+        debugPrint('📦 Bundles endpoint response: ${bundlesResponse.statusCode}');
+        
+        if (bundlesResponse.statusCode == 200) {
+          final data = bundlesResponse.data;
+          List bundlesList;
+          
+          if (data is List) {
+            bundlesList = data;
+          } else if (data is Map) {
+            bundlesList = data['bundles'] as List? ?? 
+                         data['available_bundles'] as List? ?? 
+                         data['results'] as List? ?? [];
+          } else {
+            bundlesList = [];
+          }
+          
+          if (bundlesList.isNotEmpty) {
+            final bundles = bundlesList
+                .map((item) => CreditBundle.fromJson(item))
+                .toList();
+            debugPrint('✅ Loaded ${bundles.length} credit bundles from bundles endpoint');
+            return bundles;
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ Bundles endpoint not available, trying check-credits: $e');
+      }
+
+      // Fallback: Use check-credits endpoint which always returns bundles
       final response = await _dio.post(
         '/api/v1/subscriptions/call-history/check-credits/',
         data: {'consultant_id': 1}, // Use a placeholder consultant ID
@@ -21,9 +58,10 @@ class CreditService {
         ),
       );
 
-      debugPrint('📦 Bundles Response: ${response.statusCode}');
+      debugPrint('📦 Check-credits Response: ${response.statusCode}');
+      debugPrint('📦 Check-credits Data: ${response.data}');
 
-      // Both 200 and 402 contain available_bundles
+      // Both 200 and 402 should contain available_bundles
       if (response.statusCode == 200 || response.statusCode == 402) {
         final data = response.data as Map<String, dynamic>;
         
@@ -34,7 +72,7 @@ class CreditService {
             .map((item) => CreditBundle.fromJson(item))
             .toList();
 
-        debugPrint('✅ Loaded ${bundles.length} credit bundles');
+        debugPrint('✅ Loaded ${bundles.length} credit bundles from check-credits');
         return bundles;
       }
 
@@ -45,7 +83,7 @@ class CreditService {
     }
   }
 
-  /// Get current user's credit balance
+  /// Get current user's credit balance and available bundles
   Future<Map<String, dynamic>> getUserCredits() async {
     try {
       debugPrint('💰 Fetching user credits...');
@@ -56,12 +94,17 @@ class CreditService {
       );
 
       debugPrint('💰 Credits Response: ${response.statusCode}');
+      debugPrint('💰 Credits Data: ${response.data}');
 
       if (response.statusCode == 200) {
         final data = response.data as Map<String, dynamic>;
 
         final totalMinutes = data['total_minutes'] ?? 0;
         debugPrint('✅ User has $totalMinutes minutes');
+        
+        // Also extract bundles if present
+        final bundlesList = data['available_bundles'] as List? ?? [];
+        debugPrint('📦 Bundles in my-credits: ${bundlesList.length}');
 
         return {
           'totalMinutes': totalMinutes,
@@ -70,6 +113,9 @@ class CreditService {
                   ?.map((item) => CreditEntry.fromJson(item))
                   .toList() ??
               [],
+          'bundles': bundlesList
+              .map((item) => CreditBundle.fromJson(item))
+              .toList(),
         };
       }
 
@@ -104,18 +150,27 @@ class CreditService {
       );
 
       debugPrint('💳 Payment Response: ${response.statusCode}');
+      debugPrint('💳 Payment Response Data: ${response.data}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = response.data as Map<String, dynamic>;
         debugPrint('✅ Payment initiated successfully');
-        debugPrint('   Transaction ID: ${data['transaction']?['id']}');
+        
+        // Handle both response formats:
+        // Format 1: { "transaction": { "id": "..." } }
+        // Format 2: { "transactionId": "..." } (AzamPay direct response)
+        final transactionId = data['transaction']?['id'] ?? 
+                              data['transactionId'] ?? 
+                              data['transaction_id'];
+        
+        debugPrint('   Transaction ID: $transactionId');
 
         return {
           'success': true,
-          'transactionId': data['transaction']?['id'],
+          'transactionId': transactionId,
           'message': data['message'] ?? 'Payment initiated',
           'nextSteps': (data['next_steps'] as List?)?.cast<String>() ?? [],
-          'transaction': data['transaction'],
+          'transaction': data['transaction'] ?? data,
         };
       }
 
@@ -139,19 +194,37 @@ class CreditService {
       );
 
       debugPrint('🔍 Payment Status Response: ${response.statusCode}');
+      debugPrint('🔍 Payment Status Data: ${response.data}');
 
       if (response.statusCode == 200) {
         final data = response.data as Map<String, dynamic>;
-        final payment = data['payment'] as Map<String, dynamic>;
-
-        final status = payment['status'] ?? 'pending';
+        
+        // Handle different response structures
+        // API might return {payment: {...}} or {status: '...', ...} directly
+        final payment = data['payment'] as Map<String, dynamic>?;
+        
+        String status;
+        int? creditsAdded;
+        int? minutesAdded;
+        
+        if (payment != null) {
+          status = payment['status']?.toString() ?? 'pending';
+          creditsAdded = payment['credits_added'] as int?;
+          minutesAdded = payment['minutes_added'] as int?;
+        } else {
+          // Fallback: status might be at root level
+          status = data['status']?.toString() ?? 'pending';
+          creditsAdded = data['credits_added'] as int?;
+          minutesAdded = data['minutes_added'] as int?;
+        }
+        
         debugPrint('📊 Payment Status: $status');
 
         return {
           'status': status,
-          'payment': payment,
-          'credits_added': payment['credits_added'],
-          'minutes_added': payment['minutes_added'],
+          'payment': payment ?? data,
+          'credits_added': creditsAdded,
+          'minutes_added': minutesAdded,
         };
       }
 
