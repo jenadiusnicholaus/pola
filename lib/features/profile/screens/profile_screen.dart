@@ -6,6 +6,7 @@ import '../widgets/profile_info_card.dart';
 import '../widgets/role_specific_info.dart';
 import '../widgets/subscription_card.dart';
 import '../../user_verification/widgets/profile_verification_card.dart';
+import '../../../utils/navigation_helper.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -46,10 +47,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             icon: const Icon(Icons.edit),
             onPressed: () {
               // TODO: Navigate to edit profile screen
-              Get.snackbar(
-                'Coming Soon',
-                'Profile editing feature will be available soon',
-                snackPosition: SnackPosition.BOTTOM,
+              NavigationHelper.showSafeSnackbar(
+                title: 'Coming Soon',
+                message: 'Profile editing feature will be available soon',
               );
             },
             tooltip: 'Edit Profile',

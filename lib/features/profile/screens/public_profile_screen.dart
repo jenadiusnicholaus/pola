@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import '../../hubs_and_services/legal_education/models/legal_education_models.dart';
+import '../../../utils/navigation_helper.dart';
 
 class PublicProfileScreen extends StatelessWidget {
   final UploaderInfo user;
@@ -143,10 +143,9 @@ class PublicProfileScreen extends StatelessWidget {
           child: OutlinedButton.icon(
             onPressed: () {
               // TODO: Implement follow functionality
-              Get.snackbar(
-                'Coming Soon',
-                'Follow functionality will be available soon',
-                snackPosition: SnackPosition.BOTTOM,
+              NavigationHelper.showSafeSnackbar(
+                title: 'Coming Soon',
+                message: 'Follow functionality will be available soon',
               );
             },
             icon: const Icon(Icons.person_add),
@@ -314,13 +313,11 @@ class PublicProfileScreen extends StatelessWidget {
                 Navigator.of(context).pop();
 
                 // Show success message
-                Get.snackbar(
-                  'Message Sent',
-                  'Your message has been sent to ${user.fullName}',
-                  snackPosition: SnackPosition.BOTTOM,
+                NavigationHelper.showSafeSnackbar(
+                  title: 'Message Sent',
+                  message: 'Your message has been sent to ${user.fullName}',
                   backgroundColor: Colors.green,
                   colorText: Colors.white,
-                  duration: const Duration(seconds: 2),
                 );
               }
             },

@@ -5,6 +5,7 @@ import '../config/environment_config.dart';
 import 'api_service.dart';
 import 'token_storage_service.dart';
 import '../features/profile/services/profile_service.dart';
+import '../utils/navigation_helper.dart';
 import 'dart:async';
 
 class AuthService extends GetxController {
@@ -129,11 +130,9 @@ class AuthService extends GetxController {
     Get.offAllNamed('/login');
 
     // Show notification to user
-    Get.snackbar(
-      'Session Expired',
-      'Your session has expired. Please log in again.',
-      snackPosition: SnackPosition.BOTTOM,
-      duration: const Duration(seconds: 4),
+    NavigationHelper.showSafeSnackbar(
+      title: 'Session Expired',
+      message: 'Your session has expired. Please log in again.',
     );
   }
 

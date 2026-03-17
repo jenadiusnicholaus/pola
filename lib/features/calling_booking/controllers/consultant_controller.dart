@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../utils/navigation_helper.dart';
 import '../models/consultant_models.dart';
 import '../services/call_service.dart';
 
@@ -130,10 +131,9 @@ class ConsultantController extends GetxController {
     try {
       return await _service.getConsultantDetails(consultantId);
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        e.toString(),
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: e.toString(),
       );
       return null;
     }

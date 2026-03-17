@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import '../../../../utils/navigation_helper.dart';
 
 class ContentRatingWidget extends StatelessWidget {
   final int contentId;
@@ -298,10 +298,9 @@ class _RatingDialogState extends State<RatingDialog> {
   void _submitRating() {
     // TODO: Submit rating through service
     Navigator.of(context).pop();
-    Get.snackbar(
-      'Success',
-      'Thank you for rating this content!',
-      snackPosition: SnackPosition.BOTTOM,
+    NavigationHelper.showSafeSnackbar(
+      title: 'Success',
+      message: 'Thank you for rating this content!',
     );
   }
 

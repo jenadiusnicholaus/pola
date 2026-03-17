@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../utils/navigation_helper.dart';
 import '../services/consultation_service.dart';
 import '../../../services/permission_service.dart';
 
@@ -181,21 +182,21 @@ class _MyConsultationsScreenState extends State<MyConsultationsScreen>
     );
 
     if (success) {
-      Get.snackbar(
-        'Success',
-        'Consultation ${status.toLowerCase()} successfully',
-        icon: const Icon(Icons.check_circle, color: Colors.white),
+      NavigationHelper.showSafeSnackbar(
+        title: 'Success',
+        message: 'Consultation ${status.toLowerCase()} successfully',
         backgroundColor: Colors.green,
         colorText: Colors.white,
+        icon: const Icon(Icons.check_circle, color: Colors.white),
       );
       _loadConsultations();
     } else {
-      Get.snackbar(
-        'Error',
-        'Failed to update consultation status',
-        icon: const Icon(Icons.error, color: Colors.white),
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to update consultation status',
         backgroundColor: Colors.red,
         colorText: Colors.white,
+        icon: const Icon(Icons.error, color: Colors.white),
       );
     }
   }

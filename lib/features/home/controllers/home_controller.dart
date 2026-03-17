@@ -4,6 +4,7 @@ import '../../../services/auth_service.dart';
 import '../../../services/token_storage_service.dart';
 import '../../../services/permission_service.dart';
 import '../../profile/services/profile_service.dart';
+import '../../../utils/navigation_helper.dart';
 
 class HomeController extends GetxController {
   final AuthService _authService = Get.find<AuthService>();
@@ -107,28 +108,25 @@ class HomeController extends GetxController {
       final success = await _authService.manualRefreshToken();
 
       if (success) {
-        Get.snackbar(
-          'Session Refreshed',
-          'Your session has been refreshed successfully.',
-          snackPosition: SnackPosition.BOTTOM,
+        NavigationHelper.showSafeSnackbar(
+          title: 'Session Refreshed',
+          message: 'Your session has been refreshed successfully.',
           duration: const Duration(seconds: 2),
         );
         debugPrint('✅ Manual token refresh successful');
       } else {
-        Get.snackbar(
-          'Refresh Failed',
-          'Failed to refresh session. You may need to log in again.',
-          snackPosition: SnackPosition.BOTTOM,
+        NavigationHelper.showSafeSnackbar(
+          title: 'Refresh Failed',
+          message: 'Failed to refresh session. You may need to log in again.',
           duration: const Duration(seconds: 3),
         );
         debugPrint('❌ Manual token refresh failed');
       }
     } catch (e) {
       debugPrint('❌ Error during manual token refresh: $e');
-      Get.snackbar(
-        'Error',
-        'An error occurred while refreshing your session.',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'An error occurred while refreshing your session.',
         duration: const Duration(seconds: 3),
       );
     } finally {
@@ -162,11 +160,9 @@ class HomeController extends GetxController {
     final hasAccessToken = _tokenStorage.accessToken.isNotEmpty;
     final hasRefreshToken = _tokenStorage.refreshToken.isNotEmpty;
 
-    Get.snackbar(
-      'Token Status',
-      'Logged In: $isLoggedIn\nAccess Token: ${hasAccessToken ? 'Present' : 'Missing'}\nRefresh Token: ${hasRefreshToken ? 'Present' : 'Missing'}',
-      snackPosition: SnackPosition.BOTTOM,
-      duration: const Duration(seconds: 4),
+    NavigationHelper.showSafeSnackbar(
+      title: 'Token Status',
+      message: 'Logged In: $isLoggedIn\nAccess Token: ${hasAccessToken ? 'Present' : 'Missing'}\nRefresh Token: ${hasRefreshToken ? 'Present' : 'Missing'}',
     );
   }
 

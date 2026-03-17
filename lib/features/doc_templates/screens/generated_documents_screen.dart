@@ -192,7 +192,7 @@ class _DocumentCard extends StatelessWidget {
             ),
             if (document.status == 'completed') ...[
               const SizedBox(height: 16),
-              if (document.isFree)
+              if (document.isFree || document.isPaid)
                 _DownloadButton(document: document)
               else
                 _PayButton(document: document),
@@ -452,7 +452,7 @@ class _DownloadButtonState extends State<_DownloadButton> {
           : ElevatedButton.icon(
               onPressed: () => _downloadDocument(context),
               icon: const Icon(Icons.download),
-              label: const Text('Download FREE'),
+              label: Text(widget.document.isFree ? 'Download FREE' : 'Download Document'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,

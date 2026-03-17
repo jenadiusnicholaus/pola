@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../utils/navigation_helper.dart';
 import '../controllers/hub_content_controller.dart';
 import '../models/hub_content_models.dart';
 
@@ -262,10 +263,9 @@ class _BookmarksContentState extends State<_BookmarksContent> {
       );
     } catch (e) {
       print('❌ Error navigating to content: $e');
-      Get.snackbar(
-        'Navigation Error',
-        'Unable to open this content. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Navigation Error',
+        message: 'Unable to open this content. Please try again.',
       );
     }
   }

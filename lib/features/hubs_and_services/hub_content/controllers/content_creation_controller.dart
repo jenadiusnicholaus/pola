@@ -7,6 +7,7 @@ import '../utils/user_role_manager.dart';
 import '../../legal_education/models/legal_education_models.dart';
 import '../../legal_education/services/legal_education_service.dart';
 import '../../../../services/token_storage_service.dart';
+import '../../../../utils/navigation_helper.dart';
 import 'dart:convert';
 
 class ContentCreationController extends GetxController {
@@ -151,24 +152,20 @@ class ContentCreationController extends GetxController {
   void setFile(PlatformFile file) {
     // Validate file size (50MB limit)
     if (file.size > 50 * 1024 * 1024) {
-      Get.snackbar(
-        'File Too Large',
-        'Please select a file smaller than 50MB',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'File Too Large',
+        message: 'Please select a file smaller than 50MB',
         backgroundColor: Colors.red,
-        colorText: Colors.white,
       );
       return;
     }
 
     // Validate file type
     if (!_isValidFileType(file.name)) {
-      Get.snackbar(
-        'Invalid File Type',
-        'Please select a supported file type',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Invalid File Type',
+        message: 'Please select a supported file type',
         backgroundColor: Colors.red,
-        colorText: Colors.white,
       );
       return;
     }
@@ -183,12 +180,10 @@ class ContentCreationController extends GetxController {
 
       // Validate image data is not corrupted
       if (bytes.isEmpty) {
-        Get.snackbar(
-          'Invalid Image',
-          'The selected image appears to be corrupted. Please try a different image.',
-          snackPosition: SnackPosition.BOTTOM,
+        NavigationHelper.showSafeSnackbar(
+          title: 'Invalid Image',
+          message: 'The selected image appears to be corrupted. Please try a different image.',
           backgroundColor: Colors.red,
-          colorText: Colors.white,
         );
         return;
       }
@@ -212,12 +207,10 @@ class ContentCreationController extends GetxController {
 
       setFile(file);
     } catch (e) {
-      Get.snackbar(
-        'Image Processing Error',
-        'Failed to process the selected image: $e',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Image Processing Error',
+        message: 'Failed to process the selected image: $e',
         backgroundColor: Colors.red,
-        colorText: Colors.white,
       );
     }
   }
@@ -270,28 +263,20 @@ class ContentCreationController extends GetxController {
 
       final createdContent = await _service.createHubContent(jsonData);
 
-      Get.snackbar(
-        'Success',
-        'Your content "${createdContent.title}" has been published successfully',
-        snackPosition: SnackPosition.TOP,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Success',
+        message: 'Your content "${createdContent.title}" has been published successfully',
         backgroundColor: Colors.green,
-        colorText: Colors.white,
         duration: const Duration(seconds: 3),
       );
       return true;
     } catch (e) {
       error.value = e.toString();
-      Get.snackbar(
-        'Error ❌',
-        'Failed to create content: ${e.toString()}',
-        snackPosition: SnackPosition.TOP,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error ❌',
+        message: 'Failed to create content: ${e.toString()}',
         backgroundColor: Colors.red.shade600,
-        colorText: Colors.white,
         duration: const Duration(seconds: 5),
-        margin: const EdgeInsets.all(16),
-        borderRadius: 8,
-        isDismissible: true,
-        dismissDirection: DismissDirection.horizontal,
         icon: const Icon(Icons.error_outline, color: Colors.white, size: 28),
       );
       return false;
@@ -405,12 +390,10 @@ class ContentCreationController extends GetxController {
       }
     } catch (e) {
       error.value = 'Failed to load topics: $e';
-      Get.snackbar(
-        'Error Loading Topics',
-        'Failed to load available topics: $e',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error Loading Topics',
+        message: 'Failed to load available topics: $e',
         backgroundColor: Colors.red,
-        colorText: Colors.white,
       );
     } finally {
       isLoadingTopics.value = false;
@@ -435,12 +418,10 @@ class ContentCreationController extends GetxController {
   /// Create a new topic on-the-fly
   Future<Topic?> createNewTopic() async {
     if (newTopicName.value.isEmpty) {
-      Get.snackbar(
-        'Topic Name Required',
-        'Please enter a topic name',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Topic Name Required',
+        message: 'Please enter a topic name',
         backgroundColor: Colors.red,
-        colorText: Colors.white,
       );
       return null;
     }
@@ -467,24 +448,20 @@ class ContentCreationController extends GetxController {
         newTopicName.value = '';
         newTopicDescription.value = '';
 
-        Get.snackbar(
-          'Topic Created! 🎉',
-          'New topic "${response.name}" has been created',
-          snackPosition: SnackPosition.BOTTOM,
+        NavigationHelper.showSafeSnackbar(
+          title: 'Topic Created! 🎉',
+          message: 'New topic "${response.name}" has been created',
           backgroundColor: Colors.green,
-          colorText: Colors.white,
         );
 
         return response;
       }
     } catch (e) {
       error.value = 'Failed to create topic: $e';
-      Get.snackbar(
-        'Topic Creation Failed',
-        'Failed to create new topic: $e',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Topic Creation Failed',
+        message: 'Failed to create new topic: $e',
         backgroundColor: Colors.red,
-        colorText: Colors.white,
       );
     } finally {
       isLoading.value = false;

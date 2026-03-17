@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../utils/navigation_helper.dart';
 import '../../../services/auth_service.dart';
 import '../services/lookup_service.dart';
 import '../models/lookup_models.dart';
@@ -53,12 +54,12 @@ class _ChangeRoleScreenState extends State<ChangeRoleScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedRole == null) {
-      Get.snackbar(
-        'Validation Error',
-        'Please select a new role',
-        icon: const Icon(Icons.error, color: Colors.white),
+      NavigationHelper.showSafeSnackbar(
+        title: 'Validation Error',
+        message: 'Please select a new role',
         backgroundColor: Colors.red,
         colorText: Colors.white,
+        icon: const Icon(Icons.error, color: Colors.white),
       );
       return;
     }
@@ -96,12 +97,12 @@ class _ChangeRoleScreenState extends State<ChangeRoleScreen> {
           });
         }
 
-        Get.snackbar(
-          'Success',
-          message,
-          icon: const Icon(Icons.check_circle, color: Colors.white),
+        NavigationHelper.showSafeSnackbar(
+          title: 'Success',
+          message: message,
           backgroundColor: Colors.green,
           colorText: Colors.white,
+          icon: const Icon(Icons.check_circle, color: Colors.white),
           duration: const Duration(seconds: 4),
         );
 
@@ -114,23 +115,23 @@ class _ChangeRoleScreenState extends State<ChangeRoleScreen> {
         }
       } else {
         final error = response['error'] ?? 'Failed to change role';
-        Get.snackbar(
-          'Error',
-          error,
-          icon: const Icon(Icons.error, color: Colors.white),
+        NavigationHelper.showSafeSnackbar(
+          title: 'Error',
+          message: error,
           backgroundColor: Colors.red,
           colorText: Colors.white,
+          icon: const Icon(Icons.error, color: Colors.white),
         );
       }
     } catch (e) {
       setState(() => _isLoading = false);
       debugPrint('Error changing role: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to change role: $e',
-        icon: const Icon(Icons.error, color: Colors.white),
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to change role: $e',
         backgroundColor: Colors.red,
         colorText: Colors.white,
+        icon: const Icon(Icons.error, color: Colors.white),
       );
     }
   }

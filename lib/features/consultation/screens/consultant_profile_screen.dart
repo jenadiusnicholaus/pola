@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../utils/navigation_helper.dart';
 import '../services/consultation_service.dart';
 import '../../../services/token_storage_service.dart';
 
@@ -467,12 +468,12 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
           child: ElevatedButton.icon(
             onPressed: () {
               // TODO: Contact support or reapply
-              Get.snackbar(
-                'Contact Support',
-                'Please contact support for more information',
-                icon: const Icon(Icons.support_agent, color: Colors.white),
+              NavigationHelper.showSafeSnackbar(
+                title: 'Contact Support',
+                message: 'Please contact support for more information',
                 backgroundColor: Colors.blue,
                 colorText: Colors.white,
+                icon: const Icon(Icons.support_agent, color: Colors.white),
               );
             },
             icon: const Icon(Icons.support_agent),
@@ -717,25 +718,25 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
       // Reload the profile to get updated data
       await _loadData();
 
-      Get.snackbar(
-        'Success',
-        value
+      NavigationHelper.showSafeSnackbar(
+        title: 'Success',
+        message: value
             ? 'You are now available for consultations'
             : 'You are no longer accepting new consultations',
+        backgroundColor: value ? Colors.green : Colors.orange,
+        colorText: Colors.white,
         icon: Icon(
           value ? Icons.check_circle : Icons.cancel,
           color: Colors.white,
         ),
-        backgroundColor: value ? Colors.green : Colors.orange,
-        colorText: Colors.white,
       );
     } else {
-      Get.snackbar(
-        'Error',
-        'Failed to update availability',
-        icon: const Icon(Icons.error, color: Colors.white),
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to update availability',
         backgroundColor: Colors.red,
         colorText: Colors.white,
+        icon: const Icon(Icons.error, color: Colors.white),
       );
     }
   }
@@ -750,12 +751,12 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
     Get.back(); // Close loading
 
     if (reviewsData == null || reviewsData.reviews.isEmpty) {
-      Get.snackbar(
-        'No Reviews',
-        'You don\'t have any reviews yet',
-        icon: const Icon(Icons.info_outline, color: Colors.white),
+      NavigationHelper.showSafeSnackbar(
+        title: 'No Reviews',
+        message: 'You don\'t have any reviews yet',
         backgroundColor: Colors.blue,
         colorText: Colors.white,
+        icon: const Icon(Icons.info_outline, color: Colors.white),
       );
       return;
     }
@@ -924,9 +925,9 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
           ElevatedButton(
             onPressed: () async {
               if (controller.text.trim().isEmpty) {
-                Get.snackbar(
-                  'Error',
-                  'Please write a response',
+                NavigationHelper.showSafeSnackbar(
+                  title: 'Error',
+                  message: 'Please write a response',
                   backgroundColor: Colors.red,
                   colorText: Colors.white,
                 );
@@ -947,22 +948,22 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
               Get.back(); // Close loading
 
               if (success) {
-                Get.snackbar(
-                  'Success',
-                  'Response submitted successfully',
-                  icon: const Icon(Icons.check_circle, color: Colors.white),
+                NavigationHelper.showSafeSnackbar(
+                  title: 'Success',
+                  message: 'Response submitted successfully',
                   backgroundColor: Colors.green,
                   colorText: Colors.white,
+                  icon: const Icon(Icons.check_circle, color: Colors.white),
                 );
                 Get.back(); // Close reviews sheet
                 _viewReviews(); // Reload reviews
               } else {
-                Get.snackbar(
-                  'Error',
-                  'Failed to submit response',
-                  icon: const Icon(Icons.error, color: Colors.white),
+                NavigationHelper.showSafeSnackbar(
+                  title: 'Error',
+                  message: 'Failed to submit response',
                   backgroundColor: Colors.red,
                   colorText: Colors.white,
+                  icon: const Icon(Icons.error, color: Colors.white),
                 );
               }
             },
@@ -1161,13 +1162,12 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
                             ),
                           );
                         } else {
-                          Get.snackbar(
-                            'Application Failed',
-                            result.message,
-                            icon: const Icon(Icons.error, color: Colors.white),
+                          NavigationHelper.showSafeSnackbar(
+                            title: 'Application Failed',
+                            message: result.message,
                             backgroundColor: Colors.red,
                             colorText: Colors.white,
-                            duration: const Duration(seconds: 5),
+                            icon: const Icon(Icons.error, color: Colors.white),
                           );
                         }
                       }

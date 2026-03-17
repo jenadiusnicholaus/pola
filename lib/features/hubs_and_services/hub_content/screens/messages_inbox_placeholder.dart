@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import '../../../../utils/navigation_helper.dart';
 
 /// Placeholder Messages Inbox Screen
 /// This demonstrates the messaging interface structure
@@ -86,7 +86,10 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
               ],
             ),
             onTap: () {
-              Get.snackbar('Message', 'Opened message from User ${index + 1}');
+              NavigationHelper.showSafeSnackbar(
+                title: 'Message',
+                message: 'Opened message from User ${index + 1}',
+              );
             },
           ),
         );
@@ -95,6 +98,9 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
   }
 
   void _showComposeDialog() {
-    Get.snackbar('Info', 'Compose message feature will be implemented');
+    NavigationHelper.showSafeSnackbar(
+      title: 'Info',
+      message: 'Compose message feature will be implemented',
+    );
   }
 }

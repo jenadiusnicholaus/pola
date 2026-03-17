@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../utils/navigation_helper.dart';
 import '../models/profile_models.dart';
 import '../services/profile_service.dart';
 
@@ -324,22 +325,18 @@ class ProfileHeader extends StatelessWidget {
         Get.back();
 
         if (success) {
-          Get.snackbar(
-            'Success',
-            'Profile picture updated successfully',
-            snackPosition: SnackPosition.BOTTOM,
+          NavigationHelper.showSafeSnackbar(
+            title: 'Success',
+            message: 'Profile picture updated successfully',
             backgroundColor: Colors.green,
             colorText: Colors.white,
-            duration: const Duration(seconds: 2),
           );
         } else {
-          Get.snackbar(
-            'Error',
-            'Failed to update profile picture. Please try again.',
-            snackPosition: SnackPosition.BOTTOM,
+          NavigationHelper.showSafeSnackbar(
+            title: 'Error',
+            message: 'Failed to update profile picture. Please try again.',
             backgroundColor: Colors.red,
             colorText: Colors.white,
-            duration: const Duration(seconds: 3),
           );
         }
       }
@@ -349,13 +346,11 @@ class ProfileHeader extends StatelessWidget {
         Get.back();
       }
 
-      Get.snackbar(
-        'Error',
-        'Failed to select image: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to select image: ${e.toString()}',
         backgroundColor: Colors.red,
         colorText: Colors.white,
-        duration: const Duration(seconds: 3),
       );
     }
   }

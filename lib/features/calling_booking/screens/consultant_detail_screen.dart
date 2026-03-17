@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../utils/navigation_helper.dart';
 import '../models/consultant_models.dart';
 
 class ConsultantDetailScreen extends StatelessWidget {
@@ -350,10 +351,9 @@ class ConsultantDetailScreen extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      Get.snackbar(
-                        'Book Consultation',
-                        'Physical consultation booking coming soon',
-                        snackPosition: SnackPosition.BOTTOM,
+                      NavigationHelper.showSafeSnackbar(
+                        title: 'Book Consultation',
+                        message: 'Physical consultation booking coming soon',
                       );
                     },
                     icon: const Icon(Icons.location_on, size: 18),

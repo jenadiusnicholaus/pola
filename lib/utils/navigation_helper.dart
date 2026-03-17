@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../services/permission_service.dart';
+import '../routes/app_routes.dart';
 
 /// Navigation helper to safely handle GetX navigation
 /// This helps avoid the LateInitializationError with SnackbarController
 class NavigationHelper {
+  /// Global key for ScaffoldMessenger to show snackbars when GetX overlay is not available
+  static final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
+      GlobalKey<ScaffoldMessengerState>();
+
   /// Safely close a dialog without trying to close snackbars
   /// Use this inside Get.dialog() button callbacks
   static void closeDialog() {
@@ -165,7 +170,7 @@ class NavigationHelper {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              Get.toNamed('/subscription');
+              Get.toNamed(AppRoutes.subscriptionPlans);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
@@ -259,7 +264,7 @@ class NavigationHelper {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              Get.toNamed('/subscription');
+              Get.toNamed(AppRoutes.subscriptionPlans);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
@@ -270,5 +275,95 @@ class NavigationHelper {
         ],
       ),
     );
+  }
+  /// Show a snackbar safely, ensuring an overlay is available
+  static void showSafeSnackbar({
+    required String title,
+    required String message,
+    SnackPosition position = SnackPosition.BOTTOM,
+    Color? backgroundColor,
+    Color? colorText,
+    Duration duration = const Duration(seconds: 4),
+    TextButton? mainButton,
+    Widget? icon,
+  }) {
+    // 1. Try showing via ScaffoldMessenger first if possible (it's more robust)
+    // but Get.snackbar looks better and is already used everywhere.
+    // So we use Get.snackbar by default and fallback to ScaffoldMessenger.
+
+    void showFallbackSnackbar() {
+      try {
+        final state = scaffoldMessengerKey.currentState;
+        if (state != null) {
+          debugPrint('ℹ️ Using ScaffoldMessenger fallback for snackbar');
+          state.showSnackBar(
+            SnackBar(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(message),
+                ],
+              ),
+              backgroundColor: backgroundColor ?? Colors.black87,
+              duration: duration,
+              action: mainButton != null
+                  ? SnackBarAction(
+                      label: (mainButton.child as Text).data ?? 'Action',
+                      onPressed: mainButton.onPressed ?? () {},
+                    )
+                  : null,
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.all(15),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+          );
+        } else {
+          debugPrint('❌ ScaffoldMessengerState is null, cannot show snackbar');
+        }
+      } catch (e) {
+        debugPrint('❌ Error in ScaffoldMessenger fallback: $e');
+      }
+    }
+
+    try {
+      // Use addPostFrameCallback to ensure we're not called during build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try {
+          // Check if we have an overlay context
+          final overlayContext = Get.overlayContext;
+          if (overlayContext == null || Overlay.maybeOf(overlayContext) == null) {
+            debugPrint('⚠️ No overlay found via Get.overlayContext, using fallback');
+            showFallbackSnackbar();
+            return;
+          }
+
+          Get.snackbar(
+            title,
+            message,
+            snackPosition: position,
+            backgroundColor: backgroundColor ?? Colors.black87,
+            colorText: colorText ?? Colors.white,
+            duration: duration,
+            mainButton: mainButton,
+            icon: icon,
+            margin: const EdgeInsets.all(15),
+            borderRadius: 10,
+            isDismissible: true,
+            dismissDirection: DismissDirection.horizontal,
+          );
+        } catch (e) {
+          debugPrint('⚠️ Get.snackbar failed: $e, trying fallback');
+          showFallbackSnackbar();
+        }
+      });
+    } catch (e) {
+      debugPrint('⚠️ Failed to schedule safe snackbar: $e');
+      showFallbackSnackbar();
+    }
   }
 }

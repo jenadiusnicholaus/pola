@@ -9,6 +9,7 @@ import 'features/settings/controllers/theme_controller.dart';
 import 'services/token_storage_service.dart';
 import 'services/auth_service.dart';
 import 'services/app_initializer.dart';
+import 'utils/navigation_helper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +36,7 @@ class MyApp extends StatelessWidget {
 
     return Obx(() => GetMaterialApp(
           debugShowCheckedModeBanner: false,
+          scaffoldMessengerKey: NavigationHelper.scaffoldMessengerKey,
           title: AppStrings.appName,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,

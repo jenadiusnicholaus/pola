@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../utils/navigation_helper.dart';
 import 'package:flutter_cached_pdfview/flutter_cached_pdfview.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -164,10 +165,9 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
             );
           });
 
-          Get.snackbar(
-            'Success',
-            'Document purchased successfully! You can now download it.',
-            snackPosition: SnackPosition.BOTTOM,
+          NavigationHelper.showSafeSnackbar(
+            title: 'Success',
+            message: 'Document purchased successfully! You can now download it.',
             backgroundColor: theme.colorScheme.primaryContainer,
             colorText: theme.colorScheme.onPrimaryContainer,
             icon: const Icon(Icons.check_circle),
@@ -178,7 +178,10 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
         }
       } catch (e) {
         debugPrint('❌ Error showing dialog: $e');
-        Get.snackbar('Error', 'Failed to show payment dialog: $e');
+        NavigationHelper.showSafeSnackbar(
+          title: 'Error',
+          message: 'Failed to show payment dialog: $e',
+        );
       }
     } else if (material.canDownload || !_isPaidMaterial) {
       debugPrint(
@@ -197,10 +200,9 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
 
     try {
       if (material.fileUrl.isEmpty) {
-        Get.snackbar(
-          'Error',
-          'No file available for download',
-          snackPosition: SnackPosition.BOTTOM,
+        NavigationHelper.showSafeSnackbar(
+          title: 'Error',
+          message: 'No file available for download',
           backgroundColor: theme.colorScheme.errorContainer,
           colorText: theme.colorScheme.onErrorContainer,
         );
@@ -208,13 +210,11 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
       }
 
       // Show download started message
-      Get.snackbar(
-        'Opening',
-        'Opening file...',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Opening',
+        message: 'Opening file...',
         backgroundColor: theme.colorScheme.primaryContainer,
         colorText: theme.colorScheme.onPrimaryContainer,
-        duration: const Duration(seconds: 2),
       );
 
       final uri = Uri.parse(material.fileUrl);
@@ -260,13 +260,11 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
       }
     } catch (e) {
       debugPrint('Download error: $e');
-      Get.snackbar(
-        'Cannot Open File',
-        'Unable to open the file. Try opening the link in your browser manually.',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Cannot Open File',
+        message: 'Unable to open the file. Try opening the link in your browser manually.',
         backgroundColor: theme.colorScheme.errorContainer,
         colorText: theme.colorScheme.onErrorContainer,
-        duration: const Duration(seconds: 4),
       );
     }
   }
@@ -1360,10 +1358,9 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
-      Get.snackbar(
-        'Error',
-        'Could not open link',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Could not open link',
       );
     }
   }

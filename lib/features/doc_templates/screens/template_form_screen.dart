@@ -193,8 +193,8 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        // TODO: Handle PDF download/viewing
-        Get.back();
+        // Navigate to my documents and replace the current screen
+        Get.offNamed('/my-documents');
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

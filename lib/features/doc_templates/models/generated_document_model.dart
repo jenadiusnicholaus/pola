@@ -56,10 +56,10 @@ class GeneratedDocument {
     );
   }
 
-  bool get isFree => isPaid && paymentAmount == '0.00';
-
+  bool get isFree => paymentAmount == '0.00' || paymentAmount == '0';
+  
   bool get canDownload =>
-      status == 'completed' && downloadUrl != null && isFree;
+      status == 'completed' && downloadUrl != null && (isFree || isPaid);
 
   bool get needsPayment => status == 'completed' && !isFree && !isPaid;
 

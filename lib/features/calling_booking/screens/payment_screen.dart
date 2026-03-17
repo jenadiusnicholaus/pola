@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../utils/navigation_helper.dart';
 import '../models/consultant_models.dart';
 
 class PaymentScreen extends StatelessWidget {
@@ -224,10 +225,9 @@ class PaymentScreen extends StatelessWidget {
     return InkWell(
       onTap: isComingSoon
           ? () {
-              Get.snackbar(
-                'Coming Soon',
-                'This payment method will be available soon',
-                snackPosition: SnackPosition.BOTTOM,
+              NavigationHelper.showSafeSnackbar(
+                title: 'Coming Soon',
+                message: 'This payment method will be available soon',
               );
             }
           : null,

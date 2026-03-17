@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'dart:convert';
 import '../models/verification_models.dart';
 import '../services/verification_service.dart';
+import '../../../utils/navigation_helper.dart';
 
 class VerificationController extends GetxController {
   final VerificationService _verificationService = VerificationService();
@@ -134,24 +135,20 @@ class VerificationController extends GetxController {
         // Refresh status to get updated documents
         await refreshVerificationStatus();
 
-        Get.snackbar(
-          'Success',
-          'Document uploaded successfully',
+        NavigationHelper.showSafeSnackbar(
+          title: 'Success',
+          message: 'Document uploaded successfully',
           backgroundColor: Colors.green,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP,
         );
         return true;
       } else {
         debugPrint('❌ Failed to upload document');
         _error.value = 'Failed to upload document';
 
-        Get.snackbar(
-          'Upload Failed',
-          'Failed to upload document. Please try again.',
+        NavigationHelper.showSafeSnackbar(
+          title: 'Upload Failed',
+          message: 'Failed to upload document. Please try again.',
           backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP,
         );
         return false;
       }
@@ -159,12 +156,10 @@ class VerificationController extends GetxController {
       debugPrint('❌ Error uploading document: $e');
       _error.value = 'Error uploading document';
 
-      Get.snackbar(
-        'Error',
-        'An error occurred while uploading the document',
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'An error occurred while uploading the document',
         backgroundColor: Colors.red,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
       );
       return false;
     } finally {
@@ -209,24 +204,20 @@ class VerificationController extends GetxController {
         // Refresh status to get updated info
         await refreshVerificationStatus();
 
-        Get.snackbar(
-          'Success',
-          'Information updated successfully',
+        NavigationHelper.showSafeSnackbar(
+          title: 'Success',
+          message: 'Information updated successfully',
           backgroundColor: Colors.green,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP,
         );
         return true;
       } else {
         debugPrint('❌ Failed to update user information');
         _error.value = 'Failed to update information';
 
-        Get.snackbar(
-          'Update Failed',
-          'Failed to update information. Please try again.',
+        NavigationHelper.showSafeSnackbar(
+          title: 'Update Failed',
+          message: 'Failed to update information. Please try again.',
           backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP,
         );
         return false;
       }
@@ -234,12 +225,10 @@ class VerificationController extends GetxController {
       debugPrint('❌ Error updating user information: $e');
       _error.value = 'Error updating information';
 
-      Get.snackbar(
-        'Error',
-        'An error occurred while updating information',
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'An error occurred while updating information',
         backgroundColor: Colors.red,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
       );
       return false;
     } finally {
@@ -262,24 +251,20 @@ class VerificationController extends GetxController {
         // Refresh status
         await refreshVerificationStatus();
 
-        Get.snackbar(
-          'Success',
-          'Verification submitted for review',
+        NavigationHelper.showSafeSnackbar(
+          title: 'Success',
+          message: 'Verification submitted for review',
           backgroundColor: Colors.green,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP,
         );
         return true;
       } else {
         debugPrint('❌ Failed to submit for review');
         _error.value = 'Failed to submit for review';
 
-        Get.snackbar(
-          'Submission Failed',
-          'Failed to submit for review. Please try again.',
+        NavigationHelper.showSafeSnackbar(
+          title: 'Submission Failed',
+          message: 'Failed to submit for review. Please try again.',
           backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP,
         );
         return false;
       }
@@ -287,12 +272,10 @@ class VerificationController extends GetxController {
       debugPrint('❌ Error submitting for review: $e');
       _error.value = 'Error submitting for review';
 
-      Get.snackbar(
-        'Error',
-        'An error occurred while submitting for review',
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'An error occurred while submitting for review',
         backgroundColor: Colors.red,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
       );
       return false;
     } finally {
@@ -315,24 +298,20 @@ class VerificationController extends GetxController {
         // Refresh status to update documents list
         await refreshVerificationStatus();
 
-        Get.snackbar(
-          'Success',
-          'Document deleted successfully',
+        NavigationHelper.showSafeSnackbar(
+          title: 'Success',
+          message: 'Document deleted successfully',
           backgroundColor: Colors.green,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP,
         );
         return true;
       } else {
         debugPrint('❌ Failed to delete document');
         _error.value = 'Failed to delete document';
 
-        Get.snackbar(
-          'Deletion Failed',
-          'Failed to delete document. Please try again.',
+        NavigationHelper.showSafeSnackbar(
+          title: 'Deletion Failed',
+          message: 'Failed to delete document. Please try again.',
           backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP,
         );
         return false;
       }
@@ -340,12 +319,10 @@ class VerificationController extends GetxController {
       debugPrint('❌ Error deleting document: $e');
       _error.value = 'Error deleting document';
 
-      Get.snackbar(
-        'Error',
-        'An error occurred while deleting the document',
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'An error occurred while deleting the document',
         backgroundColor: Colors.red,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
       );
       return false;
     } finally {
@@ -402,19 +379,16 @@ class VerificationController extends GetxController {
     try {
       // For now, just show a placeholder message
       // TODO: Implement file picker when dependency is added
-      Get.snackbar(
-        'Feature Coming Soon',
-        'Document upload functionality will be available soon',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Feature Coming Soon',
+        message: 'Document upload functionality will be available soon',
       );
     } catch (e) {
       debugPrint('❌ Error picking file: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to pick file',
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to pick file',
         backgroundColor: Colors.red,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
       );
     }
   }
@@ -427,12 +401,10 @@ class VerificationController extends GetxController {
       // Check camera permission
       final cameraStatus = await Permission.camera.request();
       if (cameraStatus != PermissionStatus.granted) {
-        Get.snackbar(
-          '⚠️ Permission Required',
-          'Camera permission is needed to take photos',
-          snackPosition: SnackPosition.TOP,
+        NavigationHelper.showSafeSnackbar(
+          title: '⚠️ Permission Required',
+          message: 'Camera permission is needed to take photos',
           backgroundColor: Colors.orange,
-          colorText: Colors.white,
         );
         return;
       }
@@ -458,24 +430,20 @@ class VerificationController extends GetxController {
         // Check file size (limit to 15MB for camera captures)
         final fileSize = await file.length();
         if (fileSize > 15 * 1024 * 1024) {
-          Get.snackbar(
-            '⚠️ Image Too Large',
-            'Captured image is too large. Please try again with lower quality.',
-            snackPosition: SnackPosition.TOP,
+          NavigationHelper.showSafeSnackbar(
+            title: '⚠️ Image Too Large',
+            message: 'Captured image is too large. Please try again with lower quality.',
             backgroundColor: Colors.orange,
-            colorText: Colors.white,
           );
           return;
         }
 
         await _uploadFile(file, documentType, 'Camera Capture');
       } else {
-        Get.snackbar(
-          'ℹ️ No Photo Taken',
-          'Please take a photo to upload',
-          snackPosition: SnackPosition.BOTTOM,
+        NavigationHelper.showSafeSnackbar(
+          title: 'ℹ️ No Photo Taken',
+          message: 'Please take a photo to upload',
           backgroundColor: Colors.blue.withOpacity(0.8),
-          colorText: Colors.white,
         );
       }
     } catch (e) {
@@ -493,12 +461,10 @@ class VerificationController extends GetxController {
         errorMessage = 'No camera found. Please try using gallery instead.';
       }
 
-      Get.snackbar(
-        '📷 Camera Error',
-        errorMessage,
+      NavigationHelper.showSafeSnackbar(
+        title: '📷 Camera Error',
+        message: errorMessage,
         backgroundColor: Colors.red,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
         duration: const Duration(seconds: 4),
       );
     } finally {
@@ -517,12 +483,10 @@ class VerificationController extends GetxController {
         // Try media library permission for Android
         final mediaStatus = await Permission.mediaLibrary.request();
         if (mediaStatus != PermissionStatus.granted) {
-          Get.snackbar(
-            '⚠️ Permission Required',
-            'Photo library access is needed to select images',
-            snackPosition: SnackPosition.TOP,
+          NavigationHelper.showSafeSnackbar(
+            title: '⚠️ Permission Required',
+            message: 'Photo library access is needed to select images',
             backgroundColor: Colors.orange,
-            colorText: Colors.white,
           );
           return;
         }
@@ -585,24 +549,20 @@ class VerificationController extends GetxController {
         // Check file size (limit to 10MB)
         final fileSize = await file.length();
         if (fileSize > 10 * 1024 * 1024) {
-          Get.snackbar(
-            '⚠️ File Too Large',
-            'Image size must be less than 10MB. Please select a smaller image or reduce quality.',
-            snackPosition: SnackPosition.TOP,
+          NavigationHelper.showSafeSnackbar(
+            title: '⚠️ File Too Large',
+            message: 'Image size must be less than 10MB. Please select a smaller image or reduce quality.',
             backgroundColor: Colors.orange,
-            colorText: Colors.white,
           );
           return;
         }
 
         await _uploadFile(file, documentType, 'Gallery Selection');
       } else {
-        Get.snackbar(
-          'ℹ️ No Image Selected',
-          'Please select an image to upload',
-          snackPosition: SnackPosition.BOTTOM,
+        NavigationHelper.showSafeSnackbar(
+          title: 'ℹ️ No Image Selected',
+          message: 'Please select an image to upload',
           backgroundColor: Colors.blue.withOpacity(0.8),
-          colorText: Colors.white,
         );
       }
     } catch (e) {
@@ -622,12 +582,10 @@ class VerificationController extends GetxController {
             'Gallery access permission denied. Please enable photo library access in Settings.';
       }
 
-      Get.snackbar(
-        '📱 Gallery Error',
-        errorMessage,
+      NavigationHelper.showSafeSnackbar(
+        title: '📱 Gallery Error',
+        message: errorMessage,
         backgroundColor: Colors.red,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
         duration: const Duration(seconds: 4),
       );
     } finally {
@@ -648,12 +606,10 @@ class VerificationController extends GetxController {
           final manageStorageStatus =
               await Permission.manageExternalStorage.request();
           if (manageStorageStatus != PermissionStatus.granted) {
-            Get.snackbar(
-              '⚠️ Permission Required',
-              'Storage access is needed to browse files',
-              snackPosition: SnackPosition.TOP,
+            NavigationHelper.showSafeSnackbar(
+              title: '⚠️ Permission Required',
+              message: 'Storage access is needed to browse files',
               backgroundColor: Colors.orange,
-              colorText: Colors.white,
             );
             return;
           }
@@ -673,12 +629,10 @@ class VerificationController extends GetxController {
           await _uploadFile(file, documentType, result.files.single.name);
           return; // Success with file picker
         } else {
-          Get.snackbar(
-            'ℹ️ No File Selected',
-            'Please select a file to upload',
-            snackPosition: SnackPosition.BOTTOM,
+          NavigationHelper.showSafeSnackbar(
+            title: 'ℹ️ No File Selected',
+            message: 'Please select a file to upload',
             backgroundColor: Colors.blue.withOpacity(0.8),
-            colorText: Colors.white,
           );
           return;
         }
@@ -687,12 +641,10 @@ class VerificationController extends GetxController {
             '⚠️ File picker failed, trying gallery fallback: $filePickerError');
 
         // Show fallback message
-        Get.snackbar(
-          '📱 Using Gallery Instead',
-          'File browser unavailable. Opening photo gallery...',
-          snackPosition: SnackPosition.BOTTOM,
+        NavigationHelper.showSafeSnackbar(
+          title: '📱 Using Gallery Instead',
+          message: 'File browser unavailable. Opening photo gallery...',
           backgroundColor: Colors.blue.withOpacity(0.8),
-          colorText: Colors.white,
           duration: const Duration(seconds: 2),
         );
 
@@ -725,12 +677,10 @@ class VerificationController extends GetxController {
             if (finalError.toString().contains(
                     'Cannot load representation of type public.jpeg') ||
                 finalError.toString().contains('invalid_image')) {
-              Get.snackbar(
-                '📱 Image Format Issue',
-                'Unable to load this image format. Please try taking a new photo with the camera instead.',
-                snackPosition: SnackPosition.TOP,
+              NavigationHelper.showSafeSnackbar(
+                title: '📱 Image Format Issue',
+                message: 'Unable to load this image format. Please try taking a new photo with the camera instead.',
                 backgroundColor: Colors.orange,
-                colorText: Colors.white,
                 duration: const Duration(seconds: 5),
               );
               return;
@@ -749,35 +699,29 @@ class VerificationController extends GetxController {
 
           final fileSize = await file.length();
           if (fileSize > 10 * 1024 * 1024) {
-            Get.snackbar(
-              '⚠️ File Too Large',
-              'Image size must be less than 10MB. Please select a smaller image.',
-              snackPosition: SnackPosition.TOP,
+            NavigationHelper.showSafeSnackbar(
+              title: '⚠️ File Too Large',
+              message: 'Image size must be less than 10MB. Please select a smaller image.',
               backgroundColor: Colors.orange,
-              colorText: Colors.white,
             );
             return;
           }
 
           await _uploadFile(file, documentType, image.name);
         } else {
-          Get.snackbar(
-            'ℹ️ No Image Selected',
-            'Please select an image from gallery',
-            snackPosition: SnackPosition.BOTTOM,
+          NavigationHelper.showSafeSnackbar(
+            title: 'ℹ️ No Image Selected',
+            message: 'Please select an image from gallery',
             backgroundColor: Colors.blue.withOpacity(0.8),
-            colorText: Colors.white,
           );
         }
       }
     } catch (e) {
       debugPrint('❌ File upload error: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to select file: $e',
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to select file: $e',
         backgroundColor: Colors.red,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
       );
     } finally {
       _isUploading.value = false;
@@ -793,12 +737,10 @@ class VerificationController extends GetxController {
       const maxSize = 10 * 1024 * 1024; // 10MB
 
       if (fileSize > maxSize) {
-        Get.snackbar(
-          '⚠️ File Too Large',
-          'File size must be less than 10MB. Selected file is ${(fileSize / (1024 * 1024)).toStringAsFixed(1)}MB',
-          snackPosition: SnackPosition.TOP,
+        NavigationHelper.showSafeSnackbar(
+          title: '⚠️ File Too Large',
+          message: 'File size must be less than 10MB. Selected file is ${(fileSize / (1024 * 1024)).toStringAsFixed(1)}MB',
           backgroundColor: Colors.orange,
-          colorText: Colors.white,
         );
         return;
       }
@@ -863,12 +805,10 @@ class VerificationController extends GetxController {
       }
 
       // Show success message
-      Get.snackbar(
-        '✅ Upload Successful',
-        '${_getDocumentDisplayName(documentType)} uploaded successfully!',
-        snackPosition: SnackPosition.TOP,
+      NavigationHelper.showSafeSnackbar(
+        title: '✅ Upload Successful',
+        message: '${_getDocumentDisplayName(documentType)} uploaded successfully!',
         backgroundColor: Colors.green,
-        colorText: Colors.white,
         icon: const Icon(Icons.check_circle, color: Colors.white),
       );
 
@@ -882,12 +822,10 @@ class VerificationController extends GetxController {
         Get.back();
       }
 
-      Get.snackbar(
-        'Upload Failed',
-        'Failed to upload document: $e',
+      NavigationHelper.showSafeSnackbar(
+        title: 'Upload Failed',
+        message: 'Failed to upload document: $e',
         backgroundColor: Colors.red,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
       );
     }
   }
@@ -913,22 +851,18 @@ class VerificationController extends GetxController {
       if (doc != null) {
         await pickAndUploadDocument(doc.documentType);
       } else {
-        Get.snackbar(
-          'Error',
-          'Document not found',
+        NavigationHelper.showSafeSnackbar(
+          title: 'Error',
+          message: 'Document not found',
           backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP,
         );
       }
     } catch (e) {
       debugPrint('❌ Error re-uploading document: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to re-upload document',
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to re-upload document',
         backgroundColor: Colors.red,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
       );
     }
   }

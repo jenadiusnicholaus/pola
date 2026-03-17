@@ -6,6 +6,7 @@ import '../../../services/api_service.dart';
 import '../../../config/environment_config.dart';
 import '../models/registration_data.dart';
 import '../services/lookup_service.dart';
+import '../../../utils/navigation_helper.dart';
 
 class RegistrationController extends GetxController {
   final ApiService _apiService = Get.find<ApiService>();
@@ -128,12 +129,10 @@ class RegistrationController extends GetxController {
         debugPrint('   ${i + 1}. ${errors[i]}');
       }
 
-      Get.snackbar(
-        'Validation Error',
-        errors.first,
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Validation Error',
+        message: errors.first,
         backgroundColor: Colors.red,
-        colorText: Colors.white,
       );
       return;
     }
@@ -168,12 +167,10 @@ class RegistrationController extends GetxController {
         debugPrint('📊 Status code: ${response.statusCode}');
         debugPrint('📄 Response data: ${response.data}');
 
-        Get.snackbar(
-          'Success',
-          'Registration completed successfully!',
-          snackPosition: SnackPosition.BOTTOM,
+        NavigationHelper.showSafeSnackbar(
+          title: 'Success',
+          message: 'Registration completed successfully!',
           backgroundColor: Colors.green,
-          colorText: Colors.white,
         );
 
         // Show success dialog with option to login

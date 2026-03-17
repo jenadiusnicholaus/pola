@@ -8,6 +8,7 @@ import '../../../services/api_service.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/device_registration_service.dart';
 import '../../../config/environment_config.dart';
+import '../../../utils/navigation_helper.dart';
 import '../models/login_data.dart';
 import '../../profile/services/profile_service.dart';
 
@@ -142,12 +143,10 @@ class LoginController extends GetxController {
     // Check if fields are empty (additional validation)
     if (emailController.text.trim().isEmpty ||
         passwordController.text.trim().isEmpty) {
-      Get.snackbar(
-        'Validation Error',
-        'Please fill in all required fields',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Validation Error',
+        message: 'Please fill in all required fields',
         backgroundColor: Colors.orange,
-        colorText: Colors.white,
       );
       return;
     }
@@ -183,12 +182,10 @@ class LoginController extends GetxController {
       debugPrint('🚨 Unexpected error during login: $e');
       debugPrint('📚 Stack trace: ${StackTrace.current}');
 
-      Get.snackbar(
-        'Error',
-        'Login failed: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Login failed: ${e.toString()}',
         backgroundColor: Colors.red,
-        colorText: Colors.white,
       );
     } finally {
       _isLoading.value = false;
@@ -232,13 +229,11 @@ class LoginController extends GetxController {
         _registerDevice();
 
         // Show success message
-        Get.snackbar(
-          'Success',
-          'Welcome back! You are now logged in.',
-          snackPosition: SnackPosition.BOTTOM,
+        NavigationHelper.showSafeSnackbar(
+          title: 'Success',
+          message: 'Welcome back! You are now logged in.',
           backgroundColor: Colors.green,
           colorText: Colors.white,
-          duration: const Duration(seconds: 2),
         );
 
         // Navigate to home screen
@@ -249,10 +244,9 @@ class LoginController extends GetxController {
       }
     } catch (e) {
       debugPrint('❌ Error processing login response: $e');
-      Get.snackbar(
-        'Error',
-        'Login successful but failed to process response: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Login successful but failed to process response: ${e.toString()}',
         backgroundColor: Colors.orange,
         colorText: Colors.white,
       );
@@ -281,16 +275,14 @@ class LoginController extends GetxController {
         if (errorData['password'] != null) {
           errors.add('Password: ${errorData['password'].join(', ')}');
         }
-        errorMessage = errors.join('\\n');
+        errorMessage = errors.join('\n');
       }
     }
 
-    Get.snackbar(
-      'Login Failed',
-      errorMessage,
-      snackPosition: SnackPosition.BOTTOM,
+    NavigationHelper.showSafeSnackbar(
+      title: 'Login Failed',
+      message: errorMessage,
       backgroundColor: Colors.red,
-      colorText: Colors.white,
       duration: const Duration(seconds: 5),
     );
   }
@@ -325,10 +317,9 @@ class LoginController extends GetxController {
         errorMessage = 'Network error occurred. Please try again.';
     }
 
-    Get.snackbar(
-      'Connection Error',
-      errorMessage,
-      snackPosition: SnackPosition.BOTTOM,
+    NavigationHelper.showSafeSnackbar(
+      title: 'Connection Error',
+      message: errorMessage,
       backgroundColor: Colors.orange,
       colorText: Colors.white,
       duration: const Duration(seconds: 6),
@@ -455,10 +446,9 @@ class LoginController extends GetxController {
   // Navigate to forgot password (TODO: implement)
   void goToForgotPassword() {
     // TODO: Implement forgot password functionality
-    Get.snackbar(
-      'Coming Soon',
-      'Forgot password functionality will be available soon.',
-      snackPosition: SnackPosition.BOTTOM,
+    NavigationHelper.showSafeSnackbar(
+      title: 'Coming Soon',
+      message: 'Forgot password functionality will be available soon.',
       backgroundColor: Colors.blue,
       colorText: Colors.white,
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../utils/navigation_helper.dart';
 import '../controllers/hub_content_controller.dart';
 import '../models/hub_content_models.dart';
 import 'hub_content_card.dart';
@@ -222,10 +223,9 @@ class HubContentSearchDelegate extends SearchDelegate {
         isSearching.value = false;
       }).catchError((error) {
         isSearching.value = false;
-        Get.snackbar(
-          'Search Error',
-          'Failed to search content. Please try again.',
-          snackPosition: SnackPosition.BOTTOM,
+        NavigationHelper.showSafeSnackbar(
+          title: 'Search Error',
+          message: 'Failed to search content. Please try again.',
         );
       });
     }

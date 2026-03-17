@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../utils/navigation_helper.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../screens/incoming_call_screen.dart';
 import '../controllers/call_controller.dart';
@@ -764,14 +765,12 @@ class FCMService extends GetxService {
     }
     _cancelIncomingCallNotification();
 
-    Get.snackbar(
-      'Call Accepted',
-      'Consultant is joining the call...',
-      icon: const Icon(Icons.check_circle, color: Colors.white),
+    NavigationHelper.showSafeSnackbar(
+      title: 'Call Accepted',
+      message: 'Consultant is joining the call...',
       backgroundColor: Colors.green,
       colorText: Colors.white,
-      snackPosition: SnackPosition.TOP,
-      duration: const Duration(seconds: 2),
+      icon: const Icon(Icons.check_circle, color: Colors.white),
     );
   }
 
@@ -787,14 +786,12 @@ class FCMService extends GetxService {
     }
     _cancelIncomingCallNotification();
 
-    Get.snackbar(
-      'Call Declined',
-      'The consultant is unable to take your call right now.',
-      icon: const Icon(Icons.cancel, color: Colors.white),
+    NavigationHelper.showSafeSnackbar(
+      title: 'Call Declined',
+      message: 'The consultant is unable to take your call right now.',
       backgroundColor: Colors.red,
       colorText: Colors.white,
-      snackPosition: SnackPosition.TOP,
-      duration: const Duration(seconds: 3),
+      icon: const Icon(Icons.cancel, color: Colors.white),
     );
 
     // Delay closing the screen so user can see the rejection message
@@ -911,14 +908,12 @@ class FCMService extends GetxService {
 
     final callerName = data['caller_name']?.toString() ?? 'Someone';
 
-    Get.snackbar(
-      'Missed Call',
-      'You missed a call from $callerName',
-      icon: const Icon(Icons.phone_missed, color: Colors.white),
+    NavigationHelper.showSafeSnackbar(
+      title: 'Missed Call',
+      message: 'You missed a call from $callerName',
       backgroundColor: Colors.orange,
       colorText: Colors.white,
-      snackPosition: SnackPosition.TOP,
-      duration: const Duration(seconds: 3),
+      icon: const Icon(Icons.phone_missed, color: Colors.white),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../services/profile_service.dart';
 import '../models/profile_models.dart';
 import '../../../services/permission_service.dart';
+import '../../../utils/navigation_helper.dart';
 
 class ProfileController extends GetxController {
   final ProfileService _profileService = Get.find<ProfileService>();
@@ -52,16 +53,14 @@ class ProfileController extends GetxController {
         debugPrint('⚠️ Could not refresh permissions: $e');
       }
 
-      Get.snackbar(
-        'Success',
-        'Profile refreshed successfully',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Success',
+        message: 'Profile refreshed successfully',
       );
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to refresh profile: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to refresh profile: ${e.toString()}',
       );
     }
   }
@@ -70,16 +69,14 @@ class ProfileController extends GetxController {
   Future<void> updateProfile(Map<String, dynamic> updates) async {
     try {
       await _profileService.updateProfile(updates);
-      Get.snackbar(
-        'Success',
-        'Profile updated successfully',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Success',
+        message: 'Profile updated successfully',
       );
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to update profile: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to update profile: ${e.toString()}',
       );
     }
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../hub_content/services/hub_content_service.dart';
+import '../../../utils/navigation_helper.dart';
 import '../legal_education/models/legal_education_models.dart';
 
 class HubContentController extends GetxController {
@@ -30,40 +31,29 @@ class HubContentController extends GetxController {
 
       // Show appropriate feedback
       if (newLikeStatus) {
-        Get.snackbar(
-          '❤️ Liked',
-          'Content added to your favorites',
-          snackPosition: SnackPosition.BOTTOM,
-          duration: const Duration(seconds: 2),
+        NavigationHelper.showSafeSnackbar(
+          title: '❤️ Liked',
+          message: 'Content added to your favorites',
           backgroundColor: Colors.green.withOpacity(0.8),
           colorText: Colors.white,
-          margin: const EdgeInsets.all(16),
-          borderRadius: 8,
         );
       } else {
-        Get.snackbar(
-          '💔 Unliked',
-          'Removed from your favorites',
-          snackPosition: SnackPosition.BOTTOM,
-          duration: const Duration(seconds: 2),
+        NavigationHelper.showSafeSnackbar(
+          title: '💔 Unliked',
+          message: 'Removed from your favorites',
           backgroundColor: Colors.grey.withOpacity(0.8),
           colorText: Colors.white,
-          margin: const EdgeInsets.all(16),
-          borderRadius: 8,
         );
       }
 
       return newLikeStatus;
     } catch (e) {
       _error.value = e.toString();
-      Get.snackbar(
-        'Error',
-        'Failed to update like status: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to update like status: ${e.toString()}',
         backgroundColor: Colors.red.withOpacity(0.8),
         colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-        borderRadius: 8,
       );
       return material.isLiked; // Return original state on error
     } finally {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import '../../../../utils/navigation_helper.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import '../controllers/content_creation_controller.dart';
@@ -730,19 +731,16 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
             'Storage access denied. Please enable storage access in Settings.';
       }
 
-      Get.snackbar(
-        'Document Selection Error',
-        errorMessage,
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Document Selection Error',
+        message: errorMessage,
         backgroundColor: Colors.orange,
         colorText: Colors.white,
-        duration: const Duration(seconds: 4),
       );
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'An unexpected error occurred while selecting the document',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'An unexpected error occurred while selecting the document',
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
@@ -766,10 +764,9 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
           await _pickImageWithFilePicker();
         }
       } catch (fallbackError) {
-        Get.snackbar(
-          'Error',
-          'Unable to select image. Please try again or contact support.',
-          snackPosition: SnackPosition.BOTTOM,
+        NavigationHelper.showSafeSnackbar(
+          title: 'Error',
+          message: 'Unable to select image. Please try again or contact support.',
           backgroundColor: Colors.red,
           colorText: Colors.white,
         );
@@ -848,10 +845,9 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
 
   void _saveDraft() {
     // TODO: Implement save draft functionality
-    Get.snackbar(
-      'Draft Saved',
-      'Your content has been saved as draft',
-      snackPosition: SnackPosition.BOTTOM,
+    NavigationHelper.showSafeSnackbar(
+      title: 'Draft Saved',
+      message: 'Your content has been saved as draft',
     );
   }
 
@@ -862,10 +858,9 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
 
     // Validate topic selection for Legal Education hub
     if (hubType == 'legal_ed' && controller.selectedTopic.value == null) {
-      Get.snackbar(
-        'Topic Required',
-        'Please select a topic for this Legal Education content',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Topic Required',
+        message: 'Please select a topic for this Legal Education content',
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
@@ -900,7 +895,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
           '🔄 ContentCreationScreen: Content created successfully, showing success message');
 
       // Give users time to see the success message before navigating back
-      await Future.delayed(const Duration(seconds: 1));
+      await Future.delayed(const Duration(seconds: 2));
 
       print('🔄 ContentCreationScreen: Navigating back with result=true');
       Get.back(result: true);
@@ -1349,10 +1344,9 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
         controller.setImageFile(result.path, bytes);
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to take picture: $e',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to take picture: $e',
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );

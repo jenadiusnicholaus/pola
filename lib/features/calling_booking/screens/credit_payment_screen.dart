@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import '../../../utils/navigation_helper.dart';
 import '../models/consultant_models.dart';
 import '../services/credit_service.dart';
 import 'dart:async';
@@ -43,7 +44,7 @@ class _CreditPaymentScreenState extends State<CreditPaymentScreen> {
 
     if (_bundle == null) {
       Get.back();
-      Get.snackbar('Error', 'Invalid bundle selected');
+      NavigationHelper.showSafeSnackbar(title: 'Error', message: 'Invalid bundle selected');
     }
   }
 

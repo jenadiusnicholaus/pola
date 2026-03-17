@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../models/legal_education_models.dart';
 import '../services/legal_education_service.dart';
 import '../../../../services/token_storage_service.dart';
+import '../../../../utils/navigation_helper.dart';
 
 enum LanguageFilter { both, english, swahili }
 
@@ -161,14 +162,12 @@ class LegalEducationController extends GetxController {
       }
 
       // Show user-friendly error message
-      Get.snackbar(
-        'Error Loading Topics',
-        isAuthError
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error Loading Topics',
+        message: isAuthError
             ? 'Please log in to access legal education content'
             : 'Failed to load topics. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
-        colorText: Colors.white,
         duration: const Duration(seconds: 4),
       );
     } finally {

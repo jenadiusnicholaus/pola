@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants/app_strings.dart';
+import '../../utils/navigation_helper.dart';
 import '../../features/profile/services/profile_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/token_storage_service.dart';
@@ -698,13 +699,12 @@ class AppDrawer extends StatelessWidget {
                   final authService = Get.find<AuthService>();
                   await authService.logout();
 
-                  Get.snackbar(
-                    'Signed Out',
-                    'You have been signed out successfully',
+                  NavigationHelper.showSafeSnackbar(
+                    title: 'Signed Out',
+                    message: 'You have been signed out successfully',
                     icon: const Icon(Icons.logout, color: Colors.white),
                     backgroundColor: Colors.green,
                     colorText: Colors.white,
-                    duration: const Duration(seconds: 2),
                   );
                 } catch (e) {
                   debugPrint('❌ Logout error: $e');

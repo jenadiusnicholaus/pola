@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../utils/navigation_helper.dart';
 import '../../hubs_and_services/data.dart';
 import '../controllers/home_controller.dart';
 import '../../../services/token_storage_service.dart';
@@ -335,10 +336,9 @@ class HubsAndServicesList extends StatelessWidget {
 
     // Check if user has access to this hub
     if (type == 'hub' && !_hasAccessToHub(key, controller.userRole)) {
-      Get.snackbar(
-        'Access Denied',
-        'You don\'t have permission to access this hub',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Access Denied',
+        message: 'You don\'t have permission to access this hub',
         backgroundColor: Colors.red,
         colorText: Colors.white,
         duration: const Duration(seconds: 3),
@@ -374,10 +374,9 @@ class HubsAndServicesList extends StatelessWidget {
         break;
       default:
         // Show a snackbar for other items - will implement later
-        Get.snackbar(
-          '${type.capitalize} Selected',
-          'Coming Soon: $key',
-          snackPosition: SnackPosition.BOTTOM,
+        NavigationHelper.showSafeSnackbar(
+          title: '${type.capitalize} Selected',
+          message: 'Coming Soon: $key',
           backgroundColor: type == 'hub' ? Colors.blue : Colors.green,
           colorText: Colors.white,
           duration: const Duration(seconds: 2),

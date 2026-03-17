@@ -6,6 +6,7 @@ import '../utils/user_role_manager.dart';
 import '../../legal_education/models/legal_education_models.dart';
 import '../../../../services/permission_service.dart';
 import '../../../../utils/navigation_helper.dart';
+import '../../../../routes/app_routes.dart';
 
 class HubContentController extends GetxController {
   final String hubType;
@@ -163,10 +164,9 @@ class HubContentController extends GetxController {
       hasMoreData.value = response.next != null;
     } catch (e) {
       currentPage.value--;
-      Get.snackbar(
-        'Error',
-        'Failed to load more content: $e',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to load more content: $e',
       );
     } finally {
       isLoadingMore.value = false;
@@ -214,10 +214,9 @@ class HubContentController extends GetxController {
 
       searchResults.assignAll(response.results);
     } catch (e) {
-      Get.snackbar(
-        'Search Error',
-        'Failed to search content: $e',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Search Error',
+        message: 'Failed to search content: $e',
       );
     } finally {
       isSearching.value = false;
@@ -431,10 +430,9 @@ class HubContentController extends GetxController {
       // No snackbar feedback - just visual icon change
     } catch (e) {
       print('❌ Error toggling like: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to update like: $e',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to update like: $e',
       );
     }
   }
@@ -511,10 +509,9 @@ class HubContentController extends GetxController {
       }
     } catch (e) {
       print('❌ Error toggling bookmark: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to update bookmark: $e',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to update bookmark: $e',
       );
     }
   }
@@ -543,21 +540,17 @@ class HubContentController extends GetxController {
 
       _updateContentInLists(updatedItem);
 
-      Get.snackbar(
-        'Success',
-        'Content rated successfully!',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Success',
+        message: 'Content rated successfully!',
         backgroundColor: Colors.green,
-        colorText: Colors.white,
       );
     } catch (e) {
       print('❌ Error rating content: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to rate content: $e',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to rate content: $e',
         backgroundColor: Colors.red,
-        colorText: Colors.white,
       );
     }
   }
@@ -643,10 +636,9 @@ class HubContentController extends GetxController {
       }
     } catch (e) {
       print('❌ Error searching with filters: $e');
-      Get.snackbar(
-        'Search Error',
-        'Failed to search content: $e',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Search Error',
+        message: 'Failed to search content: $e',
       );
     } finally {
       isSearching.value = false;
@@ -709,10 +701,9 @@ class HubContentController extends GetxController {
       // the endpoint may not be implemented yet on backend
       if (!e.toString().contains('404') &&
           !e.toString().contains('Not found')) {
-        Get.snackbar(
-          'Error',
-          'Failed to fetch bookmarked content: $e',
-          snackPosition: SnackPosition.BOTTOM,
+        NavigationHelper.showSafeSnackbar(
+          title: 'Error',
+          message: 'Failed to fetch bookmarked content: $e',
         );
       }
       // Clear bookmarked content on error to show empty state
@@ -736,10 +727,9 @@ class HubContentController extends GetxController {
       searchResults.assignAll(response.results);
     } catch (e) {
       print('❌ Error fetching liked content: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to fetch liked content: $e',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to fetch liked content: $e',
       );
     } finally {
       isLoading.value = false;
@@ -1021,10 +1011,9 @@ class HubContentController extends GetxController {
       _updateContentCommentCountToActual(contentId, actualCount);
     } catch (e) {
       print('Error loading comments: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to load comments: $e',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to load comments: $e',
       );
     } finally {
       commentsLoading[contentId]!.value = false;
@@ -1048,15 +1037,13 @@ class HubContentController extends GetxController {
         if (context != null) {
           NavigationHelper.checkPermissionOrShowUpgrade(context, feature);
         } else {
-          Get.snackbar(
-            'Upgrade Required',
-            permissionService.getPermissionDeniedMessage(feature),
-            snackPosition: SnackPosition.BOTTOM,
+          NavigationHelper.showSafeSnackbar(
+            title: 'Upgrade Required',
+            message: permissionService.getPermissionDeniedMessage(feature),
             backgroundColor: Colors.orange,
-            colorText: Colors.white,
             duration: const Duration(seconds: 4),
             mainButton: TextButton(
-              onPressed: () => Get.toNamed('/subscription'),
+              onPressed: () => Get.toNamed(AppRoutes.subscriptionPlans),
               child: const Text('Upgrade', style: TextStyle(color: Colors.white)),
             ),
           );
@@ -1081,7 +1068,7 @@ class HubContentController extends GetxController {
       print('Mentioned user IDs: $mentionedUserIds');
 
       if (commentText.isEmpty) {
-        Get.snackbar('Error', 'Comment cannot be empty');
+        NavigationHelper.showSafeSnackbar(title: 'Error', message: 'Comment cannot be empty');
         return;
       }
 
@@ -1135,16 +1122,14 @@ class HubContentController extends GetxController {
         controller.clear();
       }
 
-      Get.snackbar(
-        'Success',
-        'Comment added successfully',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Success',
+        message: 'Comment added successfully',
       );
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to add comment: $e',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to add comment: $e',
       );
     } finally {
       addingComment[contentId]!.value = false;
@@ -1280,10 +1265,9 @@ class HubContentController extends GetxController {
         _updateCommentLikeStatus(contentId, commentId);
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to toggle comment like: $e',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to toggle comment like: $e',
       );
     }
   }
@@ -1385,16 +1369,14 @@ class HubContentController extends GetxController {
     try {
       await _service.deleteComment(commentId);
       _removeCommentFromList(contentId, commentId);
-      Get.snackbar(
-        'Success',
-        'Comment deleted successfully',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Success',
+        message: 'Comment deleted successfully',
       );
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to delete comment: $e',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to delete comment: $e',
       );
     }
   }
@@ -1407,10 +1389,9 @@ class HubContentController extends GetxController {
 
       _updateCommentReplies(contentId, commentId, replies, page);
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to load replies: $e',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to load replies: $e',
       );
     }
   }

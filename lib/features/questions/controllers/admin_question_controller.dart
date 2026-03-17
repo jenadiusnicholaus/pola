@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../models/question_models.dart';
 import '../services/question_service.dart';
+import '../../../utils/navigation_helper.dart';
 
 class AdminQuestionController extends GetxController {
   final QuestionService _service = QuestionService();
@@ -34,10 +35,9 @@ class AdminQuestionController extends GetxController {
       questions.value = questionsList;
     } catch (e) {
       error.value = e.toString();
-      Get.snackbar(
-        'Error',
-        e.toString(),
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: e.toString(),
       );
     } finally {
       isLoading.value = false;
@@ -73,21 +73,21 @@ class AdminQuestionController extends GetxController {
       await fetchStats();
 
       Get.back(); // Close answer screen
-      Get.snackbar(
-        'Success',
-        'Question answered successfully!',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Success',
+        message: 'Question answered successfully!',
         backgroundColor: Get.theme.colorScheme.primaryContainer,
+        colorText: Get.theme.colorScheme.onPrimaryContainer,
       );
 
       return true;
     } catch (e) {
       error.value = e.toString();
-      Get.snackbar(
-        'Error',
-        e.toString(),
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: e.toString(),
         backgroundColor: Get.theme.colorScheme.errorContainer,
+        colorText: Get.theme.colorScheme.onErrorContainer,
       );
       return false;
     } finally {
@@ -109,16 +109,14 @@ class AdminQuestionController extends GetxController {
       // Refresh stats
       await fetchStats();
 
-      Get.snackbar(
-        'Success',
-        'Question closed successfully',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Success',
+        message: 'Question closed successfully',
       );
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        e.toString(),
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: e.toString(),
       );
     }
   }
@@ -137,16 +135,14 @@ class AdminQuestionController extends GetxController {
       // Refresh stats
       await fetchStats();
 
-      Get.snackbar(
-        'Success',
-        'Question reopened successfully',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Success',
+        message: 'Question reopened successfully',
       );
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        e.toString(),
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: e.toString(),
       );
     }
   }

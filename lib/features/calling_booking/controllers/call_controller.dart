@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../utils/navigation_helper.dart';
 import '../models/consultant_models.dart';
 import '../services/call_service.dart';
 import '../services/zego_call_service.dart';
@@ -87,19 +88,13 @@ class CallController extends GetxController {
       if (Get.isRegistered<CallController>()) {
         Get.back();
         Future.delayed(const Duration(milliseconds: 300), () {
-          if (Get.context != null) {
-            ScaffoldMessenger.of(Get.context!).showSnackBar(
-              SnackBar(
-                content: Text(
-                  errorMessage.isNotEmpty
-                      ? errorMessage
-                      : 'An error occurred during the call',
-                ),
-                backgroundColor: Colors.red.shade700,
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          }
+          NavigationHelper.showSafeSnackbar(
+            title: 'Error',
+            message: errorMessage.isNotEmpty
+                ? errorMessage
+                : 'An error occurred during the call',
+            backgroundColor: Colors.red.shade700,
+          );
         });
       }
     };
@@ -143,14 +138,11 @@ class CallController extends GetxController {
     } catch (e) {
       debugPrint('❌ Error joining incoming call: $e');
       isCheckingCredits.value = false;
-      if (Get.context != null) {
-        ScaffoldMessenger.of(Get.context!).showSnackBar(
-          const SnackBar(
-            content: Text('Could not join call. Please try again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Could not join call. Please try again.',
+        backgroundColor: Colors.red,
+      );
       Get.back();
     }
   }
@@ -202,16 +194,11 @@ class CallController extends GetxController {
         print('❌ Failed to initiate call: ${initiateResult['error']}');
         isCheckingCredits.value = false;
         error.value = initiateResult['error'] ?? 'Failed to initiate call';
-        if (Get.context != null) {
-          ScaffoldMessenger.of(Get.context!).showSnackBar(
-            SnackBar(
-              content:
-                  Text(initiateResult['error'] ?? 'Failed to initiate call'),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
+        NavigationHelper.showSafeSnackbar(
+          title: 'Error',
+          message: initiateResult['error'] ?? 'Failed to initiate call',
+          backgroundColor: Colors.red,
+        );
         // Delay before going back to avoid snackbar controller issues
         await Future.delayed(const Duration(milliseconds: 100));
         if (Get.isSnackbarOpen) {
@@ -230,16 +217,11 @@ class CallController extends GetxController {
       if (!hasPermission) {
         print('❌ Microphone permission denied');
         isCheckingCredits.value = false;
-        if (Get.context != null) {
-          ScaffoldMessenger.of(Get.context!).showSnackBar(
-            const SnackBar(
-              content:
-                  Text('Microphone permission is required for voice calls'),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
+        NavigationHelper.showSafeSnackbar(
+          title: 'Permission Denied',
+          message: 'Microphone permission is required for voice calls',
+          backgroundColor: Colors.red,
+        );
         Get.back();
         return;
       }
@@ -270,15 +252,11 @@ class CallController extends GetxController {
       print('Error initiating call: $e');
       isCheckingCredits.value = false;
       // Show toast for unexpected errors
-      if (Get.context != null) {
-        ScaffoldMessenger.of(Get.context!).showSnackBar(
-          const SnackBar(
-            content: Text('An unexpected error occurred. Please try again.'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'An unexpected error occurred. Please try again.',
+        backgroundColor: Colors.red,
+      );
       Get.back();
     }
   }
@@ -393,14 +371,11 @@ class CallController extends GetxController {
       // Show summary after navigation
       final minutes = (durationSeconds / 60).ceil();
       Future.delayed(const Duration(milliseconds: 300), () {
-        if (Get.context != null) {
-          Get.snackbar(
-            'Call Completed',
-            'Call duration: ${callDuration.value}\nCredits used: $minutes minute(s)',
-            snackPosition: SnackPosition.BOTTOM,
-            duration: const Duration(seconds: 4),
-          );
-        }
+        NavigationHelper.showSafeSnackbar(
+          title: 'Call Completed',
+          message: 'Call duration: ${callDuration.value}\nCredits used: $minutes minute(s)',
+          duration: const Duration(seconds: 4),
+        );
       });
     }
   }

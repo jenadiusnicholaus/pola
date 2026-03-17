@@ -8,6 +8,7 @@ import 'material_viewer_screen.dart';
 import '../../hub_content/widgets/content_creation_fab.dart';
 import '../../hub_content/utils/user_role_manager.dart';
 import '../../../../services/permission_service.dart';
+import '../../../../routes/app_routes.dart';
 
 class TopicMaterialsScreen extends StatefulWidget {
   final Topic? topic;
@@ -423,7 +424,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
             onPressed: () {
               Navigator.of(context).pop();
               // Navigate to subscription page
-              Get.toNamed('/subscription');
+              Get.toNamed(AppRoutes.subscriptionPlans);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,

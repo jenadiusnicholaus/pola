@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import '../../../utils/navigation_helper.dart';
 import '../services/document_payment_service.dart';
 import 'dart:async';
 
@@ -67,13 +68,19 @@ class _DocumentPurchaseDialogState extends State<DocumentPurchaseDialog> {
     final phone = _phoneController.text.trim();
 
     if (phone.isEmpty) {
-      Get.snackbar('Error', 'Please enter your phone number');
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Please enter your phone number',
+      );
       return;
     }
 
     final formattedPhone = _formatPhoneNumber(phone);
     if (!_validatePhoneNumber(formattedPhone)) {
-      Get.snackbar('Error', 'Invalid phone number format');
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Invalid phone number format',
+      );
       return;
     }
 
@@ -152,11 +159,10 @@ class _DocumentPurchaseDialogState extends State<DocumentPurchaseDialog> {
           // Payment pending - start polling
           final nextSteps = result['nextSteps'] as List<String>? ?? [];
           if (nextSteps.isNotEmpty) {
-            Get.snackbar(
-              'Payment Initiated',
-              nextSteps.join('\n'),
+            NavigationHelper.showSafeSnackbar(
+              title: 'Payment Initiated',
+              message: nextSteps.join('\n'),
               duration: const Duration(seconds: 5),
-              snackPosition: SnackPosition.BOTTOM,
             );
           }
 
@@ -166,7 +172,10 @@ class _DocumentPurchaseDialogState extends State<DocumentPurchaseDialog> {
         setState(() {
           _paymentStatus = 'failed';
         });
-        Get.snackbar('Error', result['message'] ?? 'Payment failed');
+        NavigationHelper.showSafeSnackbar(
+          title: 'Error',
+          message: result['message'] ?? 'Payment failed',
+        );
       }
     } catch (e, stackTrace) {
       debugPrint('❌ EXCEPTION in payment dialog: $e');
@@ -174,7 +183,10 @@ class _DocumentPurchaseDialogState extends State<DocumentPurchaseDialog> {
       setState(() {
         _paymentStatus = 'failed';
       });
-      Get.snackbar('Error', 'Failed to initiate payment: $e');
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to initiate payment: $e',
+      );
     }
   }
 
@@ -186,7 +198,10 @@ class _DocumentPurchaseDialogState extends State<DocumentPurchaseDialog> {
         setState(() {
           _paymentStatus = 'failed';
         });
-        Get.snackbar('Timeout', 'Payment verification timed out');
+        NavigationHelper.showSafeSnackbar(
+          title: 'Timeout',
+          message: 'Payment verification timed out',
+        );
         return;
       }
 

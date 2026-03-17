@@ -72,20 +72,24 @@ class UserProfile {
     return '$firstName $lastName'.trim();
   }
 
-  String get displayRole => userRole.getRoleDisplay;
+  String get displayRole => userRole.displayName;
 }
 
 // User role information
 class UserRole {
   final int id;
   final String roleName;
-  final String getRoleDisplay;
+  final String displayName;
+  final String? nameEn;
+  final String? nameSw;
   final String? description;
 
   UserRole({
     required this.id,
     required this.roleName,
-    required this.getRoleDisplay,
+    required this.displayName,
+    this.nameEn,
+    this.nameSw,
     this.description,
   });
 
@@ -93,7 +97,9 @@ class UserRole {
     return UserRole(
       id: json['id'] ?? 0,
       roleName: json['role_name'] ?? '',
-      getRoleDisplay: json['get_role_display'] ?? '',
+      displayName: json['display_name'] ?? '',
+      nameEn: json['name_en'],
+      nameSw: json['name_sw'],
       description: json['description'],
     );
   }
@@ -232,10 +238,10 @@ class SubscriptionPermissions {
   final bool canAccessLegalLibrary;
   final bool canAskQuestions;
   final int questionsLimit;
-  final int questionsRemaining;
+  final int? questionsRemaining;
   final bool canGenerateDocuments;
   final int freeDocumentsLimit;
-  final int documentsRemaining;
+  final int? documentsRemaining;
   final bool canReceiveLegalUpdates;
   final bool canAccessForum;
   final bool canAccessStudentHub;
@@ -254,9 +260,9 @@ class SubscriptionPermissions {
   final bool canBookConsultation;
 
   // Legal education
-  final int legalEducationLimit;
-  final int legalEducationReads;
-  final double legalEducationRemaining;
+  final int? legalEducationLimit;
+  final int? legalEducationReads;
+  final double? legalEducationRemaining;
 
   // Role-specific permissions
   final bool canViewTalkToLawyer;
@@ -266,8 +272,8 @@ class SubscriptionPermissions {
   // User info
   final String userRole;
   final bool isProfessional;
-  final int daysRemaining;
-  final String endDate;
+  final int? daysRemaining;
+  final String? endDate;
 
   SubscriptionPermissions({
     required this.isActive,
@@ -278,7 +284,7 @@ class SubscriptionPermissions {
     required this.questionsRemaining,
     required this.canGenerateDocuments,
     required this.freeDocumentsLimit,
-    required this.documentsRemaining,
+    this.documentsRemaining,
     required this.canReceiveLegalUpdates,
     required this.canAccessForum,
     required this.canAccessStudentHub,
@@ -291,16 +297,16 @@ class SubscriptionPermissions {
     required this.canTalkToLawyer,
     required this.canAskQuestion,
     required this.canBookConsultation,
-    required this.legalEducationLimit,
-    required this.legalEducationReads,
-    required this.legalEducationRemaining,
+    this.legalEducationLimit,
+    this.legalEducationReads,
+    this.legalEducationRemaining,
     required this.canViewTalkToLawyer,
     required this.canViewNearbyLawyers,
     required this.canViewOwnConsultations,
     required this.userRole,
     required this.isProfessional,
-    required this.daysRemaining,
-    required this.endDate,
+    this.daysRemaining,
+    this.endDate,
   });
 
   factory SubscriptionPermissions.fromJson(Map<String, dynamic> json) {
@@ -310,10 +316,10 @@ class SubscriptionPermissions {
       canAccessLegalLibrary: json['can_access_legal_library'] ?? false,
       canAskQuestions: json['can_ask_questions'] ?? false,
       questionsLimit: json['questions_limit'] ?? 0,
-      questionsRemaining: json['questions_remaining'] ?? 0,
+      questionsRemaining: (json['questions_remaining'] ?? 0).toInt(),
       canGenerateDocuments: json['can_generate_documents'] ?? false,
       freeDocumentsLimit: json['free_documents_limit'] ?? 0,
-      documentsRemaining: json['documents_remaining'] ?? 0,
+      documentsRemaining: json['documents_remaining']?.toInt(),
       canReceiveLegalUpdates: json['can_receive_legal_updates'] ?? false,
       canAccessForum: json['can_access_forum'] ?? false,
       canAccessStudentHub: json['can_access_student_hub'] ?? false,
@@ -327,8 +333,8 @@ class SubscriptionPermissions {
       canTalkToLawyer: json['can_talk_to_lawyer'] ?? false,
       canAskQuestion: json['can_ask_question'] ?? false,
       canBookConsultation: json['can_book_consultation'] ?? false,
-      legalEducationLimit: json['legal_education_limit'] ?? 0,
-      legalEducationReads: json['legal_education_reads'] ?? 0,
+      legalEducationLimit: json['legal_education_limit']?.toInt(),
+      legalEducationReads: json['legal_education_reads']?.toInt(),
       legalEducationRemaining:
           (json['legal_education_remaining'] ?? 0).toDouble(),
       canViewTalkToLawyer: json['can_view_talk_to_lawyer'] ?? false,
@@ -336,8 +342,8 @@ class SubscriptionPermissions {
       canViewOwnConsultations: json['can_view_own_consultations'] ?? false,
       userRole: json['user_role'] ?? '',
       isProfessional: json['is_professional'] ?? false,
-      daysRemaining: json['days_remaining'] ?? 0,
-      endDate: json['end_date'] ?? '',
+      daysRemaining: json['days_remaining']?.toInt(),
+      endDate: json['end_date'],
     );
   }
 }
@@ -393,11 +399,19 @@ class RegionalChapter {
   final int id;
   final String name;
   final String code;
+  final int? region;
+  final String? regionName;
+  final String? description;
+  final bool? isActive;
 
   RegionalChapter({
     required this.id,
     required this.name,
     required this.code,
+    this.region,
+    this.regionName,
+    this.description,
+    this.isActive,
   });
 
   factory RegionalChapter.fromJson(Map<String, dynamic> json) {
@@ -405,6 +419,10 @@ class RegionalChapter {
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
       code: json['code'] ?? '',
+      region: json['region'],
+      regionName: json['region_name'],
+      description: json['description'],
+      isActive: json['is_active'],
     );
   }
 }

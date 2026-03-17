@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../utils/navigation_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/hub_content_models.dart';
 import '../controllers/hub_content_controller.dart';
 import '../../legal_education/screens/material_viewer_screen.dart';
 import '../../../../services/permission_service.dart';
+import '../../../../routes/app_routes.dart';
 
 class HubContentCard extends StatelessWidget {
   final HubContentItem content;
@@ -1050,10 +1052,9 @@ class HubContentCard extends StatelessWidget {
     if (await canLaunchUrl(videoUri)) {
       await launchUrl(videoUri, mode: LaunchMode.externalApplication);
     } else {
-      Get.snackbar(
-        'Error',
-        'Cannot open video URL',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Cannot open video URL',
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
@@ -1161,7 +1162,7 @@ class HubContentCard extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              Get.toNamed('/subscription');
+              Get.toNamed(AppRoutes.subscriptionPlans);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,

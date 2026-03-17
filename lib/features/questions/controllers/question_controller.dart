@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../models/question_models.dart';
 import '../services/question_service.dart';
 import '../../../services/permission_service.dart';
+import '../../../routes/app_routes.dart';
+import '../../../utils/navigation_helper.dart';
 
 class QuestionController extends GetxController {
   final QuestionService _service = QuestionService();
@@ -107,15 +109,13 @@ class QuestionController extends GetxController {
       if (!permissionService.canAccess(PermissionFeature.askQuestions)) {
         final message = permissionService.getPermissionDeniedMessage(
             PermissionFeature.askQuestions);
-        Get.snackbar(
-          'Upgrade Required',
-          message,
-          snackPosition: SnackPosition.BOTTOM,
+        NavigationHelper.showSafeSnackbar(
+          title: 'Upgrade Required',
+          message: message,
           backgroundColor: Colors.orange,
-          colorText: Colors.white,
           duration: const Duration(seconds: 4),
           mainButton: TextButton(
-            onPressed: () => Get.toNamed('/subscription'),
+            onPressed: () => Get.toNamed(AppRoutes.subscriptionPlans),
             child: const Text('Upgrade', style: TextStyle(color: Colors.white)),
           ),
         );
@@ -138,21 +138,21 @@ class QuestionController extends GetxController {
       myQuestions.insert(0, question);
 
       Get.back(); // Close the ask question screen
-      Get.snackbar(
-        'Success',
-        'Question submitted successfully!',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Success',
+        message: 'Question submitted successfully',
         backgroundColor: Get.theme.colorScheme.primaryContainer,
+        colorText: Get.theme.colorScheme.onPrimaryContainer,
       );
 
       return true;
     } catch (e) {
       error.value = e.toString();
-      Get.snackbar(
-        'Error',
-        e.toString(),
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: e.toString(),
         backgroundColor: Get.theme.colorScheme.errorContainer,
+        colorText: Get.theme.colorScheme.onErrorContainer,
       );
       return false;
     } finally {
@@ -184,17 +184,15 @@ class QuestionController extends GetxController {
         );
       }
 
-      Get.snackbar(
-        'Thank you!',
-        'Marked as helpful',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Thank you!',
+        message: 'Marked as helpful',
         duration: const Duration(seconds: 2),
       );
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to mark as helpful',
-        snackPosition: SnackPosition.BOTTOM,
+      NavigationHelper.showSafeSnackbar(
+        title: 'Error',
+        message: 'Failed to mark as helpful',
       );
     }
   }

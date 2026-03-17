@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../constants/app_colors.dart';
+import '../../../utils/navigation_helper.dart';
 
 class ComingSoonScreen extends StatelessWidget {
   final String? featureName;
@@ -225,14 +226,13 @@ class ComingSoonScreen extends StatelessWidget {
                 // Newsletter/Notification CTA
                 TextButton.icon(
                   onPressed: () {
-                    Get.snackbar(
-                      'Notifications',
-                      'We\'ll notify you when this feature is ready!',
+                    NavigationHelper.showSafeSnackbar(
+                      title: 'Notifications',
+                      message: 'We\'ll notify you when this feature is ready!',
                       icon: const Icon(Icons.notifications_active,
                           color: Colors.white),
                       backgroundColor: Colors.green,
                       colorText: Colors.white,
-                      duration: const Duration(seconds: 3),
                     );
                   },
                   icon: const Icon(Icons.notifications_outlined),

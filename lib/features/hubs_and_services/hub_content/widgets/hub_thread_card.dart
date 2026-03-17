@@ -5,6 +5,7 @@ import '../controllers/hub_content_controller.dart';
 import '../utils/mention_parser.dart';
 import 'enhanced_comment_thread.dart';
 import 'mention_text_field.dart';
+import '../../../../utils/navigation_helper.dart';
 import '../../../profile/services/profile_service.dart';
 
 class HubThreadCard extends StatefulWidget {
@@ -1688,7 +1689,10 @@ class _HubThreadCardState extends State<HubThreadCard> {
         _showReplyDialog(comment);
         break;
       case 'report':
-        Get.snackbar('Report', 'Comment reported');
+        NavigationHelper.showSafeSnackbar(
+          title: 'Report',
+          message: 'Comment reported',
+        );
         break;
     }
   }
@@ -2012,11 +2016,9 @@ class _HubThreadCardState extends State<HubThreadCard> {
                                                   mentionedUserIds,
                                             );
                                             Get.back();
-                                            Get.snackbar(
-                                              'Success',
-                                              'Your reply has been posted!',
-                                              snackPosition:
-                                                  SnackPosition.BOTTOM,
+                                            NavigationHelper.showSafeSnackbar(
+                                              title: 'Success',
+                                              message: 'Your reply has been posted!',
                                               backgroundColor:
                                                   Theme.of(Get.context!)
                                                       .colorScheme
@@ -2032,11 +2034,9 @@ class _HubThreadCardState extends State<HubThreadCard> {
                                               ),
                                             );
                                           } catch (e) {
-                                            Get.snackbar(
-                                              'Error',
-                                              'Failed to post reply. Please try again.',
-                                              snackPosition:
-                                                  SnackPosition.BOTTOM,
+                                            NavigationHelper.showSafeSnackbar(
+                                              title: 'Error',
+                                              message: 'Failed to post reply. Please try again.',
                                               backgroundColor:
                                                   Theme.of(Get.context!)
                                                       .colorScheme

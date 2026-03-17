@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../utils/navigation_helper.dart';
 import '../models/hub_content_models.dart';
 import '../controllers/hub_content_controller.dart';
 
@@ -166,10 +167,9 @@ class CommentActionsWidget extends StatelessWidget {
               if (editController.text.trim().isNotEmpty) {
                 // TODO: Implement edit comment functionality in controller
                 Navigator.of(context).pop();
-                Get.snackbar(
-                  'Info',
-                  'Edit comment functionality will be implemented',
-                  snackPosition: SnackPosition.BOTTOM,
+                NavigationHelper.showSafeSnackbar(
+                  title: 'Info',
+                  message: 'Edit comment functionality will be implemented',
                 );
               }
             },

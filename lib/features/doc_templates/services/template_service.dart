@@ -7,94 +7,39 @@ class TemplateService {
   final Dio _dio = DioConfig.instance;
 
   Future<Map<String, dynamic>> getTemplates({int? page, int? pageSize}) async {
-    // TODO: Replace with actual API endpoint when backend is ready
-    // Endpoint should be: /api/v1/document-templates/
-
-    // MOCK DATA - Remove this when backend is ready
-    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-
-    final mockTemplates = [
-      {
-        "id": 16,
-        "name": "Employment Questionnaire",
-        "name_sw": "Dodoso la Ajira",
-        "description":
-            "Comprehensive employment questionnaire form for contract creation",
-        "description_sw":
-            "Fomu kamili ya dodoso la ajira kwa kutengeneza mkataba",
-        "category": "questionnaire",
-        "is_free": true,
-        "price": "0.00",
-        "icon": "📋",
-        "usage_count": 15
-      },
-      {
-        "id": 15,
-        "name": "Notice of Termination",
-        "name_sw": "Taarifa ya Kusitisha Ajira",
-        "description":
-            "Formal notice of employment termination from employer to employee",
-        "description_sw":
-            "Taarifa rasmi ya kusitisha ajira kutoka kwa mwajiri kwa mfanyakazi",
-        "category": "legal_notice",
-        "is_free": true,
-        "price": "0.00",
-        "icon": "📢",
-        "usage_count": 16
-      },
-      {
-        "id": 13,
-        "name": "Employment Contract",
-        "name_sw": "Mkataba wa Ajira",
-        "description":
-            "Official employment contract document extracted from Word template",
-        "description_sw":
-            "Mkataba rasmi wa ajira uliochukuliwa kutoka kwenye template ya Word",
-        "category": "employment",
-        "is_free": true,
-        "price": "0.00",
-        "icon": "📄",
-        "usage_count": 17
-      },
-      {
-        "id": 14,
-        "name": "Resignation Letter",
-        "name_sw": "Barua ya Kujiuzulu",
-        "description":
-            "Professional resignation letter for employees leaving their position",
-        "description_sw":
-            "Barua rasmi ya kujiuzulu kwa wafanyakazi wanaoondoka kazini",
-        "category": "resignation",
-        "is_free": true,
-        "price": "0.00",
-        "icon": "📝",
-        "usage_count": 22
-      }
-    ];
-
-    final templates =
-        mockTemplates.map((json) => DocumentTemplate.fromJson(json)).toList();
-
-    return {
-      'count': mockTemplates.length,
-      'next': null,
-      'previous': null,
-      'templates': templates,
-    };
-
-    /* UNCOMMENT THIS WHEN BACKEND IS READY:
     try {
-      final response = await _dio.get('/api/v1/document-templates/');
-      
+      final response = await _dio.get(
+        '/api/v1/doc-templates/templates/',
+        queryParameters: {
+          if (page != null) 'page': page,
+          if (pageSize != null) 'page_size': pageSize,
+        },
+      );
+
       if (response.statusCode == 200) {
-        final data = response.data as Map<String, dynamic>;
-        final List<dynamic> results = data['results'] as List<dynamic>;
-        final templates = results.map((json) => DocumentTemplate.fromJson(json)).toList();
-        
+        final dynamic responseData = response.data;
+        List<dynamic> results = [];
+        int count = 0;
+        dynamic next;
+        dynamic previous;
+
+        if (responseData is Map<String, dynamic>) {
+          results = (responseData['results'] ?? []) as List<dynamic>;
+          count = responseData['count'] as int? ?? results.length;
+          next = responseData['next'];
+          previous = responseData['previous'];
+        } else if (responseData is List<dynamic>) {
+          results = responseData;
+          count = results.length;
+        }
+
+        final templates =
+            results.map((json) => DocumentTemplate.fromJson(json)).toList();
+
         return {
-          'count': data['count'] as int,
-          'next': data['next'],
-          'previous': data['previous'],
+          'count': count,
+          'next': next,
+          'previous': previous,
           'templates': templates,
         };
       } else {
@@ -102,12 +47,12 @@ class TemplateService {
       }
     } on DioException catch (e) {
       if (e.response != null) {
-        throw Exception('Error: ${e.response?.data['message'] ?? 'Failed to load templates'}');
+        throw Exception(
+            'Error: ${e.response?.data['message'] ?? e.response?.data['detail'] ?? 'Failed to load templates'}');
       } else {
         throw Exception('Network error: ${e.message}');
       }
     }
-    */
   }
 
   Future<Map<String, dynamic>> getTemplateDetail({
