@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:signature/signature.dart';
 import '../models/template_model.dart';
 import '../services/template_service.dart';
 
@@ -21,6 +23,7 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
   bool isLoading = false;
   List<Map<String, dynamic>> formFields = [];
   Map<String, TextEditingController> fieldControllers = {};
+  Map<String, SignatureController> signatureControllers = {};
 
   @override
   void initState() {
@@ -37,6 +40,9 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
   @override
   void dispose() {
     for (var controller in fieldControllers.values) {
+      controller.dispose();
+    }
+    for (var controller in signatureControllers.values) {
       controller.dispose();
     }
     super.dispose();
@@ -108,7 +114,17 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
           // Initialize controllers for each field
           for (var field in formFields) {
             final fieldName = field['field_name'] as String;
+            final fieldType = field['field_type'] as String? ?? 'text';
+            
             fieldControllers[fieldName] = TextEditingController();
+            
+            if (fieldType == 'signature') {
+              signatureControllers[fieldName] = SignatureController(
+                penStrokeWidth: 3,
+                penColor: Colors.black,
+                exportBackgroundColor: Colors.transparent,
+              );
+            }
           }
         });
 
@@ -167,8 +183,41 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
       final formData = <String, dynamic>{};
 
       if (!isBlank) {
+            // Validate all signatures
+            for (var field in formFields) {
+               final fieldName = field['field_name'] as String;
+               final fieldType = field['field_type'] as String? ?? 'text';
+               final required = field['is_required'] as bool? ?? false;
+               
+               if (fieldType == 'signature' && required) {
+                 final sigController = signatureControllers[fieldName];
+                 if (sigController == null || sigController.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Please provide your signature for ${field['label_en'] ?? fieldName}'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    setState(() => isLoading = false);
+                    return;
+                 }
+               }
+            }
+
         for (var entry in fieldControllers.entries) {
           formData[entry.key] = entry.value.text;
+        }
+
+        // Process signatures
+        for (var entry in signatureControllers.entries) {
+          if (entry.value.isNotEmpty) {
+            final signatureData = await entry.value.toPngBytes();
+            if (signatureData != null) {
+              final base64Signature = base64Encode(signatureData);
+              // Sending as a data URI format which most HTML to PDF renderers support
+              formData[entry.key] = 'data:image/png;base64,$base64Signature';
+            }
+          }
         }
       }
 
@@ -505,6 +554,242 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
     }
 
     switch (detectedType) {
+      case 'dropdown':
+      case 'select':
+        // Safe cast handling for options array which can come in various formats
+        final optionsRaw = selectedLanguage == 'sw' && field['options_sw'] != null && (field['options_sw'] as List).isNotEmpty
+            ? field['options_sw']
+            : (field['options'] ?? []);
+            
+        final List<String> optionsList = (optionsRaw as List)
+            .map((e) => e.toString())
+            .where((e) => e.isNotEmpty)
+            .toList();
+
+        // Ensure current value in controller is valid, or empty it
+        if (controller.text.isNotEmpty && !optionsList.contains(controller.text)) {
+           controller.text = ''; // Clear invalid selection when language/options change
+        }
+
+        return DropdownButtonFormField<String>(
+          value: controller.text.isNotEmpty ? controller.text : null,
+          decoration: InputDecoration(
+            labelText: label,
+            labelStyle: TextStyle(color: Colors.grey[700], fontSize: 14),
+            hintText: placeholder ?? helpText ?? 'Select an option',
+            helperText: helpText,
+            helperMaxLines: 2,
+            border: const OutlineInputBorder(),
+            suffixIcon: required ? const Icon(Icons.star, size: 12, color: Colors.red) : null,
+          ),
+          items: optionsList.map((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+          onChanged: (String? newValue) {
+            if (newValue != null) {
+              controller.text = newValue;
+              // Trigger a state update so the UI reflects the change if needed elsewhere
+              // Though TextEditingController usually handles its own updates for text fields, 
+              // for dropdowns it's good practice to ensure the broader form knows.
+              setState(() {}); 
+            }
+          },
+          validator: required ? (value) => value == null || value.isEmpty ? 'This field is required' : null : null,
+        );
+
+      case 'radio':
+        final optionsRaw = selectedLanguage == 'sw' && field['options_sw'] != null && (field['options_sw'] as List).isNotEmpty
+            ? field['options_sw']
+            : (field['options'] ?? []);
+            
+        final List<String> optionsList = (optionsRaw as List).map((e) => e.toString()).toList();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(color: Colors.grey[800], fontSize: 14, fontWeight: FontWeight.w500),
+                ),
+                if (required) ...[
+                  const SizedBox(width: 4),
+                  const Icon(Icons.star, size: 10, color: Colors.red),
+                ]
+              ],
+            ),
+            if (helpText != null && helpText.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4, bottom: 8),
+                child: Text(
+                  helpText,
+                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                ),
+              )
+            else
+              const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade400),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Column(
+                children: optionsList.map((String option) {
+                  return ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    dense: true,
+                    title: Text(option, style: const TextStyle(fontSize: 14)),
+                    leading: Radio<String>(
+                      value: option,
+                      groupValue: controller.text,
+                      onChanged: (String? value) {
+                        if (value != null) {
+                          setState(() {
+                            controller.text = value;
+                          });
+                        }
+                      },
+                    ),
+                    onTap: () {
+                      setState(() {
+                        controller.text = option;
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+            ),
+            // Hidden text field just for validation purposes
+            if (required)
+              SizedBox(
+                height: 0,
+                child: TextFormField(
+                  controller: controller,
+                  validator: (value) => value?.isEmpty ?? true ? 'Please select an option' : null,
+                ),
+              ),
+          ],
+        );
+
+      case 'checkbox':
+        // Ensure controller has a default boolean-like state string
+        if (controller.text != 'true' && controller.text != 'false') {
+          controller.text = 'false';
+        }
+
+        return Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade400),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: CheckboxListTile(
+            title: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ),
+                if (required) const Icon(Icons.star, size: 10, color: Colors.red),
+              ],
+            ),
+            subtitle: helpText != null && helpText.isNotEmpty 
+                ? Text(helpText, style: TextStyle(color: Colors.grey[500], fontSize: 12))
+                : null,
+            value: controller.text == 'true',
+            onChanged: (bool? value) {
+              setState(() {
+                controller.text = (value ?? false).toString();
+              });
+            },
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+          ),
+        );
+
+      case 'signature':
+        final sigController = signatureControllers[fieldName];
+        if (sigController == null) return const SizedBox.shrink();
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(color: Colors.grey[800], fontSize: 14, fontWeight: FontWeight.w500),
+                ),
+                if (required) ...[
+                  const SizedBox(width: 4),
+                  const Icon(Icons.star, size: 10, color: Colors.red),
+                ]
+              ],
+            ),
+            if (helpText != null && helpText.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4, bottom: 8),
+                child: Text(
+                  helpText,
+                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                ),
+              )
+            else
+              const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade400),
+                borderRadius: BorderRadius.circular(4),
+                color: Colors.grey.shade100,
+              ),
+              child: Column(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
+                    child: Signature(
+                      controller: sigController,
+                      height: 150,
+                      backgroundColor: Colors.white,
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border(top: BorderSide(color: Colors.grey.shade300)),
+                      color: Colors.grey.shade100,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          placeholder ?? 'Sign above',
+                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                        ),
+                        TextButton.icon(
+                          onPressed: () => sigController.clear(),
+                          icon: const Icon(Icons.clear, size: 16),
+                          label: const Text('Clear'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+
       case 'textarea':
         return TextFormField(
           controller: controller,
@@ -569,27 +854,57 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
           decoration: InputDecoration(
             labelText: label,
             labelStyle: TextStyle(color: Colors.grey[700], fontSize: 14),
-            hintText: placeholder ?? helpText,
+            hintText: placeholder ?? 'Select a date (YYYY-MM-DD)',
             hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
             helperText: helpText,
             helperStyle: TextStyle(color: Colors.grey[400], fontSize: 11),
             helperMaxLines: 2,
             border: const OutlineInputBorder(),
-            suffixIcon: required
-                ? const Icon(Icons.star, size: 12, color: Colors.red)
-                : const Icon(Icons.calendar_today),
+            prefixIcon: const Icon(Icons.calendar_month_outlined),
+            suffixIcon: Row(
+               mainAxisSize: MainAxisSize.min,
+               children: [
+                 if (controller.text.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.clear, size: 16),
+                      onPressed: () => setState(() => controller.clear()),
+                    ),
+                 if (required) const Icon(Icons.star, size: 12, color: Colors.red),
+                 const SizedBox(width: 8),
+               ],
+            ),
           ),
           readOnly: true,
           onTap: () async {
+            // Parse existing date if any to open picker at right month
+            DateTime initialDate = DateTime.now();
+            if (controller.text.isNotEmpty) {
+              try {
+                initialDate = DateTime.parse(controller.text);
+              } catch (_) {}
+            }
+          
             final date = await showDatePicker(
               context: context,
-              initialDate: DateTime.now(),
+              initialDate: initialDate,
               firstDate: DateTime(1900),
               lastDate: DateTime(2100),
+              builder: (context, child) {
+                return Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: Theme.of(context).colorScheme.copyWith(
+                      primary: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  child: child!,
+                );
+              },
             );
             if (date != null) {
-              controller.text =
-                  '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+              setState(() {
+                controller.text =
+                    '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+              });
             }
           },
           validator: required
@@ -622,6 +937,7 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
               : null,
         );
 
+      case 'text':
       default:
         return TextFormField(
           controller: controller,
