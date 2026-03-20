@@ -6,13 +6,18 @@ import '../models/generated_document_model.dart';
 class TemplateService {
   final Dio _dio = DioConfig.instance;
 
-  Future<Map<String, dynamic>> getTemplates({int? page, int? pageSize}) async {
+  Future<Map<String, dynamic>> getTemplates({
+    int? page,
+    int? pageSize,
+    String language = 'en',
+  }) async {
     try {
       final response = await _dio.get(
         '/api/v1/doc-templates/templates/',
         queryParameters: {
           if (page != null) 'page': page,
           if (pageSize != null) 'page_size': pageSize,
+          'language': language,
         },
       );
 
@@ -126,11 +131,17 @@ class TemplateService {
     }
   }
 
-  Future<Map<String, dynamic>> getGeneratedDocuments({int page = 1}) async {
+  Future<Map<String, dynamic>> getGeneratedDocuments({
+    int page = 1,
+    String language = 'en',
+  }) async {
     try {
       final response = await _dio.get(
         '/api/v1/doc-templates/documents/',
-        queryParameters: {'page': page},
+        queryParameters: {
+          'page': page,
+          'language': language,
+        },
       );
 
       if (response.statusCode == 200) {

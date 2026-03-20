@@ -33,7 +33,9 @@ class DioConfig {
         'X-API-Key': EnvironmentConfig.apiKey,
       },
       validateStatus: (status) {
-        return status! < 500;
+        // Standard Dio behavior is status >= 200 && status < 300
+        // We allow 300s as well. 400s should be handled by error interceptors.
+        return status! < 400;
       },
     );
 

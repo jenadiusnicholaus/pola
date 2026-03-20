@@ -86,6 +86,11 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () => Get.back(),
+          tooltip: 'Back',
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
