@@ -1105,6 +1105,8 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
 
                         final result =
                             await _consultationService.submitApplication(
+                          consultantType:
+                              _eligibility?.consultantType ?? userRole,
                           // Only pass physical consultations param for law firms
                           offersPhysicalConsultations:
                               canOfferPhysical ? offersPhysical : null,
@@ -1133,8 +1135,7 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
                                           fontWeight: FontWeight.bold),
                                     ),
                                     const SizedBox(height: 8),
-                                    ...result.nextSteps!
-                                        .map((step) => Padding(
+                                    ...result.nextSteps!.map((step) => Padding(
                                               padding: const EdgeInsets.only(
                                                   bottom: 4),
                                               child: Row(
@@ -1145,8 +1146,7 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
                                                   Expanded(child: Text(step)),
                                                 ],
                                               ),
-                                            ))
-                                        .toList(),
+                                            )),
                                   ],
                                 ],
                               ),

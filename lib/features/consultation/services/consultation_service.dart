@@ -49,18 +49,30 @@ class ConsultationService extends GetxService {
 
   /// Submit consultant application
   Future<ConsultationApplicationResult> submitApplication({
+    required String consultantType,
+    bool? offersMobileConsultations,
     bool? offersPhysicalConsultations,
+    String? preferredConsultationCity,
     required bool termsAccepted,
   }) async {
     try {
       debugPrint('📤 Submitting consultant application...');
       final data = {
+        'consultant_type': consultantType,
         'terms_accepted': termsAccepted,
       };
+
+      if (offersMobileConsultations != null) {
+        data['offers_mobile_consultations'] = offersMobileConsultations;
+      }
 
       // Only include physical consultations if explicitly provided (for law firms)
       if (offersPhysicalConsultations != null) {
         data['offers_physical_consultations'] = offersPhysicalConsultations;
+      }
+
+      if (preferredConsultationCity != null) {
+        data['preferred_consultation_city'] = preferredConsultationCity;
       }
 
       final response = await _apiService.post(

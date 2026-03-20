@@ -6,6 +6,7 @@ import '../widgets/profile_info_card.dart';
 import '../widgets/role_specific_info.dart';
 import '../widgets/subscription_card.dart';
 import '../../user_verification/widgets/profile_verification_card.dart';
+import '../../consultation/widgets/consultant_status_card.dart';
 import '../../../utils/navigation_helper.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -136,6 +137,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       // Verification Status
                       const ProfileVerificationCard(),
+                      const SizedBox(height: 16),
+
+                      // Consultant Status/Apply
+                      const ConsultantStatusCard(),
                       const SizedBox(height: 16),
 
                       // Subscription Info
