@@ -89,29 +89,49 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Create ${_getHubDisplayName()} Content'),
+            Text(
+              'Create ${_getHubDisplayName()} Content',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             if (UserRoleManager.isAdmin())
               Text(
                 '👑 ${UserRoleManager.getUserRoleDisplayName()}',
-                style:
-                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                ),
               ),
           ],
         ),
+        centerTitle: false,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
+        scrolledUnderElevation: 2,
         actions: [
           Obx(() => controller.isLoading.value
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.only(right: 16),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                    ),
+                  ),
                 )
-              : TextButton.icon(
-                  onPressed: _submitContent,
-                  icon: const Icon(Icons.publish),
-                  label: const Text('Publish'),
+              : Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: TextButton.icon(
+                    onPressed: _submitContent,
+                    icon: const Icon(Icons.publish_rounded, size: 20),
+                    label: const Text('Publish',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
                 )),
-          const SizedBox(width: 16),
         ],
       ),
       body: Form(
@@ -159,72 +179,141 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
     return Obx(() => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Content Type',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+            Row(
+              children: [
+                Icon(Icons.category_outlined,
+                    size: 20, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Content Category',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: controller.getAvailableContentTypes().map((type) {
-                final isSelected = controller.selectedContentType.value == type;
-                return FilterChip(
-                  label: Text(_getContentTypeDisplayName(type)),
-                  selected: isSelected,
-                  onSelected: (_) => controller.setContentType(type),
-                  backgroundColor: Theme.of(context).colorScheme.surface,
-                  selectedColor: Theme.of(context).colorScheme.primaryContainer,
-                );
-              }).toList(),
+            const SizedBox(height: 12),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: controller.getAvailableContentTypes().map((type) {
+                  final isSelected =
+                      controller.selectedContentType.value == type;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(_getContentTypeDisplayName(type)),
+                      selected: isSelected,
+                      onSelected: (_) => controller.setContentType(type),
+                      labelStyle: TextStyle(
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.onPrimary
+                            : Theme.of(context).colorScheme.onSurface,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                      selectedColor: Theme.of(context).colorScheme.primary,
+                      backgroundColor:
+                          Theme.of(context).colorScheme.surfaceVariant,
+                      elevation: isSelected ? 2 : 0,
+                      pressElevation: 4,
+                      side: BorderSide.none,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
           ],
         ));
   }
 
   Widget _buildTitleField() {
-    return TextFormField(
-      controller: _titleController,
-      decoration: const InputDecoration(
-        labelText: 'Title *',
-        hintText: 'Enter a clear, descriptive title',
-        border: OutlineInputBorder(),
-        prefixIcon: Icon(Icons.title),
+    return _buildFormFieldContainer(
+      child: TextFormField(
+        controller: _titleController,
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        decoration: InputDecoration(
+          labelText: 'Content Title *',
+          hintText: 'e.g., Understanding Civil Rights',
+          prefixIcon: const Icon(Icons.title_rounded),
+          filled: true,
+          fillColor: Theme.of(context).colorScheme.surface,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.primary,
+              width: 2,
+            ),
+          ),
+        ),
+        maxLength: 200,
+        validator: (value) {
+          if (value == null || value.trim().isEmpty) {
+            return 'Title is required';
+          }
+          if (value.trim().length < 5) {
+            return 'Title must be at least 5 characters';
+          }
+          return null;
+        },
       ),
-      maxLength: 200,
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return 'Title is required';
-        }
-        if (value.trim().length < 5) {
-          return 'Title must be at least 5 characters';
-        }
-        return null;
-      },
     );
   }
 
   Widget _buildDescriptionField() {
-    return TextFormField(
-      controller: _descriptionController,
-      decoration: const InputDecoration(
-        labelText: 'Description *',
-        hintText: 'Brief summary of your content',
-        border: OutlineInputBorder(),
-        prefixIcon: Icon(Icons.description),
+    return _buildFormFieldContainer(
+      child: TextFormField(
+        controller: _descriptionController,
+        decoration: InputDecoration(
+          labelText: 'Summary Description *',
+          hintText: 'A short summary of what this content is about',
+          prefixIcon: const Icon(Icons.description_outlined),
+          filled: true,
+          fillColor: Theme.of(context).colorScheme.surface,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.primary,
+              width: 2,
+            ),
+          ),
+        ),
+        maxLines: 3,
+        maxLength: 1000,
+        validator: (value) {
+          if (value == null || value.trim().isEmpty) {
+            return 'Description is required';
+          }
+          if (value.trim().length < 10) {
+            return 'Description must be at least 10 characters';
+          }
+          return null;
+        },
       ),
-      maxLines: 3,
-      maxLength: 1000,
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return 'Description is required';
-        }
-        if (value.trim().length < 10) {
-          return 'Description must be at least 10 characters';
-        }
-        return null;
-      },
     );
   }
 
@@ -443,7 +532,6 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                     ? const SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Text('Create'),
               )),
@@ -456,70 +544,91 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Enhanced content field with attachment and emoji buttons
+        Row(
+          children: [
+            Icon(Icons.edit_note_rounded,
+                size: 20, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 8),
+            Text(
+              'Content Details',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).dividerColor),
-            borderRadius: BorderRadius.circular(12),
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
+          clipBehavior: Clip.antiAlias,
           child: Column(
             children: [
-              // Toolbar with attachments and emoji
+              // Toolbar
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(12),
-                    bottomRight: Radius.circular(12),
-                  ),
-                ),
+                color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
                 child: Row(
                   children: [
-                    // Attachment button
-                    IconButton(
+                    _buildToolbarButton(
                       onPressed: _showAttachmentOptions,
-                      icon: const Icon(Icons.attach_file),
+                      icon: Icons.attach_file_rounded,
                       tooltip: 'Attach file',
-                      style: IconButton.styleFrom(
-                        backgroundColor:
-                            Theme.of(context).colorScheme.primaryContainer,
-                        foregroundColor:
-                            Theme.of(context).colorScheme.onPrimaryContainer,
-                      ),
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                     const SizedBox(width: 8),
-
-                    // Image button
-                    IconButton(
+                    _buildToolbarButton(
                       onPressed: _pickImage,
-                      icon: const Icon(Icons.image),
+                      icon: Icons.image_rounded,
                       tooltip: 'Add image',
-                      style: IconButton.styleFrom(
-                        backgroundColor:
-                            Theme.of(context).colorScheme.secondaryContainer,
-                        foregroundColor:
-                            Theme.of(context).colorScheme.onSecondaryContainer,
-                      ),
+                      color: Theme.of(context).colorScheme.secondary,
                     ),
                     const SizedBox(width: 8),
-
-                    // Emoji button
-                    IconButton(
+                    _buildToolbarButton(
                       onPressed: _showEmojiPicker,
-                      icon: const Icon(Icons.emoji_emotions),
-                      tooltip: 'Add emoji to description',
-                      style: IconButton.styleFrom(
-                        backgroundColor:
-                            Theme.of(context).colorScheme.tertiaryContainer,
-                        foregroundColor:
-                            Theme.of(context).colorScheme.onTertiaryContainer,
-                      ),
+                      icon: Icons.emoji_emotions_outlined,
+                      tooltip: 'Add emoji',
+                      color: Theme.of(context).colorScheme.tertiary,
                     ),
-
                     const Spacer(),
+                    Obx(() {
+                      if (controller.selectedFile.value != null) {
+                        return Text(
+                          '1 attachment',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    }),
                   ],
+                ),
+              ),
+              // Content placeholder (since it's not a real rich text editor yet)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Content editor will appear here. Attachments: Paperclips, Images, and Emojis are supported.',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               ),
             ],
@@ -533,25 +642,22 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
           }
 
           return Container(
-            margin: const EdgeInsets.only(top: 12),
+            margin: const EdgeInsets.only(top: 16),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Theme.of(context)
-                  .colorScheme
-                  .primaryContainer
-                  .withOpacity(0.3),
-              borderRadius: BorderRadius.circular(8),
+              color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
               ),
             ),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.primary,
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     _getFileIcon(controller.selectedFile.value!.name),
@@ -566,26 +672,30 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                     children: [
                       Text(
                         controller.selectedFile.value!.name,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w500,
-                            ),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      const SizedBox(height: 2),
                       Text(
                         _formatFileSize(controller.selectedFile.value!.size),
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 IconButton(
                   onPressed: () => controller.removeFile(),
-                  icon: const Icon(Icons.close),
-                  tooltip: 'Remove file',
+                  icon: const Icon(Icons.delete_outline_rounded),
+                  color: Theme.of(context).colorScheme.error,
                   style: IconButton.styleFrom(
-                    backgroundColor: Colors.red.withOpacity(0.1),
-                    foregroundColor: Colors.red,
+                    backgroundColor: Theme.of(context).colorScheme.errorContainer.withOpacity(0.5),
                   ),
                 ),
               ],
@@ -596,49 +706,162 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
     );
   }
 
-  Widget _buildPriceField() {
-    return TextFormField(
-      controller: _priceController,
-      decoration: const InputDecoration(
-        labelText: 'Price (TZS)',
-        hintText: '0.00 for free content',
-        border: OutlineInputBorder(),
-        prefixIcon: Icon(Icons.attach_money),
-        suffixText: 'TZS',
+  Widget _buildToolbarButton({
+    required VoidCallback onPressed,
+    required IconData icon,
+    required String tooltip,
+    required Color color,
+  }) {
+    return IconButton(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 20),
+      tooltip: tooltip,
+      style: IconButton.styleFrom(
+        backgroundColor: color.withOpacity(0.1),
+        foregroundColor: color,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
       ),
-      keyboardType: TextInputType.number,
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return null; // Optional field
-        }
-        final price = double.tryParse(value);
-        if (price == null || price < 0) {
-          return 'Enter a valid price';
-        }
-        return null;
-      },
+    );
+  }
+
+  Widget _buildPriceField() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.monetization_on_rounded,
+                  size: 20, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Monetize Content',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Set a price for users to access this premium content.',
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _priceController,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+            decoration: InputDecoration(
+              labelText: 'Access Price (TZS)',
+              hintText: '0 for free content',
+              prefixIcon: const Icon(Icons.payments_outlined),
+              suffixText: 'TZS',
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surface,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2,
+                ),
+              ),
+            ),
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return null;
+              }
+              final price = double.tryParse(value);
+              if (price == null || price < 0) {
+                return 'Enter a valid price';
+              }
+              return null;
+            },
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildVideoUrlField() {
-    return TextFormField(
-      controller: _videoUrlController,
-      decoration: const InputDecoration(
-        labelText: 'Video URL (Optional)',
-        hintText: 'YouTube, Vimeo, or other video URL',
-        border: OutlineInputBorder(),
-        prefixIcon: Icon(Icons.video_library),
+    return _buildFormFieldContainer(
+      child: TextFormField(
+        controller: _videoUrlController,
+        decoration: InputDecoration(
+          labelText: 'External Video URL (Optional)',
+          hintText: 'YouTube, Vimeo, etc.',
+          prefixIcon: const Icon(Icons.video_library_rounded),
+          filled: true,
+          fillColor: Theme.of(context).colorScheme.surface,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.primary,
+              width: 2,
+            ),
+          ),
+        ),
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return null;
+          }
+          final uri = Uri.tryParse(value);
+          if (uri == null || !uri.hasScheme) {
+            return 'Enter a valid URL';
+          }
+          return null;
+        },
       ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return null; // Optional field
-        }
-        final uri = Uri.tryParse(value);
-        if (uri == null || !uri.hasScheme) {
-          return 'Enter a valid URL';
-        }
-        return null;
-      },
+    );
+  }
+
+  Widget _buildFormFieldContainer({required Widget child}) {
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: child,
     );
   }
 
@@ -676,18 +899,33 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
 
   Widget _buildBottomActions() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: MediaQuery.of(context).padding.bottom + 16,
+      ),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        border: Border(
-          top: BorderSide(color: Theme.of(context).dividerColor),
-        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Expanded(
             child: OutlinedButton(
               onPressed: _saveDraft,
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               child: const Text('Save Draft'),
             ),
           ),
@@ -696,13 +934,31 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
             flex: 2,
             child: Obx(() => ElevatedButton(
                   onPressed: controller.isLoading.value ? null : _submitContent,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                   child: controller.isLoading.value
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
                         )
-                      : const Text('Publish Content'),
+                      : const Text(
+                          'Publish Content',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                 )),
           ),
         ],

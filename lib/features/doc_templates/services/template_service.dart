@@ -72,8 +72,17 @@ class TemplateService {
       }
     } on DioException catch (e) {
       if (e.response != null) {
-        throw Exception(
-            'Error: ${e.response?.data['message'] ?? 'Failed to load template details'}');
+        final dynamic errorData = e.response?.data;
+        String errorMessage = 'Failed to load template details';
+        
+        if (errorData is Map) {
+          errorMessage = errorData['error'] ?? errorData['message'] ?? errorData['detail'] ?? errorMessage;
+        } else if (errorData is String && errorData.isNotEmpty) {
+          // If it's a string (like HTML), don't try to use it as a map
+          errorMessage = 'Server error (${e.response?.statusCode})';
+        }
+        
+        throw Exception('Error: $errorMessage');
       } else {
         throw Exception('Network error: ${e.message}');
       }

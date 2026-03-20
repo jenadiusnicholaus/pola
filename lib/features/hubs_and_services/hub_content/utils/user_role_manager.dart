@@ -232,6 +232,9 @@ class UserRoleManager {
       case 'legal_ed':
         // Legal Education hub - only admins can create payable content
         return isAdmin();
+      case 'forum':
+        // Forum - all users can create payable content (monetization)
+        return canCreateContentInHub(hubType);
       default:
         // No pricing allowed in other hubs
         return false;

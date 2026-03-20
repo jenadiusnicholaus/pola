@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import '../services/consultation_service.dart';
+import '../models/consultation_models.dart';
 import '../../../services/permission_service.dart';
 
 class ConsultationController extends GetxController {

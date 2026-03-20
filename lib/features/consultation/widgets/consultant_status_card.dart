@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/consultation_controller.dart';
-import '../services/consultation_service.dart';
+import '../models/consultation_models.dart';
 import 'consultant_application_dialog.dart';
 
 class ConsultantStatusCard extends StatelessWidget {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../services/consultation_service.dart';
+import '../models/consultation_models.dart';
 import '../../../utils/navigation_helper.dart';
 
 class ConsultantApplicationDialog extends StatefulWidget {

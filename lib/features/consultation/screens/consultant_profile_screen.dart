@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../utils/navigation_helper.dart';
 import '../services/consultation_service.dart';
+import '../models/consultation_models.dart';
 import '../../../services/token_storage_service.dart';
 
 class ConsultantProfileScreen extends StatefulWidget {
