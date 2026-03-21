@@ -32,6 +32,7 @@ import '../features/consultation/screens/my_bookings_screen.dart';
 import '../features/consultation/screens/book_consultation_screen.dart';
 import '../features/subscription/screens/subscription_plans_screen.dart';
 import '../features/notifications/screens/notifications_screen.dart';
+import '../features/auth/screens/device_verification_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -68,6 +69,7 @@ class AppRoutes {
   static const String bookConsultation = '/book-consultation';
   static const String subscriptionPlans = '/subscription-plans';
   static const String notifications = '/notifications';
+  static const String deviceVerification = '/device-verification';
 
   static List<GetPage> routes = [
     GetPage(
@@ -217,6 +219,10 @@ class AppRoutes {
     GetPage(
       name: notifications,
       page: () => const NotificationsScreen(),
+    ),
+    GetPage(
+      name: deviceVerification,
+      page: () => const DeviceVerificationScreen(),
     ),
   ];
 

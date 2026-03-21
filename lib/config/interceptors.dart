@@ -80,12 +80,31 @@ class ApiInterceptors {
     );
   }
 
-  // Error handling interceptor with token refresh
   static Interceptor createErrorInterceptor(Dio dio) {
     return InterceptorsWrapper(
       onError: (error, handler) async {
         // Handle specific error cases
         if (error.response != null) {
+          // Check for device registration error globally
+          try {
+            final errorData = error.response!.data is String
+                ? jsonDecode(error.response!.data)
+                : error.response!.data;
+            if (errorData is Map &&
+                errorData['error'] == 'This device is already registered to another account') {
+              debugPrint('🔴 Device already registered error detected. Redirecting to verification screen.');
+              // Use string route to avoid circular dependency, or assume it's valid
+              if (getx.Get.currentRoute != '/device-verification') {
+                // Short delay to ensure navigation stack is ready
+                Future.delayed(const Duration(milliseconds: 100), () {
+                  getx.Get.offAllNamed('/device-verification');
+                });
+              }
+            }
+          } catch (_) {
+            // Ignore parse errors
+          }
+
           switch (error.response!.statusCode) {
             case 401:
               debugPrint(

@@ -52,28 +52,51 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
   Future<void> _loadBookings() async {
     setState(() => _isLoadingBookings = true);
 
-    final status = _selectedBookingStatus == 'all' ? null : _selectedBookingStatus;
-    final response = await _service.getMyBookings(status: status);
+    try {
+      final status = _selectedBookingStatus == 'all' ? null : _selectedBookingStatus;
+      final response = await _service.getMyBookings(status: status);
 
-    setState(() {
-      _bookings = response;
-      _isLoadingBookings = false;
-    });
+      if (mounted) {
+        setState(() {
+          _bookings = response;
+          _isLoadingBookings = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ Error in _loadBookings: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingBookings = false;
+          // Optionally show error state or snackbar here if desired.
+        });
+      }
+    }
   }
 
   Future<void> _loadCallData() async {
     setState(() => _isLoadingCalls = true);
 
-    final historyFuture = _service.getMyCallHistory();
-    final creditsFuture = _service.getMyCallCredits();
+    try {
+      final historyFuture = _service.getMyCallHistory();
+      final creditsFuture = _service.getMyCallCredits();
 
-    final results = await Future.wait([historyFuture, creditsFuture]);
+      final results = await Future.wait([historyFuture, creditsFuture]);
 
-    setState(() {
-      _callHistory = results[0] as CallHistoryResponse?;
-      _callCredits = results[1] as CallCreditsResponse?;
-      _isLoadingCalls = false;
-    });
+      if (mounted) {
+        setState(() {
+          _callHistory = results[0] as CallHistoryResponse?;
+          _callCredits = results[1] as CallCreditsResponse?;
+          _isLoadingCalls = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ Error in _loadCallData: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingCalls = false;
+        });
+      }
+    }
   }
 
   @override
