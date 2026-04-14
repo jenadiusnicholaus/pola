@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/legal_education_controller.dart';
 import '../models/legal_education_models.dart';
+import '../widgets/material_card.dart';
+import '../widgets/common_sliver_widgets.dart';
+import 'material_viewer_screen.dart';
+import '../../../../services/permission_service.dart';
+import '../../../../routes/app_routes.dart';
 
 class SubtopicDetailScreen extends StatefulWidget {
   const SubtopicDetailScreen({super.key});
@@ -13,6 +18,7 @@ class SubtopicDetailScreen extends StatefulWidget {
 class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
   late LegalEducationController controller;
   late Subtopic subtopic;
+  String? selectedLanguage;
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -21,13 +27,27 @@ class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
 
     // Get subtopic from navigation arguments
     subtopic = Get.arguments as Subtopic;
-
     controller = Get.find<LegalEducationController>();
 
-    // Load materials for this subtopic if needed
+    // Add scroll listener for infinite scroll
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+          _scrollController.position.maxScrollExtent * 0.8) {
+        if (!controller.isLoadingSubtopicMaterials &&
+            controller.hasMoreSubtopicMaterials) {
+          controller.fetchSubtopicMaterials(subtopic.slug,
+              language: selectedLanguage, refresh: false);
+        }
+      }
+    });
+
+    // Load materials for this subtopic
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // This would load materials when that feature is implemented
-      // controller.loadMaterials(subtopic.slug);
+      controller.fetchSubtopicMaterials(
+        subtopic.slug,
+        language: selectedLanguage,
+        refresh: true,
+      );
     });
   }
 
@@ -37,364 +57,274 @@ class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
     super.dispose();
   }
 
+  void _changeLanguage(String? language) {
+    setState(() {
+      selectedLanguage = language;
+    });
+    controller.fetchSubtopicMaterials(
+      subtopic.slug,
+      language: language,
+      refresh: true,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      body: CustomScrollView(
-        controller: _scrollController,
-        slivers: [
-          // Custom App Bar
-          SliverAppBar(
-            expandedHeight: 180,
-            pinned: true,
-            stretch: true,
-            backgroundColor:
-                Theme.of(context).colorScheme.primary.withOpacity(0.95),
-            foregroundColor: Theme.of(context).colorScheme.onPrimary,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                _getLocalizedTitle(),
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  shadows: [
-                    Shadow(
-                      offset: Offset(0, 1),
-                      blurRadius: 3,
-                      color: Colors.black45,
-                    ),
-                  ],
-                ),
-              ),
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Theme.of(context).colorScheme.primary,
-                      Theme.of(context).colorScheme.primary.withOpacity(0.8),
+      body: Obx(() => CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              // Custom App Bar
+              SliverAppBar(
+                expandedHeight: 180,
+                pinned: true,
+                stretch: true,
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
+                actions: [
+                  // Language toggle buttons
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildLanguageToggleButton('EN', 'en'),
+                      const SizedBox(width: 4),
+                      _buildLanguageToggleButton('SW', 'sw'),
+                      const SizedBox(width: 8),
                     ],
                   ),
-                ),
-                child: Stack(
-                  children: [
-                    // Background icon
-                    Positioned.fill(
-                      child: Opacity(
-                        opacity: 0.1,
-                        child: Icon(
-                          _getSubtopicIconData(),
-                          size: 100,
-                          color: Colors.white,
+                ],
+                flexibleSpace: FlexibleSpaceBar(
+                  title: Text(
+                    _getLocalizedTitle(),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      shadows: [
+                        Shadow(
+                          offset: Offset(0, 1),
+                          blurRadius: 3,
+                          color: Colors.black45,
                         ),
-                      ),
+                      ],
                     ),
-                    // Stats
-                    Positioned(
-                      bottom: 60,
-                      left: 16,
-                      right: 16,
-                      child: Row(
-                        children: [
-                          _buildStatChip(
-                            icon: Icons.article,
-                            label: '${subtopic.materialsCount} Materials',
-                          ),
-                          const SizedBox(width: 12),
-                          _buildLanguageIndicators(),
+                  ),
+                  background: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          theme.colorScheme.primary,
+                          theme.colorScheme.primary.withOpacity(0.8),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Content
-          SliverToBoxAdapter(
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Description Section
-                  Text(
-                    'About This Subtopic',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: Opacity(
+                            opacity: 0.1,
+                            child: Icon(
+                              _getSubtopicIconData(),
+                              size: 100,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _getLocalizedDescription(),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      height: 1.5,
-                      color: theme.colorScheme.onSurface.withOpacity(0.8),
+                ),
+              ),
+
+              // Description Section
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'About This Subtopic',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _getLocalizedDescription(),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          height: 1.5,
+                          color: theme.colorScheme.onSurface.withOpacity(0.8),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Learning Materials',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Materials Content
+              if (controller.subtopicMaterialsError.isNotEmpty && controller.subtopicMaterials.isEmpty)
+                SliverFillRemaining(
+                  child: controller.subtopicMaterialsError.toLowerCase().contains('subscription') 
+                    ? CommonEmptyWidget(
+                        title: 'Subscription Required',
+                        message: controller.subtopicMaterialsError,
+                        icon: Icons.workspace_premium,
+                        action: ElevatedButton.icon(
+                          onPressed: () => Get.toNamed(AppRoutes.subscriptionPlans),
+                          icon: const Icon(Icons.star),
+                          label: const Text('Go to Subscription Page'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.amber.shade700,
+                            foregroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          ),
+                        ),
+                      )
+                    : CommonErrorWidget(
+                        message: controller.subtopicMaterialsError,
+                        onRetry: () => controller.fetchSubtopicMaterials(
+                          subtopic.slug,
+                          language: selectedLanguage,
+                          refresh: true,
+                        ),
+                      ),
+                )
+              else if (controller.isLoadingSubtopicMaterials &&
+                  controller.subtopicMaterials.isEmpty)
+                const SliverFillRemaining(
+                  child: CommonLoadingWidget(message: 'Loading materials...'),
+                )
+              else if (controller.subtopicMaterials.isEmpty)
+                SliverFillRemaining(
+                  child: CommonEmptyWidget(
+                    title: 'No materials found',
+                    message: selectedLanguage != null
+                        ? 'No learning materials available in ${selectedLanguage == 'en' ? 'English' : 'Kiswahili'}'
+                        : 'No learning materials available for this subtopic.',
+                    icon: Icons.library_books_outlined,
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        if (index < controller.subtopicMaterials.length) {
+                          final material = controller.subtopicMaterials[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: MaterialCard(
+                              material: material,
+                              onTap: () => _openMaterial(context, material),
+                            ),
+                          );
+                        } else {
+                          if (controller.hasMoreSubtopicMaterials) {
+                            return const Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Center(child: CircularProgressIndicator()),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        }
+                      },
+                      childCount: controller.subtopicMaterials.length +
+                          (controller.hasMoreSubtopicMaterials ? 1 : 0),
                     ),
                   ),
-                  const SizedBox(height: 24),
-
-                  // Materials Section
-                  _buildMaterialsSection(theme),
-
-                  const SizedBox(height: 24),
-
-                  // Additional Info Section
-                  _buildInfoSection(theme),
-                ],
-              ),
-            ),
-          ),
-
-          // Bottom Padding
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 80),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatChip({
-    required IconData icon,
-    required String label,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 14,
-            color: Colors.white,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLanguageIndicators() {
-    final hasEnglish = subtopic.name.isNotEmpty;
-    final hasSwahili = subtopic.nameSw.isNotEmpty;
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (hasEnglish) _buildLanguageChip('English', Icons.language),
-        if (hasEnglish && hasSwahili) const SizedBox(width: 8),
-        if (hasSwahili) _buildLanguageChip('Kiswahili', Icons.translate),
-      ],
-    );
-  }
-
-  Widget _buildLanguageChip(String label, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 14,
-            color: Colors.white,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMaterialsSection(ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Learning Materials',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              '${subtopic.materialsCount} items',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        // Placeholder for materials list
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: theme.colorScheme.outline.withOpacity(0.2),
-            ),
-          ),
-          child: Column(
-            children: [
-              Icon(
-                Icons.construction,
-                size: 48,
-                color: theme.colorScheme.onSurface.withOpacity(0.4),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Materials Coming Soon',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Learning materials and resources for this subtopic will be available soon. Check back later for updates.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.7),
-                ),
-                textAlign: TextAlign.center,
+
+              // Bottom Padding
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 80),
               ),
             ],
-          ),
-        ),
-      ],
+          )),
     );
   }
 
-  Widget _buildInfoSection(ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Additional Information',
-          style: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 16),
-        _buildInfoCard(
-          theme: theme,
-          icon: Icons.info_outline,
-          title: 'Subtopic ID',
-          content: subtopic.id.toString(),
-          color: Colors.blue,
-        ),
-        const SizedBox(height: 12),
-        _buildInfoCard(
-          theme: theme,
-          icon: Icons.sort,
-          title: 'Display Order',
-          content: subtopic.displayOrder.toString(),
-          color: Colors.green,
-        ),
-        const SizedBox(height: 12),
-        _buildInfoCard(
-          theme: theme,
-          icon: Icons.schedule,
-          title: 'Last Updated',
-          content: _formatDate(subtopic.lastUpdated),
-          color: Colors.orange,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInfoCard({
-    required ThemeData theme,
-    required IconData icon,
-    required String title,
-    required String content,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
+  Widget _buildLanguageToggleButton(String label, String code) {
+    final isSelected = selectedLanguage == code;
+    return ElevatedButton(
+      onPressed: () => _changeLanguage(isSelected ? null : code),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isSelected
+            ? (code == 'en' ? Colors.blue : Colors.amber.shade700)
+            : Colors.white.withOpacity(0.2),
+        foregroundColor: isSelected ? Colors.white : Colors.white70,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        minimumSize: const Size(50, 32),
+        elevation: isSelected ? 2 : 0,
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: isSelected && code == 'sw' ? Colors.black : Colors.white,
         ),
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: color,
-            ),
+    );
+  }
+
+  void _openMaterial(BuildContext context, LearningMaterial material) {
+    try {
+      final permissionService = Get.find<PermissionService>();
+      if (!permissionService.canReadLegalEducation) {
+        _showLimitReachedDialog(context, permissionService);
+        return;
+      }
+    } catch (e) {
+      debugPrint('⚠️ Permission check failed: $e');
+    }
+
+    if (material.fileUrl.isNotEmpty || material.description.isNotEmpty) {
+      Get.to(
+        () => const MaterialViewerScreen(),
+        arguments: {'material': material},
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No content available for this material')),
+      );
+    }
+  }
+
+  void _showLimitReachedDialog(
+      BuildContext context, PermissionService permissionService) {
+    final isTrial = permissionService.isTrialSubscription;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text(isTrial ? 'Trial Limit Reached' : 'Limit Reached'),
+        content: Text(isTrial
+            ? 'You have used all free reads in your trial.'
+            : 'You have reached your reading limit.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Later'),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  content,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Get.toNamed(AppRoutes.subscriptionPlans);
+            },
+            child: const Text('Upgrade'),
           ),
         ],
       ),
@@ -402,53 +332,29 @@ class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
   }
 
   String _getLocalizedTitle() {
-    const locale = 'en'; // Get from Get.locale if needed
-
+    const locale = 'en';
     if (locale.startsWith('sw') && subtopic.nameSw.isNotEmpty) {
       return subtopic.nameSw;
-    } else if (subtopic.name.isNotEmpty) {
-      return subtopic.name;
-    } else if (subtopic.nameSw.isNotEmpty) {
-      return subtopic.nameSw;
     }
-
-    return subtopic.slug;
+    return subtopic.name.isNotEmpty ? subtopic.name : subtopic.slug;
   }
 
   String _getLocalizedDescription() {
-    const locale = 'en'; // Get from Get.locale if needed
-
+    const locale = 'en';
     if (locale.startsWith('sw') && subtopic.descriptionSw.isNotEmpty) {
       return subtopic.descriptionSw;
-    } else if (subtopic.description.isNotEmpty) {
-      return subtopic.description;
-    } else if (subtopic.descriptionSw.isNotEmpty) {
-      return subtopic.descriptionSw;
     }
-
-    return 'Detailed information about this subtopic will help you understand the key concepts and applications in this area of law.';
+    return subtopic.description.isNotEmpty
+        ? subtopic.description
+        : 'Detailed information about this subtopic.';
   }
 
   IconData _getSubtopicIconData() {
     final slug = subtopic.slug.toLowerCase();
-
     if (slug.contains('right')) return Icons.security;
     if (slug.contains('procedure')) return Icons.format_list_numbered;
     if (slug.contains('case')) return Icons.folder;
     if (slug.contains('law')) return Icons.gavel;
-    if (slug.contains('rule')) return Icons.rule;
-    if (slug.contains('regulation')) return Icons.policy;
-    if (slug.contains('contract')) return Icons.handshake;
-    if (slug.contains('property')) return Icons.home_work;
-    if (slug.contains('evidence')) return Icons.fact_check;
-    if (slug.contains('appeal')) return Icons.call_made;
-    if (slug.contains('judgment')) return Icons.balance;
-    if (slug.contains('court')) return Icons.account_balance;
-
     return Icons.article;
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
   }
 }

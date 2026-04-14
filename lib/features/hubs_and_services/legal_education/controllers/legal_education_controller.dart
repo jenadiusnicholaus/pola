@@ -27,32 +27,37 @@ class LegalEducationController extends GetxController {
   final RxInt _currentMaterialsPage = 1.obs;
   final RxBool _hasMoreTopics = true.obs;
   final RxBool _hasMoreMaterials = true.obs;
+  final RxBool _hasMoreSubtopicMaterials = true.obs;
   static const int pageSize = 20;
 
-  // Scroll controllers for infinite scroll
-  late ScrollController topicsScrollController;
-  late ScrollController materialsScrollController;
-
-  // Current material's topic (for pagination)
+  // Current active data for navigation
+  final Rxn<Topic> _currentTopic = Rxn<Topic>(null);
+  Topic? get currentTopic => _currentTopic.value;
+  void setCurrentTopic(Topic topic) => _currentTopic.value = topic;
   String? _currentMaterialsTopicSlug;
+  String? _currentSubtopicMaterialsSlug;
   String? _currentMaterialsLanguage;
+  String? _currentSubtopicMaterialsLanguage;
 
   // Getters
   List<Topic> get topics => _topics;
   List<LearningMaterial> get materials => _materials;
   bool get isLoadingTopics => _isLoadingTopics.value;
   bool get isLoadingMaterials => _isLoadingMaterials.value;
+  bool get isLoadingSubtopicMaterials =>
+      _isLoadingSubtopicMaterials.value; // New
   String get error => _error.value;
   String get materialsError => _materialsError.value;
+  String get subtopicMaterialsError => _subtopicMaterialsError.value; // New
   LanguageFilter get languageFilter => _languageFilter.value;
   String get searchQuery => _searchQuery.value;
   bool get hasMoreTopics => _hasMoreTopics.value;
   bool get hasMoreMaterials => _hasMoreMaterials.value;
+  bool get hasMoreSubtopicMaterials => _hasMoreSubtopicMaterials.value;
 
   @override
   void onInit() {
     super.onInit();
-    _initializeScrollControllers();
     _debugAuthStatus();
     fetchTopics();
   }
@@ -73,33 +78,27 @@ class LegalEducationController extends GetxController {
 
   @override
   void onClose() {
-    topicsScrollController.dispose();
-    materialsScrollController.dispose();
     super.onClose();
   }
 
-  void _initializeScrollControllers() {
-    topicsScrollController = ScrollController();
-    materialsScrollController = ScrollController();
-
-    // Add listeners for infinite scroll
-    topicsScrollController.addListener(() {
-      if (topicsScrollController.position.pixels >=
-          topicsScrollController.position.maxScrollExtent * 0.8) {
-        if (!_isLoadingTopics.value && _hasMoreTopics.value) {
-          _loadMoreTopics();
-        }
+  // Method to check if we should load more topics (called from screen)
+  void onTopicsScroll(ScrollController scrollController) {
+    if (scrollController.position.pixels >=
+        scrollController.position.maxScrollExtent * 0.8) {
+      if (!_isLoadingTopics.value && _hasMoreTopics.value) {
+        _loadMoreTopics();
       }
-    });
+    }
+  }
 
-    materialsScrollController.addListener(() {
-      if (materialsScrollController.position.pixels >=
-          materialsScrollController.position.maxScrollExtent * 0.8) {
-        if (!_isLoadingMaterials.value && _hasMoreMaterials.value) {
-          _loadMoreMaterials();
-        }
+  // Method to check if we should load more materials (called from screen)
+  void onMaterialsScroll(ScrollController scrollController) {
+    if (scrollController.position.pixels >=
+        scrollController.position.maxScrollExtent * 0.8) {
+      if (!_isLoadingMaterials.value && _hasMoreMaterials.value) {
+        _loadMoreMaterials();
       }
-    });
+    }
   }
 
   // Load topics (initial load or refresh)
@@ -273,9 +272,69 @@ class LegalEducationController extends GetxController {
     }
   }
 
+  // Subtopic materials functionality
+  final RxList<LearningMaterial> _subtopicMaterials = <LearningMaterial>[].obs;
+  final RxBool _isLoadingSubtopicMaterials = false.obs;
+  final RxString _subtopicMaterialsError = ''.obs;
+  final RxInt _currentSubtopicMaterialsPage = 1.obs;
+
+  List<LearningMaterial> get subtopicMaterials => _subtopicMaterials;
+
+  Future<void> fetchSubtopicMaterials(String subtopicSlug,
+      {String? language, bool refresh = false}) async {
+    _currentSubtopicMaterialsSlug = subtopicSlug;
+    _currentSubtopicMaterialsLanguage = language;
+
+    try {
+      _isLoadingSubtopicMaterials.value = true;
+      _subtopicMaterialsError.value = '';
+
+      if (refresh) {
+        _currentSubtopicMaterialsPage.value = 1;
+        _hasMoreSubtopicMaterials.value = true;
+        _subtopicMaterials.clear();
+      }
+
+      // Check for token initialization
+      final tokenService = Get.find<TokenStorageService>();
+      await tokenService.waitForInitialization();
+
+      final response = await _service.getSubtopicMaterials(
+        subtopicSlug,
+        language: language,
+        page: _currentSubtopicMaterialsPage.value,
+        pageSize: 10,
+      );
+
+      if (refresh) {
+        _subtopicMaterials.assignAll(response.materials);
+      } else {
+        _subtopicMaterials.addAll(response.materials);
+      }
+
+      _hasMoreSubtopicMaterials.value = response.materials.length == pageSize;
+      _currentSubtopicMaterialsPage.value++;
+    } catch (e) {
+      _subtopicMaterialsError.value = e.toString();
+    } finally {
+      _isLoadingSubtopicMaterials.value = false;
+    }
+  }
+
+  void refreshSubtopicMaterials() {
+    if (_currentSubtopicMaterialsSlug != null) {
+      fetchSubtopicMaterials(
+        _currentSubtopicMaterialsSlug!,
+        language: _currentSubtopicMaterialsLanguage,
+        refresh: true,
+      );
+    }
+  }
+
   // Existing methods for subtopics, etc.
   final RxList<Subtopic> _subtopics = <Subtopic>[].obs;
   final RxBool _isLoadingSubtopics = false.obs;
+  String? _currentTopicSlug; // Added _currentTopicSlug
 
   List<Subtopic> get subtopics => _subtopics;
   bool get isLoadingSubtopics => _isLoadingSubtopics.value;
@@ -284,11 +343,25 @@ class LegalEducationController extends GetxController {
     try {
       _isLoadingSubtopics.value = true;
       _error.value = '';
+      _currentTopicSlug = topicSlug; // Set _currentTopicSlug
+      _currentMaterialsTopicSlug = topicSlug; // Store it for materials access
+
+      // Check for token initialization
+      final tokenService = Get.find<TokenStorageService>();
+      await tokenService.waitForInitialization();
 
       final response =
           await _service.getSubtopics(topicSlug: topicSlug, language: language);
+      print(
+          '🔍 DEBUG SUBTOPICS RES: count=${response.count}, results_length=${response.results.length}');
+      if (response.results.isEmpty) {
+        print(
+            '⚠️ DEBUG SUBTOPICS EMPTY: Ensure API response format matches expected JSON parsing.');
+      }
       _subtopics.assignAll(response.results);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ ERROR fetching subtopics: $e');
+      print('❌ STACK TRACE: $stackTrace');
       _error.value = e.toString();
     } finally {
       _isLoadingSubtopics.value = false;

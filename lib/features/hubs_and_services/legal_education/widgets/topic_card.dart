@@ -23,7 +23,7 @@ class TopicCard extends StatelessWidget {
             child: _buildCompactButton(
               theme: theme,
               label: topic.nameSw,
-              onTap: () => onLanguageTap('swahili'),
+              onTap: () => onLanguageTap('sw'),
               color: Colors.blue,
               isAvailable: true,
             ),
@@ -38,7 +38,7 @@ class TopicCard extends StatelessWidget {
             child: _buildCompactButton(
               theme: theme,
               label: topic.name,
-              onTap: () => onLanguageTap('english'),
+              onTap: () => onLanguageTap('en'),
               color: Colors.amber.shade700,
               isAvailable: true,
             ),

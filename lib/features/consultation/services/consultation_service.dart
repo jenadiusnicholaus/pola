@@ -104,20 +104,40 @@ class ConsultationService extends GetxService {
       if (e is dio.DioException && e.response != null) {
         final errorData = e.response!.data;
         if (errorData is Map) {
-          // Handle validation errors
+          // Check for 'error', 'detail', or 'message' keys first
           if (errorData.containsKey('error')) {
             return ConsultationApplicationResult(
               success: false,
               message: errorData['error'].toString(),
             );
           }
+          if (errorData.containsKey('detail')) {
+            return ConsultationApplicationResult(
+              success: false,
+              message: errorData['detail'].toString(),
+            );
+          }
+          if (errorData.containsKey('message')) {
+            return ConsultationApplicationResult(
+              success: false,
+              message: errorData['message'].toString(),
+            );
+          }
+          
           // Handle field-specific errors
-          final firstError = errorData.values.first;
+          if (errorData.isNotEmpty) {
+            final firstValue = errorData.values.first;
+            return ConsultationApplicationResult(
+              success: false,
+              message: firstValue is List
+                  ? firstValue.first.toString()
+                  : firstValue.toString(),
+            );
+          }
+        } else if (errorData is String) {
           return ConsultationApplicationResult(
             success: false,
-            message: firstError is List
-                ? firstError.first.toString()
-                : firstError.toString(),
+            message: errorData,
           );
         }
       }

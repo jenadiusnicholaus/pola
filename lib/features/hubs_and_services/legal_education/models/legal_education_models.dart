@@ -197,10 +197,13 @@ class SubtopicsResponse {
 
   factory SubtopicsResponse.fromJson(Map<String, dynamic> json) {
     return SubtopicsResponse(
-      count: json['count'] ?? 0,
+      count: json['count'] ?? json['subtopics_count'] ?? 0,
       next: json['next'],
       previous: json['previous'],
       results: (json['results'] as List?)
+              ?.map((subtopic) => Subtopic.fromJson(subtopic))
+              .toList() ??
+          (json['subtopics'] as List?)
               ?.map((subtopic) => Subtopic.fromJson(subtopic))
               .toList() ??
           [],
@@ -448,11 +451,67 @@ class MaterialsResponse {
   });
 
   factory MaterialsResponse.fromJson(Map<String, dynamic> json) {
+    final resultsData = json['results'];
+    if (resultsData == null || resultsData is! Map<String, dynamic>) {
+      return MaterialsResponse(
+        count: 0,
+        next: null,
+        previous: null,
+        results: TopicMaterialsData(
+          topicId: 0,
+          topicName: '',
+          topicNameSw: '',
+          appliedFilters: {},
+          filterOptions: {},
+          materialsCount: 0,
+          totalMaterialsCount: 0,
+          directMaterialsCount: 0,
+          subtopicMaterialsCount: 0,
+          materials: [],
+        ),
+      );
+    }
     return MaterialsResponse(
       count: json['count'] ?? 0,
       next: json['next'],
       previous: json['previous'],
-      results: TopicMaterialsData.fromJson(json['results']),
+      results: TopicMaterialsData.fromJson(resultsData),
+    );
+  }
+}
+
+// Model for subtopic materials API (different response structure)
+class SubtopicMaterialsResponse {
+  final int subtopicId;
+  final String subtopicName;
+  final String subtopicNameSw;
+  final String topicName;
+  final String topicNameSw;
+  final int materialsCount;
+  final List<LearningMaterial> materials;
+
+  SubtopicMaterialsResponse({
+    required this.subtopicId,
+    required this.subtopicName,
+    required this.subtopicNameSw,
+    required this.topicName,
+    required this.topicNameSw,
+    required this.materialsCount,
+    required this.materials,
+  });
+
+  factory SubtopicMaterialsResponse.fromJson(Map<String, dynamic> json) {
+    final materialsList = json['materials'] as List? ?? [];
+    return SubtopicMaterialsResponse(
+      subtopicId: json['subtopic_id'] ?? 0,
+      subtopicName: json['subtopic_name'] ?? '',
+      subtopicNameSw: json['subtopic_name_sw'] ?? '',
+      topicName: json['topic_name'] ?? '',
+      topicNameSw: json['topic_name_sw'] ?? '',
+      materialsCount: json['materials_count'] ?? 0,
+      materials: materialsList
+          .map((m) => LearningMaterial.fromJson(m as Map<String, dynamic>))
+          .toList(),
     );
   }
 }

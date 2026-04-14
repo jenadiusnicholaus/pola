@@ -21,6 +21,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
   late LegalEducationController controller;
   late Topic currentTopic;
   String? selectedLanguage;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -50,12 +51,22 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
 
     // Load materials when screen is first built
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollController.addListener(() {
+        controller.onMaterialsScroll(_scrollController);
+      });
+
       controller.fetchMaterials(
         currentTopic.slug,
         language: selectedLanguage,
         refresh: true,
       );
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void _changeLanguage(String? language) {
@@ -95,7 +106,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Obx(() => CustomScrollView(
-            controller: controller.materialsScrollController,
+            controller: _scrollController,
             slivers: [
               // Topic-specific header
               SliverAppBar(

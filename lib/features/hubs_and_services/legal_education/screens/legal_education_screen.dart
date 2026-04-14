@@ -3,12 +3,43 @@ import 'package:get/get.dart';
 import '../controllers/legal_education_controller.dart';
 import '../widgets/common_sliver_widgets.dart';
 import '../widgets/topic_card.dart';
-import 'topic_materials_screen.dart';
+import 'topic_detail_screen.dart';
 import 'legal_education_search_screen.dart';
 import '../../../../services/token_storage_service.dart';
 
-class LegalEducationScreen extends StatelessWidget {
+class LegalEducationScreen extends StatefulWidget {
   const LegalEducationScreen({super.key});
+
+  @override
+  State<LegalEducationScreen> createState() => _LegalEducationScreenState();
+}
+
+class _LegalEducationScreenState extends State<LegalEducationScreen> {
+  final ScrollController _scrollController = ScrollController();
+  late LegalEducationController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(LegalEducationController(), permanent: false);
+
+    _scrollController.addListener(() {
+      controller.onTopicsScroll(_scrollController);
+    });
+
+    // Reload topics when screen is accessed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (controller.topics.isEmpty && !controller.isLoadingTopics) {
+        controller.fetchTopics(refresh: true);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +59,7 @@ class LegalEducationScreen extends StatelessWidget {
               const SizedBox(height: 16),
               const Text(
                 'Please Log In',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
@@ -53,19 +84,9 @@ class LegalEducationScreen extends StatelessWidget {
       );
     }
 
-    // Get or create controller and ensure topics are loaded
-    final controller = Get.put(LegalEducationController(), permanent: false);
-
-    // Reload topics when screen is accessed (in case user just logged in)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (controller.topics.isEmpty && !controller.isLoadingTopics) {
-        controller.fetchTopics(refresh: true);
-      }
-    });
-
     return Scaffold(
       body: Obx(() => CustomScrollView(
-            controller: controller.topicsScrollController,
+            controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics(),
             ),
@@ -207,19 +228,14 @@ class LegalEducationScreen extends StatelessWidget {
                       if (index < controller.topics.length) {
                         final topic = controller.topics[index];
                         return Padding(
-                          padding: EdgeInsets.only(
-                            left: 16,
-                            right: 16,
-                            top: index == 0 ? 8 : 4,
-                            bottom: 4,
-                          ),
+                          padding: const EdgeInsets.only(bottom: 12),
                           child: TopicCard(
                             topic: topic,
                             onLanguageTap: (language) => Get.to(
-                              () => const TopicMaterialsScreen(),
+                              () => const TopicDetailScreen(),
                               arguments: {
                                 'topic': topic,
-                                'language': language == 'english' ? 'en' : 'sw',
+                                'language': language,
                               },
                             ),
                           ),

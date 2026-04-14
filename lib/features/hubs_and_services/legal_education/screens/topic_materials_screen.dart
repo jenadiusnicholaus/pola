@@ -12,10 +12,12 @@ import '../../../../routes/app_routes.dart';
 
 class TopicMaterialsScreen extends StatefulWidget {
   final Topic? topic;
+  final Subtopic? subtopic;
 
   const TopicMaterialsScreen({
     super.key,
     this.topic,
+    this.subtopic,
   });
 
   @override
@@ -24,8 +26,24 @@ class TopicMaterialsScreen extends StatefulWidget {
 
 class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
   late LegalEducationController controller;
-  late Topic currentTopic;
+  Topic? currentTopic;
+  Subtopic? currentSubtopic;
+  bool get isSubtopicMode => currentSubtopic != null;
   String? selectedLanguage;
+  final ScrollController _scrollController = ScrollController();
+
+  // Helper getters to access correct controller properties
+  List<LearningMaterial> get materials =>
+      isSubtopicMode ? controller.subtopicMaterials : controller.materials;
+  bool get isLoadingMaterials => isSubtopicMode
+      ? controller.isLoadingSubtopicMaterials
+      : controller.isLoadingMaterials;
+  bool get hasMoreMaterials => isSubtopicMode
+      ? controller.hasMoreSubtopicMaterials
+      : controller.hasMoreMaterials;
+  String get materialsError => isSubtopicMode
+      ? controller.subtopicMaterialsError
+      : controller.materialsError;
 
   @override
   void initState() {
@@ -38,18 +56,28 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
       controller = Get.put(LegalEducationController());
     }
 
-    // Get topic and language from arguments or use the provided topic
+    // Get topic/subtopic and language from arguments or use the provided widget params
     if (widget.topic != null) {
       // Topic passed directly (fallback)
       currentTopic = widget.topic!;
+      selectedLanguage = null;
+    } else if (widget.subtopic != null) {
+      // Subtopic passed directly
+      currentSubtopic = widget.subtopic!;
       selectedLanguage = null;
     } else {
       // Get from arguments
       final args = Get.arguments;
       if (args is Map<String, dynamic>) {
-        // New format with topic and language
-        currentTopic = args['topic'] as Topic;
-        selectedLanguage = args['language'] as String?;
+        if (args.containsKey('subtopic')) {
+          // Subtopic mode
+          currentSubtopic = args['subtopic'] as Subtopic;
+          selectedLanguage = args['language'] as String?;
+        } else {
+          // Topic mode
+          currentTopic = args['topic'] as Topic;
+          selectedLanguage = args['language'] as String?;
+        }
       } else {
         // Old format with just topic
         currentTopic = args as Topic;
@@ -59,44 +87,98 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
 
     // Load materials when screen is first built
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.fetchMaterials(
-        currentTopic.slug,
-        language: selectedLanguage,
-        refresh: true,
-      );
+      _scrollController.addListener(() {
+        controller.onMaterialsScroll(_scrollController);
+      });
+
+      if (isSubtopicMode) {
+        // Fetch subtopic materials
+        controller.fetchSubtopicMaterials(
+          currentSubtopic!.slug,
+          language: selectedLanguage,
+          refresh: true,
+        );
+      } else {
+        // Fetch topic materials
+        controller.fetchMaterials(
+          currentTopic!.slug,
+          language: selectedLanguage,
+          refresh: true,
+        );
+      }
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void _changeLanguage(String? language) {
     setState(() {
       selectedLanguage = language;
     });
-    controller.fetchMaterials(
-      currentTopic.slug,
-      language: language,
-      refresh: true,
-    );
-  }
-
-  String _getTopicTitle() {
-    if (selectedLanguage == 'en') {
-      return currentTopic.name; // English name
-    } else if (selectedLanguage == 'sw') {
-      return currentTopic.nameSw; // Swahili name
+    if (isSubtopicMode) {
+      controller.fetchSubtopicMaterials(
+        currentSubtopic!.slug,
+        language: language,
+        refresh: true,
+      );
     } else {
-      // When no specific language is selected, default to English
-      return currentTopic.name;
+      controller.fetchMaterials(
+        currentTopic!.slug,
+        language: language,
+        refresh: true,
+      );
     }
   }
 
-  String _getTopicDescription() {
-    if (selectedLanguage == 'en') {
-      return currentTopic.description; // English description
-    } else if (selectedLanguage == 'sw') {
-      return currentTopic.descriptionSw; // Swahili description
+  String _getTitle() {
+    if (isSubtopicMode) {
+      // Subtopic title
+      if (selectedLanguage == 'en') {
+        return currentSubtopic!.name;
+      } else if (selectedLanguage == 'sw') {
+        return currentSubtopic!.nameSw.isNotEmpty
+            ? currentSubtopic!.nameSw
+            : currentSubtopic!.name;
+      } else {
+        return currentSubtopic!.name;
+      }
     } else {
-      // When no specific language is selected, default to English
-      return currentTopic.description;
+      // Topic title
+      if (selectedLanguage == 'en') {
+        return currentTopic!.name;
+      } else if (selectedLanguage == 'sw') {
+        return currentTopic!.nameSw;
+      } else {
+        return currentTopic!.name;
+      }
+    }
+  }
+
+  String _getDescription() {
+    if (isSubtopicMode) {
+      // Subtopic description
+      if (selectedLanguage == 'en') {
+        return currentSubtopic!.description;
+      } else if (selectedLanguage == 'sw') {
+        return currentSubtopic!.descriptionSw.isNotEmpty
+            ? currentSubtopic!.descriptionSw
+            : currentSubtopic!.description;
+      } else {
+        return currentSubtopic!.description;
+      }
+    } else {
+      // Topic description
+      if (selectedLanguage == 'en') {
+        return currentTopic!.description;
+      } else if (selectedLanguage == 'sw') {
+        return currentTopic!.descriptionSw;
+      } else {
+        return currentTopic!.description;
+      }
     }
   }
 
@@ -105,7 +187,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       body: Obx(() => CustomScrollView(
-            controller: controller.materialsScrollController,
+            controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics(),
             ),
@@ -113,7 +195,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
               // Simple compact header
               SliverAppBar(
                 title: Text(
-                  _getTopicTitle(),
+                  _getTitle(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -204,30 +286,38 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
               ),
 
               // Content based on state
-              if (controller.materialsError.isNotEmpty &&
-                  controller.materials.isEmpty)
+              if (materialsError.isNotEmpty && materials.isEmpty)
                 SliverFillRemaining(
                   child: CommonErrorWidget(
-                    message: controller.materialsError,
-                    onRetry: () => controller.fetchMaterials(
-                      currentTopic.slug,
-                      language: selectedLanguage,
-                      refresh: true,
-                    ),
+                    message: materialsError,
+                    onRetry: () {
+                      if (isSubtopicMode) {
+                        controller.fetchSubtopicMaterials(
+                          currentSubtopic!.slug,
+                          language: selectedLanguage,
+                          refresh: true,
+                        );
+                      } else {
+                        controller.fetchMaterials(
+                          currentTopic!.slug,
+                          language: selectedLanguage,
+                          refresh: true,
+                        );
+                      }
+                    },
                   ),
                 )
-              else if (controller.materials.isEmpty &&
-                  controller.isLoadingMaterials)
+              else if (materials.isEmpty && isLoadingMaterials)
                 const SliverFillRemaining(
                   child: CommonLoadingWidget(message: 'Loading materials...'),
                 )
-              else if (controller.materials.isEmpty)
+              else if (materials.isEmpty)
                 SliverFillRemaining(
                   child: CommonEmptyWidget(
                     title: 'No materials found',
                     message: selectedLanguage != null
-                        ? 'No learning materials available for this topic in ${selectedLanguage == 'en' ? 'English' : 'Kiswahili'}'
-                        : 'No learning materials available for this topic',
+                        ? 'No learning materials available in ${selectedLanguage == 'en' ? 'English' : 'Kiswahili'}'
+                        : 'No learning materials available',
                     icon: Icons.library_books_outlined,
                   ),
                 )
@@ -238,8 +328,8 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
-                        if (index < controller.materials.length) {
-                          final material = controller.materials[index];
+                        if (index < materials.length) {
+                          final material = materials[index];
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                             child: MaterialCard(
@@ -249,7 +339,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
                           );
                         } else {
                           // Loading indicator at the end
-                          if (controller.hasMoreMaterials) {
+                          if (hasMoreMaterials) {
                             return const Padding(
                               padding: EdgeInsets.all(16),
                               child: Center(
@@ -260,8 +350,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
                           return const SizedBox.shrink();
                         }
                       },
-                      childCount: controller.materials.length +
-                          (controller.hasMoreMaterials ? 1 : 0),
+                      childCount: materials.length + (hasMoreMaterials ? 1 : 0),
                     ),
                   ),
                 ),
@@ -274,42 +363,54 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
             ],
           )),
 
-      // Floating Action Button - Content creation for admins, refresh for others
-      floatingActionButton: UserRoleManager.canCreateContentInHub('legal_ed')
-          ? ContentCreationMenu(
-              hubType: 'legal_ed',
-              heroTag: 'topic_materials_fab',
-              presetData: {
-                'currentTopic': {
-                  'id': currentTopic.id,
-                  'name': currentTopic.name,
-                  'name_sw': currentTopic.nameSw,
-                  'slug': currentTopic.slug,
-                  'description': currentTopic.description,
-                  'description_sw': currentTopic.descriptionSw,
-                  'display_order': currentTopic.displayOrder,
-                  'subtopics_count': currentTopic.subtopicsCount,
-                  'materials_count': currentTopic.materialsCount,
-                },
-                'selectedLanguage': selectedLanguage,
-              },
-              onContentCreated: () {
-                // Refresh materials after successful content creation
-                print(
-                    '🔄 TopicMaterialsScreen: onContentCreated callback triggered');
-                print('🔄 Controller instance: $controller');
-                controller.refreshMaterials();
-              },
-            )
-          : FloatingActionButton(
-              onPressed: () => controller.fetchMaterials(
-                currentTopic.slug,
+      // Floating Action Button - Content creation for admins (topics only), refresh for others
+      floatingActionButton: isSubtopicMode
+          // Subtopic mode - just show refresh button
+          ? FloatingActionButton(
+              onPressed: () => controller.fetchSubtopicMaterials(
+                currentSubtopic!.slug,
                 language: selectedLanguage,
                 refresh: true,
               ),
               child: const Icon(Icons.refresh),
               tooltip: 'Refresh Materials',
-            ),
+            )
+          // Topic mode - show content creation or refresh
+          : UserRoleManager.canCreateContentInHub('legal_ed')
+              ? ContentCreationMenu(
+                  hubType: 'legal_ed',
+                  heroTag: 'topic_materials_fab',
+                  presetData: {
+                    'currentTopic': {
+                      'id': currentTopic!.id,
+                      'name': currentTopic!.name,
+                      'name_sw': currentTopic!.nameSw,
+                      'slug': currentTopic!.slug,
+                      'description': currentTopic!.description,
+                      'description_sw': currentTopic!.descriptionSw,
+                      'display_order': currentTopic!.displayOrder,
+                      'subtopics_count': currentTopic!.subtopicsCount,
+                      'materials_count': currentTopic!.materialsCount,
+                    },
+                    'selectedLanguage': selectedLanguage,
+                  },
+                  onContentCreated: () {
+                    // Refresh materials after successful content creation
+                    print(
+                        '🔄 TopicMaterialsScreen: onContentCreated callback triggered');
+                    print('🔄 Controller instance: $controller');
+                    controller.refreshMaterials();
+                  },
+                )
+              : FloatingActionButton(
+                  onPressed: () => controller.fetchMaterials(
+                    currentTopic!.slug,
+                    language: selectedLanguage,
+                    refresh: true,
+                  ),
+                  child: const Icon(Icons.refresh),
+                  tooltip: 'Refresh Materials',
+                ),
     );
   }
 
@@ -317,7 +418,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
     // Check if user has permission to read legal education content
     try {
       final permissionService = Get.find<PermissionService>();
-      
+
       // Check if user can read legal education content
       if (!permissionService.canReadLegalEducation) {
         // Show limit reached dialog
@@ -345,10 +446,11 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
     }
   }
 
-  void _showLimitReachedDialog(BuildContext context, PermissionService permissionService) {
+  void _showLimitReachedDialog(
+      BuildContext context, PermissionService permissionService) {
     final theme = Theme.of(context);
     final isTrial = permissionService.isTrialSubscription;
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -417,7 +519,8 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
               'Later',
-              style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+              style: TextStyle(
+                  color: theme.colorScheme.onSurface.withOpacity(0.6)),
             ),
           ),
           ElevatedButton(

@@ -129,6 +129,37 @@ class LegalEducationService extends GetxService {
     }
   }
 
+  // Get materials for a subtopic
+  Future<SubtopicMaterialsResponse> getSubtopicMaterials(
+    String subtopicSlug, {
+    String? language,
+    int? page,
+    int? pageSize = 10,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (language != null) queryParams['language'] = language;
+      if (page != null) queryParams['page'] = page;
+      if (pageSize != null) queryParams['page_size'] = pageSize;
+
+      final url =
+          '${EnvironmentConfig.legalEducationSubtopicsUrl}$subtopicSlug/materials/';
+      print('🔍 SUBTOPIC MATERIALS API: Requesting $url');
+      print('🔍 SUBTOPIC MATERIALS API: Query params: $queryParams');
+
+      final response = await _apiService.get(
+        url,
+        queryParameters: queryParams,
+      );
+
+      print(
+          '🔍 SUBTOPIC MATERIALS API: Response status: ${response.statusCode}');
+      return SubtopicMaterialsResponse.fromJson(response.data);
+    } catch (e) {
+      throw _handleError(e, 'Failed to fetch subtopic materials');
+    }
+  }
+
   // Get all subtopics
   Future<SubtopicsResponse> getSubtopics({
     int? topicId,
@@ -142,9 +173,16 @@ class LegalEducationService extends GetxService {
   }) async {
     try {
       final queryParams = <String, dynamic>{};
+      String url = EnvironmentConfig.legalEducationSubtopicsUrl;
 
-      if (topicId != null) queryParams['topic'] = topicId;
-      if (topicSlug != null) queryParams['topic__slug'] = topicSlug;
+      // If fetching subtopics for a specific topic, use the specific endpoint
+      if (topicSlug != null) {
+        url =
+            '${EnvironmentConfig.legalEducationTopicsUrl}$topicSlug/subtopics/';
+      } else if (topicId != null) {
+        queryParams['topic'] = topicId;
+      }
+
       if (search != null) queryParams['search'] = search;
       if (language != null) queryParams['language'] = language;
       if (isActive != null) queryParams['is_active'] = isActive;
@@ -153,7 +191,7 @@ class LegalEducationService extends GetxService {
       if (pageSize != null) queryParams['page_size'] = pageSize;
 
       final response = await _apiService.get(
-        EnvironmentConfig.legalEducationSubtopicsUrl,
+        url,
         queryParameters: queryParams,
       );
 
@@ -225,6 +263,13 @@ class LegalEducationService extends GetxService {
           if (statusCode == 401) {
             return 'Authentication required. Please log in again.';
           } else if (statusCode == 403) {
+            // Check if the response contains subscription upgrade fields
+            if (error.response?.data != null &&
+                error.response?.data is Map &&
+                error.response?.data['upgrade_required'] == true) {
+              return error.response?.data['message'] ??
+                  'Subscription required to view this content.';
+            }
             return 'Access denied. You don\'t have permission to view this content.';
           } else if (statusCode == 404) {
             return 'Content not found.';

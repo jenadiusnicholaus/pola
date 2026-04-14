@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/legal_education_controller.dart';
 import '../widgets/professional_search_bar.dart';
 import '../widgets/topic_card.dart';
-import 'topic_materials_screen.dart';
+import 'topic_detail_screen.dart';
 
 class LegalEducationSearchScreen extends StatelessWidget {
   const LegalEducationSearchScreen({super.key});
@@ -120,7 +120,7 @@ class LegalEducationSearchScreen extends StatelessWidget {
                         child: TopicCard(
                           topic: topic,
                           onLanguageTap: (language) => Get.to(
-                            () => const TopicMaterialsScreen(),
+                            () => const TopicDetailScreen(),
                             arguments: {
                               'topic': topic,
                               'language': language == 'english' ? 'en' : 'sw',

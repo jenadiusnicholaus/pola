@@ -4,11 +4,13 @@ import '../models/legal_education_models.dart';
 class SubtopicCard extends StatelessWidget {
   final Subtopic subtopic;
   final VoidCallback onTap;
+  final String? language; // 'swahili' or null for English
 
   const SubtopicCard({
     super.key,
     required this.subtopic,
     required this.onTap,
+    this.language,
   });
 
   @override
@@ -16,17 +18,25 @@ class SubtopicCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Card(
-      elevation: isDark ? 2 : 1,
-      shadowColor: Colors.black.withOpacity(0.08),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+    return Material(
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
+        splashColor: theme.colorScheme.primary.withOpacity(0.1),
+        highlightColor: theme.colorScheme.primary.withOpacity(0.05),
         child: Container(
           padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark
+                ? theme.colorScheme.surfaceContainerHighest
+                : theme.colorScheme.surfaceContainer,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+              width: 1,
+            ),
+          ),
           child: Row(
             children: [
               // Leading Icon
@@ -98,9 +108,9 @@ class SubtopicCard extends StatelessWidget {
 
               // Trailing Arrow
               Icon(
-                Icons.chevron_right,
-                size: 20,
-                color: theme.colorScheme.onSurface.withOpacity(0.4),
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: theme.colorScheme.onSurface.withOpacity(0.3),
               ),
             ],
           ),
@@ -184,9 +194,12 @@ class SubtopicCard extends StatelessWidget {
   }
 
   String _getLocalizedTitle() {
-    final locale = 'en'; // You can get this from Get.locale or other source
+    // Use language from API parameter only
+    final isSwahili = language == 'sw';
+    print(
+        '🎴 SubtopicCard: language=$language, isSwahili=$isSwahili, name=${subtopic.name}, nameSw=${subtopic.nameSw}');
 
-    if (locale.startsWith('sw') && subtopic.nameSw.isNotEmpty) {
+    if (isSwahili && subtopic.nameSw.isNotEmpty) {
       return subtopic.nameSw;
     } else if (subtopic.name.isNotEmpty) {
       return subtopic.name;
@@ -198,9 +211,10 @@ class SubtopicCard extends StatelessWidget {
   }
 
   String _getLocalizedDescription() {
-    final locale = 'en'; // You can get this from Get.locale or other source
+    // Use language from API parameter only
+    final isSwahili = language == 'sw';
 
-    if (locale.startsWith('sw') && subtopic.descriptionSw.isNotEmpty) {
+    if (isSwahili && subtopic.descriptionSw.isNotEmpty) {
       return subtopic.descriptionSw;
     } else if (subtopic.description.isNotEmpty) {
       return subtopic.description;

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../services/consultation_service.dart';
-import '../models/consultation_models.dart';
 import '../../../utils/navigation_helper.dart';
 
 class ConsultantApplicationDialog extends StatefulWidget {
@@ -57,8 +56,8 @@ class _ConsultantApplicationDialogState extends State<ConsultantApplicationDialo
     final result = await _service.submitApplication(
       consultantType: widget.consultantType,
       termsAccepted: _termsAccepted,
-      offersPhysicalConsultations: _offersPhysical,
-      preferredConsultationCity: _offersPhysical ? _preferredCity : null,
+      offersPhysicalConsultations: widget.canOfferPhysical ? _offersPhysical : null,
+      preferredConsultationCity: (widget.canOfferPhysical && _offersPhysical) ? _preferredCity : null,
     );
 
     setState(() => _isLoading = false);
