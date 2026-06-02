@@ -18,16 +18,19 @@ class CallController extends GetxController {
   var creditsRemaining = 0.obs;
   var isMuted = false.obs;
   var isSpeakerOn = false.obs;
-  var availableBundles = <CreditBundle>[].obs;
+  final List<CreditBundle> _availableBundles = [];
   var showBundlesDialog = false.obs;
   var selectedBundleId = Rxn<int>();
 
   Consultant? _currentConsultant;
   bool _isEndingCall = false; // Prevent multiple simultaneous endCall() calls
 
+  // Getters
+  List<CreditBundle> get availableBundles => _availableBundles;
+
   // Check if current error is related to insufficient credits
   bool get isInsufficientCreditsError {
-    return availableBundles.isNotEmpty ||
+    return availableBundles.length > 0 ||
         error.value.toLowerCase().contains('credit') ||
         error.value.toLowerCase().contains('insufficient');
   }
@@ -39,7 +42,12 @@ class CallController extends GetxController {
   CreditBundle? get selectedBundle {
     if (selectedBundleId.value == null) return null;
     try {
-      return availableBundles.firstWhere((b) => b.id == selectedBundleId.value);
+      for (int i = 0; i < _availableBundles.length; i++) {
+        if (_availableBundles[i].id == selectedBundleId.value) {
+          return _availableBundles[i];
+        }
+      }
+      return null;
     } catch (e) {
       return null;
     }
@@ -158,20 +166,22 @@ class CallController extends GetxController {
       print('💳 Consultant ID (profile): ${consultant.id}');
       print('💳 Consultant name: ${consultant.userDetails.fullName}');
       print('💳 Consultant user ID: ${consultant.userDetails.id}');
-      
+
       final creditCheck = await _callService.checkCredits(consultant.id);
 
       print('💳 Credit check result:');
       print('   hasCredits: ${creditCheck.hasCredits}');
       print('   availableMinutes: ${creditCheck.availableMinutes}');
-      print('   availableBundles count: ${creditCheck.availableBundles.length}');
+      print(
+          '   availableBundles count: ${creditCheck.availableBundles.length}');
       print('   message: ${creditCheck.message}');
 
       if (!creditCheck.hasCredits) {
         // Store available bundles for display
-        availableBundles.value = creditCheck.availableBundles;
+        _availableBundles.clear();
+        _availableBundles.addAll(creditCheck.availableBundles);
         print('📦 Stored ${availableBundles.length} bundles for display');
-        
+
         error.value = creditCheck.message.isNotEmpty
             ? creditCheck.message
             : 'You don\'t have enough credits to make this call.';
@@ -373,7 +383,8 @@ class CallController extends GetxController {
       Future.delayed(const Duration(milliseconds: 300), () {
         NavigationHelper.showSafeSnackbar(
           title: 'Call Completed',
-          message: 'Call duration: ${callDuration.value}\nCredits used: $minutes minute(s)',
+          message:
+              'Call duration: ${callDuration.value}\nCredits used: $minutes minute(s)',
           duration: const Duration(seconds: 4),
         );
       });

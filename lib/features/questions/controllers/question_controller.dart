@@ -10,11 +10,13 @@ class QuestionController extends GetxController {
   final QuestionService _service = QuestionService();
 
   // State
-  final myQuestions = <Question>[].obs;
+  final List<Question> _myQuestions = [];
   final isLoading = false.obs;
   final isSubmitting = false.obs;
   final error = ''.obs;
   final selectedStatus = 'all'.obs;
+
+  List<Question> get myQuestions => _myQuestions;
 
   // Pagination
   final ScrollController scrollController = ScrollController();
@@ -61,8 +63,10 @@ class QuestionController extends GetxController {
         pageSize: pageSize,
       );
 
-      myQuestions.value = response['results'] as List<Question>;
+      _myQuestions.clear();
+      _myQuestions.addAll(response['results'] as List<Question>);
       hasMore.value = response['next'] != null;
+      update();
     } catch (e) {
       error.value = e.toString();
       // Don't show snackbar on initial load, let the UI handle the error display
@@ -87,8 +91,9 @@ class QuestionController extends GetxController {
       );
 
       final newQuestions = response['results'] as List<Question>;
-      myQuestions.addAll(newQuestions);
+      _myQuestions.addAll(newQuestions);
       hasMore.value = response['next'] != null;
+      update();
     } catch (e) {
       debugPrint('Error loading more questions: $e');
       currentPage--;
@@ -107,8 +112,8 @@ class QuestionController extends GetxController {
     try {
       final permissionService = Get.find<PermissionService>();
       if (!permissionService.canAccess(PermissionFeature.askQuestions)) {
-        final message = permissionService.getPermissionDeniedMessage(
-            PermissionFeature.askQuestions);
+        final message = permissionService
+            .getPermissionDeniedMessage(PermissionFeature.askQuestions);
         NavigationHelper.showSafeSnackbar(
           title: 'Upgrade Required',
           message: message,
@@ -135,7 +140,8 @@ class QuestionController extends GetxController {
       );
 
       // Add to list
-      myQuestions.insert(0, question);
+      _myQuestions.insert(0, question);
+      update();
 
       Get.back(); // Close the ask question screen
       NavigationHelper.showSafeSnackbar(
@@ -166,10 +172,10 @@ class QuestionController extends GetxController {
       await _service.markHelpful(questionId);
 
       // Update local state
-      final index = myQuestions.indexWhere((q) => q.id == questionId);
+      final index = _myQuestions.indexWhere((q) => q.id == questionId);
       if (index != -1) {
-        final question = myQuestions[index];
-        myQuestions[index] = Question(
+        final question = _myQuestions[index];
+        _myQuestions[index] = Question(
           id: question.id,
           material: question.material,
           asker: question.asker,
@@ -182,6 +188,7 @@ class QuestionController extends GetxController {
           createdAt: question.createdAt,
           updatedAt: question.updatedAt,
         );
+        update();
       }
 
       NavigationHelper.showSafeSnackbar(
@@ -206,7 +213,10 @@ class QuestionController extends GetxController {
   /// Get question by ID
   Question? getQuestionById(int id) {
     try {
-      return myQuestions.firstWhere((q) => q.id == id);
+      for (final q in _myQuestions) {
+        if (q.id == id) return q;
+      }
+      return null;
     } catch (e) {
       return null;
     }

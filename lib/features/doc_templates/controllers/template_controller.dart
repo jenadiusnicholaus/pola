@@ -6,10 +6,12 @@ import '../services/template_service.dart';
 class TemplateController extends GetxController {
   final TemplateService _service = TemplateService();
 
-  var templates = <DocumentTemplate>[].obs;
+  final List<DocumentTemplate> _templates = [];
   var isLoading = false.obs;
   var error = ''.obs;
   var totalCount = 0.obs;
+
+  List<DocumentTemplate> get templates => _templates;
 
   // Pagination
   final ScrollController scrollController = ScrollController();
@@ -50,7 +52,8 @@ class TemplateController extends GetxController {
 
       final response =
           await _service.getTemplates(page: currentPage, pageSize: pageSize);
-      templates.value = response['templates'] as List<DocumentTemplate>;
+      _templates.clear();
+      _templates.addAll(response['templates'] as List<DocumentTemplate>);
       totalCount.value = response['count'] as int;
       hasMore.value = response['next'] != null;
     } catch (e) {
@@ -71,7 +74,7 @@ class TemplateController extends GetxController {
       final response =
           await _service.getTemplates(page: currentPage, pageSize: pageSize);
       final newTemplates = response['templates'] as List<DocumentTemplate>;
-      templates.addAll(newTemplates);
+      _templates.addAll(newTemplates);
       hasMore.value = response['next'] != null;
     } catch (e) {
       debugPrint('Error loading more templates: $e');

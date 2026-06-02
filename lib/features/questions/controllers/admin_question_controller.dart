@@ -7,12 +7,14 @@ class AdminQuestionController extends GetxController {
   final QuestionService _service = QuestionService();
 
   // State
-  final questions = <Question>[].obs;
+  final List<Question> _questions = [];
   final stats = Rx<QuestionStats?>(null);
   final isLoading = false.obs;
   final isAnswering = false.obs;
   final error = ''.obs;
   final selectedStatus = 'all'.obs;
+
+  List<Question> get questions => _questions;
 
   @override
   void onInit() {
@@ -32,7 +34,9 @@ class AdminQuestionController extends GetxController {
         ordering: '-created_at',
       );
 
-      questions.value = questionsList;
+      _questions.clear();
+      _questions.addAll(questionsList);
+      update();
     } catch (e) {
       error.value = e.toString();
       NavigationHelper.showSafeSnackbar(
@@ -64,9 +68,10 @@ class AdminQuestionController extends GetxController {
           await _service.answerQuestion(questionId, answerText);
 
       // Update local state
-      final index = questions.indexWhere((q) => q.id == questionId);
+      final index = _questions.indexWhere((q) => q.id == questionId);
       if (index != -1) {
-        questions[index] = answeredQuestion;
+        _questions[index] = answeredQuestion;
+        update();
       }
 
       // Refresh stats
@@ -101,9 +106,10 @@ class AdminQuestionController extends GetxController {
       final closedQuestion = await _service.closeQuestion(questionId);
 
       // Update local state
-      final index = questions.indexWhere((q) => q.id == questionId);
+      final index = _questions.indexWhere((q) => q.id == questionId);
       if (index != -1) {
-        questions[index] = closedQuestion;
+        _questions[index] = closedQuestion;
+        update();
       }
 
       // Refresh stats
@@ -127,9 +133,10 @@ class AdminQuestionController extends GetxController {
       final reopenedQuestion = await _service.reopenQuestion(questionId);
 
       // Update local state
-      final index = questions.indexWhere((q) => q.id == questionId);
+      final index = _questions.indexWhere((q) => q.id == questionId);
       if (index != -1) {
-        questions[index] = reopenedQuestion;
+        _questions[index] = reopenedQuestion;
+        update();
       }
 
       // Refresh stats

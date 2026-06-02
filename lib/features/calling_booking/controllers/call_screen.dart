@@ -185,7 +185,7 @@ class _CallScreenState extends State<CallScreen> {
 
                       // Show available bundles only if it's a credit error
                       if (controller!.isInsufficientCreditsError &&
-                          controller!.availableBundles.isNotEmpty) ...[
+                          controller!.availableBundles.length > 0) ...[
                         const SizedBox(height: 32),
                         Text(
                           'Available Packages',

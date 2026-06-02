@@ -7,8 +7,10 @@ import 'hub_content_card.dart';
 
 class HubContentSearchDelegate extends SearchDelegate {
   final HubContentController controller;
-  final RxList<HubContentItem> searchResults = <HubContentItem>[].obs;
+  final List<HubContentItem> _searchResults = [];
   final RxBool isSearching = false.obs;
+
+  List<HubContentItem> get searchResults => _searchResults;
 
   HubContentSearchDelegate(this.controller);
 
@@ -219,7 +221,8 @@ class HubContentSearchDelegate extends SearchDelegate {
     if (!isSearching.value) {
       isSearching.value = true;
       controller.searchContent(query).then((_) {
-        searchResults.assignAll(controller.searchResults);
+        _searchResults.clear();
+        _searchResults.addAll(controller.searchResults);
         isSearching.value = false;
       }).catchError((error) {
         isSearching.value = false;

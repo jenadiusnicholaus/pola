@@ -15,12 +15,19 @@ class HubContentController extends GetxController {
   HubContentController({required this.hubType});
 
   // Observable variables
-  final RxList<HubContentItem> content = <HubContentItem>[].obs;
-  final RxList<HubContentItem> trendingContent = <HubContentItem>[].obs;
-  final RxList<HubContentItem> recentContent = <HubContentItem>[].obs;
-  final RxList<HubContentItem> filteredContent = <HubContentItem>[].obs;
-  final RxList<HubContentItem> searchResults = <HubContentItem>[].obs;
-  final RxList<HubContentItem> bookmarkedContent = <HubContentItem>[].obs;
+  final List<HubContentItem> _content = [];
+  final List<HubContentItem> _trendingContent = [];
+  final List<HubContentItem> _recentContent = [];
+  final List<HubContentItem> _filteredContent = [];
+  final List<HubContentItem> _searchResults = [];
+  final List<HubContentItem> _bookmarkedContent = [];
+
+  List<HubContentItem> get content => _content;
+  List<HubContentItem> get trendingContent => _trendingContent;
+  List<HubContentItem> get recentContent => _recentContent;
+  List<HubContentItem> get filteredContent => _filteredContent;
+  List<HubContentItem> get searchResults => _searchResults;
+  List<HubContentItem> get bookmarkedContent => _bookmarkedContent;
 
   final RxBool isLoading = false.obs;
   final RxBool isLoadingMore = false.obs;
@@ -39,8 +46,8 @@ class HubContentController extends GetxController {
   final RxMap<int, int> commentPages = <int, int>{}.obs;
 
   // Comments-related observables
-  final RxMap<int, RxList<HubComment>> contentComments =
-      <int, RxList<HubComment>>{}.obs;
+  final RxMap<int, List<HubComment>> contentComments =
+      <int, List<HubComment>>{}.obs;
   final RxMap<int, RxBool> commentsLoading = <int, RxBool>{}.obs;
   final RxMap<int, RxBool> commentsExpanded = <int, RxBool>{}.obs;
   final Map<int, TextEditingController> commentControllers =
@@ -127,7 +134,8 @@ class HubContentController extends GetxController {
         }
       }
 
-      content.assignAll(response.results);
+      _content.clear();
+      _content.addAll(response.results);
       totalContent.value = response.count;
       hasMoreData.value = response.next != null;
 
@@ -160,7 +168,7 @@ class HubContentController extends GetxController {
         filters: _getCurrentFilters(),
       );
 
-      content.addAll(response.results);
+      _content.addAll(response.results);
       hasMoreData.value = response.next != null;
     } catch (e) {
       currentPage.value--;
@@ -177,7 +185,8 @@ class HubContentController extends GetxController {
   Future<void> fetchTrendingContent() async {
     try {
       final response = await _service.getTrendingContent(hubType);
-      trendingContent.assignAll(response.results);
+      _trendingContent.clear();
+      _trendingContent.addAll(response.results);
     } catch (e) {
       print('Error fetching trending content: $e');
     }
@@ -187,7 +196,8 @@ class HubContentController extends GetxController {
   Future<void> fetchRecentContent() async {
     try {
       final response = await _service.getRecentContent(hubType);
-      recentContent.assignAll(response.results);
+      _recentContent.clear();
+      _recentContent.addAll(response.results);
     } catch (e) {
       print('Error fetching recent content: $e');
     }
@@ -212,7 +222,8 @@ class HubContentController extends GetxController {
             : null,
       );
 
-      searchResults.assignAll(response.results);
+      _searchResults.clear();
+      _searchResults.addAll(response.results);
     } catch (e) {
       NavigationHelper.showSafeSnackbar(
         title: 'Search Error',
@@ -226,7 +237,7 @@ class HubContentController extends GetxController {
   /// Clear search and reload content
   void clearSearch() {
     searchQuery.value = '';
-    searchResults.clear();
+    _searchResults.clear();
     isSearching.value = false;
   }
 
@@ -630,9 +641,10 @@ class HubContentController extends GetxController {
       );
 
       if (page == 1) {
-        searchResults.assignAll(response.results);
+        _searchResults.clear();
+        _searchResults.addAll(response.results);
       } else {
-        searchResults.addAll(response.results);
+        _searchResults.addAll(response.results);
       }
     } catch (e) {
       print('❌ Error searching with filters: $e');
@@ -661,7 +673,7 @@ class HubContentController extends GetxController {
       print(
           '🔖 Controller: Received ${response.results.length} bookmarked items for $hubType');
       print(
-          '🔖 Controller: Current bookmarked list size before update: ${bookmarkedContent.length}');
+          '🔖 Controller: Current bookmarked list size before update: ${_bookmarkedContent.length}');
 
       if (page == 1) {
         // For first page, intelligently merge instead of replacing
@@ -680,20 +692,21 @@ class HubContentController extends GetxController {
           }
         }
 
-        bookmarkedContent.assignAll(mergedList);
+        _bookmarkedContent.clear();
+        _bookmarkedContent.addAll(mergedList);
         print(
             '🔖 Controller: Merged local and server bookmarks - final count: ${mergedList.length}');
       } else {
-        bookmarkedContent.addAll(response.results);
+        _bookmarkedContent.addAll(response.results);
         print(
             '🔖 Controller: Added ${response.results.length} items to existing bookmarked list');
       }
 
       print(
-          '🔖 Controller: Final bookmarked list size: ${bookmarkedContent.length}');
-      if (bookmarkedContent.isNotEmpty) {
+          '🔖 Controller: Final bookmarked list size: ${_bookmarkedContent.length}');
+      if (_bookmarkedContent.isNotEmpty) {
         print(
-            '🔖 Controller: First few bookmarked items: ${bookmarkedContent.take(3).map((item) => 'ID:${item.id} Title:"${item.title}"').join(", ")}');
+            '🔖 Controller: First few bookmarked items: ${_bookmarkedContent.take(3).map((item) => 'ID:${item.id} Title:"${item.title}"').join(", ")}');
       }
     } catch (e) {
       print('❌ Error fetching bookmarked content for $hubType: $e');
@@ -707,7 +720,7 @@ class HubContentController extends GetxController {
         );
       }
       // Clear bookmarked content on error to show empty state
-      bookmarkedContent.clear();
+      _bookmarkedContent.clear();
     } finally {
       isLoading.value = false;
     }
@@ -724,7 +737,8 @@ class HubContentController extends GetxController {
       );
 
       // You might want to store this in a separate list for liked content view
-      searchResults.assignAll(response.results);
+      _searchResults.clear();
+      _searchResults.addAll(response.results);
     } catch (e) {
       print('❌ Error fetching liked content: $e');
       NavigationHelper.showSafeSnackbar(
@@ -741,59 +755,59 @@ class HubContentController extends GetxController {
     int updatesCount = 0;
 
     // Update in main content list
-    final mainIndex = content.indexWhere((item) => item.id == updatedItem.id);
+    final mainIndex = _content.indexWhere((item) => item.id == updatedItem.id);
     if (mainIndex != -1) {
-      content[mainIndex] = updatedItem;
+      _content[mainIndex] = updatedItem;
       updatesCount++;
     }
 
     // Update in trending content list
     final trendingIndex =
-        trendingContent.indexWhere((item) => item.id == updatedItem.id);
+        _trendingContent.indexWhere((item) => item.id == updatedItem.id);
     if (trendingIndex != -1) {
-      trendingContent[trendingIndex] = updatedItem;
+      _trendingContent[trendingIndex] = updatedItem;
       updatesCount++;
     }
 
     // Update in recent content list
     final recentIndex =
-        recentContent.indexWhere((item) => item.id == updatedItem.id);
+        _recentContent.indexWhere((item) => item.id == updatedItem.id);
     if (recentIndex != -1) {
-      recentContent[recentIndex] = updatedItem;
+      _recentContent[recentIndex] = updatedItem;
       updatesCount++;
     }
 
     // Update in search results
     final searchIndex =
-        searchResults.indexWhere((item) => item.id == updatedItem.id);
+        _searchResults.indexWhere((item) => item.id == updatedItem.id);
     if (searchIndex != -1) {
-      searchResults[searchIndex] = updatedItem;
+      _searchResults[searchIndex] = updatedItem;
       updatesCount++;
     }
 
     // Update in filtered content
     final filteredIndex =
-        filteredContent.indexWhere((item) => item.id == updatedItem.id);
+        _filteredContent.indexWhere((item) => item.id == updatedItem.id);
     if (filteredIndex != -1) {
-      filteredContent[filteredIndex] = updatedItem;
+      _filteredContent[filteredIndex] = updatedItem;
       updatesCount++;
     }
 
     // Update in bookmarked content list
     final bookmarkedIndex =
-        bookmarkedContent.indexWhere((item) => item.id == updatedItem.id);
+        _bookmarkedContent.indexWhere((item) => item.id == updatedItem.id);
     print(
-        '🔖 Bookmark list update - Item ${updatedItem.id}, isBookmarked: ${updatedItem.isBookmarked}, currentIndex: $bookmarkedIndex, listSize: ${bookmarkedContent.length}');
+        '🔖 Bookmark list update - Item ${updatedItem.id}, isBookmarked: ${updatedItem.isBookmarked}, currentIndex: $bookmarkedIndex, listSize: ${_bookmarkedContent.length}');
 
     if (updatedItem.isBookmarked) {
       // If item is bookmarked but not present in list, add it
       if (bookmarkedIndex == -1) {
-        bookmarkedContent.insert(0, updatedItem);
+        _bookmarkedContent.insert(0, updatedItem);
         updatesCount++;
         print(
-            '🔖 Added item ${updatedItem.id} to bookmarks list (new size: ${bookmarkedContent.length})');
+            '🔖 Added item ${updatedItem.id} to bookmarks list (new size: ${_bookmarkedContent.length})');
       } else {
-        bookmarkedContent[bookmarkedIndex] = updatedItem;
+        _bookmarkedContent[bookmarkedIndex] = updatedItem;
         updatesCount++;
         print(
             '🔖 Updated item ${updatedItem.id} in bookmarks list at index $bookmarkedIndex');
@@ -801,22 +815,17 @@ class HubContentController extends GetxController {
     } else {
       // If item is unbookmarked and present in the list, remove it
       if (bookmarkedIndex != -1) {
-        bookmarkedContent.removeAt(bookmarkedIndex);
+        _bookmarkedContent.removeAt(bookmarkedIndex);
         updatesCount++;
         print(
-            '🔖 Removed item ${updatedItem.id} from bookmarks list (new size: ${bookmarkedContent.length})');
+            '🔖 Removed item ${updatedItem.id} from bookmarks list (new size: ${_bookmarkedContent.length})');
       }
     }
 
     print('🔄 Updated content ${updatedItem.id} in $updatesCount lists');
 
-    // Force UI update by triggering reactive variable changes
-    content.refresh();
-    trendingContent.refresh();
-    recentContent.refresh();
-    searchResults.refresh();
-    filteredContent.refresh();
-    bookmarkedContent.refresh();
+    // Force UI update
+    update();
   }
 
   /// Convert hub content to LearningMaterial for viewer compatibility
@@ -845,20 +854,20 @@ class HubContentController extends GetxController {
   /// Refresh content
   Future<void> refreshContent() async {
     print('🔄 HubContentController: refreshContent called for hub: $hubType');
-    print('🔄 Current content count before refresh: ${content.length}');
+    print('🔄 Current content count before refresh: ${_content.length}');
 
     // Clear current state to force fresh data
-    content.clear();
-    trendingContent.clear();
-    recentContent.clear();
+    _content.clear();
+    _trendingContent.clear();
+    _recentContent.clear();
     currentPage.value = 1;
     hasMoreData.value = true;
 
     await fetchInitialContent();
 
     print('🔄 HubContentController: refreshContent completed');
-    print('🔄 Content count after refresh: ${content.length}');
-    print('🔄 Content titles: ${content.map((e) => e.title).join(", ")}');
+    print('🔄 Content count after refresh: ${_content.length}');
+    print('🔄 Content titles: ${_content.map((e) => e.title).join(", ")}');
   }
 
   /// Get content by ID
@@ -917,7 +926,7 @@ class HubContentController extends GetxController {
       commentsLoading[contentId] = false.obs;
       commentsExpanded[contentId] = false.obs;
       addingComment[contentId] = false.obs;
-      contentComments[contentId] = <HubComment>[].obs;
+      contentComments[contentId] = <HubComment>[];
     }
   }
 
@@ -1005,7 +1014,8 @@ class HubContentController extends GetxController {
         print('... and ${allComments.length - 5} more comments');
       }
 
-      contentComments[contentId]!.assignAll(allComments);
+      contentComments[contentId]!.clear();
+      contentComments[contentId]!.addAll(allComments);
 
       // Update the comment count in the content item to reflect actual loaded comments
       _updateContentCommentCountToActual(contentId, actualCount);
@@ -1044,7 +1054,8 @@ class HubContentController extends GetxController {
             duration: const Duration(seconds: 4),
             mainButton: TextButton(
               onPressed: () => Get.toNamed(AppRoutes.subscriptionPlans),
-              child: const Text('Upgrade', style: TextStyle(color: Colors.white)),
+              child:
+                  const Text('Upgrade', style: TextStyle(color: Colors.white)),
             ),
           );
         }
@@ -1068,12 +1079,13 @@ class HubContentController extends GetxController {
       print('Mentioned user IDs: $mentionedUserIds');
 
       if (commentText.isEmpty) {
-        NavigationHelper.showSafeSnackbar(title: 'Error', message: 'Comment cannot be empty');
+        NavigationHelper.showSafeSnackbar(
+            title: 'Error', message: 'Comment cannot be empty');
         return;
       }
 
       // Get the hub type from the content item
-      final contentItem = content.firstWhere((item) => item.id == contentId);
+      final contentItem = _content.firstWhere((item) => item.id == contentId);
       final hubType = contentItem.hubType;
 
       // Track view for this interaction
@@ -1204,23 +1216,23 @@ class HubContentController extends GetxController {
 
   /// Update comment count in the content item
   void _updateContentCommentCount(int contentId, int increment) {
-    final contentIndex = content.indexWhere((item) => item.id == contentId);
+    final contentIndex = _content.indexWhere((item) => item.id == contentId);
     if (contentIndex != -1) {
-      final updatedContent = content[contentIndex].copyWith(
-        commentsCount: content[contentIndex].commentsCount + increment,
+      final updatedContent = _content[contentIndex].copyWith(
+        commentsCount: _content[contentIndex].commentsCount + increment,
       );
-      content[contentIndex] = updatedContent;
+      _content[contentIndex] = updatedContent;
     }
   }
 
   /// Update comment count to actual number (used when loading comments)
   void _updateContentCommentCountToActual(int contentId, int actualCount) {
-    final contentIndex = content.indexWhere((item) => item.id == contentId);
+    final contentIndex = _content.indexWhere((item) => item.id == contentId);
     if (contentIndex != -1) {
-      final updatedContent = content[contentIndex].copyWith(
+      final updatedContent = _content[contentIndex].copyWith(
         commentsCount: actualCount,
       );
-      content[contentIndex] = updatedContent;
+      _content[contentIndex] = updatedContent;
     }
   }
 
@@ -1299,7 +1311,8 @@ class HubContentController extends GetxController {
 
       // Replace the entire list to trigger reactive update
       if (found || updatedComments.isNotEmpty) {
-        contentComments[contentId]!.assignAll(updatedComments);
+        contentComments[contentId]!.clear();
+        contentComments[contentId]!.addAll(updatedComments);
       }
     }
   }
@@ -1490,7 +1503,7 @@ class HubContentController extends GetxController {
 
       if (comments.isNotEmpty) {
         if (contentComments[contentId] == null) {
-          contentComments[contentId] = <HubComment>[].obs;
+          contentComments[contentId] = <HubComment>[];
         }
         contentComments[contentId]!.addAll(comments);
         commentPages[contentId] = nextPage;
@@ -1503,7 +1516,8 @@ class HubContentController extends GetxController {
   }
 
   /// Search users for mentions
-  Future<List<Map<String, dynamic>>> searchUsersForMentions(String query) async {
+  Future<List<Map<String, dynamic>>> searchUsersForMentions(
+      String query) async {
     try {
       return await _service.searchUsersForMentions(
         query: query,

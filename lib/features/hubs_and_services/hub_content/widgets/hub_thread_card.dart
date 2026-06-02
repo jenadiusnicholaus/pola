@@ -30,8 +30,9 @@ class _HubThreadCardState extends State<HubThreadCard> {
 
   /// Extract unique users from existing comments to use as fallback suggestions
   List<MentionSuggestion> _getFallbackUsersFromComments() {
-    final comments = widget.controller.contentComments[widget.content.id] ??
-        <HubComment>[].obs;
+    final comments = (widget.controller.contentComments[widget.content.id]
+            as List<HubComment>?) ??
+        <HubComment>[];
     final Map<int, MentionSuggestion> uniqueUsers = {};
 
     for (final comment in comments) {
@@ -57,7 +58,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
       final profile = profileService.currentProfile;
       final profilePicture = profile?.profilePicture;
       final firstName = profile?.firstName ?? '';
-      
+
       return Container(
         width: 36,
         height: 36,
@@ -500,8 +501,9 @@ class _HubThreadCardState extends State<HubThreadCard> {
 
   Widget _buildCommentsSection(ThemeData theme) {
     return Obx(() {
-      final comments = widget.controller.contentComments[widget.content.id] ??
-          <HubComment>[].obs;
+      final comments = (widget.controller.contentComments[widget.content.id]
+              as List<HubComment>?) ??
+          <HubComment>[];
       final isLoading =
           widget.controller.commentsLoading[widget.content.id]?.value ?? false;
 
@@ -838,8 +840,9 @@ class _HubThreadCardState extends State<HubThreadCard> {
               Expanded(
                 child: Obx(() {
                   final comments =
-                      widget.controller.contentComments[widget.content.id] ??
-                          <HubComment>[].obs;
+                      (widget.controller.contentComments[widget.content.id]
+                              as List<HubComment>?) ??
+                          <HubComment>[];
                   final isLoading = widget.controller
                           .commentsLoading[widget.content.id]?.value ??
                       false;
@@ -939,7 +942,8 @@ class _HubThreadCardState extends State<HubThreadCard> {
                                 : Colors.grey.shade100,
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(
-                              color: theme.colorScheme.outline.withOpacity(0.15),
+                              color:
+                                  theme.colorScheme.outline.withOpacity(0.15),
                               width: 1,
                             ),
                           ),
@@ -1427,8 +1431,8 @@ class _HubThreadCardState extends State<HubThreadCard> {
                       mentionedUserIds = userIds;
                     },
                     onSearchMentions: (query) async {
-                      final results = await widget.controller
-                          .searchUsersForMentions(query);
+                      final results =
+                          await widget.controller.searchUsersForMentions(query);
                       return results
                           .map((user) => MentionSuggestion.fromJson(user))
                           .toList();
@@ -1567,8 +1571,8 @@ class _HubThreadCardState extends State<HubThreadCard> {
                       mentionedUserIds = userIds;
                     },
                     onSearchMentions: (query) async {
-                      final results = await widget.controller
-                          .searchUsersForMentions(query);
+                      final results =
+                          await widget.controller.searchUsersForMentions(query);
                       return results
                           .map((user) => MentionSuggestion.fromJson(user))
                           .toList();
@@ -2018,7 +2022,8 @@ class _HubThreadCardState extends State<HubThreadCard> {
                                             Get.back();
                                             NavigationHelper.showSafeSnackbar(
                                               title: 'Success',
-                                              message: 'Your reply has been posted!',
+                                              message:
+                                                  'Your reply has been posted!',
                                               backgroundColor:
                                                   Theme.of(Get.context!)
                                                       .colorScheme
@@ -2036,7 +2041,8 @@ class _HubThreadCardState extends State<HubThreadCard> {
                                           } catch (e) {
                                             NavigationHelper.showSafeSnackbar(
                                               title: 'Error',
-                                              message: 'Failed to post reply. Please try again.',
+                                              message:
+                                                  'Failed to post reply. Please try again.',
                                               backgroundColor:
                                                   Theme.of(Get.context!)
                                                       .colorScheme

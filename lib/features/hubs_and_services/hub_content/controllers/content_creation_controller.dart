@@ -44,7 +44,8 @@ class ContentCreationController extends GetxController {
   final Rx<PlatformFile?> selectedFile = Rx<PlatformFile?>(null);
 
   // Topic-related variables (for Legal Education hub)
-  final RxList<Topic> availableTopics = <Topic>[].obs;
+  final List<Topic> _availableTopics = [];
+  List<Topic> get availableTopics => _availableTopics;
   final Rx<Topic?> selectedTopic = Rx<Topic?>(null);
   final RxBool isLoadingTopics = false.obs;
   final RxString newTopicName = ''.obs;
@@ -101,9 +102,12 @@ class ContentCreationController extends GetxController {
       if (topicId != null) {
         Topic? matchingTopic;
         try {
-          matchingTopic = availableTopics.firstWhere(
-            (topic) => topic.id.toString() == topicId,
-          );
+          for (final t in _availableTopics) {
+            if (t.id.toString() == topicId) {
+              matchingTopic = t;
+              break;
+            }
+          }
         } catch (e) {
           matchingTopic = null;
         }
@@ -182,7 +186,8 @@ class ContentCreationController extends GetxController {
       if (bytes.isEmpty) {
         NavigationHelper.showSafeSnackbar(
           title: 'Invalid Image',
-          message: 'The selected image appears to be corrupted. Please try a different image.',
+          message:
+              'The selected image appears to be corrupted. Please try a different image.',
           backgroundColor: Colors.red,
         );
         return;
@@ -265,7 +270,8 @@ class ContentCreationController extends GetxController {
 
       NavigationHelper.showSafeSnackbar(
         title: 'Success',
-        message: 'Your content "${createdContent.title}" has been published successfully',
+        message:
+            'Your content "${createdContent.title}" has been published successfully',
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 3),
       );
@@ -380,13 +386,14 @@ class ContentCreationController extends GetxController {
         ordering: 'display_order',
       );
 
-      availableTopics.assignAll(response.results);
+      _availableTopics.clear();
+      _availableTopics.addAll(response.results);
 
       // Auto-select first topic if available and not disabled
       if (autoSelectFirst &&
-          availableTopics.isNotEmpty &&
+          _availableTopics.isNotEmpty &&
           selectedTopic.value == null) {
-        selectedTopic.value = availableTopics.first;
+        selectedTopic.value = _availableTopics.first;
       }
     } catch (e) {
       error.value = 'Failed to load topics: $e';
@@ -439,7 +446,7 @@ class ContentCreationController extends GetxController {
 
       if (response != null) {
         // Add to available topics
-        availableTopics.add(response);
+        _availableTopics.add(response);
 
         // Select the new topic
         selectedTopic.value = response;
@@ -478,7 +485,7 @@ class ContentCreationController extends GetxController {
     isLectureMaterial.value = false;
     selectedFile.value = null;
     selectedTopic.value =
-        availableTopics.isNotEmpty ? availableTopics.first : null;
+        _availableTopics.isNotEmpty ? _availableTopics.first : null;
     newTopicName.value = '';
     newTopicDescription.value = '';
     error.value = '';

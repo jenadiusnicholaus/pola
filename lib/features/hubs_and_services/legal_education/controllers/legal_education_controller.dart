@@ -11,14 +11,14 @@ class LegalEducationController extends GetxController {
   final LegalEducationService _service = Get.put(LegalEducationService());
 
   // Observable variables
-  final RxList<Topic> _topics = <Topic>[].obs;
+  final List<Topic> _topics = [];
   final RxBool _isLoadingTopics = false.obs;
   final RxString _error = ''.obs;
   final Rx<LanguageFilter> _languageFilter = LanguageFilter.both.obs;
   final RxString _searchQuery = ''.obs;
 
   // Materials variables
-  final RxList<LearningMaterial> _materials = <LearningMaterial>[].obs;
+  final List<LearningMaterial> _materials = [];
   final RxBool _isLoadingMaterials = false.obs;
   final RxString _materialsError = ''.obs;
 
@@ -136,7 +136,8 @@ class LegalEducationController extends GetxController {
 
       // Now replace or add the data
       if (refresh) {
-        _topics.assignAll(response.results);
+        _topics.clear();
+        _topics.addAll(response.results);
       } else {
         _topics.addAll(response.results);
       }
@@ -230,7 +231,8 @@ class LegalEducationController extends GetxController {
       );
 
       if (refresh) {
-        _materials.assignAll(response.results.materials);
+        _materials.clear();
+        _materials.addAll(response.results.materials);
       } else {
         _materials.addAll(response.results.materials);
       }
@@ -273,7 +275,7 @@ class LegalEducationController extends GetxController {
   }
 
   // Subtopic materials functionality
-  final RxList<LearningMaterial> _subtopicMaterials = <LearningMaterial>[].obs;
+  final List<LearningMaterial> _subtopicMaterials = [];
   final RxBool _isLoadingSubtopicMaterials = false.obs;
   final RxString _subtopicMaterialsError = ''.obs;
   final RxInt _currentSubtopicMaterialsPage = 1.obs;
@@ -307,7 +309,8 @@ class LegalEducationController extends GetxController {
       );
 
       if (refresh) {
-        _subtopicMaterials.assignAll(response.materials);
+        _subtopicMaterials.clear();
+        _subtopicMaterials.addAll(response.materials);
       } else {
         _subtopicMaterials.addAll(response.materials);
       }
@@ -332,7 +335,7 @@ class LegalEducationController extends GetxController {
   }
 
   // Existing methods for subtopics, etc.
-  final RxList<Subtopic> _subtopics = <Subtopic>[].obs;
+  final List<Subtopic> _subtopics = [];
   final RxBool _isLoadingSubtopics = false.obs;
   String? _currentTopicSlug; // Added _currentTopicSlug
 
@@ -358,7 +361,8 @@ class LegalEducationController extends GetxController {
         print(
             '⚠️ DEBUG SUBTOPICS EMPTY: Ensure API response format matches expected JSON parsing.');
       }
-      _subtopics.assignAll(response.results);
+      _subtopics.clear();
+      _subtopics.addAll(response.results);
     } catch (e, stackTrace) {
       print('❌ ERROR fetching subtopics: $e');
       print('❌ STACK TRACE: $stackTrace');

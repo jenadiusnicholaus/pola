@@ -8,16 +8,18 @@ import '../services/auth_service.dart';
 class ApiInterceptors {
   // Add comprehensive interceptors to Dio instance
   static void addInterceptors(Dio dio) {
+    final interceptorList = dio.interceptors as List<Interceptor>;
+
     // Request/Response logging interceptor (only in debug mode)
     if (kDebugMode) {
-      dio.interceptors.add(createLoggingInterceptor());
+      interceptorList.add(createLoggingInterceptor());
     }
 
     // Auth interceptor
-    dio.interceptors.add(createAuthInterceptor());
+    interceptorList.add(createAuthInterceptor());
 
     // Error handling interceptor with retry capability
-    dio.interceptors.add(createErrorInterceptor(dio));
+    interceptorList.add(createErrorInterceptor(dio));
   }
 
   // Comprehensive logging interceptor
@@ -91,8 +93,10 @@ class ApiInterceptors {
                 ? jsonDecode(error.response!.data)
                 : error.response!.data;
             if (errorData is Map &&
-                errorData['error'] == 'This device is already registered to another account') {
-              debugPrint('🔴 Device already registered error detected. Redirecting to verification screen.');
+                errorData['error'] ==
+                    'This device is already registered to another account') {
+              debugPrint(
+                  '🔴 Device already registered error detected. Redirecting to verification screen.');
               // Use string route to avoid circular dependency, or assume it's valid
               if (getx.Get.currentRoute != '/device-verification') {
                 // Short delay to ensure navigation stack is ready

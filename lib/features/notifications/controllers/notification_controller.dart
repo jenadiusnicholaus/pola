@@ -9,12 +9,14 @@ class NotificationController extends GetxController {
   final NotificationService _service = Get.find<NotificationService>();
 
   // Observable state
-  final RxList<NotificationModel> notifications = <NotificationModel>[].obs;
+  final List<NotificationModel> _notifications = [];
   final RxInt unreadCount = 0.obs;
   final RxBool isLoading = false.obs;
   final RxBool isLoadingMore = false.obs;
   final RxString error = ''.obs;
   final RxBool hasMoreData = true.obs;
+
+  List<NotificationModel> get notifications => _notifications;
 
   // Pagination
   int _currentPage = 1;
@@ -65,7 +67,9 @@ class NotificationController extends GetxController {
         pageSize: _pageSize,
       );
 
-      notifications.assignAll(result);
+      _notifications.clear();
+      _notifications.addAll(result);
+      update();
 
       // Check if more data available
       if (result.length < _pageSize) {
@@ -100,7 +104,8 @@ class NotificationController extends GetxController {
       if (result.isEmpty) {
         hasMoreData.value = false;
       } else {
-        notifications.addAll(result);
+        _notifications.addAll(result);
+        update();
         if (result.length < _pageSize) {
           hasMoreData.value = false;
         }
@@ -130,14 +135,15 @@ class NotificationController extends GetxController {
 
     if (success) {
       // Update local state
-      final index = notifications.indexWhere((n) => n.id == notificationId);
+      final index = _notifications.indexWhere((n) => n.id == notificationId);
       if (index != -1) {
-        final notification = notifications[index];
+        final notification = _notifications[index];
         if (!notification.isRead) {
-          notifications[index] = notification.copyWith(
+          _notifications[index] = notification.copyWith(
             isRead: true,
             readAt: DateTime.now(),
           );
+          update();
 
           // Decrease unread count
           unreadCount.value =
@@ -153,9 +159,11 @@ class NotificationController extends GetxController {
 
     if (success) {
       // Update all local notifications
-      notifications.value = notifications.map((n) {
+      _notifications.clear();
+      _notifications.addAll(_notifications.map((n) {
         return n.copyWith(isRead: true, readAt: DateTime.now());
-      }).toList();
+      }).toList());
+      update();
 
       unreadCount.value = 0;
     }
@@ -164,13 +172,19 @@ class NotificationController extends GetxController {
   /// Delete a notification
   Future<void> deleteNotification(int notificationId) async {
     // Find the notification before deleting
-    final notification =
-        notifications.firstWhereOrNull((n) => n.id == notificationId);
+    NotificationModel? notification;
+    for (final n in _notifications) {
+      if (n.id == notificationId) {
+        notification = n;
+        break;
+      }
+    }
 
     final success = await _service.deleteNotification(notificationId);
 
     if (success) {
-      notifications.removeWhere((n) => n.id == notificationId);
+      _notifications.removeWhere((n) => n.id == notificationId);
+      update();
 
       // Update unread count if the deleted notification was unread
       if (notification != null && !notification.isRead) {
@@ -330,5 +344,5 @@ class NotificationController extends GetxController {
 
   /// Get unread notifications only
   List<NotificationModel> get unreadNotifications =>
-      notifications.where((n) => !n.isRead).toList();
+      _notifications.where((n) => !n.isRead).toList();
 }

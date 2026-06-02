@@ -6,12 +6,16 @@ import '../services/nearby_lawyers_service.dart';
 class NearbyLawyersController extends GetxController {
   final NearbyLawyersService _service = Get.find<NearbyLawyersService>();
 
-  final _lawyers = <NearbyLawyer>[].obs;
+  final List<NearbyLawyer> _lawyers = [];
   final _isLoading = false.obs;
   final _error = Rx<String?>(null);
   final _radius = 20.0.obs;
-  final _selectedTypes =
-      <String>['advocate', 'lawyer', 'paralegal', 'law_firm'].obs;
+  final List<String> _selectedTypes = [
+    'advocate',
+    'lawyer',
+    'paralegal',
+    'law_firm'
+  ];
   final _userLocation = Rx<UserLocation?>(null);
 
   // Pagination
@@ -72,8 +76,10 @@ class NearbyLawyersController extends GetxController {
       );
 
       if (response != null) {
-        _lawyers.value = response.results;
+        _lawyers.clear();
+        _lawyers.addAll(response.results);
         _userLocation.value = response.yourLocation;
+        update();
         _hasMore.value = response.results.length >= pageSize;
 
         if (response.count == 0) {
@@ -109,6 +115,7 @@ class NearbyLawyersController extends GetxController {
       if (response != null && response.results.isNotEmpty) {
         _lawyers.addAll(response.results);
         _currentPage.value = nextPage;
+        update();
         _hasMore.value = response.results.length >= pageSize;
       } else {
         _hasMore.value = false;
@@ -132,10 +139,12 @@ class NearbyLawyersController extends GetxController {
       if (_selectedTypes.length > 1) {
         // Don't allow removing all types
         _selectedTypes.remove(type);
+        update();
         fetchNearbyLawyers();
       }
     } else {
       _selectedTypes.add(type);
+      update();
       fetchNearbyLawyers();
     }
   }

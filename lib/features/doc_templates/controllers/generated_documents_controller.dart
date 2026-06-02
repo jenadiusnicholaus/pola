@@ -5,12 +5,15 @@ import '../services/template_service.dart';
 class GeneratedDocumentsController extends GetxController {
   final TemplateService _service = TemplateService();
 
-  var documents = <GeneratedDocument>[].obs;
+  final List<GeneratedDocument> _documents = [];
   var isLoading = false.obs;
   var error = ''.obs;
   var totalCount = 0.obs;
   var currentPage = 1.obs;
   var hasMore = false.obs;
+
+  // Getters
+  List<GeneratedDocument> get documents => _documents;
 
   @override
   void onInit() {
@@ -34,9 +37,10 @@ class GeneratedDocumentsController extends GetxController {
       final newDocuments = response['documents'] as List<GeneratedDocument>;
 
       if (refresh) {
-        documents.value = newDocuments;
+        _documents.clear();
+        _documents.addAll(newDocuments);
       } else {
-        documents.addAll(newDocuments);
+        _documents.addAll(newDocuments);
       }
 
       totalCount.value = response['count'] as int;

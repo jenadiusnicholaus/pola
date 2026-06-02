@@ -7,14 +7,14 @@ class LookupService extends GetxService {
   final ApiService _apiService = Get.find<ApiService>();
 
   // Cache for lookups to avoid repeated API calls
-  final RxList<UserRole> _userRoles = <UserRole>[].obs;
-  final RxList<Region> _regions = <Region>[].obs;
-  final RxList<District> _districts = <District>[].obs;
-  final RxList<Specialization> _specializations = <Specialization>[].obs;
-  final RxList<Workplace> _workplaces = <Workplace>[].obs;
-  final RxList<Chapter> _chapters = <Chapter>[].obs;
-  final RxList<Advocate> _advocates = <Advocate>[].obs;
-  final RxList<LawFirm> _lawFirms = <LawFirm>[].obs;
+  final List<UserRole> _userRoles = [];
+  final List<Region> _regions = [];
+  final List<District> _districts = [];
+  final List<Specialization> _specializations = [];
+  final List<Workplace> _workplaces = [];
+  final List<Chapter> _chapters = [];
+  final List<Advocate> _advocates = [];
+  final List<LawFirm> _lawFirms = [];
 
   // Loading states
   final RxBool _isLoadingRoles = false.obs;
@@ -48,13 +48,13 @@ class LookupService extends GetxService {
   // Role order priority - arranged by expected user significance
   // Swahili first: Mwananchi, Wakili, Mwanasheria, Msaidizi wa Kisheria, Ofisi ya Mawakili, Mwanafunzi wa Sheria, Mhadhiri
   static const List<String> _roleOrder = [
-    'citizen',      // Mwananchi | Citizen
-    'advocate',     // Wakili | Advocate
-    'lawyer',       // Mwanasheria | Lawyer
-    'paralegal',    // Msaidizi wa Kisheria | Paralegal
-    'law_firm',     // Ofisi ya Mawakili | Law Firm
-    'law_student',  // Mwanafunzi wa Sheria | Law Student
-    'lecturer',     // Mhadhiri | Lecturer
+    'citizen', // Mwananchi | Citizen
+    'advocate', // Wakili | Advocate
+    'lawyer', // Mwanasheria | Lawyer
+    'paralegal', // Msaidizi wa Kisheria | Paralegal
+    'law_firm', // Ofisi ya Mawakili | Law Firm
+    'law_student', // Mwanafunzi wa Sheria | Law Student
+    'lecturer', // Mhadhiri | Lecturer
   ];
 
   /// Sort roles by significance order
@@ -72,7 +72,7 @@ class LookupService extends GetxService {
 
   // Fetch user roles
   Future<List<UserRole>> fetchUserRoles() async {
-    if (_userRoles.isNotEmpty) return _userRoles;
+    if (_userRoles.length > 0) return _userRoles;
 
     try {
       _isLoadingRoles.value = true;
@@ -107,13 +107,17 @@ class LookupService extends GetxService {
         }
 
         if (data != null) {
-          final parsedRoles = data.map((json) => UserRole.fromJson(json)).toList();
+          final parsedRoles =
+              data.map((json) => UserRole.fromJson(json)).toList();
           // Sort roles by significance order
-          _userRoles.value = _sortRolesBySignificance(parsedRoles);
-          print('Successfully loaded ${_userRoles.length} user roles (sorted by significance)');
+          _userRoles.clear();
+          _userRoles.addAll(_sortRolesBySignificance(parsedRoles));
+          print(
+              'Successfully loaded ${_userRoles.length} user roles (sorted by significance)');
         } else {
           // API might be returning an error or different format
-          print('Expected paginated response or List but got: ${response.data}');
+          print(
+              'Expected paginated response or List but got: ${response.data}');
           throw Exception('Invalid API response format for user roles');
         }
       }
@@ -129,7 +133,7 @@ class LookupService extends GetxService {
 
   // Fetch regions
   Future<List<Region>> fetchRegions() async {
-    if (_regions.isNotEmpty) return _regions;
+    if (_regions.length > 0) return _regions;
 
     try {
       _isLoadingRegions.value = true;
@@ -147,7 +151,8 @@ class LookupService extends GetxService {
         } else {
           throw Exception('Invalid API response format for regions');
         }
-        _regions.value = data.map((json) => Region.fromJson(json)).toList();
+        _regions.clear();
+        _regions.addAll(data.map((json) => Region.fromJson(json)));
       }
 
       return _regions;
@@ -187,7 +192,13 @@ class LookupService extends GetxService {
 
         // Always update cache - merge with existing districts to keep all loaded
         for (final district in districts) {
-          final existingIndex = _districts.indexWhere((d) => d.id == district.id);
+          int existingIndex = -1;
+          for (int i = 0; i < _districts.length; i++) {
+            if (_districts[i].id == district.id) {
+              existingIndex = i;
+              break;
+            }
+          }
           if (existingIndex == -1) {
             _districts.add(district);
           }
@@ -207,7 +218,7 @@ class LookupService extends GetxService {
 
   // Fetch specializations
   Future<List<Specialization>> fetchSpecializations() async {
-    if (_specializations.isNotEmpty) return _specializations;
+    if (_specializations.length > 0) return _specializations;
 
     try {
       _isLoadingSpecializations.value = true;
@@ -226,8 +237,9 @@ class LookupService extends GetxService {
         } else {
           throw Exception('Invalid API response format for specializations');
         }
-        _specializations.value =
-            data.map((json) => Specialization.fromJson(json)).toList();
+        _specializations.clear();
+        _specializations
+            .addAll(data.map((json) => Specialization.fromJson(json)));
       }
 
       return _specializations;
@@ -241,7 +253,7 @@ class LookupService extends GetxService {
 
   // Fetch workplaces
   Future<List<Workplace>> fetchWorkplaces() async {
-    if (_workplaces.isNotEmpty) return _workplaces;
+    if (_workplaces.length > 0) return _workplaces;
 
     try {
       _isLoadingWorkplaces.value = true;
@@ -259,8 +271,8 @@ class LookupService extends GetxService {
         } else {
           throw Exception('Invalid API response format for workplaces');
         }
-        _workplaces.value =
-            data.map((json) => Workplace.fromJson(json)).toList();
+        _workplaces.clear();
+        _workplaces.addAll(data.map((json) => Workplace.fromJson(json)));
       }
 
       return _workplaces;
@@ -274,7 +286,7 @@ class LookupService extends GetxService {
 
   // Fetch chapters
   Future<List<Chapter>> fetchChapters() async {
-    if (_chapters.isNotEmpty) return _chapters;
+    if (_chapters.length > 0) return _chapters;
 
     try {
       _isLoadingChapters.value = true;
@@ -292,7 +304,8 @@ class LookupService extends GetxService {
         } else {
           throw Exception('Invalid API response format for chapters');
         }
-        _chapters.value = data.map((json) => Chapter.fromJson(json)).toList();
+        _chapters.clear();
+        _chapters.addAll(data.map((json) => Chapter.fromJson(json)));
       }
 
       return _chapters;
@@ -313,7 +326,7 @@ class LookupService extends GetxService {
 
   // Fetch advocates
   Future<List<Advocate>> fetchAdvocates() async {
-    if (_advocates.isNotEmpty) return _advocates;
+    if (_advocates.length > 0) return _advocates;
 
     try {
       _isLoadingAdvocates.value = true;
@@ -331,7 +344,8 @@ class LookupService extends GetxService {
         } else {
           throw Exception('Invalid API response format for advocates');
         }
-        _advocates.value = data.map((json) => Advocate.fromJson(json)).toList();
+        _advocates.clear();
+        _advocates.addAll(data.map((json) => Advocate.fromJson(json)));
       }
 
       return _advocates;
@@ -345,7 +359,7 @@ class LookupService extends GetxService {
 
   // Fetch law firms
   Future<List<LawFirm>> fetchLawFirms() async {
-    if (_lawFirms.isNotEmpty) return _lawFirms;
+    if (_lawFirms.length > 0) return _lawFirms;
 
     try {
       _isLoadingLawFirms.value = true;
@@ -363,7 +377,8 @@ class LookupService extends GetxService {
         } else {
           throw Exception('Invalid API response format for law firms');
         }
-        _lawFirms.value = data.map((json) => LawFirm.fromJson(json)).toList();
+        _lawFirms.clear();
+        _lawFirms.addAll(data.map((json) => LawFirm.fromJson(json)));
       }
 
       return _lawFirms;

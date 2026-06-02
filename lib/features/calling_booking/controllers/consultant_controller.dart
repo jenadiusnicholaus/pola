@@ -8,9 +8,12 @@ class ConsultantController extends GetxController {
   final CallService _service = CallService();
 
   // State
-  final consultants = <Consultant>[].obs;
+  final List<Consultant> _consultants = [];
   final isLoading = false.obs;
   final error = ''.obs;
+
+  // Getters
+  List<Consultant> get consultants => _consultants;
 
   // Pagination
   final ScrollController scrollController = ScrollController();
@@ -65,7 +68,8 @@ class ConsultantController extends GetxController {
         pageSize: pageSize,
       );
 
-      consultants.value = response['results'] as List<Consultant>;
+      _consultants.clear();
+      _consultants.addAll(response['results'] as List<Consultant>);
       totalCount = response['count'] as int?;
       hasMore.value = response['next'] != null;
     } catch (e) {
@@ -118,7 +122,8 @@ class ConsultantController extends GetxController {
             : null,
       );
 
-      consultants.value = results;
+      _consultants.clear();
+      _consultants.addAll(results);
     } catch (e) {
       error.value = e.toString();
     } finally {
