@@ -694,10 +694,12 @@ class HubContentController extends GetxController {
 
         _bookmarkedContent.clear();
         _bookmarkedContent.addAll(mergedList);
+        update();
         print(
             '🔖 Controller: Merged local and server bookmarks - final count: ${mergedList.length}');
       } else {
         _bookmarkedContent.addAll(response.results);
+        update();
         print(
             '🔖 Controller: Added ${response.results.length} items to existing bookmarked list');
       }

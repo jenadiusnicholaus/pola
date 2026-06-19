@@ -4,6 +4,8 @@ import '../../../../utils/navigation_helper.dart';
 import 'package:flutter_cached_pdfview/flutter_cached_pdfview.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:html/parser.dart' as html_parser;
+import 'package:html/dom.dart' as html_dom;
 import '../models/legal_education_models.dart';
 import '../../controllers/hub_content_controller.dart';
 import '../../widgets/document_purchase_dialog.dart';
@@ -167,7 +169,8 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
 
           NavigationHelper.showSafeSnackbar(
             title: 'Success',
-            message: 'Document purchased successfully! You can now download it.',
+            message:
+                'Document purchased successfully! You can now download it.',
             backgroundColor: theme.colorScheme.primaryContainer,
             colorText: theme.colorScheme.onPrimaryContainer,
             icon: const Icon(Icons.check_circle),
@@ -262,7 +265,8 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
       debugPrint('Download error: $e');
       NavigationHelper.showSafeSnackbar(
         title: 'Cannot Open File',
-        message: 'Unable to open the file. Try opening the link in your browser manually.',
+        message:
+            'Unable to open the file. Try opening the link in your browser manually.',
         backgroundColor: theme.colorScheme.errorContainer,
         colorText: theme.colorScheme.onErrorContainer,
       );
@@ -1072,7 +1076,7 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
               ),
               child: SingleChildScrollView(
                 child: Text(
-                  material.description,
+                  _stripHtmlTags(material.description),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         height: 1.5,
                         color: Theme.of(context).colorScheme.onSurface,
@@ -1095,7 +1099,7 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
         : material.description;
 
     Widget contentWidget = SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1105,44 +1109,131 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
               style: {
                 "body": Style(
                   fontSize: FontSize(16),
-                  lineHeight: const LineHeight(1.6),
+                  lineHeight: const LineHeight(1.7),
                   color: theme.colorScheme.onSurface,
                   fontFamily: theme.textTheme.bodyLarge?.fontFamily,
+                  padding: HtmlPaddings.zero,
+                  margin: Margins.zero,
                 ),
                 "p": Style(
-                  margin: Margins.only(bottom: 16),
+                  margin: Margins.only(bottom: 20),
                   fontSize: FontSize(16),
-                  lineHeight: const LineHeight(1.6),
+                  lineHeight: const LineHeight(1.7),
                   color: theme.colorScheme.onSurface,
                 ),
-                "h1, h2, h3, h4, h5, h6": Style(
+                "h1": Style(
+                  fontSize: FontSize(28),
+                  fontWeight: FontWeight.bold,
+                  margin: Margins.only(top: 32, bottom: 16),
+                  color: theme.colorScheme.onSurface,
+                  lineHeight: const LineHeight(1.3),
+                ),
+                "h2": Style(
+                  fontSize: FontSize(24),
+                  fontWeight: FontWeight.bold,
+                  margin: Margins.only(top: 28, bottom: 14),
+                  color: theme.colorScheme.onSurface,
+                  lineHeight: const LineHeight(1.3),
+                ),
+                "h3": Style(
+                  fontSize: FontSize(20),
                   fontWeight: FontWeight.bold,
                   margin: Margins.only(top: 24, bottom: 12),
                   color: theme.colorScheme.onSurface,
-                  fontFamily: theme.textTheme.headlineMedium?.fontFamily,
+                  lineHeight: const LineHeight(1.4),
                 ),
-                "h1": Style(fontSize: FontSize(24)),
-                "h2": Style(fontSize: FontSize(20)),
-                "h3": Style(fontSize: FontSize(18)),
-                "li": Style(
-                  margin: Margins.only(bottom: 8),
+                "h4": Style(
+                  fontSize: FontSize(18),
+                  fontWeight: FontWeight.bold,
+                  margin: Margins.only(top: 20, bottom: 10),
+                  color: theme.colorScheme.onSurface,
+                  lineHeight: const LineHeight(1.4),
+                ),
+                "h5, h6": Style(
                   fontSize: FontSize(16),
-                  lineHeight: const LineHeight(1.6),
+                  fontWeight: FontWeight.bold,
+                  margin: Margins.only(top: 16, bottom: 8),
+                  color: theme.colorScheme.onSurface,
+                  lineHeight: const LineHeight(1.4),
+                ),
+                "li": Style(
+                  margin: Margins.only(bottom: 10),
+                  fontSize: FontSize(16),
+                  lineHeight: const LineHeight(1.7),
                   color: theme.colorScheme.onSurface,
                 ),
-                "ul, ol": Style(
-                  margin: Margins.only(bottom: 16),
+                "ul": Style(
+                  margin: Margins.only(bottom: 20, left: 20),
+                ),
+                "ol": Style(
+                  margin: Margins.only(bottom: 20, left: 20),
                 ),
                 "blockquote": Style(
-                  margin: Margins.only(left: 16, bottom: 16),
-                  padding: HtmlPaddings.all(12),
-                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                  margin: Margins.only(left: 0, bottom: 20),
+                  padding: HtmlPaddings.symmetric(horizontal: 20, vertical: 16),
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest
+                      .withOpacity(0.5),
                   border: Border(
                     left: BorderSide(
                       color: theme.colorScheme.primary,
                       width: 4,
                     ),
                   ),
+                ),
+                "code": Style(
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                  padding: HtmlPaddings.symmetric(horizontal: 6, vertical: 3),
+                  fontFamily: 'monospace',
+                  fontSize: FontSize(14),
+                  color: theme.colorScheme.onSurface,
+                ),
+                "pre": Style(
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                  padding: HtmlPaddings.all(16),
+                  margin: Margins.only(bottom: 20),
+                  fontFamily: 'monospace',
+                  fontSize: FontSize(14),
+                  color: theme.colorScheme.onSurface,
+                ),
+                "a": Style(
+                  color: theme.colorScheme.primary,
+                  textDecoration: TextDecoration.underline,
+                ),
+                "strong, b": Style(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface,
+                ),
+                "em, i": Style(
+                  fontStyle: FontStyle.italic,
+                  color: theme.colorScheme.onSurface,
+                ),
+                "hr": Style(
+                  margin: Margins.only(top: 24, bottom: 24),
+                  border: Border(
+                    bottom: BorderSide(
+                      color: theme.colorScheme.outline.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                ),
+                "table": Style(
+                  margin: Margins.only(bottom: 20),
+                ),
+                "th": Style(
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                  padding: HtmlPaddings.symmetric(horizontal: 12, vertical: 8),
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface,
+                ),
+                "td": Style(
+                  padding: HtmlPaddings.symmetric(horizontal: 12, vertical: 8),
+                  border: Border(
+                    bottom: BorderSide(
+                      color: theme.colorScheme.outline.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  color: theme.colorScheme.onSurface,
                 ),
               },
               onLinkTap: (url, _, __) {
@@ -1259,7 +1350,7 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
             ),
             child: Text(
               material.description.isNotEmpty
-                  ? material.description
+                  ? _stripHtmlTags(material.description)
                   : 'No content available for this material.',
               style: theme.textTheme.bodyLarge?.copyWith(
                 height: 1.7,
@@ -1318,6 +1409,20 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
         contentType == 'research' ||
         (material.description.contains('<') &&
             material.description.contains('>'));
+  }
+
+  /// Strip HTML tags from text and decode HTML entities
+  String _stripHtmlTags(String htmlText) {
+    if (htmlText.isEmpty) return htmlText;
+
+    // Parse HTML and extract text content
+    final document = html_parser.parse(htmlText);
+    String plainText = document.body?.text ?? htmlText;
+
+    // Clean up extra whitespace
+    plainText = plainText.replaceAll(RegExp(r'\s+'), ' ').trim();
+
+    return plainText;
   }
 
   bool _isValidPdfUrl(String url) {

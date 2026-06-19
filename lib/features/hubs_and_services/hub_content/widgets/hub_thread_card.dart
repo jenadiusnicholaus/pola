@@ -309,137 +309,67 @@ class _HubThreadCardState extends State<HubThreadCard> {
   Widget _buildThreadActions(BuildContext context, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          // Like button
-          Obx(() {
-            // Get current content state from all possible lists
-            HubContentItem currentContent = widget.content;
-            final allLists = [
-              widget.controller.content,
-              widget.controller.trendingContent,
-              widget.controller.recentContent,
-              widget.controller.searchResults,
-              widget.controller.filteredContent,
-              widget.controller.bookmarkedContent,
-            ];
-
-            for (final list in allLists) {
-              try {
-                final found =
-                    list.firstWhere((item) => item.id == widget.content.id);
-                currentContent = found;
-                break; // Use the first match found
-              } catch (e) {
-                // Item not in this list, continue searching
-              }
-            }
-
-            return _buildActionButton(
-              icon: currentContent.isLiked
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            // Like button
+            _buildActionButton(
+              icon: widget.content.isLiked
                   ? Icons.favorite
                   : Icons.favorite_border,
-              label: '${currentContent.likesCount}',
-              isActive: currentContent.isLiked,
-              onTap: () => widget.controller.toggleLike(currentContent),
+              label: '${widget.content.likesCount}',
+              isActive: widget.content.isLiked,
+              onTap: () => widget.controller.toggleLike(widget.content),
               theme: theme,
-            );
-          }),
+            ),
 
-          const SizedBox(width: 16),
+            const SizedBox(width: 16),
 
-          // Comments button
-          Obx(() {
-            // Get current content state from all possible lists
-            HubContentItem currentContent = widget.content;
-            final allLists = [
-              widget.controller.content,
-              widget.controller.trendingContent,
-              widget.controller.recentContent,
-              widget.controller.searchResults,
-              widget.controller.filteredContent,
-              widget.controller.bookmarkedContent,
-            ];
-
-            for (final list in allLists) {
-              try {
-                final found =
-                    list.firstWhere((item) => item.id == widget.content.id);
-                currentContent = found;
-                break; // Use the first match found
-              } catch (e) {
-                // Item not in this list, continue searching
-              }
-            }
-
-            return _buildActionButton(
+            // Comments button
+            _buildActionButton(
               icon: Icons.comment_outlined,
-              label: '${currentContent.commentsCount}',
+              label: '${widget.content.commentsCount}',
               isActive: false,
               onTap: () => _showTikTokCommentsModal(context),
               theme: theme,
-            );
-          }),
+            ),
 
-          const SizedBox(width: 16),
+            const SizedBox(width: 16),
 
-          // Bookmark button
-          Obx(() {
-            // Get current content state from all possible lists
-            HubContentItem currentContent = widget.content;
-            final allLists = [
-              widget.controller.content,
-              widget.controller.trendingContent,
-              widget.controller.recentContent,
-              widget.controller.searchResults,
-              widget.controller.filteredContent,
-              widget.controller.bookmarkedContent,
-            ];
-
-            for (final list in allLists) {
-              try {
-                final found =
-                    list.firstWhere((item) => item.id == widget.content.id);
-                currentContent = found;
-                print(
-                    '🔍 HubThreadCard: Found content ${widget.content.id} in list - bookmarked: ${found.isBookmarked}, count: ${found.bookmarksCount}');
-                break; // Use the first match found
-              } catch (e) {
-                // Item not in this list, continue searching
-              }
-            }
-
-            return _buildActionButton(
-              icon: currentContent.isBookmarked
+            // Bookmark button
+            _buildActionButton(
+              icon: widget.content.isBookmarked
                   ? Icons.bookmark
                   : Icons.bookmark_outline,
-              label: '${currentContent.bookmarksCount}',
-              isActive: currentContent.isBookmarked,
-              onTap: () => widget.controller.toggleBookmark(currentContent),
+              label: '${widget.content.bookmarksCount}',
+              isActive: widget.content.isBookmarked,
+              onTap: () => widget.controller.toggleBookmark(widget.content),
               theme: theme,
-            );
-          }),
+            ),
 
-          const Spacer(),
+            const SizedBox(width: 16),
 
-          // Views count
-          Row(
-            children: [
-              Icon(
-                Icons.visibility_outlined,
-                size: 16,
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '${widget.content.viewsCount}',
-                style: theme.textTheme.bodySmall?.copyWith(
+            // Views count
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.visibility_outlined,
+                  size: 16,
                   color: theme.colorScheme.onSurface.withOpacity(0.6),
                 ),
-              ),
-            ],
-          ),
-        ],
+                const SizedBox(width: 4),
+                Text(
+                  '${widget.content.viewsCount}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

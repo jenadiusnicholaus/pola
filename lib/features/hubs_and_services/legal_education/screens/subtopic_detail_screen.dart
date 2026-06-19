@@ -4,6 +4,7 @@ import '../controllers/legal_education_controller.dart';
 import '../models/legal_education_models.dart';
 import '../widgets/material_card.dart';
 import '../widgets/common_sliver_widgets.dart';
+import '../widgets/shimmer_widgets.dart';
 import 'material_viewer_screen.dart';
 import '../../../../services/permission_service.dart';
 import '../../../../routes/app_routes.dart';
@@ -173,37 +174,42 @@ class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
               ),
 
               // Materials Content
-              if (controller.subtopicMaterialsError.isNotEmpty && controller.subtopicMaterials.isEmpty)
+              if (controller.subtopicMaterialsError.isNotEmpty &&
+                  controller.subtopicMaterials.isEmpty)
                 SliverFillRemaining(
-                  child: controller.subtopicMaterialsError.toLowerCase().contains('subscription') 
-                    ? CommonEmptyWidget(
-                        title: 'Subscription Required',
-                        message: controller.subtopicMaterialsError,
-                        icon: Icons.workspace_premium,
-                        action: ElevatedButton.icon(
-                          onPressed: () => Get.toNamed(AppRoutes.subscriptionPlans),
-                          icon: const Icon(Icons.star),
-                          label: const Text('Go to Subscription Page'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.amber.shade700,
-                            foregroundColor: Colors.black,
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  child: controller.subtopicMaterialsError
+                          .toLowerCase()
+                          .contains('subscription')
+                      ? CommonEmptyWidget(
+                          title: 'Subscription Required',
+                          message: controller.subtopicMaterialsError,
+                          icon: Icons.workspace_premium,
+                          action: ElevatedButton.icon(
+                            onPressed: () =>
+                                Get.toNamed(AppRoutes.subscriptionPlans),
+                            icon: const Icon(Icons.star),
+                            label: const Text('Go to Subscription Page'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.amber.shade700,
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 12),
+                            ),
+                          ),
+                        )
+                      : CommonErrorWidget(
+                          message: controller.subtopicMaterialsError,
+                          onRetry: () => controller.fetchSubtopicMaterials(
+                            subtopic.slug,
+                            language: selectedLanguage,
+                            refresh: true,
                           ),
                         ),
-                      )
-                    : CommonErrorWidget(
-                        message: controller.subtopicMaterialsError,
-                        onRetry: () => controller.fetchSubtopicMaterials(
-                          subtopic.slug,
-                          language: selectedLanguage,
-                          refresh: true,
-                        ),
-                      ),
                 )
               else if (controller.isLoadingSubtopicMaterials &&
                   controller.subtopicMaterials.isEmpty)
                 const SliverFillRemaining(
-                  child: CommonLoadingWidget(message: 'Loading materials...'),
+                  child: MaterialsShimmer(),
                 )
               else if (controller.subtopicMaterials.isEmpty)
                 SliverFillRemaining(

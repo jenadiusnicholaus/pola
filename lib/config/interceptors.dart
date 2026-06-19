@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart' as getx;
 import '../services/token_storage_service.dart';
 import '../services/auth_service.dart';
@@ -156,6 +157,23 @@ class ApiInterceptors {
               break;
             case 403:
               debugPrint('🚫 Access forbidden - Insufficient permissions');
+              // Check if this is a subscription required error
+              try {
+                final errorData = error.response!.data is String
+                    ? jsonDecode(error.response!.data)
+                    : error.response!.data;
+                if (errorData is Map &&
+                    (errorData['error'] == 'Subscription required' ||
+                        errorData['upgrade_required'] == true)) {
+                  debugPrint(
+                      '💳 Subscription required - Showing subscription modal');
+                  // Show subscription modal
+                  _showSubscriptionModal(errorData['message'] ??
+                      'You need an active subscription to access this content.');
+                }
+              } catch (_) {
+                // Ignore parse errors
+              }
               break;
             case 404:
               debugPrint('❌ Resource not found - ${error.requestOptions.uri}');
@@ -293,6 +311,66 @@ class ApiInterceptors {
       debugPrint('✅ Auth token cleared from TokenStorageService');
     } catch (e) {
       debugPrint('❌ Error clearing auth token: $e');
+    }
+  }
+
+  // Show subscription modal when subscription is required
+  static void _showSubscriptionModal(String message) {
+    try {
+      // Get current context from GetX
+      final context = getx.Get.context;
+      if (context == null) {
+        debugPrint('⚠️ No context available to show subscription modal');
+        return;
+      }
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.workspace_premium, color: Colors.amber.shade700),
+              const SizedBox(width: 12),
+              const Flexible(
+                child: Text('Subscription Required'),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(message),
+              const SizedBox(height: 16),
+              const Text(
+                'Upgrade your subscription to access this premium content.',
+                style: TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                getx.Get.toNamed('/subscription-plans');
+              },
+              icon: const Icon(Icons.upgrade),
+              label: const Text('View Plans'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber.shade700,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      debugPrint('❌ Error showing subscription modal: $e');
     }
   }
 }

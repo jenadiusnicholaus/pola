@@ -4,6 +4,7 @@ import '../controllers/legal_education_controller.dart';
 import '../models/legal_education_models.dart';
 import '../widgets/common_sliver_widgets.dart';
 import '../widgets/material_card.dart';
+import '../widgets/shimmer_widgets.dart';
 import 'material_viewer_screen.dart';
 import '../../hub_content/widgets/content_creation_fab.dart';
 import '../../hub_content/utils/user_role_manager.dart';
@@ -309,7 +310,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
                 )
               else if (materials.isEmpty && isLoadingMaterials)
                 const SliverFillRemaining(
-                  child: CommonLoadingWidget(message: 'Loading materials...'),
+                  child: MaterialsShimmer(),
                 )
               else if (materials.isEmpty)
                 SliverFillRemaining(

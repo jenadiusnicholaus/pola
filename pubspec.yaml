@@ -75,12 +75,19 @@ dependencies:
   # ZegoCloud SDK for voice/video calls
   zego_express_engine: ^3.14.5
 
+  # WebRTC for video calls
+  flutter_webrtc: ^0.12.0
+
   # PDF & Document Viewing
   flutter_cached_pdfview: ^0.4.2
 
   # Rich Text & HTML Display
   flutter_html: ^3.0.0-beta.2
   webview_flutter: ^4.9.0
+  html: ^0.15.4
+
+  # Shimmer loading effects
+  shimmer: ^3.0.0
 
   # URL Launcher for external links
   url_launcher: ^6.3.1

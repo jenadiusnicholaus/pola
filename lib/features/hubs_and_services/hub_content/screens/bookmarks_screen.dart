@@ -71,11 +71,15 @@ class _BookmarksContentState extends State<_BookmarksContent> {
         debugPrint('Failed to fetch bookmarks for ${c.hubType}: $e');
       }
     }
+    setState(() {}); // Trigger rebuild after fetching
   }
 
   void _removeBookmarkWithUndo(BuildContext context, BookmarkedItem bookmark) {
     // Remove the bookmark
     bookmark.controller.toggleBookmark(bookmark.content);
+
+    // Trigger UI update
+    setState(() {});
 
     // Show undo snackbar
     ScaffoldMessenger.of(context).showSnackBar(
@@ -86,6 +90,7 @@ class _BookmarksContentState extends State<_BookmarksContent> {
           onPressed: () {
             // Add the bookmark back
             bookmark.controller.toggleBookmark(bookmark.content);
+            setState(() {});
           },
         ),
         duration: const Duration(seconds: 4),
@@ -103,107 +108,104 @@ class _BookmarksContentState extends State<_BookmarksContent> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Obx(() {
-                int totalBookmarks = 0;
-                for (final controller in controllers.values) {
-                  totalBookmarks += controller.bookmarkedContent.length;
-                }
-
-                return Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.bookmark,
-                          color: Colors.orange,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Your Bookmarks',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            Text(
-                              '$totalBookmarks items saved',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withOpacity(0.7),
-                                  ),
-                            ),
-                          ],
-                        ),
-                        const Spacer(),
-                        if (totalBookmarks > 0)
-                          TextButton(
-                            onPressed: () => _fetchAllBookmarks(),
-                            child: const Text('Refresh'),
-                          ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
+              child: _buildBookmarkHeader(context),
             ),
           ),
 
           // Bookmarks content
-          Obx(() {
-            // Combine all bookmarked content from different hubs
-            final List<BookmarkedItem> allBookmarks = [];
-
-            for (final entry in controllers.entries) {
-              final hubType = entry.key;
-              final controller = entry.value;
-
-              for (final content in controller.bookmarkedContent) {
-                allBookmarks.add(BookmarkedItem(
-                  content: content,
-                  hubType: hubType,
-                  controller: controller,
-                ));
-              }
-            }
-
-            // Sort by most recently bookmarked (assuming updatedAt reflects bookmark time)
-            allBookmarks.sort(
-                (a, b) => b.content.updatedAt.compareTo(a.content.updatedAt));
-
-            if (allBookmarks.isEmpty) {
-              return SliverFillRemaining(
-                child: _buildEmptyState(context),
-              );
-            }
-
-            return SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final bookmark = allBookmarks[index];
-                  return _BookmarkCard(
-                    bookmark: bookmark,
-                    onTap: () => _navigateToContent(bookmark),
-                    onRemoveBookmark: () =>
-                        _removeBookmarkWithUndo(context, bookmark),
-                  );
-                },
-                childCount: allBookmarks.length,
-              ),
-            );
-          }),
+          _buildBookmarksList(context),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBookmarkHeader(BuildContext context) {
+    int totalBookmarks = 0;
+    for (final controller in controllers.values) {
+      totalBookmarks += controller.bookmarkedContent.length;
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(
+              Icons.bookmark,
+              color: Colors.orange,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Your Bookmarks',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                Text(
+                  '$totalBookmarks items saved',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.7),
+                      ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            if (totalBookmarks > 0)
+              TextButton(
+                onPressed: () => _fetchAllBookmarks(),
+                child: const Text('Refresh'),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBookmarksList(BuildContext context) {
+    // Combine all bookmarked content from different hubs
+    final List<BookmarkedItem> allBookmarks = [];
+
+    for (final entry in controllers.entries) {
+      final hubType = entry.key;
+      final controller = entry.value;
+
+      for (final content in controller.bookmarkedContent) {
+        allBookmarks.add(BookmarkedItem(
+          content: content,
+          hubType: hubType,
+          controller: controller,
+        ));
+      }
+    }
+
+    // Sort by most recently bookmarked (assuming updatedAt reflects bookmark time)
+    allBookmarks
+        .sort((a, b) => b.content.updatedAt.compareTo(a.content.updatedAt));
+
+    if (allBookmarks.isEmpty) {
+      return SliverFillRemaining(
+        child: _buildEmptyState(context),
+      );
+    }
+
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final bookmark = allBookmarks[index];
+          return _BookmarkCard(
+            bookmark: bookmark,
+            onTap: () => _navigateToContent(bookmark),
+            onRemoveBookmark: () => _removeBookmarkWithUndo(context, bookmark),
+          );
+        },
+        childCount: allBookmarks.length,
       ),
     );
   }

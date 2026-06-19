@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/legal_education_controller.dart';
 import '../models/legal_education_models.dart';
 import '../widgets/subtopic_card.dart';
+import '../widgets/shimmer_widgets.dart';
 import '../widgets/common_sliver_widgets.dart';
 import 'topic_materials_screen.dart';
 
@@ -121,7 +122,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
               // Subtopics Content
               if (controller.isLoadingSubtopics && controller.subtopics.isEmpty)
                 const SliverFillRemaining(
-                  child: CommonLoadingWidget(message: 'Loading subtopics...'),
+                  child: SubtopicShimmerList(),
                 )
               else if (controller.subtopics.isEmpty)
                 const SliverFillRemaining(

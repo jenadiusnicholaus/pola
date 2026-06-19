@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/legal_education_controller.dart';
 import '../widgets/common_sliver_widgets.dart';
+import '../widgets/shimmer_widgets.dart';
 import '../widgets/topic_card.dart';
 import 'topic_detail_screen.dart';
 import 'legal_education_search_screen.dart';
@@ -198,7 +199,7 @@ class _LegalEducationScreenState extends State<LegalEducationScreen> {
                 )
               else if (controller.topics.isEmpty && controller.isLoadingTopics)
                 const SliverFillRemaining(
-                  child: CommonLoadingWidget(message: 'Loading topics...'),
+                  child: TopicsShimmer(),
                 )
               else if (controller.topics.isEmpty)
                 SliverFillRemaining(

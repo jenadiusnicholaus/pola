@@ -344,6 +344,8 @@ class LegalEducationController extends GetxController {
 
   Future<void> fetchSubtopics(String topicSlug, {String? language}) async {
     try {
+      // Clear subtopics immediately to prevent showing old data from previous topic
+      _subtopics.clear();
       _isLoadingSubtopics.value = true;
       _error.value = '';
       _currentTopicSlug = topicSlug; // Set _currentTopicSlug
@@ -361,7 +363,6 @@ class LegalEducationController extends GetxController {
         print(
             '⚠️ DEBUG SUBTOPICS EMPTY: Ensure API response format matches expected JSON parsing.');
       }
-      _subtopics.clear();
       _subtopics.addAll(response.results);
     } catch (e, stackTrace) {
       print('❌ ERROR fetching subtopics: $e');
