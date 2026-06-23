@@ -131,7 +131,7 @@ class LegalEducationService extends GetxService {
 
   // Get materials for a subtopic
   Future<SubtopicMaterialsResponse> getSubtopicMaterials(
-    String subtopicSlug, {
+    int subtopicId, {
     String? language,
     int? page,
     int? pageSize = 10,
@@ -143,7 +143,7 @@ class LegalEducationService extends GetxService {
       if (pageSize != null) queryParams['page_size'] = pageSize;
 
       final url =
-          '${EnvironmentConfig.legalEducationSubtopicsUrl}$subtopicSlug/materials/';
+          '${EnvironmentConfig.legalEducationSubtopicsUrl}$subtopicId/materials/';
       print('🔍 SUBTOPIC MATERIALS API: Requesting $url');
       print('🔍 SUBTOPIC MATERIALS API: Query params: $queryParams');
 

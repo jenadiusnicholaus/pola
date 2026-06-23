@@ -93,9 +93,8 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
       });
 
       if (isSubtopicMode) {
-        // Fetch subtopic materials
         controller.fetchSubtopicMaterials(
-          currentSubtopic!.slug,
+          currentSubtopic!.id,
           language: selectedLanguage,
           refresh: true,
         );
@@ -122,7 +121,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
     });
     if (isSubtopicMode) {
       controller.fetchSubtopicMaterials(
-        currentSubtopic!.slug,
+        currentSubtopic!.id,
         language: language,
         refresh: true,
       );
@@ -294,7 +293,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
                     onRetry: () {
                       if (isSubtopicMode) {
                         controller.fetchSubtopicMaterials(
-                          currentSubtopic!.slug,
+                          currentSubtopic!.id,
                           language: selectedLanguage,
                           refresh: true,
                         );
@@ -369,7 +368,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
           // Subtopic mode - just show refresh button
           ? FloatingActionButton(
               onPressed: () => controller.fetchSubtopicMaterials(
-                currentSubtopic!.slug,
+                currentSubtopic!.id,
                 language: selectedLanguage,
                 refresh: true,
               ),

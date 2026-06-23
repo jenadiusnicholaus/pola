@@ -46,7 +46,7 @@ class TopicsShimmer extends StatelessWidget {
       child: ListView.builder(
         physics: const NeverScrollableScrollPhysics(),
         shrinkWrap: true,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
         itemCount: itemCount,
         itemBuilder: (_, __) => Padding(
           padding: const EdgeInsets.only(bottom: 12),

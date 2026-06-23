@@ -117,7 +117,7 @@ class Subtopic {
       topicNameSw: json['topic_name_sw'] ?? '',
       name: json['name'] ?? '',
       nameSw: json['name_sw'] ?? '',
-      slug: json['slug'] ?? '',
+      slug: json['slug'] as String? ?? '',
       description: json['description'] ?? '',
       descriptionSw: json['description_sw'] ?? '',
       displayOrder: json['display_order'] ?? 0,
@@ -501,14 +501,17 @@ class SubtopicMaterialsResponse {
   });
 
   factory SubtopicMaterialsResponse.fromJson(Map<String, dynamic> json) {
-    final materialsList = json['materials'] as List? ?? [];
+    // Handle both direct structure and paginated structure with results object
+    final results = json['results'] as Map<String, dynamic>?;
+    final data = results ?? json;
+    final materialsList = data['materials'] as List? ?? [];
     return SubtopicMaterialsResponse(
-      subtopicId: json['subtopic_id'] ?? 0,
-      subtopicName: json['subtopic_name'] ?? '',
-      subtopicNameSw: json['subtopic_name_sw'] ?? '',
-      topicName: json['topic_name'] ?? '',
-      topicNameSw: json['topic_name_sw'] ?? '',
-      materialsCount: json['materials_count'] ?? 0,
+      subtopicId: data['subtopic_id'] ?? 0,
+      subtopicName: data['subtopic_name'] ?? '',
+      subtopicNameSw: data['subtopic_name_sw'] ?? '',
+      topicName: data['topic_name'] ?? '',
+      topicNameSw: data['topic_name_sw'] ?? '',
+      materialsCount: data['materials_count'] ?? 0,
       materials: materialsList
           .map((m) => LearningMaterial.fromJson(m as Map<String, dynamic>))
           .toList(),

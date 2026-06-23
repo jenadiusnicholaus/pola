@@ -157,19 +157,25 @@ class ApiInterceptors {
               break;
             case 403:
               debugPrint('🚫 Access forbidden - Insufficient permissions');
-              // Check if this is a subscription required error
               try {
                 final errorData = error.response!.data is String
                     ? jsonDecode(error.response!.data)
                     : error.response!.data;
-                if (errorData is Map &&
-                    (errorData['error'] == 'Subscription required' ||
-                        errorData['upgrade_required'] == true)) {
-                  debugPrint(
-                      '💳 Subscription required - Showing subscription modal');
-                  // Show subscription modal
-                  _showSubscriptionModal(errorData['message'] ??
-                      'You need an active subscription to access this content.');
+                if (errorData is Map) {
+                  if (errorData['error'] == 'Subscription required' ||
+                      errorData['upgrade_required'] == true) {
+                    debugPrint(
+                        '💳 Subscription required - Showing subscription modal');
+                    _showSubscriptionModal(errorData['message'] ??
+                        'You need an active subscription to access this content.');
+                  } else if ((errorData['detail'] as String? ?? '')
+                      .toLowerCase()
+                      .contains('verified')) {
+                    debugPrint(
+                        '✅ Verification required - Showing verification modal');
+                    _showVerificationModal(errorData['detail'] as String? ??
+                        'You must be verified to access this content.');
+                  }
                 }
               } catch (_) {
                 // Ignore parse errors
@@ -371,6 +377,65 @@ class ApiInterceptors {
       );
     } catch (e) {
       debugPrint('❌ Error showing subscription modal: $e');
+    }
+  }
+
+  // Show verification modal when account verification is required
+  static void _showVerificationModal(String message) {
+    try {
+      final context = getx.Get.context;
+      if (context == null) {
+        debugPrint('⚠️ No context available to show verification modal');
+        return;
+      }
+
+      showDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (dialogContext) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.verified_user_outlined, color: Colors.blue.shade700),
+              const SizedBox(width: 12),
+              const Flexible(
+                child: Text('Verification Required'),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(message),
+              const SizedBox(height: 16),
+              const Text(
+                'Complete your account verification to access this hub.',
+                style: TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Close'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                getx.Get.toNamed('/profile');
+              },
+              icon: const Icon(Icons.verified_user),
+              label: const Text('Go to Profile'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue.shade700,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      debugPrint('❌ Error showing verification modal: $e');
     }
   }
 }

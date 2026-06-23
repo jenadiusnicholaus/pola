@@ -30,8 +30,13 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
   void initState() {
     super.initState();
 
-    // Initialize controllers
-    _hubContentController = Get.put(HubContentController(), permanent: false);
+    // Initialize controllers - find existing instance or create a tagged one to avoid displacing other instances
+    try {
+      _hubContentController = Get.find<HubContentController>();
+    } catch (_) {
+      _hubContentController = Get.put(HubContentController(),
+          tag: 'material_viewer', permanent: false);
+    }
 
     // Get material from arguments
     final args = Get.arguments as Map<String, dynamic>;

@@ -396,54 +396,57 @@ class HubContentController extends GetxController {
 
   /// Toggle like on content
   Future<void> toggleLike(HubContentItem contentItem) async {
+    print(
+        '❤️ ${contentItem.isLiked ? 'Unliking' : 'Liking'} content: ${contentItem.id}');
+
+    // Optimistic update — apply immediately before API call
+    final optimisticLikeState = !contentItem.isLiked;
+    final optimisticLikesCount = optimisticLikeState
+        ? contentItem.likesCount + 1
+        : (contentItem.likesCount > 0 ? contentItem.likesCount - 1 : 0);
+
+    final optimisticItem = contentItem.copyWith(
+      isLiked: optimisticLikeState,
+      likesCount: optimisticLikesCount,
+    );
+    _updateContentInLists(optimisticItem);
+
+    // Track view for this interaction
+    trackViewOnInteraction(contentItem, 'like');
+
     try {
-      print(
-          '❤️ ${contentItem.isLiked ? 'Unliking' : 'Liking'} content: ${contentItem.id}');
-
-      // Track view for this interaction
-      trackViewOnInteraction(contentItem, 'like');
-
-      Map<String, dynamic> result;
-      bool newLikeState;
-      int newLikesCount;
-
-      // The likeContent method handles both like and unlike
-      result = await _service.likeContent(contentItem.id);
-
-      // Toggle the like state
-      newLikeState = !contentItem.isLiked;
-      newLikesCount = newLikeState
-          ? contentItem.likesCount + 1
-          : (contentItem.likesCount > 0 ? contentItem.likesCount - 1 : 0);
+      final result = await _service.likeContent(contentItem.id);
 
       print('📝 Like API response: $result');
 
-      // Check if API returned updated counts
+      // Reconcile with server response if it returns updated values
+      bool finalLikeState = optimisticLikeState;
+      int finalLikesCount = optimisticLikesCount;
+
       if (result.containsKey('is_liked')) {
-        newLikeState = result['is_liked'] ?? newLikeState;
+        finalLikeState = result['is_liked'] ?? finalLikeState;
       }
       if (result.containsKey('likes_count')) {
-        newLikesCount = result['likes_count'] ?? newLikesCount;
+        finalLikesCount = result['likes_count'] ?? finalLikesCount;
       }
 
-      // Update the content item locally
-      final updatedItem = contentItem.copyWith(
-        isLiked: newLikeState,
-        likesCount: newLikesCount,
-      );
-
-      // Update in all lists to ensure UI consistency
-      _updateContentInLists(updatedItem);
+      if (finalLikeState != optimisticLikeState ||
+          finalLikesCount != optimisticLikesCount) {
+        _updateContentInLists(contentItem.copyWith(
+          isLiked: finalLikeState,
+          likesCount: finalLikesCount,
+        ));
+      }
 
       print(
-          '✅ Like updated: ${updatedItem.isLiked ? 'Liked' : 'Unliked'} (${updatedItem.likesCount} likes)');
-
-      // No snackbar feedback - just visual icon change
+          '✅ Like confirmed: ${finalLikeState ? 'Liked' : 'Unliked'} ($finalLikesCount likes)');
     } catch (e) {
-      print('❌ Error toggling like: $e');
+      print('❌ Error toggling like: $e — reverting optimistic update');
+      // Revert to original state on failure
+      _updateContentInLists(contentItem);
       NavigationHelper.showSafeSnackbar(
         title: 'Error',
-        message: 'Failed to update like: $e',
+        message: 'Failed to update like. Please try again.',
       );
     }
   }

@@ -35,7 +35,7 @@ class LegalEducationController extends GetxController {
   Topic? get currentTopic => _currentTopic.value;
   void setCurrentTopic(Topic topic) => _currentTopic.value = topic;
   String? _currentMaterialsTopicSlug;
-  String? _currentSubtopicMaterialsSlug;
+  int? _currentSubtopicMaterialsId;
   String? _currentMaterialsLanguage;
   String? _currentSubtopicMaterialsLanguage;
 
@@ -282,10 +282,16 @@ class LegalEducationController extends GetxController {
 
   List<LearningMaterial> get subtopicMaterials => _subtopicMaterials;
 
-  Future<void> fetchSubtopicMaterials(String subtopicSlug,
+  Future<void> fetchSubtopicMaterials(int subtopicId,
       {String? language, bool refresh = false}) async {
-    _currentSubtopicMaterialsSlug = subtopicSlug;
+    _currentSubtopicMaterialsId = subtopicId;
     _currentSubtopicMaterialsLanguage = language;
+
+    // Clear immediately on refresh to prevent stale data showing before load
+    if (refresh) {
+      _subtopicMaterials.clear();
+      _subtopicMaterialsError.value = '';
+    }
 
     try {
       _isLoadingSubtopicMaterials.value = true;
@@ -294,7 +300,6 @@ class LegalEducationController extends GetxController {
       if (refresh) {
         _currentSubtopicMaterialsPage.value = 1;
         _hasMoreSubtopicMaterials.value = true;
-        _subtopicMaterials.clear();
       }
 
       // Check for token initialization
@@ -302,7 +307,7 @@ class LegalEducationController extends GetxController {
       await tokenService.waitForInitialization();
 
       final response = await _service.getSubtopicMaterials(
-        subtopicSlug,
+        subtopicId,
         language: language,
         page: _currentSubtopicMaterialsPage.value,
         pageSize: 10,
@@ -325,9 +330,9 @@ class LegalEducationController extends GetxController {
   }
 
   void refreshSubtopicMaterials() {
-    if (_currentSubtopicMaterialsSlug != null) {
+    if (_currentSubtopicMaterialsId != null) {
       fetchSubtopicMaterials(
-        _currentSubtopicMaterialsSlug!,
+        _currentSubtopicMaterialsId!,
         language: _currentSubtopicMaterialsLanguage,
         refresh: true,
       );

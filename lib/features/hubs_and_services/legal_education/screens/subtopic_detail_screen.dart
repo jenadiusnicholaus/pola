@@ -36,7 +36,7 @@ class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
           _scrollController.position.maxScrollExtent * 0.8) {
         if (!controller.isLoadingSubtopicMaterials &&
             controller.hasMoreSubtopicMaterials) {
-          controller.fetchSubtopicMaterials(subtopic.slug,
+          controller.fetchSubtopicMaterials(subtopic.id,
               language: selectedLanguage, refresh: false);
         }
       }
@@ -45,7 +45,7 @@ class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
     // Load materials for this subtopic
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.fetchSubtopicMaterials(
-        subtopic.slug,
+        subtopic.id,
         language: selectedLanguage,
         refresh: true,
       );
@@ -63,7 +63,7 @@ class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
       selectedLanguage = language;
     });
     controller.fetchSubtopicMaterials(
-      subtopic.slug,
+      subtopic.id,
       language: language,
       refresh: true,
     );
@@ -200,7 +200,7 @@ class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
                       : CommonErrorWidget(
                           message: controller.subtopicMaterialsError,
                           onRetry: () => controller.fetchSubtopicMaterials(
-                            subtopic.slug,
+                            subtopic.id,
                             language: selectedLanguage,
                             refresh: true,
                           ),
