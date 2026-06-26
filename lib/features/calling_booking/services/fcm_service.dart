@@ -7,7 +7,7 @@ import '../../../utils/navigation_helper.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../screens/incoming_call_screen.dart';
 import '../controllers/call_controller.dart';
-import '../services/zego_call_service.dart';
+import '../services/nexacon_call_service.dart';
 import '../../../services/device_registration_service.dart';
 import '../../../config/environment_config.dart';
 import '../../notifications/controllers/notification_controller.dart';
@@ -40,11 +40,11 @@ Future<void> _showBackgroundNotification(RemoteMessage message) async {
   try {
     final notification = message.notification;
     final data = message.data;
-    
+
     String title = notification?.title ?? data['title'] ?? 'New Notification';
     String body = notification?.body ?? data['body'] ?? '';
     final messageType = data['type'] ?? 'system';
-    
+
     // Determine notification channel based on type
     String channelId = 'general_notifications';
     String channelName = 'General Notifications';
@@ -52,7 +52,7 @@ Future<void> _showBackgroundNotification(RemoteMessage message) async {
       channelId = 'payment_notifications';
       channelName = 'Payment Notifications';
     }
-    
+
     AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       channelId,
       channelName,
@@ -63,24 +63,25 @@ Future<void> _showBackgroundNotification(RemoteMessage message) async {
       enableVibration: true,
       playSound: true,
     );
-    
+
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
     );
-    
+
     NotificationDetails notificationDetails = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
-    
+
     // Generate unique notification ID
-    final notificationId = message.messageId?.hashCode ?? DateTime.now().millisecondsSinceEpoch;
-    
+    final notificationId =
+        message.messageId?.hashCode ?? DateTime.now().millisecondsSinceEpoch;
+
     // Encode data for payload
     final payload = jsonEncode(data);
-    
+
     await flutterLocalNotificationsPlugin.show(
       notificationId,
       title,
@@ -88,7 +89,7 @@ Future<void> _showBackgroundNotification(RemoteMessage message) async {
       notificationDetails,
       payload: payload,
     );
-    
+
     debugPrint('✅ Background notification shown: $title');
   } catch (e) {
     debugPrint('❌ Error showing background notification: $e');
@@ -195,14 +196,15 @@ class FCMService extends GetxService {
   late final DeviceRegistrationService _deviceService;
   final FlutterLocalNotificationsPlugin _localNotifications =
       flutterLocalNotificationsPlugin;
-  
+
   Timer? _tokenRefreshTimer;
-  static const Duration _tokenRefreshInterval = Duration(hours: 12); // Refresh token every 12 hours
+  static const Duration _tokenRefreshInterval =
+      Duration(hours: 12); // Refresh token every 12 hours
 
   /// Initialize FCM service
   Future<FCMService> init() async {
     debugPrint('🔔 Initializing FCM Service...');
-    
+
     // Get device service (must be registered before FCM service)
     _deviceService = Get.find<DeviceRegistrationService>();
     debugPrint('📱 DeviceRegistrationService found');
@@ -221,17 +223,18 @@ class FCMService extends GetxService {
 
     // Listen for token refresh
     _firebaseMessaging.onTokenRefresh.listen((newToken) {
-      debugPrint('🔄 FCM token refreshed automatically: ${newToken.substring(0, 20)}...');
+      debugPrint(
+          '🔄 FCM token refreshed automatically: ${newToken.substring(0, 20)}...');
       _registerTokenWithBackend(newToken, isUpdate: true);
     });
-    
+
     // Start periodic token refresh to ensure backend always has valid token
     _startPeriodicTokenRefresh();
 
     debugPrint('✅ FCM Service initialized');
     return this;
   }
-  
+
   /// Start periodic token refresh
   void _startPeriodicTokenRefresh() {
     _tokenRefreshTimer?.cancel();
@@ -240,19 +243,19 @@ class FCMService extends GetxService {
       refreshAndRegisterToken();
     });
   }
-  
+
   /// Force refresh FCM token and register with backend
   Future<void> refreshAndRegisterToken() async {
     try {
       debugPrint('🔄 Force refreshing FCM token...');
-      
+
       // Delete the old token first
       await _firebaseMessaging.deleteToken();
       debugPrint('🗑️ Old FCM token deleted');
-      
+
       // Get a new token
       final newToken = await _firebaseMessaging.getToken();
-      
+
       if (newToken != null) {
         debugPrint('🔑 New FCM Token: ${newToken.substring(0, 20)}...');
         await _registerTokenWithBackend(newToken, isUpdate: true);
@@ -263,11 +266,12 @@ class FCMService extends GetxService {
       debugPrint('❌ Error refreshing FCM token: $e');
     }
   }
-  
+
   /// Register token with backend via device registration
   /// For initial registration, uses full device registration
   /// For token updates, uses the more efficient PATCH endpoint
-  Future<void> _registerTokenWithBackend(String token, {bool isUpdate = false}) async {
+  Future<void> _registerTokenWithBackend(String token,
+      {bool isUpdate = false}) async {
     try {
       if (isUpdate) {
         // Use PATCH endpoint for token updates - more efficient
@@ -275,7 +279,8 @@ class FCMService extends GetxService {
         if (success) {
           debugPrint('✅ FCM token updated with backend (PATCH)');
         } else {
-          debugPrint('⚠️ FCM token update failed, already fell back to full registration');
+          debugPrint(
+              '⚠️ FCM token update failed, already fell back to full registration');
         }
       } else {
         // Use full device registration for initial setup
@@ -286,7 +291,7 @@ class FCMService extends GetxService {
       debugPrint('❌ Error registering FCM token with backend: $e');
     }
   }
-  
+
   @override
   void onClose() {
     _tokenRefreshTimer?.cancel();
@@ -392,7 +397,8 @@ class FCMService extends GetxService {
         // For notification taps on call notifications, check if call is still pending
         final callId = data['call_id']?.toString() ?? '';
         if (callId.isNotEmpty && !_isCallPending(callId)) {
-          debugPrint('⚠️ Call $callId is no longer pending, ignoring notification tap');
+          debugPrint(
+              '⚠️ Call $callId is no longer pending, ignoring notification tap');
           _cancelIncomingCallNotification();
           return;
         }
@@ -493,7 +499,8 @@ class FCMService extends GetxService {
   void _handleForegroundMessage(RemoteMessage message) {
     debugPrint('📱 ====== FCM MESSAGE RECEIVED ======');
     debugPrint('📱 FCM data: ${message.data}');
-    debugPrint('📱 FCM notification: ${message.notification?.title} - ${message.notification?.body}');
+    debugPrint(
+        '📱 FCM notification: ${message.notification?.title} - ${message.notification?.body}');
 
     final messageType = message.data['type'];
     debugPrint('📱 Message type: $messageType');
@@ -539,23 +546,25 @@ class FCMService extends GetxService {
     try {
       final notification = message.notification;
       final data = message.data;
-      
+
       String title = notification?.title ?? data['title'] ?? 'New Notification';
       String body = notification?.body ?? data['body'] ?? '';
       final messageType = data['type'] ?? 'system';
-      
+
       debugPrint('🔔 Showing notification: $title - $body');
-      
+
       // Determine notification channel based on type
       String channelId = 'general_notifications';
       if (messageType == 'payment_received') {
         channelId = 'payment_notifications';
       }
-      
+
       // Android notification details
       AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
         channelId,
-        channelId == 'payment_notifications' ? 'Payment Notifications' : 'General Notifications',
+        channelId == 'payment_notifications'
+            ? 'Payment Notifications'
+            : 'General Notifications',
         channelDescription: 'App notifications',
         importance: Importance.high,
         priority: Priority.high,
@@ -563,25 +572,26 @@ class FCMService extends GetxService {
         enableVibration: true,
         playSound: true,
       );
-      
+
       // iOS notification details
       const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
       );
-      
+
       NotificationDetails notificationDetails = NotificationDetails(
         android: androidDetails,
         iOS: iosDetails,
       );
-      
+
       // Generate unique notification ID from message data
-      final notificationId = message.messageId?.hashCode ?? DateTime.now().millisecondsSinceEpoch;
-      
+      final notificationId =
+          message.messageId?.hashCode ?? DateTime.now().millisecondsSinceEpoch;
+
       // Encode data for payload
       final payload = jsonEncode(data);
-      
+
       await _localNotifications.show(
         notificationId,
         title,
@@ -589,16 +599,16 @@ class FCMService extends GetxService {
         notificationDetails,
         payload: payload,
       );
-      
+
       // Refresh notification count in the app
       _refreshNotificationCount();
-      
+
       debugPrint('✅ Local notification shown: $title');
     } catch (e) {
       debugPrint('❌ Error showing general notification: $e');
     }
   }
-  
+
   /// Refresh notification count in the app
   void _refreshNotificationCount() {
     try {
@@ -616,7 +626,7 @@ class FCMService extends GetxService {
     debugPrint('📱 App opened from notification: ${message.data}');
 
     final messageType = message.data['type'];
-    
+
     if (messageType == 'incoming_call') {
       _handleIncomingCall(message.data);
     } else {
@@ -624,13 +634,13 @@ class FCMService extends GetxService {
       _navigateFromNotification(message.data);
     }
   }
-  
+
   /// Navigate to appropriate screen based on notification data
   void _navigateFromNotification(Map<String, dynamic> data) {
     final actionType = data['action_type'];
-    
+
     debugPrint('🔔 Navigating for action: $actionType');
-    
+
     switch (actionType) {
       case 'open_comment':
         final hubType = data['hub_type']?.toString() ?? 'forum';
@@ -650,19 +660,19 @@ class FCMService extends GetxService {
         }
         Get.toNamed(route);
         break;
-        
+
       case 'open_consultation':
         Get.toNamed('/my-consultations');
         break;
-        
+
       case 'open_earnings':
         Get.toNamed('/my-consultations');
         break;
-        
+
       case 'open_document':
         Get.toNamed('/my-documents');
         break;
-        
+
       default:
         // Open notifications screen
         Get.toNamed('/notifications');
@@ -837,22 +847,22 @@ class FCMService extends GetxService {
     }
     _cancelIncomingCallNotification();
 
-    // IMMEDIATELY try to stop timer via ZegoService first
+    // IMMEDIATELY try to stop timer via NexaconService first
     try {
-      final zegoService = Get.find<ZegoCallService>();
-      zegoService.stopDurationTimer();
-      debugPrint('⏱️ ✅ Timer stopped via ZegoService immediately');
+      final nexaconService = Get.find<NexaconCallService>();
+      nexaconService.stopDurationTimer();
+      debugPrint('⏱️ ✅ Timer stopped via NexaconService immediately');
     } catch (e) {
-      debugPrint('⚠️ Could not access ZegoService to stop timer: $e');
+      debugPrint('⚠️ Could not access NexaconService to stop timer: $e');
     }
 
     // Close the call properly through the controller
-    // This ensures proper cleanup of ZegoCloud resources
+    // This ensures proper cleanup of Nexacon resources
     if (Get.isRegistered<CallController>()) {
       debugPrint('🎮 Found CallController, triggering endCall()');
       try {
         final controller = Get.find<CallController>();
-        // Call endCall to properly cleanup ZegoCloud, stop timer, and close screen
+        // Call endCall to properly cleanup Nexacon, stop timer, and close screen
         controller.endCall();
         debugPrint('✅ Controller endCall() triggered - window will close');
       } catch (e) {

@@ -3,11 +3,11 @@ import 'package:get/get.dart';
 import '../../../utils/navigation_helper.dart';
 import '../models/consultant_models.dart';
 import '../services/call_service.dart';
-import '../services/zego_call_service.dart';
+import '../services/nexacon_call_service.dart';
 
 class CallController extends GetxController {
   final CallService _callService = CallService();
-  final ZegoCallService _zegoService = ZegoCallService();
+  final NexaconCallService _nexaconService = NexaconCallService();
 
   // Observable state
   var isCheckingCredits = false.obs;
@@ -61,25 +61,25 @@ class CallController extends GetxController {
 
   void _setupCallbacks() {
     // Duration update callback
-    _zegoService.onDurationUpdate = (duration) {
+    _nexaconService.onDurationUpdate = (duration) {
       callDuration.value = duration;
     };
 
     // Call ended callback
-    _zegoService.onCallEnded = (durationSeconds) {
+    _nexaconService.onCallEnded = (durationSeconds) {
       _handleCallEnded(durationSeconds);
     };
 
     // Other user joined callback
-    _zegoService.onOtherUserJoined = () {
+    _nexaconService.onOtherUserJoined = () {
       print('✅ Other user joined the call, timer started');
       isConsultantConnected.value = true;
     };
 
     // Other user left callback - end call when other party disconnects
-    _zegoService.onOtherUserLeft = () {
+    _nexaconService.onOtherUserLeft = () {
       print('🚪 ❗ OTHER USER LEFT - Triggering endCall IMMEDIATELY');
-      // Small delay to ensure ZegoCloud state is updated
+      // Small delay to ensure Nexacon state is updated
       Future.delayed(const Duration(milliseconds: 200), () {
         if (!_isEndingCall) {
           print('🚪 Executing endCall() after other user left');
@@ -91,7 +91,7 @@ class CallController extends GetxController {
     };
 
     // Error callback
-    _zegoService.onError = (errorMessage) {
+    _nexaconService.onError = (errorMessage) {
       error.value = errorMessage;
       if (Get.isRegistered<CallController>()) {
         Get.back();
@@ -121,22 +121,30 @@ class CallController extends GetxController {
       debugPrint('📞 Joining incoming call: $callId');
       debugPrint('📡 Channel: $channelName');
 
-      // Initialize ZegoExpressEngine first
-      // TODO: Get actual user info from auth service
-      final userId = callId;
-      final userName = 'User';
-      await _zegoService.initializeZego(userId, userName);
+      // Initialize Nexacon SDK first
+      // TODO: Get actual user info from auth service (nxid, nxtoken, wsUrl)
+      // These credentials should come from your Nexacon account
+      final nxid = 'user_nxid'; // TODO: Replace with actual NX ID
+      final nxtoken = 'user_nxtoken'; // TODO: Replace with actual NX token
+      final wsUrl =
+          'wss://your-nexacon-ws-url'; // TODO: Replace with actual WebSocket URL
+      await _nexaconService.initializeNexacon(
+        nxid: nxid,
+        nxtoken: nxtoken,
+        wsUrl: wsUrl,
+        name: 'User',
+      );
 
       // Check/Request permissions
-      final hasPermission = await _zegoService.requestPermissions();
+      final hasPermission = await _nexaconService.requestPermissions();
       if (!hasPermission) {
         debugPrint('⚠️ Microphone permission not granted');
       }
 
       isCheckingCredits.value = false;
 
-      // Join the Zego room
-      await _zegoService.joinRoom(channelName, userId, userName);
+      // Join the Nexacon call
+      await _nexaconService.joinRoom(channelName, callId, 'User');
 
       isCallConnected.value = true;
       // Note: isConsultantConnected will be set by onOtherUserJoined callback
@@ -223,7 +231,7 @@ class CallController extends GetxController {
 
       // Microphone permission should already be granted from ConsultantsScreen
       // Just verify it's still granted
-      final hasPermission = await _zegoService.requestPermissions();
+      final hasPermission = await _nexaconService.requestPermissions();
       if (!hasPermission) {
         print('❌ Microphone permission denied');
         isCheckingCredits.value = false;
@@ -236,20 +244,28 @@ class CallController extends GetxController {
         return;
       }
 
-      // Initialize ZegoExpressEngine
-      // TODO: Get actual user info from auth service
-      final userId = 'user_${DateTime.now().millisecondsSinceEpoch}';
-      final userName = 'User';
-      await _zegoService.initializeZego(userId, userName);
+      // Initialize Nexacon SDK
+      // TODO: Get actual user info from auth service (nxid, nxtoken, wsUrl)
+      // These credentials should come from your Nexacon account
+      final nxid = 'user_nxid'; // TODO: Replace with actual NX ID
+      final nxtoken = 'user_nxtoken'; // TODO: Replace with actual NX token
+      final wsUrl =
+          'wss://your-nexacon-ws-url'; // TODO: Replace with actual WebSocket URL
+      await _nexaconService.initializeNexacon(
+        nxid: nxid,
+        nxtoken: nxtoken,
+        wsUrl: wsUrl,
+        name: 'User',
+      );
 
       // Set call ID for call recording
-      _zegoService.setCallId(initiateResult['call_id']);
+      _nexaconService.setCallId(initiateResult['call_id']);
 
-      // Join the Zego room
-      await _zegoService.joinRoom(
+      // Join the Nexacon call
+      await _nexaconService.joinRoom(
         initiateResult['channel_name'],
-        userId,
-        userName,
+        'user_${DateTime.now().millisecondsSinceEpoch}',
+        'User',
       );
 
       isCallConnected.value = true;
@@ -282,32 +298,32 @@ class CallController extends GetxController {
     print('🔴 endCall() called');
 
     // IMMEDIATELY stop the timer as first action
-    _zegoService.stopDurationTimer();
+    _nexaconService.stopDurationTimer();
     print('⏱️ Timer stopped immediately');
 
     // Check if the call was actually connected (consultant joined)
     final wasConnected = isConsultantConnected.value;
-    final callId = _zegoService.callId;
+    final callId = _nexaconService.callId;
     print('📞 Was consultant connected: $wasConnected, Call ID: $callId');
 
     Map<String, dynamic>? callSummary;
 
     try {
-      // Leave the room
-      await _zegoService.leaveRoom();
+      // Leave the call
+      await _nexaconService.leaveRoom();
 
       // Notify backend based on call state
       if (callId != null) {
         if (wasConnected) {
           // Call was connected - use endCall to record duration
           print('📞 Call was connected, recording duration...');
-          callSummary = await _zegoService.endCall(recordCall: true);
+          callSummary = await _nexaconService.endCall(recordCall: true);
         } else {
           // Call was not answered - cancel it so callee gets notified
           print('📵 Call was not answered, cancelling...');
           await _callService.cancelCall(callId: callId.toString());
           // Clear call ID since we cancelled
-          _zegoService.clearCallId();
+          _nexaconService.clearCallId();
         }
       } else {
         print('⚠️ No call ID available');
@@ -491,10 +507,10 @@ class CallController extends GetxController {
 
   @override
   void onClose() {
-    // Clean up: stop timer and leave room
-    _zegoService.stopDurationTimer();
-    _zegoService.leaveRoom();
-    // Note: We don't destroy the engine - it should persist across calls
+    // Clean up: stop timer and leave call
+    _nexaconService.stopDurationTimer();
+    _nexaconService.leaveRoom();
+    // Note: We don't dispose the service - it should persist across calls
     super.onClose();
   }
 }

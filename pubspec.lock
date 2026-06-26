@@ -657,13 +657,13 @@ packages:
     source: sdk
     version: "0.0.0"
   flutter_webrtc:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: flutter_webrtc
-      sha256: b832dc76c0d1577f14aaf35e9c38d4ed7667cbc89c492b7bf4505d8d5f62e08b
+      sha256: "0f89dee7f4c35dab5611f351c3897a3bfe9f7057720cc7da209b52455af4316e"
       url: "https://pub.dev"
     source: hosted
-    version: "0.12.12+hotfix.1"
+    version: "1.5.2"
   frontend_server_client:
     dependency: transitive
     description:
@@ -892,10 +892,10 @@ packages:
     dependency: transitive
     description:
       name: json_annotation
-      sha256: "1ce844379ca14835a50d2f019a3099f419082cfdd231cd86a142af94dd5c6bb1"
+      sha256: "2a743920d81b7910627f68ee2c9ac1fc0bfee32b9fc3403587d7c6791ca12f80"
       url: "https://pub.dev"
     source: hosted
-    version: "4.9.0"
+    version: "4.12.0"
   jwt_decoder:
     dependency: "direct main"
     description:
@@ -1024,6 +1024,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.4.4"
+  nexacon_sdk:
+    dependency: "direct main"
+    description:
+      name: nexacon_sdk
+      sha256: "93b5c6d3e85cc44ab943643895f9a9e7bc08fab64f97dbaa344860d89700a8e1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.5"
   open_filex:
     dependency: "direct main"
     description:
@@ -1581,6 +1589,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.3"
+  web_socket_client:
+    dependency: transitive
+    description:
+      name: web_socket_client
+      sha256: "394789177aa3bc1b7b071622a1dbf52a4631d7ce23c555c39bb2523e92316b07"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.1"
   webrtc_interface:
     dependency: transitive
     description:
@@ -1669,14 +1685,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.3"
-  zego_express_engine:
-    dependency: "direct main"
-    description:
-      name: zego_express_engine
-      sha256: eae6a7b9c7bf0d526faac61ea55188263e5501c7238293f0de5d811103bf9b5f
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.23.0"
 sdks:
   dart: ">=3.9.0 <4.0.0"
   flutter: ">=3.35.0"

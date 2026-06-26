@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../../config/dio_config.dart';
 import '../models/consultant_models.dart';
-import '../../../config/zego_config.dart';
+import '../../../config/nexacon_config.dart';
 
 class CallService {
   final Dio _dio = DioConfig.instance;
@@ -16,7 +16,7 @@ class CallService {
   }) async {
     try {
       // Generate call ID in app
-      final callId = ZegoConfig.generateCallId(consultantId);
+      final callId = NexaconConfig.generateCallId(consultantId);
 
       debugPrint('📞 Initiating call to consultant $consultantId');
       debugPrint('📡 Call ID: $callId');
@@ -286,8 +286,9 @@ class CallService {
     try {
       debugPrint('💳 ====== CHECKING CREDITS ======');
       debugPrint('💳 consultant_id being sent: $consultantId');
-      debugPrint('💳 Endpoint: /api/v1/subscriptions/call-history/check-credits/');
-      
+      debugPrint(
+          '💳 Endpoint: /api/v1/subscriptions/call-history/check-credits/');
+
       final response = await _dio.post(
         '/api/v1/subscriptions/call-history/check-credits/',
         data: {
@@ -304,15 +305,18 @@ class CallService {
 
       // Handle 404 - consultant not found in subscriptions system
       if (response.statusCode == 404) {
-        debugPrint('❌ 404 Error: Consultant ID $consultantId not found in subscriptions system');
-        debugPrint('   This may indicate an ID mismatch between Nearby Lawyers and Subscriptions APIs');
+        debugPrint(
+            '❌ 404 Error: Consultant ID $consultantId not found in subscriptions system');
+        debugPrint(
+            '   This may indicate an ID mismatch between Nearby Lawyers and Subscriptions APIs');
         return CreditCheckResponse(
           hasCredits: false,
           availableMinutes: 0,
           activeCreditsCount: 0,
           creditsBreakdown: [],
           availableBundles: [],
-          message: 'Consultant not found. Please try from Talk to Lawyer section.',
+          message:
+              'Consultant not found. Please try from Talk to Lawyer section.',
         );
       }
 

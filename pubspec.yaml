@@ -72,11 +72,8 @@ dependencies:
   path_provider: ^2.1.2
   open_filex: ^4.5.0
 
-  # ZegoCloud SDK for voice/video calls
-  zego_express_engine: ^3.14.5
-
-  # WebRTC for video calls
-  flutter_webrtc: ^0.12.0
+  # Nexacon SDK for voice/video calls
+  nexacon_sdk: ^1.1.5
 
   # PDF & Document Viewing
   flutter_cached_pdfview: ^0.4.2
