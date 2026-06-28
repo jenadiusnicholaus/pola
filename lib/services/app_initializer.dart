@@ -20,6 +20,7 @@ import '../features/subscription/services/subscription_service.dart';
 import 'device_registration_service.dart';
 import '../features/nearbylawyers/services/nearby_lawyers_service.dart';
 import '../features/calling_booking/services/fcm_service.dart';
+import '../features/calling_booking/services/nexacon_call_service.dart';
 import '../features/calling_booking/services/online_status_service.dart';
 import '../features/settings/controllers/theme_controller.dart';
 import '../features/notifications/services/notification_service.dart';
@@ -62,7 +63,8 @@ class AppInitializer {
 
       stopwatch.stop();
       debugPrint(
-          '🚀 App initialization completed in ${stopwatch.elapsedMilliseconds}ms');
+        '🚀 App initialization completed in ${stopwatch.elapsedMilliseconds}ms',
+      );
     } catch (e, stackTrace) {
       debugPrint('❌ Error during app initialization: $e');
       debugPrint('Stack trace: $stackTrace');
@@ -183,12 +185,18 @@ class AppInitializer {
       Get.put(NotificationService());
       debugPrint('✅ NotificationService initialized (background)');
 
+      // Nexacon call service (singleton for XMPP pre-warm)
+      Get.put(NexaconCallService());
+      debugPrint('✅ NexaconCallService initialized (background)');
+
       // Theme controller
       Get.put(ThemeController());
       debugPrint('✅ ThemeController initialized (background)');
 
       // Setup FCM background handler
-      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      FirebaseMessaging.onBackgroundMessage(
+        _firebaseMessagingBackgroundHandler,
+      );
       debugPrint('✅ FCM background handler registered');
     });
   }
@@ -231,7 +239,9 @@ extension GetxServiceCheck on GetInterface {
   }
 
   /// Wait for a service to be available (with timeout)
-  Future<T> waitForService<T>({Duration timeout = const Duration(seconds: 10)}) async {
+  Future<T> waitForService<T>({
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
     final completer = Completer<T>();
     final stopwatch = Stopwatch()..start();
 
@@ -242,7 +252,9 @@ extension GetxServiceCheck on GetInterface {
       } else if (stopwatch.elapsed > timeout) {
         timer.cancel();
         completer.completeError(
-          TimeoutException('Service $T not available after ${timeout.inSeconds}s'),
+          TimeoutException(
+            'Service $T not available after ${timeout.inSeconds}s',
+          ),
         );
       }
     });

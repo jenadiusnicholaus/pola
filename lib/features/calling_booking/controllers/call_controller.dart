@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../utils/navigation_helper.dart';
+import '../../../services/token_storage_service.dart';
 import '../models/consultant_models.dart';
 import '../services/call_service.dart';
 import '../services/nexacon_call_service.dart';
 
 class CallController extends GetxController {
   final CallService _callService = CallService();
-  final NexaconCallService _nexaconService = NexaconCallService();
+  final NexaconCallService _nexaconService = Get.find<NexaconCallService>();
+  final TokenStorageService _tokenStorage = Get.find<TokenStorageService>();
 
   // Observable state
   var isCheckingCredits = false.obs;
@@ -27,6 +29,52 @@ class CallController extends GetxController {
 
   // Getters
   List<CreditBundle> get availableBundles => _availableBundles;
+
+  /// Get user's phone number for Nexacon authentication
+  String? _getUserPhoneNumber() {
+    // Try to get from user data
+    final userData = _tokenStorage.userData;
+    if (userData != null) {
+      // Check for phone_number in contact or directly in user data
+      final contact = userData['contact'] as Map<String, dynamic>?;
+      String? phone;
+      if (contact != null) {
+        phone = contact['phone_number'] as String?;
+      }
+      // Try direct phone_number field
+      phone ??= userData['phone_number'] as String?;
+
+      // Format phone number with country code if missing
+      if (phone != null && phone.isNotEmpty) {
+        return _formatPhoneNumberWithCountryCode(phone);
+      }
+    }
+    return null;
+  }
+
+  /// Format phone number with Tanzania country code if missing
+  String _formatPhoneNumberWithCountryCode(String phone) {
+    // Remove any non-digit characters
+    final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
+
+    // If already has country code (starts with 255), return as is
+    if (digits.startsWith('255')) {
+      return '+$digits';
+    }
+
+    // If starts with 0, replace with +255
+    if (digits.startsWith('0')) {
+      return '+255${digits.substring(1)}';
+    }
+
+    // If 10 digits (Tanzania format without 0), add +255
+    if (digits.length == 10) {
+      return '+255$digits';
+    }
+
+    // Default: add +255 prefix
+    return '+255$digits';
+  }
 
   // Check if current error is related to insufficient credits
   bool get isInsufficientCreditsError {
@@ -90,6 +138,12 @@ class CallController extends GetxController {
       });
     };
 
+    // Incoming call callback - only used on the consultant/callee side
+    // Do NOT set isConsultantConnected here — that is driven by onOtherUserJoined
+    _nexaconService.onIncomingCall = (callerName) {
+      print('📞 Incoming call signal received from: $callerName');
+    };
+
     // Error callback
     _nexaconService.onError = (errorMessage) {
       error.value = errorMessage;
@@ -121,19 +175,19 @@ class CallController extends GetxController {
       debugPrint('📞 Joining incoming call: $callId');
       debugPrint('📡 Channel: $channelName');
 
-      // Initialize Nexacon SDK first
-      // TODO: Get actual user info from auth service (nxid, nxtoken, wsUrl)
-      // These credentials should come from your Nexacon account
-      final nxid = 'user_nxid'; // TODO: Replace with actual NX ID
-      final nxtoken = 'user_nxtoken'; // TODO: Replace with actual NX token
-      final wsUrl =
-          'wss://your-nexacon-ws-url'; // TODO: Replace with actual WebSocket URL
-      await _nexaconService.initializeNexacon(
-        nxid: nxid,
-        nxtoken: nxtoken,
-        wsUrl: wsUrl,
-        name: 'User',
-      );
+      // Get user's phone number for Nexacon authentication
+      final phoneNumber = _getUserPhoneNumber();
+      if (phoneNumber == null || phoneNumber.isEmpty) {
+        debugPrint('❌ No phone number found for user');
+        error.value = 'Phone number required for calls';
+        isCheckingCredits.value = false;
+        NavigationHelper.showSafeSnackbar(
+          title: 'Error',
+          message: 'Phone number is required to make calls',
+          backgroundColor: Colors.red,
+        );
+        return;
+      }
 
       // Check/Request permissions
       final hasPermission = await _nexaconService.requestPermissions();
@@ -143,14 +197,21 @@ class CallController extends GetxController {
 
       isCheckingCredits.value = false;
 
-      // Join the Nexacon call
-      await _nexaconService.joinRoom(channelName, callId, 'User');
+      // Format phone number with country code for NX ID compatibility
+      final formattedPhone = _formatPhoneNumberWithCountryCode(phoneNumber);
+      debugPrint(
+        '📞 Joining incoming call with formatted phone: $formattedPhone (original: $phoneNumber)',
+      );
+
+      // Initialize SDK and accept the incoming call
+      await _nexaconService.acceptIncomingCall(
+        phoneNumber: formattedPhone,
+        name: 'User',
+      );
 
       isCallConnected.value = true;
-      // Note: isConsultantConnected will be set by onOtherUserJoined callback
 
-      debugPrint(
-          '✅ Successfully joined incoming call, waiting for other user...');
+      debugPrint('✅ Successfully joined incoming call');
     } catch (e) {
       debugPrint('❌ Error joining incoming call: $e');
       isCheckingCredits.value = false;
@@ -169,6 +230,43 @@ class CallController extends GetxController {
     isCheckingCredits.value = true;
 
     try {
+      // Step 0: Check microphone permission first
+      print('🎤 Checking microphone permission...');
+      final hasPermission = await _nexaconService.requestPermissions();
+      if (!hasPermission) {
+        print('❌ Microphone permission denied');
+        isCheckingCredits.value = false;
+        NavigationHelper.showSafeSnackbar(
+          title: 'Permission Denied',
+          message: 'Microphone permission is required for voice calls',
+          backgroundColor: Colors.red,
+        );
+        return;
+      }
+      print('✅ Microphone permission granted');
+
+      // Step 0.5: Pre-warm XMPP connection for outgoing call
+      final phoneNumber = _getUserPhoneNumber();
+      if (phoneNumber == null || phoneNumber.isEmpty) {
+        debugPrint('❌ No phone number found for user');
+        isCheckingCredits.value = false;
+        NavigationHelper.showSafeSnackbar(
+          title: 'Error',
+          message: 'Phone number is required to make calls',
+          backgroundColor: Colors.red,
+        );
+        return;
+      }
+
+      final formattedCallerPhone = _formatPhoneNumberWithCountryCode(
+        phoneNumber,
+      );
+      debugPrint('🔥 Pre-warming XMPP connection for outgoing call...');
+      await _nexaconService.prewarmForOutgoing(
+        phoneNumber: formattedCallerPhone,
+        name: 'User',
+      );
+
       // Step 1: Check if user has credits
       print('💳 ====== INITIATING CALL ======');
       print('💳 Consultant ID (profile): ${consultant.id}');
@@ -181,7 +279,8 @@ class CallController extends GetxController {
       print('   hasCredits: ${creditCheck.hasCredits}');
       print('   availableMinutes: ${creditCheck.availableMinutes}');
       print(
-          '   availableBundles count: ${creditCheck.availableBundles.length}');
+        '   availableBundles count: ${creditCheck.availableBundles.length}',
+      );
       print('   message: ${creditCheck.message}');
 
       if (!creditCheck.hasCredits) {
@@ -229,51 +328,48 @@ class CallController extends GetxController {
       print('✅ Backend notified, FCM sent to consultant');
       print('📡 Channel: ${initiateResult['channel_name']}');
 
-      // Microphone permission should already be granted from ConsultantsScreen
-      // Just verify it's still granted
-      final hasPermission = await _nexaconService.requestPermissions();
-      if (!hasPermission) {
-        print('❌ Microphone permission denied');
+      // Set call ID for backend recording
+      _nexaconService.setCallId(initiateResult['call_id']);
+
+      // Consultant's phone number is their NX ID
+      final consultantPhone = consultant.userDetails.phoneNumber;
+      if (consultantPhone == null || consultantPhone.isEmpty) {
+        debugPrint(
+          '❌ Consultant has no phone number — cannot route Nexacon call',
+        );
         isCheckingCredits.value = false;
         NavigationHelper.showSafeSnackbar(
-          title: 'Permission Denied',
-          message: 'Microphone permission is required for voice calls',
+          title: 'Error',
+          message: 'Unable to connect call. Consultant contact not available.',
           backgroundColor: Colors.red,
         );
-        Get.back();
         return;
       }
 
-      // Initialize Nexacon SDK
-      // TODO: Get actual user info from auth service (nxid, nxtoken, wsUrl)
-      // These credentials should come from your Nexacon account
-      final nxid = 'user_nxid'; // TODO: Replace with actual NX ID
-      final nxtoken = 'user_nxtoken'; // TODO: Replace with actual NX token
-      final wsUrl =
-          'wss://your-nexacon-ws-url'; // TODO: Replace with actual WebSocket URL
-      await _nexaconService.initializeNexacon(
-        nxid: nxid,
-        nxtoken: nxtoken,
-        wsUrl: wsUrl,
+      // Format consultant phone number with country code for NX ID compatibility
+      final formattedConsultantPhone = _formatPhoneNumberWithCountryCode(
+        consultantPhone,
+      );
+
+      debugPrint('📞 Initiating Nexacon call:');
+      debugPrint(
+        '   From (username): $formattedCallerPhone (original: $phoneNumber)',
+      );
+      debugPrint(
+        '   To (consultant): $formattedConsultantPhone (original: $consultantPhone)',
+      );
+
+      // Initiate Nexacon call using simplified SDK API
+      await _nexaconService.initiateCall(
+        username: formattedCallerPhone,
+        to: formattedConsultantPhone,
         name: 'User',
       );
 
-      // Set call ID for call recording
-      _nexaconService.setCallId(initiateResult['call_id']);
-
-      // Join the Nexacon call
-      await _nexaconService.joinRoom(
-        initiateResult['channel_name'],
-        'user_${DateTime.now().millisecondsSinceEpoch}',
-        'User',
-      );
-
       isCallConnected.value = true;
-      // Note: isConsultantConnected will be set when consultant joins (onOtherUserJoined callback)
       isCheckingCredits.value = false;
 
-      print(
-          '✅ Call initiated and room joined - waiting for consultant to join...');
+      print('✅ Call initiated — waiting for consultant to join...');
     } catch (e) {
       print('Error initiating call: $e');
       isCheckingCredits.value = false;
@@ -437,10 +533,7 @@ class CallController extends GetxController {
           children: [
             const Text(
               'Call Summary',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             _buildSummaryRow(
@@ -465,10 +558,7 @@ class CallController extends GetxController {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('OK'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('OK')),
         ],
       ),
       barrierDismissible: false,
@@ -485,13 +575,7 @@ class CallController extends GetxController {
       children: [
         Icon(icon, size: 20, color: Colors.grey[600]),
         const SizedBox(width: 8),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey[600],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
         const Spacer(),
         Text(
           value,

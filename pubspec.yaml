@@ -72,8 +72,9 @@ dependencies:
   path_provider: ^2.1.2
   open_filex: ^4.5.0
 
-  # Nexacon SDK for voice/video calls
-  nexacon_sdk: ^1.1.5
+  # Nexacon SDK for voice/video calls (local path for custom fixes)
+  nexacon_sdk:
+    path: /Users/mac/development/sdks/nexacon-flutter-sdk
 
   # PDF & Document Viewing
   flutter_cached_pdfview: ^0.4.2

@@ -7,175 +7,232 @@ import 'call_service.dart';
 
 class NexaconCallService extends GetxService {
   Timer? _durationTimer;
-  int _callDuration = 0; // in seconds
-  int? _callId; // Backend call ID for recording
-  String? _currentRoomId;
-  NexaconClient? _client;
-  CallManager? _callManager;
+  int _callDuration = 0;
+  int? _callId;
+  bool _isTimerStarted = false;
+
+  NexaconSDK? _sdk;
+  Completer<void>? _incomingCallCompleter;
 
   // Callbacks
   Function(String duration)? onDurationUpdate;
   Function(int durationSeconds)? onCallEnded;
   Function(String error)? onError;
-  Function()? onOtherUserJoined; // Called when the other person joins
-  Function()? onOtherUserLeft; // Called when the other person disconnects
+  Function()? onOtherUserJoined;
+  Function()? onOtherUserLeft;
+  Function(String callerName)? onIncomingCall;
 
   // State
   bool _isMuted = false;
   bool _isSpeakerOn = true;
-  bool _isTimerStarted = false;
 
   bool get isMuted => _isMuted;
   bool get isSpeakerOn => _isSpeakerOn;
   int get callDuration => _callDuration;
-  int? get callId => _callId; // Expose call ID for checking
+  int? get callId => _callId;
 
-  /// Initialize Nexacon SDK
-  Future<void> initializeNexacon({
-    required String nxid,
-    required String nxtoken,
-    required String wsUrl,
+  /// Create and configure a NexaconSDK instance with all callbacks
+  NexaconSDK _createSdk() {
+    final sdk = NexaconSDK(
+      apiKey: NexaconConfig.apiKey,
+      secretKey: NexaconConfig.secretKey,
+    );
+
+    sdk.onCallStateChanged = (CallState state) {
+      print('📱 Call state changed: $state');
+      if (state == CallState.connected) {
+        print('✅ Call connected, starting timer');
+        if (!_isTimerStarted) {
+          startDurationTimer();
+          _isTimerStarted = true;
+          onOtherUserJoined?.call();
+        }
+      } else if (state == CallState.ended) {
+        print('📞 Call ended');
+        onOtherUserLeft?.call();
+      } else if (state == CallState.calling) {
+        print('📞 Call is ringing...');
+      } else if (state == CallState.idle) {
+        print('📞 Call is idle');
+      }
+    };
+
+    sdk.onIncomingCall = (callerName) {
+      print('📞 Incoming call from: $callerName');
+      // Trigger callback to notify UI of incoming call
+      onIncomingCall?.call(callerName);
+    };
+
+    sdk.onCallEnded = (reason) {
+      print('📞 Call ended: $reason');
+      onOtherUserLeft?.call();
+    };
+
+    sdk.onError = (error) {
+      print('❌ Nexacon error: $error');
+      onError?.call('Nexacon error: $error');
+    };
+
+    sdk.onLocalStream = () => print('📹 Local stream received');
+    sdk.onRemoteStream = () => print('📹 Remote stream received');
+
+    return sdk;
+  }
+
+  /// Initiate an outgoing call
+  Future<void> initiateCall({
+    required String username,
+    required String to,
     String? name,
   }) async {
     try {
-      final apiKey = NexaconConfig.apiKey;
-      final secretKey = NexaconConfig.secretKey;
-
-      print('🔑 Initializing Nexacon SDK');
-      print('📝 NX ID: $nxid');
-      print('� WS URL: $wsUrl');
-
-      // Create NexaconClient instance
-      _client = NexaconClient(
-        apiKey: apiKey,
-        secretKey: secretKey,
-      );
-
-      // Create CallManager with callbacks
-      _callManager = await _client!.createCallManager(
-        nxtoken: nxtoken,
-        nxid: nxid,
-        wsUrl: wsUrl,
-        name: name,
-        onCallStateChanged: (CallState state) {
-          print('📱 Call state changed: $state');
-          if (state == CallState.connected) {
-            print('✅ Call connected, starting timer');
-            if (!_isTimerStarted) {
-              startDurationTimer();
-              _isTimerStarted = true;
-              onOtherUserJoined?.call();
-            }
-          } else if (state == CallState.ended) {
-            print('� Call ended');
-            onOtherUserLeft?.call();
-          }
-        },
-        onIncomingCall: (callerName) {
-          print('� Incoming call from: $callerName');
-        },
-        onCallEnded: (reason) {
-          print('� Call ended: $reason');
-          onOtherUserLeft?.call();
-        },
-        onError: (error) {
-          print('❌ Nexacon error: $error');
-          onError?.call('Nexacon error: $error');
-        },
-        onLocalStream: (stream) {
-          print('📹 Local stream received');
-        },
-        onRemoteStream: (stream) {
-          print('� Remote stream received');
-        },
-      );
-
-      print('✅ Nexacon SDK initialized successfully');
-    } catch (e) {
-      print('❌ Nexacon initialization error: $e');
-      onError?.call('Failed to initialize Nexacon: ${e.toString()}');
-      rethrow;
-    }
-  }
-
-  /// Join a call room (initiate outgoing call)
-  Future<void> joinRoom(String roomId, String userId, String userName) async {
-    try {
-      _currentRoomId = roomId;
-
-      print('🔑 Initiating call to room: $roomId as $userName ($userId)');
-
-      if (_callManager == null) {
-        throw Exception(
-            'CallManager not initialized. Please call initializeNexacon() first.');
+      print('� Initiating call to: $to');
+      // Use pre-warmed SDK if available, otherwise create new
+      if (_sdk == null) {
+        print("No pre-warmed SDK, creating new instance");
+        _sdk = _createSdk();
+      } else {
+        print("Using pre-warmed SDK instance");
       }
-
-      // Initiate P2P call
-      await _callManager!.initiateCall(
-        to: userId,
+      await _sdk!.startCall(
+        to: to,
+        username: username,
+        name: name,
         audio: true,
-        video: false, // Voice call only
+        video: false,
       );
-
-      print('✅ Call initiated');
-      print('⏳ Waiting for other user to accept...');
+      print('✅ Call initiated — waiting for other user to accept...');
     } catch (e) {
       print('❌ Error initiating call: $e');
-      _currentRoomId = null;
       rethrow;
     }
   }
 
-  /// Accept an incoming call
-  Future<void> acceptCall({
-    required String roomId,
+  /// Pre-warm the NX connection as soon as the incoming call screen opens.
+  /// This connects early so the call invitation is received before user taps Accept.
+  /// Call this in the incoming call screen's initState(), not on Accept tap.
+  Future<void> prewarmForIncoming({
+    required String phoneNumber,
+    String? name,
+  }) async {
+    try {
+      print('🔥 Pre-warming NX connection for incoming call: $phoneNumber');
+      _incomingCallCompleter = Completer<void>();
+      _sdk = _createSdk();
+
+      // Override onIncomingCall to signal when the invitation arrives
+      _sdk!.onIncomingCall = (callerName) {
+        print('📞 Pre-warm captured incoming call from: $callerName');
+        onIncomingCall?.call(callerName);
+        if (_incomingCallCompleter != null &&
+            !_incomingCallCompleter!.isCompleted) {
+          _incomingCallCompleter!.complete();
+        }
+      };
+
+      // Connect first — then wait for the call invitation to arrive
+      await _sdk!.initialize(username: phoneNumber, name: name);
+      print(
+          '✅ NX pre-warm connection established — waiting for call invitation...');
+
+      await _incomingCallCompleter!.future.timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          print('⚠️ Pre-warm: timed out waiting for call invitation');
+        },
+      );
+      print('✅ Incoming call invitation received');
+    } catch (e) {
+      print('⚠️ Pre-warm failed (non-fatal): $e');
+      if (_incomingCallCompleter != null &&
+          !_incomingCallCompleter!.isCompleted) {
+        _incomingCallCompleter!.completeError(e);
+      }
+    }
+  }
+
+  /// Pre-warm the NX connection for outgoing calls.
+  /// This ensures the connection is established before sending the call invitation.
+  Future<void> prewarmForOutgoing({
+    required String phoneNumber,
+    String? name,
+  }) async {
+    try {
+      print('🔥 Pre-warming NX connection for outgoing call: $phoneNumber');
+      _sdk = _createSdk();
+      await _sdk!.initialize(username: phoneNumber, name: name);
+      print('✅ NX pre-warm complete — ready to initiate call');
+    } catch (e) {
+      print('⚠️ Pre-warm failed (non-fatal): $e');
+      // Not fatal — initiateCall() will re-initialize if needed
+    }
+  }
+
+  /// Accept an incoming call. Uses pre-warmed SDK if available,
+  /// waits for the call invitation signal, then accepts.
+  Future<void> acceptIncomingCall({
+    required String phoneNumber,
+    String? name,
     bool audio = true,
     bool video = false,
   }) async {
     try {
-      _currentRoomId = roomId;
+      if (_sdk != null && _incomingCallCompleter != null) {
+        print('✅ Using pre-warmed SDK to accept call: $phoneNumber');
 
-      print('✅ Accepting incoming call: $roomId');
+        // Wait up to 10s for call invitation to arrive if not yet received
+        if (!_incomingCallCompleter!.isCompleted) {
+          print('⏳ Waiting for call invitation signal...');
+          await _incomingCallCompleter!.future.timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              print('⚠️ Timed out waiting for call invitation signal');
+            },
+          );
+        }
 
-      if (_callManager == null) {
-        throw Exception(
-            'CallManager not initialized. Please call initializeNexacon() first.');
+        try {
+          await _sdk!.acceptCall(audio: audio, video: video);
+          print('✅ Call accepted via pre-warmed SDK');
+          return;
+        } catch (e) {
+          print(
+            '⚠️ Direct accept failed ($e), falling back to acceptWhenReady...',
+          );
+        }
       }
 
-      await _callManager!.acceptCall(
+      // Fallback: initialize fresh and wait for invitation
+      print('✅ Waiting for incoming call signal (phone: $phoneNumber)...');
+      _sdk = _createSdk();
+      await _sdk!.acceptWhenReady(
+        username: phoneNumber,
+        name: name,
         audio: audio,
         video: video,
       );
-
       print('✅ Call accepted');
     } catch (e) {
       print('❌ Error accepting call: $e');
-      _currentRoomId = null;
       rethrow;
+    } finally {
+      _incomingCallCompleter = null;
     }
   }
 
-  /// Leave the current call room
+  /// End the current call (leaves the room)
   Future<void> leaveRoom() async {
     try {
-      if (_currentRoomId == null) {
+      if (_sdk == null) {
         print('⚠️ No active call to leave');
         return;
       }
-
       print('🚪 Leaving call...');
-
-      if (_callManager != null) {
-        await _callManager!.endCall();
-      }
-
-      _currentRoomId = null;
+      await _sdk!.endCall();
       _isTimerStarted = false;
-
       print('✅ Left call successfully');
     } catch (e) {
       print('❌ Error leaving call: $e');
-      _currentRoomId = null;
     }
   }
 
@@ -183,21 +240,19 @@ class NexaconCallService extends GetxService {
   Future<void> toggleMute() async {
     try {
       _isMuted = !_isMuted;
-      if (_callManager != null) {
-        _callManager!.toggleAudio(!_isMuted);
-      }
+      _sdk?.toggleMute(_isMuted);
       print('🎤 Microphone ${_isMuted ? "muted" : "unmuted"}');
     } catch (e) {
       print('⚠️ Cannot toggle mute: $e');
     }
   }
 
-  /// Toggle speaker (audio routing)
+  /// Toggle speaker
   Future<void> toggleSpeaker() async {
     try {
       _isSpeakerOn = !_isSpeakerOn;
-      // Note: Audio routing is handled by the system
-      print('🔊 Speaker toggle: ${_isSpeakerOn ? "on" : "off"}');
+      _sdk?.toggleSpeaker(_isSpeakerOn);
+      print('🔊 Speaker: ${_isSpeakerOn ? "on" : "off"}');
     } catch (e) {
       print('⚠️ Cannot toggle speaker: $e');
     }
@@ -206,19 +261,14 @@ class NexaconCallService extends GetxService {
   /// Start call duration timer
   void startDurationTimer() {
     if (_durationTimer != null) {
-      print('⚠️ Timer already running, stopping previous timer');
       stopDurationTimer();
     }
-
     _callDuration = 0;
-    print('⏱️ Starting call duration timer at 00:00');
+    print('⏱️ Starting call duration timer');
     _durationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _callDuration++;
-      final formatted = getFormattedDuration();
-      print('⏱️ Timer tick: $formatted ($_callDuration seconds)');
-      onDurationUpdate?.call(formatted);
+      onDurationUpdate?.call(getFormattedDuration());
     });
-    print('✅ Call duration timer started successfully');
   }
 
   /// Stop call duration timer
@@ -226,13 +276,11 @@ class NexaconCallService extends GetxService {
     if (_durationTimer != null) {
       _durationTimer!.cancel();
       _durationTimer = null;
-      print('⏱️ ✅ Timer KILLED - stopped immediately');
-    } else {
-      print('⏱️ Timer already stopped or not started');
+      print('⏱️ Timer stopped');
     }
   }
 
-  /// End the call and record duration
+  /// End the call and record duration to backend
   Future<Map<String, dynamic>?> endCall({bool recordCall = true}) async {
     try {
       print('🛑 Ending call...');
@@ -241,43 +289,28 @@ class NexaconCallService extends GetxService {
       final finalDuration = _callDuration;
       final callId = _callId;
 
-      print('📊 Final call duration: $finalDuration seconds');
-      print('📞 Call ID: $callId');
-      print('💾 Should record: $recordCall');
+      print('📊 Final duration: $finalDuration seconds | Call ID: $callId');
 
       Map<String, dynamic>? callSummary;
 
-      // Record call if duration > 0 and recording is enabled
       if (recordCall && callId != null && finalDuration > 0) {
         try {
-          print('📞 Ending call and recording to backend API...');
-          final callService = CallService();
-          final result = await callService.endCall(
-            callId: callId.toString(), // Convert int to String
+          final result = await CallService().endCall(
+            callId: callId.toString(),
             durationSeconds: finalDuration,
           );
-          print(
-              '✅ Call ended and recorded successfully: $finalDuration seconds');
+          print('✅ Call recorded: $finalDuration seconds');
           callSummary = result;
         } catch (e) {
-          print('❌ Error ending call: $e');
+          print('❌ Error recording call: $e');
         }
       } else {
-        if (!recordCall) {
-          print('⚠️ Recording disabled');
-        }
-        if (callId == null) {
-          print('⚠️ No call ID - cannot record');
-        }
-        if (finalDuration <= 0) {
-          print('⚠️ Call duration is 0 - nothing to record');
-        }
+        if (callId == null) print('⚠️ No call ID — cannot record');
+        if (finalDuration <= 0) print('⚠️ Duration is 0 — nothing to record');
       }
 
-      // Cleanup
       _callDuration = 0;
       _callId = null;
-
       onCallEnded?.call(finalDuration);
 
       return callSummary;
@@ -294,7 +327,7 @@ class NexaconCallService extends GetxService {
     print('📞 Call ID set: $callId');
   }
 
-  /// Clear call ID (used when call is cancelled)
+  /// Clear call ID (when call is cancelled before being answered)
   void clearCallId() {
     _callId = null;
     _callDuration = 0;
@@ -303,40 +336,22 @@ class NexaconCallService extends GetxService {
 
   /// Get formatted duration as MM:SS
   String getFormattedDuration() {
-    int minutes = _callDuration ~/ 60;
-    int seconds = _callDuration % 60;
+    final minutes = _callDuration ~/ 60;
+    final seconds = _callDuration % 60;
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
-  /// Release resources and cleanup
+  /// Release all resources
   Future<void> dispose() async {
     try {
       stopDurationTimer();
+      await leaveRoom();
+      await _sdk?.dispose();
+      _sdk = null;
       _callDuration = 0;
       _isMuted = false;
       _isSpeakerOn = true;
-
-      // Leave call if currently in one
-      if (_currentRoomId != null) {
-        await leaveRoom();
-      }
-
-      // Dispose CallManager
-      try {
-        _callManager?.dispose();
-        _callManager = null;
-      } catch (e) {
-        print('⚠️ Error disposing CallManager: $e');
-      }
-
-      // Close NexaconClient
-      try {
-        _client?.close();
-        _client = null;
-      } catch (e) {
-        print('⚠️ Error closing NexaconClient: $e');
-      }
-
+      _isTimerStarted = false;
       print('✅ Nexacon service disposed');
     } catch (e) {
       print('❌ Error disposing Nexacon service: $e');
@@ -346,27 +361,23 @@ class NexaconCallService extends GetxService {
   /// Request microphone permissions
   Future<bool> requestPermissions() async {
     try {
-      print('🎤 Checking microphone permission status...');
-
+      print('🎤 Checking microphone permission...');
       var status = await Permission.microphone.status;
-      print('🎤 Current permission status: $status');
 
       if (status.isGranted) {
-        print('✅ Microphone permission already granted');
+        print('✅ Microphone permission granted');
         return true;
       }
 
       if (status.isDenied) {
-        print('❓ Requesting microphone permission...');
         status = await Permission.microphone.request();
-        print('🎤 Permission request result: $status');
       }
 
       if (status.isPermanentlyDenied) {
-        print(
-            '❌ Microphone permission permanently denied. Opening app settings...');
+        print('❌ Microphone permanently denied — opening settings');
         onError?.call(
-            'Microphone permission denied. Please enable it in app settings.');
+          'Microphone permission denied. Please enable it in app settings.',
+        );
         await openAppSettings();
         return false;
       }

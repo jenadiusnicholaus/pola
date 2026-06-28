@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../../../services/token_storage_service.dart';
 import '../services/call_service.dart';
+import '../services/nexacon_call_service.dart';
 import 'call_screen.dart';
 
 /// Notification ID for incoming calls (must match fcm_service.dart)
@@ -16,7 +18,8 @@ Future<void> _cancelIncomingCallNotification() async {
         FlutterLocalNotificationsPlugin();
     await plugin.cancel(_incomingCallNotificationId);
     debugPrint(
-        '🔕 Cancelled incoming call notification from IncomingCallScreen');
+      '🔕 Cancelled incoming call notification from IncomingCallScreen',
+    );
   } catch (e) {
     debugPrint('⚠️ Error cancelling notification: $e');
   }
@@ -52,9 +55,21 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
   bool _isProcessing = false;
   String _processingAction = ''; // Track which action is being processed
 
+  /// Format phone number with +255 prefix for XMPP JID compatibility
+  String _formatPhone(String phone) {
+    final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
+    if (digits.startsWith('255')) return '+$digits';
+    if (digits.startsWith('0')) return '+255${digits.substring(1)}';
+    return '+255$digits';
+  }
+
   /// Show snackbar safely without overlay issues
-  void _showSnackBar(String title, String message,
-      {Color? backgroundColor, IconData? icon}) {
+  void _showSnackBar(
+    String title,
+    String message, {
+    Color? backgroundColor,
+    IconData? icon,
+  }) {
     // Use a global key or delayed execution to avoid overlay issues
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (Get.context != null) {
@@ -71,8 +86,10 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title,
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(
+                        title,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       Text(message, style: const TextStyle(fontSize: 12)),
                     ],
                   ),
@@ -93,6 +110,29 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
     super.initState();
 
     debugPrint('📞 IncomingCallScreen initialized for ${widget.callerName}');
+
+    // Pre-warm NX connection immediately so SDK is ready when user taps Accept
+    Future.microtask(() async {
+      try {
+        final tokenStorage = Get.find<TokenStorageService>();
+        final userData = tokenStorage.userData;
+        String? rawPhone;
+        if (userData != null) {
+          final contact = userData['contact'] as Map<String, dynamic>?;
+          rawPhone =
+              contact?['phone_number'] as String? ??
+              userData['phone_number'] as String?;
+        }
+        if (rawPhone != null && rawPhone.isNotEmpty) {
+          final phone = _formatPhone(rawPhone);
+          debugPrint('🔥 Pre-warming NX for incoming call: $phone');
+          final nexaconService = Get.find<NexaconCallService>();
+          await nexaconService.prewarmForIncoming(phoneNumber: phone);
+        }
+      } catch (e) {
+        debugPrint('⚠️ Pre-warm error (non-fatal): $e');
+      }
+    });
 
     // Start playing device ringtone with slight delay to ensure screen is mounted
     Future.delayed(const Duration(milliseconds: 300), () {
@@ -126,7 +166,8 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
         volume: 1.0,
       );
       debugPrint(
-          '🔔 Ringtone play() method called successfully with looping: true');
+        '🔔 Ringtone play() method called successfully with looping: true',
+      );
     } catch (e) {
       debugPrint('❌ Error playing ringtone: $e');
       debugPrint('❌ Stack trace: ${StackTrace.current}');
@@ -252,10 +293,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
     try {
       debugPrint('❌ Rejecting call: ${widget.callId}');
 
-      await _callService.rejectCall(
-        callId: widget.callId,
-        reason: 'declined',
-      );
+      await _callService.rejectCall(callId: widget.callId, reason: 'declined');
 
       debugPrint('✅ Call rejected successfully');
 
@@ -541,11 +579,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
               width: 76,
               height: 76,
               alignment: Alignment.center,
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 36,
-              ),
+              child: Icon(icon, color: Colors.white, size: 36),
             ),
           ),
         ),
