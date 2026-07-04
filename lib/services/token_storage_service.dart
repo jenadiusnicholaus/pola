@@ -11,6 +11,9 @@ class TokenStorageService extends GetxController {
   static const String _refreshTokenKey = 'refresh_token';
   static const String _tokenExpirationKey = 'token_expiration';
   static const String _userDataKey = 'user_data';
+  static const String _nxTokenKey = 'nx_token';
+  static const String _nxJidKey = 'nx_jid';
+  static const String _nxWsUrlKey = 'nx_ws_url';
 
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
     aOptions: AndroidOptions(
@@ -258,6 +261,9 @@ class TokenStorageService extends GetxController {
       await _secureStorage.delete(key: _refreshTokenKey);
       await _secureStorage.delete(key: _tokenExpirationKey);
       await _secureStorage.delete(key: _userDataKey);
+      await _secureStorage.delete(key: _nxTokenKey);
+      await _secureStorage.delete(key: _nxJidKey);
+      await _secureStorage.delete(key: _nxWsUrlKey);
 
       // Clear reactive variables
       _currentAccessToken.value = '';
@@ -453,6 +459,9 @@ class TokenStorageService extends GetxController {
       await _secureStorage.delete(key: _refreshTokenKey);
       await _secureStorage.delete(key: _userDataKey);
       await _secureStorage.delete(key: _tokenExpirationKey);
+      await _secureStorage.delete(key: _nxTokenKey);
+      await _secureStorage.delete(key: _nxJidKey);
+      await _secureStorage.delete(key: _nxWsUrlKey);
 
       // Clear user profile as well
       await clearUserProfile();
@@ -467,6 +476,61 @@ class TokenStorageService extends GetxController {
     } catch (e) {
       debugPrint('❌ Error clearing stored tokens: $e');
     }
+  }
+
+  /// Store NX token data for messaging and calls
+  Future<void> storeNxTokenData({
+    required String token,
+    required String jid,
+    required String wsUrl,
+  }) async {
+    try {
+      await _secureStorage.write(key: _nxTokenKey, value: token);
+      await _secureStorage.write(key: _nxJidKey, value: jid);
+      await _secureStorage.write(key: _nxWsUrlKey, value: wsUrl);
+      debugPrint('✅ NX token data stored successfully');
+    } catch (e) {
+      debugPrint('❌ Error storing NX token data: $e');
+      throw Exception('Failed to store NX token data');
+    }
+  }
+
+  /// Get stored NX token
+  Future<String?> getNxToken() async {
+    try {
+      return await _secureStorage.read(key: _nxTokenKey);
+    } catch (e) {
+      debugPrint('❌ Error getting NX token: $e');
+      return null;
+    }
+  }
+
+  /// Get stored NX JID
+  Future<String?> getNxJid() async {
+    try {
+      return await _secureStorage.read(key: _nxJidKey);
+    } catch (e) {
+      debugPrint('❌ Error getting NX JID: $e');
+      return null;
+    }
+  }
+
+  /// Get stored NX WebSocket URL
+  Future<String?> getNxWsUrl() async {
+    try {
+      return await _secureStorage.read(key: _nxWsUrlKey);
+    } catch (e) {
+      debugPrint('❌ Error getting NX WebSocket URL: $e');
+      return null;
+    }
+  }
+
+  /// Check if NX token data is available
+  Future<bool> hasNxTokenData() async {
+    final token = await getNxToken();
+    final jid = await getNxJid();
+    final wsUrl = await getNxWsUrl();
+    return token != null && jid != null && wsUrl != null;
   }
 
   /// Force logout - clear everything and navigate to login

@@ -167,6 +167,7 @@ class CallController extends GetxController {
     required String callId,
     required String channelName,
     required String callerName,
+    String callerPhone = '',
   }) async {
     error.value = '';
     isCheckingCredits.value = true;
@@ -206,6 +207,8 @@ class CallController extends GetxController {
       // Initialize SDK and accept the incoming call
       await _nexaconService.acceptIncomingCall(
         phoneNumber: formattedPhone,
+        channelName: channelName,
+        callerPhone: callerPhone,
         name: 'User',
       );
 
@@ -245,7 +248,7 @@ class CallController extends GetxController {
       }
       print('✅ Microphone permission granted');
 
-      // Step 0.5: Pre-warm XMPP connection for outgoing call
+      // Step 0.5: Pre-warm NX connection for outgoing call
       final phoneNumber = _getUserPhoneNumber();
       if (phoneNumber == null || phoneNumber.isEmpty) {
         debugPrint('❌ No phone number found for user');
@@ -359,11 +362,12 @@ class CallController extends GetxController {
         '   To (consultant): $formattedConsultantPhone (original: $consultantPhone)',
       );
 
-      // Initiate Nexacon call using simplified SDK API
+      // Initiate Nexacon call using backend channel_name so both sides share the same room
       await _nexaconService.initiateCall(
         username: formattedCallerPhone,
         to: formattedConsultantPhone,
         name: 'User',
+        roomId: initiateResult['channel_name'] as String?,
       );
 
       isCallConnected.value = true;

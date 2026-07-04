@@ -74,11 +74,11 @@ class EnvironmentConfig {
 
   // Timeouts
   static int get connectionTimeout =>
-      int.tryParse(dotenv.env['CONNECTION_TIMEOUT'] ?? '30000') ?? 30000;
+      int.tryParse(dotenv.env['CONNECTION_TIMEOUT'] ?? '60000') ?? 60000;
   static int get receiveTimeout =>
-      int.tryParse(dotenv.env['RECEIVE_TIMEOUT'] ?? '30000') ?? 30000;
+      int.tryParse(dotenv.env['RECEIVE_TIMEOUT'] ?? '60000') ?? 60000;
   static int get sendTimeout =>
-      int.tryParse(dotenv.env['SEND_TIMEOUT'] ?? '30000') ?? 30000;
+      int.tryParse(dotenv.env['SEND_TIMEOUT'] ?? '60000') ?? 60000;
 
   // Logging
   static bool get enableLogging =>
@@ -323,20 +323,23 @@ class EnvironmentConfig {
 
   // Device Security endpoints
   static String get deviceRegistrationEndpoint =>
-      dotenv.env['DEVICE_REGISTRATION_ENDPOINT'] ?? '/api/v1/authentication/devices/register/';
+      dotenv.env['DEVICE_REGISTRATION_ENDPOINT'] ??
+      '/api/v1/authentication/devices/register/';
   static String get deviceRegistrationUrl =>
       '$baseUrl$deviceRegistrationEndpoint';
-  
+
   static String get deviceSecurityBaseEndpoint =>
-      dotenv.env['DEVICE_SECURITY_BASE_ENDPOINT'] ?? '/api/v1/security/devices/';
+      dotenv.env['DEVICE_SECURITY_BASE_ENDPOINT'] ??
+      '/api/v1/security/devices/';
   static String get deviceSecurityBaseUrl =>
       '$baseUrl$deviceSecurityBaseEndpoint';
-  
+
   static String get deviceUpdateCurrentFcmTokenEndpoint =>
-      dotenv.env['DEVICE_UPDATE_CURRENT_FCM_TOKEN_ENDPOINT'] ?? '/api/v1/security/devices/update_current_device_token/';
+      dotenv.env['DEVICE_UPDATE_CURRENT_FCM_TOKEN_ENDPOINT'] ??
+      '/api/v1/security/devices/update_current_device_token/';
   static String get deviceUpdateCurrentFcmTokenUrl =>
       '$baseUrl$deviceUpdateCurrentFcmTokenEndpoint';
-  
+
   /// Get URL to update FCM token for a specific device by device_id
   static String getDeviceUpdateFcmTokenUrl(String deviceId) =>
       '$deviceSecurityBaseUrl$deviceId/update_fcm_token/';

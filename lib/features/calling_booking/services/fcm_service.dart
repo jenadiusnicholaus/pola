@@ -703,6 +703,7 @@ class FCMService extends GetxService {
       String callerPhoto = data['caller_photo']?.toString() ?? '';
       final callType = data['call_type']?.toString() ?? 'voice';
       final callerId = data['caller_id']?.toString() ?? '';
+      final callerPhone = data['caller_phone']?.toString() ?? '';
 
       if (callId.isEmpty || channelName.isEmpty) {
         debugPrint('❌ Invalid incoming call data: $data');
@@ -756,6 +757,7 @@ class FCMService extends GetxService {
           callerPhoto: callerPhoto,
           callType: callType,
           callerId: callerId,
+          callerPhone: callerPhone,
         ),
         fullscreenDialog: true,
       );
@@ -774,6 +776,15 @@ class FCMService extends GetxService {
       _clearPendingCall(callId);
     }
     _cancelIncomingCallNotification();
+
+    // Unblock SDK caller wait — NX call_response may be delayed or missing
+    if (Get.isRegistered<NexaconCallService>()) {
+      try {
+        Get.find<NexaconCallService>().notifyRemoteAccepted();
+      } catch (e) {
+        debugPrint('⚠️ Could not notify NexaconCallService: $e');
+      }
+    }
 
     NavigationHelper.showSafeSnackbar(
       title: 'Call Accepted',

@@ -32,6 +32,7 @@ class IncomingCallScreen extends StatefulWidget {
   final String callerPhoto;
   final String callType;
   final String callerId;
+  final String callerPhone;
 
   const IncomingCallScreen({
     super.key,
@@ -41,6 +42,7 @@ class IncomingCallScreen extends StatefulWidget {
     required this.callerPhoto,
     required this.callType,
     required this.callerId,
+    this.callerPhone = '',
   });
 
   @override
@@ -55,7 +57,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
   bool _isProcessing = false;
   String _processingAction = ''; // Track which action is being processed
 
-  /// Format phone number with +255 prefix for XMPP JID compatibility
+  /// Format phone number with +255 prefix for NX JID compatibility
   String _formatPhone(String phone) {
     final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
     if (digits.startsWith('255')) return '+$digits';
@@ -119,8 +121,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
         String? rawPhone;
         if (userData != null) {
           final contact = userData['contact'] as Map<String, dynamic>?;
-          rawPhone =
-              contact?['phone_number'] as String? ??
+          rawPhone = contact?['phone_number'] as String? ??
               userData['phone_number'] as String?;
         }
         if (rawPhone != null && rawPhone.isNotEmpty) {
@@ -248,6 +249,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
             isIncoming: true,
             callerName: widget.callerName,
             callerPhoto: widget.callerPhoto,
+            callerPhone: widget.callerPhone,
           ),
         );
       } else {

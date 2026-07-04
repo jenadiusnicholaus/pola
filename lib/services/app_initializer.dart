@@ -22,6 +22,7 @@ import '../features/nearbylawyers/services/nearby_lawyers_service.dart';
 import '../features/calling_booking/services/fcm_service.dart';
 import '../features/calling_booking/services/nexacon_call_service.dart';
 import '../features/calling_booking/services/online_status_service.dart';
+import '../features/messaging/services/nexacon_messaging_service.dart';
 import '../features/settings/controllers/theme_controller.dart';
 import '../features/notifications/services/notification_service.dart';
 
@@ -185,9 +186,32 @@ class AppInitializer {
       Get.put(NotificationService());
       debugPrint('✅ NotificationService initialized (background)');
 
-      // Nexacon call service (singleton for XMPP pre-warm)
+      // Nexacon call service (singleton for NX pre-warm)
       Get.put(NexaconCallService());
       debugPrint('✅ NexaconCallService initialized (background)');
+
+      // Nexacon messaging service
+      final messagingService = Get.put(NexaconMessagingService());
+      debugPrint('✅ NexaconMessagingService initialized (background)');
+
+      // Initialize messaging connection (NX) if user is logged in
+      _initServiceAsync(() async {
+        try {
+          final tokenStorage = Get.find<TokenStorageService>();
+          debugPrint(
+              '🔍 Checking if user is logged in for messaging: ${tokenStorage.isLoggedIn}');
+          if (tokenStorage.isLoggedIn) {
+            debugPrint('🚀 Starting messaging connection initialization...');
+            await messagingService.initializeConnection();
+            debugPrint('✅ Messaging connection established');
+          } else {
+            debugPrint('⏭️ User not logged in, skipping messaging connection');
+          }
+        } catch (e) {
+          debugPrint('❌ Failed to initialize messaging connection: $e');
+          debugPrint('❌ Stack trace: ${StackTrace.current}');
+        }
+      });
 
       // Theme controller
       Get.put(ThemeController());

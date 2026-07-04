@@ -6,6 +6,8 @@ import '../models/consultant_models.dart';
 import '../../../widgets/profile_avatar.dart';
 import '../../../services/permission_service.dart';
 import '../../../utils/navigation_helper.dart';
+import '../../messaging/screens/chat_room_screen.dart';
+import '../../messaging/services/nexacon_messaging_service.dart';
 
 class ConsultantsScreen extends StatefulWidget {
   const ConsultantsScreen({super.key});
@@ -15,6 +17,9 @@ class ConsultantsScreen extends StatefulWidget {
 }
 
 class _ConsultantsScreenState extends State<ConsultantsScreen> {
+  final NexaconMessagingService _messagingService =
+      Get.find<NexaconMessagingService>();
+
   @override
   void initState() {
     super.initState();
@@ -345,11 +350,39 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
                 // Action Buttons based on what consultant offers
                 Row(
                   children: [
+                    // Message button
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () =>
+                            _handleMessageConsultant(context, consultant),
+                        icon: Icon(Icons.chat,
+                            size: 15, color: theme.colorScheme.primary),
+                        label: Text('Message',
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: theme.colorScheme.primary)),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                            color: theme.colorScheme.outlineVariant
+                                .withOpacity(0.5),
+                            width: 1,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 10, horizontal: 14),
+                          minimumSize: const Size(0, 38),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 8),
+
                     // Mobile Call button
                     if (consultant.offersMobileConsultations)
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: () => _handleCallConsultant(context, consultant),
+                          onPressed: () =>
+                              _handleCallConsultant(context, consultant),
                           icon: Icon(Icons.phone,
                               size: 15, color: theme.colorScheme.primary),
                           label: Text('Call',
@@ -379,7 +412,8 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
                         const SizedBox(width: 8),
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: () => _handleBookConsultation(context, consultant),
+                          onPressed: () =>
+                              _handleBookConsultation(context, consultant),
                           icon: Icon(Icons.calendar_today,
                               size: 15, color: theme.colorScheme.primary),
                           label: Text(
@@ -441,6 +475,42 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
       'consultant': consultant,
       'bookingType': 'physical',
     });
+  }
+
+  Future<void> _handleMessageConsultant(
+      BuildContext context, Consultant consultant) async {
+    try {
+      // Get the contact ID and name
+      final contactId = consultant.userDetails.phoneNumber ??
+          consultant.userDetails.id.toString();
+
+      final contactName = consultant.userDetails.fullName;
+      final contactAvatar = consultant.userDetails.profilePicture;
+
+      // Add to contacts via messaging service
+      try {
+        await _messagingService.addContact(contactId);
+      } catch (e) {
+        // Contact might already exist, continue anyway
+        print('Contact might already exist: $e');
+      }
+
+      // Navigate to chat room
+      Get.to(
+        () => ChatRoomScreen(
+          contactId: contactId,
+          contactName: contactName,
+          contactAvatar: contactAvatar,
+        ),
+      );
+    } catch (e) {
+      print('Error adding to contacts: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to add contact: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
   }
 
   Widget _buildStatChip(BuildContext context, IconData icon, String label) {

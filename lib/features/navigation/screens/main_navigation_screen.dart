@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/main_navigation_controller.dart';
 import '../../home/screens/home_screen.dart';
 import '../../posts/screens/posts_screen.dart';
-import '../../help/screens/help_support_screen.dart';
+import '../../messaging/screens/messages_inbox_screen.dart';
 import '../../bookmarks/screens/bookmark_screen.dart';
 import '../../consultation/screens/my_bookings_screen.dart';
 import '../../consultation/screens/my_consultations_screen.dart';
@@ -23,15 +23,18 @@ class MainNavigationScreen extends StatelessWidget {
       // React to profile changes
       final profile = profileService.currentProfile;
       final isProfessional = permissionService.isProfessional;
-      
-      debugPrint('🔄 Navigation rebuild - Profile: ${profile?.fullName}, Role: ${profile?.userRole.roleName}, isProfessional: $isProfessional');
+
+      debugPrint(
+          '🔄 Navigation rebuild - Profile: ${profile?.fullName}, Role: ${profile?.userRole.roleName}, isProfessional: $isProfessional');
 
       // Build screens list with the correct bookings screen based on role
       final List<Widget> screens = [
         const HomeScreen(),
         const PostsScreen(),
-        isProfessional ? const MyConsultationsScreen() : const MyBookingsScreen(),
-        const HelpSupportScreen(),
+        isProfessional
+            ? const MyConsultationsScreen()
+            : const MyBookingsScreen(),
+        const MessagesInboxScreen(),
         const BookmarkScreen(),
       ];
 
@@ -72,9 +75,9 @@ class MainNavigationScreen extends StatelessWidget {
                 label: isProfessional ? 'Consultations' : 'Bookings',
               ),
               const BottomNavigationBarItem(
-                icon: Icon(Icons.help_outline),
-                activeIcon: Icon(Icons.help),
-                label: 'Help & Support',
+                icon: Icon(Icons.inbox_outlined),
+                activeIcon: Icon(Icons.inbox),
+                label: 'Inbox',
               ),
               const BottomNavigationBarItem(
                 icon: Icon(Icons.bookmark_outline),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'chat_room_screen.dart';
+import '../services/nexacon_messaging_service.dart';
 
 /// Professional Messages Inbox Screen
 /// Modern messaging interface with professional design
@@ -15,11 +17,17 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
+  String _currentFilter = 'all';
+  final NexaconMessagingService _messagingService =
+      Get.find<NexaconMessagingService>();
+  List<Map<String, dynamic>> _contacts = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadContacts();
   }
 
   @override
@@ -27,6 +35,21 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
     _tabController.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadContacts() async {
+    try {
+      final contacts = await _messagingService.getContacts();
+      setState(() {
+        _contacts = contacts;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading contacts: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -160,6 +183,12 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
   }
 
   Widget _buildMessagesList(String filter) {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
     final messages = _getMessages(filter);
 
     if (messages.isEmpty) {
@@ -392,80 +421,33 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
   }
 
   List<Map<String, dynamic>> _getMessages(String filter) {
-    final allMessages = [
-      {
-        'name': 'Dr. Sarah Johnson',
-        'lastMessage': 'The constitutional law assignment is due next week.',
-        'time': '2m ago',
-        'unreadCount': 2,
-        'isOnline': true,
-        'isGroup': false,
-        'isSent': false,
-        'isDelivered': true,
-        'isRead': false,
-        'avatar': null,
-      },
-      {
-        'name': 'Law Study Group',
-        'lastMessage': 'Anyone available for group study tonight?',
-        'time': '15m ago',
-        'unreadCount': 5,
-        'isOnline': false,
-        'isGroup': true,
-        'isSent': false,
-        'isDelivered': true,
-        'isRead': false,
-        'avatar': null,
-      },
-      {
-        'name': 'Advocate Mwalimu',
-        'lastMessage': 'Thanks for sharing the case study document.',
-        'time': '1h ago',
-        'unreadCount': 0,
-        'isOnline': false,
-        'isGroup': false,
-        'isSent': true,
-        'isDelivered': true,
-        'isRead': true,
-        'avatar': null,
-      },
-      {
-        'name': 'Student Council',
-        'lastMessage': 'Reminder: Exam timetable has been updated.',
-        'time': '3h ago',
-        'unreadCount': 1,
-        'isOnline': false,
-        'isGroup': true,
-        'isSent': false,
-        'isDelivered': true,
-        'isRead': false,
-        'avatar': null,
-      },
-      {
-        'name': 'Maria Stevens',
-        'lastMessage': 'Can you help with the research methodology?',
-        'time': '1d ago',
-        'unreadCount': 0,
-        'isOnline': true,
-        'isGroup': false,
-        'isSent': false,
-        'isDelivered': true,
-        'isRead': true,
-        'avatar': null,
-      },
-    ];
+    // Map real contacts to the expected format
+    final messages = _contacts.map((contact) {
+      return {
+        'id': contact['nxid'] ?? contact['id'],
+        'name': contact['name'] ?? 'Unknown',
+        'lastMessage': contact['lastMessage'] ?? 'No messages yet',
+        'time': contact['time'] ?? 'Recently',
+        'unreadCount': contact['unreadCount'] ?? 0,
+        'isOnline':
+            contact['status'] == 'online' || contact['isOnline'] == true,
+        'isGroup': contact['isGroup'] == true,
+        'isSent': contact['isSent'] == true,
+        'isDelivered': contact['isDelivered'] == true,
+        'isRead': contact['isRead'] == true,
+        'avatar': contact['avatar'],
+      };
+    }).toList();
 
     switch (filter) {
       case 'unread':
-        return allMessages
+        return messages
             .where((m) => (m['unreadCount'] as int? ?? 0) > 0)
             .toList();
       case 'groups':
-        return allMessages
-            .where((m) => m['isGroup'] as bool? ?? false)
-            .toList();
+        return messages.where((m) => m['isGroup'] as bool? ?? false).toList();
       default:
-        return allMessages;
+        return messages;
     }
   }
 
@@ -479,106 +461,11 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
   }
 
   void _openConversation(Map<String, dynamic> message) {
-    Get.bottomSheet(
-      _buildConversationPreview(message),
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-    );
-  }
-
-  Widget _buildConversationPreview(Map<String, dynamic> message) {
-    final theme = Theme.of(context);
-
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.8,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: message['isGroup']
-                      ? theme.colorScheme.secondaryContainer
-                      : theme.colorScheme.primaryContainer,
-                  child: Icon(
-                    message['isGroup'] ? Icons.group : Icons.person,
-                    color: message['isGroup']
-                        ? theme.colorScheme.onSecondaryContainer
-                        : theme.colorScheme.onPrimaryContainer,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        message['name'],
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (!message['isGroup'] && message['isOnline'])
-                        Text(
-                          'Online',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: Colors.green,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Get.back(),
-                  icon: const Icon(Icons.close),
-                ),
-              ],
-            ),
-          ),
-
-          // Coming Soon Message
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.construction,
-                    size: 64,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Conversation View',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Full messaging functionality is coming soon!\nYou\'ll be able to send and receive messages here.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+    Get.to(
+      () => ChatRoomScreen(
+        contactId: message['id'] ?? message['name'],
+        contactName: message['name'],
+        contactAvatar: message['avatar'],
       ),
     );
   }

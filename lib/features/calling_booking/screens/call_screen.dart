@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../controllers/call_controller.dart';
 import '../models/consultant_models.dart';
 import '../../../routes/app_routes.dart';
+import '../../messaging/screens/chat_room_screen.dart';
+import '../../messaging/services/nexacon_messaging_service.dart';
 
 class CallScreen extends StatefulWidget {
   final Consultant? consultant;
@@ -11,6 +13,7 @@ class CallScreen extends StatefulWidget {
   final bool isIncoming;
   final String? callerName;
   final String? callerPhoto;
+  final String? callerPhone;
 
   const CallScreen({
     super.key,
@@ -20,6 +23,7 @@ class CallScreen extends StatefulWidget {
     this.isIncoming = false,
     this.callerName,
     this.callerPhoto,
+    this.callerPhone,
   });
 
   @override
@@ -30,6 +34,8 @@ class _CallScreenState extends State<CallScreen> {
   CallController? controller;
   bool _hasError = false;
   String _errorMessage = '';
+  final NexaconMessagingService _messagingService =
+      Get.find<NexaconMessagingService>();
 
   @override
   void initState() {
@@ -63,6 +69,7 @@ class _CallScreenState extends State<CallScreen> {
           callId: widget.callId!,
           channelName: widget.channelName!,
           callerName: widget.callerName ?? 'Unknown',
+          callerPhone: widget.callerPhone ?? '',
         );
       } else {
         // Initiate new call to consultant
@@ -446,139 +453,163 @@ class _CallScreenState extends State<CallScreen> {
               }
 
               // Call in progress
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Top section - Consultant info
-                  Padding(
-                    padding: const EdgeInsets.all(32.0),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 40),
-                        // Avatar
-                        CircleAvatar(
-                          radius: 60,
-                          backgroundColor:
-                              theme.colorScheme.surfaceContainerHighest,
-                          backgroundImage: widget.callerPhoto != null &&
-                                  widget.callerPhoto!.isNotEmpty
-                              ? NetworkImage(widget.callerPhoto!)
-                              : null,
-                          child: widget.callerPhoto == null ||
-                                  widget.callerPhoto!.isEmpty
-                              ? Text(
-                                  widget.consultant != null
-                                      ? widget
-                                          .consultant!.userDetails.firstName[0]
-                                          .toUpperCase()
-                                      : widget.callerName?.isNotEmpty == true
-                                          ? widget.callerName![0].toUpperCase()
-                                          : 'C',
-                                  style: TextStyle(
-                                    fontSize: 48,
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                )
-                              : null,
-                        ),
-                        const SizedBox(height: 24),
-                        // Name
-                        Text(
-                          widget.consultant != null
-                              ? widget.consultant!.userDetails.fullName
-                              : widget.callerName ?? 'Unknown',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        // Type
-                        if (widget.consultant != null)
-                          Text(
-                            widget.consultant!.consultantType.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 14,
-                              color:
-                                  theme.colorScheme.onSurface.withOpacity(0.6),
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                        const SizedBox(height: 24),
-                        // Call status
-                        Text(
-                          controller!.isConsultantConnected.value
-                              ? 'Connected'
-                              : 'Ringing...',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: theme.colorScheme.onSurface.withOpacity(0.6),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        // Duration
-                        Text(
-                          controller!.callDuration.value,
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w300,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                        ),
-                      ],
-                    ),
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: MediaQuery.of(context).size.height,
                   ),
-
-                  // Bottom section - Controls
-                  Padding(
-                    padding: const EdgeInsets.all(32.0),
-                    child: Column(
-                      children: [
-                        // Credits remaining
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            '${controller!.creditsRemaining.value} minutes remaining',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                        // Call controls
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Top section - Consultant info
+                      Padding(
+                        padding: const EdgeInsets.all(32.0),
+                        child: Column(
                           children: [
-                            // Note: With ZegoCloud prebuilt UI, mute/speaker/end call
-                            // buttons are handled by the ZegoUIKitPrebuiltCall widget
-                            // These controls are for reference/fallback only
-
-                            // End call button
-                            _buildCallButton(
-                              icon: Icons.call_end,
-                              label: 'End Call',
-                              onPressed: () => controller?.endCall(),
-                              backgroundColor: theme.colorScheme.error,
-                              iconColor: theme.colorScheme.onError,
-                              size: 70,
+                            const SizedBox(height: 40),
+                            // Avatar
+                            CircleAvatar(
+                              radius: 60,
+                              backgroundColor:
+                                  theme.colorScheme.surfaceContainerHighest,
+                              backgroundImage: widget.callerPhoto != null &&
+                                      widget.callerPhoto!.isNotEmpty
+                                  ? NetworkImage(widget.callerPhoto!)
+                                  : null,
+                              child: widget.callerPhoto == null ||
+                                      widget.callerPhoto!.isEmpty
+                                  ? Text(
+                                      widget.consultant != null
+                                          ? widget.consultant!.userDetails
+                                              .firstName[0]
+                                              .toUpperCase()
+                                          : widget.callerName?.isNotEmpty ==
+                                                  true
+                                              ? widget.callerName![0]
+                                                  .toUpperCase()
+                                              : 'C',
+                                      style: TextStyle(
+                                        fontSize: 48,
+                                        fontWeight: FontWeight.bold,
+                                        color:
+                                            theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            const SizedBox(height: 24),
+                            // Name
+                            Text(
+                              widget.consultant != null
+                                  ? widget.consultant!.userDetails.fullName
+                                  : widget.callerName ?? 'Unknown',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            // Type
+                            if (widget.consultant != null)
+                              Text(
+                                widget.consultant!.consultantType.toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.6),
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                            const SizedBox(height: 24),
+                            // Call status
+                            Text(
+                              controller!.isConsultantConnected.value
+                                  ? 'Connected'
+                                  : 'Ringing...',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: theme.colorScheme.onSurface
+                                    .withOpacity(0.6),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            // Duration
+                            Text(
+                              controller!.callDuration.value,
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w300,
+                                color: theme.colorScheme.onSurface,
+                              ),
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+
+                      // Bottom section - Controls
+                      Padding(
+                        padding: const EdgeInsets.all(32.0),
+                        child: Column(
+                          children: [
+                            // Credits remaining
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    theme.colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                '${controller!.creditsRemaining.value} minutes remaining',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+                            // Call controls
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                // Note: With ZegoCloud prebuilt UI, mute/speaker/end call
+                                // buttons are handled by the ZegoUIKitPrebuiltCall widget
+                                // These controls are for reference/fallback only
+
+                                // Message button - add to contacts and chat
+                                _buildCallButton(
+                                  icon: Icons.chat,
+                                  label: 'Message',
+                                  onPressed: _addToContactsAndChat,
+                                  backgroundColor:
+                                      theme.colorScheme.primaryContainer,
+                                  iconColor:
+                                      theme.colorScheme.onPrimaryContainer,
+                                  size: 60,
+                                ),
+
+                                // End call button
+                                _buildCallButton(
+                                  icon: Icons.call_end,
+                                  label: 'End Call',
+                                  onPressed: () => controller?.endCall(),
+                                  backgroundColor: theme.colorScheme.error,
+                                  iconColor: theme.colorScheme.onError,
+                                  size: 70,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               );
             }),
           ),
@@ -627,5 +658,48 @@ class _CallScreenState extends State<CallScreen> {
   void dispose() {
     // Don't call endCall here as it's already handled by back navigation
     super.dispose();
+  }
+
+  Future<void> _addToContactsAndChat() async {
+    try {
+      // Get the contact ID and name
+      final contactId = widget.isIncoming
+          ? widget.callerPhone ?? widget.callerName ?? 'unknown'
+          : widget.consultant?.userDetails.phoneNumber ??
+              widget.consultant?.userDetails.id.toString() ??
+              'unknown';
+
+      final contactName = widget.isIncoming
+          ? widget.callerName ?? 'Unknown'
+          : widget.consultant?.userDetails.fullName ?? 'Unknown';
+
+      final contactAvatar = widget.isIncoming
+          ? widget.callerPhoto
+          : widget.consultant?.userDetails.profilePicture;
+
+      // Add to contacts via messaging service
+      try {
+        await _messagingService.addContact(contactId);
+      } catch (e) {
+        // Contact might already exist, continue anyway
+        print('Contact might already exist: $e');
+      }
+
+      // Navigate to chat room
+      Get.to(
+        () => ChatRoomScreen(
+          contactId: contactId,
+          contactName: contactName,
+          contactAvatar: contactAvatar,
+        ),
+      );
+    } catch (e) {
+      print('Error adding to contacts: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to add contact: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
   }
 }

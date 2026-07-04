@@ -4,6 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:get/get.dart';
 import '../../../config/nexacon_config.dart';
 import 'call_service.dart';
+import '../../messaging/services/nexacon_messaging_service.dart';
 
 class NexaconCallService extends GetxService {
   Timer? _durationTimer;
@@ -84,9 +85,10 @@ class NexaconCallService extends GetxService {
     required String username,
     required String to,
     String? name,
+    String? roomId,
   }) async {
     try {
-      print('� Initiating call to: $to');
+      print('📞 Initiating call to: $to (room: $roomId)');
       // Use pre-warmed SDK if available, otherwise create new
       if (_sdk == null) {
         print("No pre-warmed SDK, creating new instance");
@@ -100,12 +102,19 @@ class NexaconCallService extends GetxService {
         name: name,
         audio: true,
         video: false,
+        roomId: roomId,
       );
       print('✅ Call initiated — waiting for other user to accept...');
     } catch (e) {
       print('❌ Error initiating call: $e');
       rethrow;
     }
+  }
+
+  /// Notify SDK that remote party accepted (FCM fallback when NX is delayed).
+  void notifyRemoteAccepted() {
+    print('📲 Notifying SDK of remote call acceptance');
+    _sdk?.notifyRemoteAccepted();
   }
 
   /// Pre-warm the NX connection as soon as the incoming call screen opens.
@@ -135,6 +144,13 @@ class NexaconCallService extends GetxService {
       print(
           '✅ NX pre-warm connection established — waiting for call invitation...');
 
+      // Initialize messaging service with the SDK
+      if (Get.isRegistered<NexaconMessagingService>()) {
+        final messagingService = Get.find<NexaconMessagingService>();
+        await messagingService.initialize(_sdk!);
+        print('✅ NexaconMessagingService initialized with SDK');
+      }
+
       await _incomingCallCompleter!.future.timeout(
         const Duration(seconds: 30),
         onTimeout: () {
@@ -162,56 +178,62 @@ class NexaconCallService extends GetxService {
       _sdk = _createSdk();
       await _sdk!.initialize(username: phoneNumber, name: name);
       print('✅ NX pre-warm complete — ready to initiate call');
+
+      // Initialize messaging service with the SDK
+      if (Get.isRegistered<NexaconMessagingService>()) {
+        final messagingService = Get.find<NexaconMessagingService>();
+        await messagingService.initialize(_sdk!);
+        print('✅ NexaconMessagingService initialized with SDK');
+      }
     } catch (e) {
       print('⚠️ Pre-warm failed (non-fatal): $e');
       // Not fatal — initiateCall() will re-initialize if needed
     }
   }
 
-  /// Accept an incoming call. Uses pre-warmed SDK if available,
-  /// waits for the call invitation signal, then accepts.
+  /// Accept an incoming call using FCM-delivered caller data.
+  /// Uses acceptFromNotification() to bypass NX invitation signaling —
+  /// the callerNxId is derived directly from callerPhone (from FCM payload).
   Future<void> acceptIncomingCall({
     required String phoneNumber,
+    required String channelName,
+    required String callerPhone,
     String? name,
     bool audio = true,
     bool video = false,
   }) async {
     try {
-      if (_sdk != null && _incomingCallCompleter != null) {
-        print('✅ Using pre-warmed SDK to accept call: $phoneNumber');
+      print('✅ Accepting incoming call as: $phoneNumber');
+      print('   Channel: $channelName | Caller phone: $callerPhone');
 
-        // Wait up to 10s for call invitation to arrive if not yet received
-        if (!_incomingCallCompleter!.isCompleted) {
-          print('⏳ Waiting for call invitation signal...');
-          await _incomingCallCompleter!.future.timeout(
-            const Duration(seconds: 10),
-            onTimeout: () {
-              print('⚠️ Timed out waiting for call invitation signal');
-            },
-          );
-        }
-
-        try {
-          await _sdk!.acceptCall(audio: audio, video: video);
-          print('✅ Call accepted via pre-warmed SDK');
-          return;
-        } catch (e) {
-          print(
-            '⚠️ Direct accept failed ($e), falling back to acceptWhenReady...',
-          );
-        }
+      // Reuse pre-warmed SDK connection if available
+      if (_sdk == null) {
+        _sdk = _createSdk();
       }
 
-      // Fallback: initialize fresh and wait for invitation
-      print('✅ Waiting for incoming call signal (phone: $phoneNumber)...');
-      _sdk = _createSdk();
-      await _sdk!.acceptWhenReady(
-        username: phoneNumber,
-        name: name,
-        audio: audio,
-        video: video,
-      );
-      print('✅ Call accepted');
+      if (callerPhone.isNotEmpty) {
+        // Fast path: bypass NX invitation wait using FCM caller data directly
+        print('📲 Using acceptFromNotification (callerPhone=$callerPhone)');
+        await _sdk!.acceptFromNotification(
+          username: phoneNumber,
+          roomId: channelName,
+          callerNxId: callerPhone,
+          name: name,
+          audio: audio,
+          video: video,
+        );
+        print('✅ Call accepted via notification path');
+      } else {
+        // Fallback: wait for NX invitation signal (callerPhone not available)
+        print('⚠️ No callerPhone — falling back to acceptWhenReady');
+        await _sdk!.acceptWhenReady(
+          username: phoneNumber,
+          name: name,
+          audio: audio,
+          video: video,
+        );
+        print('✅ Call accepted via NX invitation path');
+      }
     } catch (e) {
       print('❌ Error accepting call: $e');
       rethrow;
