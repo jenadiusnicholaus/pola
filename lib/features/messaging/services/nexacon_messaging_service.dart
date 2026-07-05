@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:nexacon_sdk/nexacon_sdk.dart';
 import 'package:get/get.dart';
 import '../../../config/nexacon_config.dart';
@@ -10,12 +12,20 @@ class NexaconMessagingService extends GetxService {
   MessagingManager? _messagingManager;
   final TokenStorageService _tokenStorage = Get.find<TokenStorageService>();
 
-  // Message streams
-  final messageStream = <Map<String, dynamic>>[].obs;
-  final typingStream = <Map<String, dynamic>>[].obs;
-  final readReceiptStream = <Map<String, dynamic>>[].obs;
-  final deliveryReceiptStream = <Map<String, dynamic>>[].obs;
-  final presenceStream = <Map<String, dynamic>>[].obs;
+  // Broadcast stream controllers — emit one Map per event (not a full List)
+  final _messageCtrl = StreamController<Map<String, dynamic>>.broadcast();
+  final _typingCtrl = StreamController<Map<String, dynamic>>.broadcast();
+  final _readReceiptCtrl = StreamController<Map<String, dynamic>>.broadcast();
+  final _deliveryReceiptCtrl =
+      StreamController<Map<String, dynamic>>.broadcast();
+  final _presenceCtrl = StreamController<Map<String, dynamic>>.broadcast();
+
+  Stream<Map<String, dynamic>> get messageStream => _messageCtrl.stream;
+  Stream<Map<String, dynamic>> get typingStream => _typingCtrl.stream;
+  Stream<Map<String, dynamic>> get readReceiptStream => _readReceiptCtrl.stream;
+  Stream<Map<String, dynamic>> get deliveryReceiptStream =>
+      _deliveryReceiptCtrl.stream;
+  Stream<Map<String, dynamic>> get presenceStream => _presenceCtrl.stream;
 
   // Connection state
   final isConnected = false.obs;
@@ -41,23 +51,23 @@ class NexaconMessagingService extends GetxService {
 
     // Listen to real-time streams
     _messagingManager?.messageStream.listen((message) {
-      messageStream.add(message);
+      _messageCtrl.add(message);
     });
 
     _messagingManager?.typingStream.listen((typing) {
-      typingStream.add(typing);
+      _typingCtrl.add(typing);
     });
 
     _messagingManager?.readReceiptStream.listen((receipt) {
-      readReceiptStream.add(receipt);
+      _readReceiptCtrl.add(receipt);
     });
 
     _messagingManager?.deliveryReceiptStream.listen((receipt) {
-      deliveryReceiptStream.add(receipt);
+      _deliveryReceiptCtrl.add(receipt);
     });
 
     _messagingManager?.presenceStream.listen((presence) {
-      presenceStream.add(presence);
+      _presenceCtrl.add(presence);
     });
 
     isConnected.value = true;
@@ -82,11 +92,36 @@ class NexaconMessagingService extends GetxService {
     // Get user's phone number for NX ID
     final userData = _tokenStorage.userData;
     print('👤 User data: ${userData != null ? "found" : "null"}');
-    final phone = userData?['phone_number'] as String?;
+    print('👤 User data keys: ${userData?.keys.toList()}');
+    print('👤 Full user data: $userData');
+
+    // Try multiple possible phone number fields
+    String? phone = userData?['phone_number'] as String?;
+    if (phone == null || phone.isEmpty) {
+      phone = userData?['phone'] as String?;
+    }
+    if (phone == null || phone.isEmpty) {
+      phone = userData?['mobile'] as String?;
+    }
+    if (phone == null || phone.isEmpty) {
+      phone = userData?['contact_number'] as String?;
+    }
+    if (phone == null || phone.isEmpty) {
+      phone = userData?['phoneNumber'] as String?;
+    }
+    if (phone == null || phone.isEmpty) {
+      phone = userData?['username'] as String?;
+    }
+    // Check nested contact object
+    if (phone == null || phone.isEmpty) {
+      final contact = userData?['contact'] as Map<String, dynamic>?;
+      phone = contact?['phone_number'] as String?;
+    }
+
     print('📱 Phone: $phone');
 
     if (phone == null || phone.isEmpty) {
-      print('❌ User phone number not found');
+      print('❌ User phone number not found in any field');
       throw Exception(
           'User phone number not found. Cannot initialize messaging.');
     }
@@ -122,47 +157,23 @@ class NexaconMessagingService extends GetxService {
           wsUrl: wsUrl,
         );
       } else {
-        // Fetch new credentials first, then pass to SDK
-        print('🔐 No stored NX credentials, fetching from API...');
+        // Let SDK fetch credentials and store them after initialization
+        print('🔐 No stored NX credentials, letting SDK fetch from API...');
 
-        // Create a temporary client to fetch credentials
-        final tempClient = NexaconClient(
-          apiKey: NexaconConfig.apiKey,
-          secretKey: NexaconConfig.secretKey,
-        );
+        // Initialize SDK without credentials - it will fetch them and return them
+        final credentials = await _sdk!.initialize(username: formattedPhone);
 
-        final nxResponse =
-            await tempClient.auth.getNxToken(username: formattedPhone);
-        final nxtoken = nxResponse['token'];
-        final nxid = nxResponse['jid'];
-        String wsUrl = nxResponse['nxws'];
-
-        print('🔑 Fetched token: ${nxtoken.substring(0, 20)}...');
-        print('🆔 Fetched JID: $nxid');
-        print('🌐 Fetched WS URL: $wsUrl');
-
-        if (wsUrl.startsWith('https://')) {
-          wsUrl = wsUrl.replaceFirst('https://', 'wss://');
-        }
-
-        // Store credentials for future use
+        // Store the credentials returned by SDK
         await _tokenStorage.storeNxTokenData(
-          token: nxtoken,
-          jid: nxid,
-          wsUrl: nxResponse['nxws'],
+          token: credentials['token'],
+          jid: credentials['jid'],
+          wsUrl: credentials['nxws'],
         );
         print('✅ NX credentials stored for future use');
-
-        // Initialize SDK with the fetched credentials
-        await _sdk!.initialize(
-          username: formattedPhone,
-          nxtoken: nxtoken,
-          nxid: nxid,
-          wsUrl: wsUrl,
-        );
       }
 
       print('✅ Messaging SDK initialized successfully');
+      print('📦 SDK client: ${_sdk?.client != null ? "exists" : "null"}');
 
       // Use the NX manager directly from SDK (already connected)
       final nxManager = _sdk!.xmppManager;
@@ -175,21 +186,23 @@ class NexaconMessagingService extends GetxService {
       // Create MessagingManager from nxManager for sending messages
       _messagingManager = MessagingManager(nxManager);
       print('📨 MessagingManager created');
+      print(
+          '📨 SDK client after init: ${_sdk?.client != null ? "exists" : "null"}');
 
       // Set up streams from NX manager
       nxManager.messageStream.listen((message) {
         print('📩 Message received from NX stream');
-        messageStream.add(message);
+        _messageCtrl.add(message);
       });
 
       nxManager.presenceStream.listen((presence) {
         print('👤 Presence received from NX stream');
-        presenceStream.add(presence);
+        _presenceCtrl.add(presence);
       });
 
       nxManager.deliveryReceiptStream.listen((receipt) {
         print('📬 Delivery receipt received from NX stream');
-        deliveryReceiptStream.add(receipt);
+        _deliveryReceiptCtrl.add(receipt);
       });
 
       isConnected.value = true;
@@ -204,12 +217,20 @@ class NexaconMessagingService extends GetxService {
 
   String _formatPhoneNumberWithCountryCode(String phone) {
     final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
+    String formatted;
+
     if (digits.startsWith('0')) {
-      return '255${digits.substring(1)}';
+      formatted = '+255${digits.substring(1)}';
     } else if (digits.startsWith('255')) {
-      return digits;
+      formatted = '+$digits';
+    } else if (digits.length == 9) {
+      // Local 9-digit number without country code or leading 0
+      formatted = '+255$digits';
+    } else {
+      formatted = digits; // assume already international
     }
-    return digits;
+
+    return '$formatted@nxservice.quantumvision-tech.com';
   }
 
   /// Send a direct message to a user
@@ -235,11 +256,21 @@ class NexaconMessagingService extends GetxService {
     required String to,
     required String message,
   }) {
+    print('📤 sendRealTimeMessage called');
+    print('📤 To: $to');
+    print('📤 Message: $message');
+    print(
+        '📤 MessagingManager: ${_messagingManager != null ? "initialized" : "null"}');
+    print('📤 isConnected: ${isConnected.value}');
+
     if (_messagingManager == null) {
+      print('❌ MessagingManager not initialized');
       throw Exception('MessagingManager not initialized');
     }
 
+    print('📤 Sending message via MessagingManager...');
     _messagingManager!.sendMessage(to: to, message: message);
+    print('✅ Message sent');
   }
 
   /// Send typing indicator
@@ -254,22 +285,51 @@ class NexaconMessagingService extends GetxService {
 
   /// Get contact list
   Future<List<Map<String, dynamic>>> getContacts() async {
+    print('📨 getContacts called');
+    print('📨 _sdk: ${_sdk != null ? "exists" : "null"}');
+    print('📨 _sdk.client: ${_sdk?.client != null ? "exists" : "null"}');
+
     final client = _sdk?.client;
     if (client == null) {
+      print('❌ SDK client is null - cannot get contacts');
       throw Exception('Messaging service not initialized');
     }
 
-    return await client.messaging.getContacts();
+    print('📨 Calling client.messaging.getContacts...');
+    try {
+      final contacts = await client.messaging.getContacts();
+      print('✅ getContacts returned ${contacts.length} contacts');
+      for (var c in contacts) {
+        print('   - Contact: $c');
+      }
+      return contacts;
+    } catch (e) {
+      print('❌ getContacts failed: $e');
+      rethrow;
+    }
   }
 
   /// Add a contact
   Future<Map<String, dynamic>> addContact(String nxid) async {
+    print('📨 addContact called with nxid: $nxid');
+    print('📨 _sdk: ${_sdk != null ? "exists" : "null"}');
+    print('📨 _sdk.client: ${_sdk?.client != null ? "exists" : "null"}');
+
     final client = _sdk?.client;
     if (client == null) {
-      throw Exception('Messaging service not initialized');
+      print('❌ SDK client is null - cannot add contact');
+      throw Exception('Messaging service not initialized - client is null');
     }
 
-    return await client.messaging.addContact(nxid);
+    print('📨 Calling client.messaging.addContact...');
+    try {
+      final result = await client.messaging.addContact(nxid);
+      print('✅ addContact result: $result');
+      return result;
+    } catch (e) {
+      print('❌ addContact failed: $e');
+      rethrow;
+    }
   }
 
   /// Remove a contact
@@ -317,11 +377,21 @@ class NexaconMessagingService extends GetxService {
       pageSize: pageSize,
     );
 
+    debugPrint(
+        '📨 getConversationHistory response type: ${history.runtimeType}');
+    debugPrint('📨 getConversationHistory response: $history');
+
     // Handle different response formats from SDK
     if (history is List) {
       return (history as List<dynamic>)
           .map((e) => e as Map<String, dynamic>)
           .toList();
+    }
+
+    // If it's an int (count), return empty list (no messages)
+    if (history is int) {
+      debugPrint('📨 Response is int (count): $history - returning empty list');
+      return [];
     }
 
     // If it's a Map, look for messages field
@@ -330,17 +400,18 @@ class NexaconMessagingService extends GetxService {
       return messages.map((e) => e as Map<String, dynamic>).toList();
     }
 
+    debugPrint('📨 Unknown response format, returning empty list');
     return [];
-  }
-
-  /// Clear message stream
-  void clearMessageStream() {
-    messageStream.value = [];
   }
 
   @override
   void onClose() {
     _messagingManager?.dispose();
+    _messageCtrl.close();
+    _typingCtrl.close();
+    _readReceiptCtrl.close();
+    _deliveryReceiptCtrl.close();
+    _presenceCtrl.close();
     super.onClose();
   }
 }

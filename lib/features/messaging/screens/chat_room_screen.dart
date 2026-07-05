@@ -27,6 +27,7 @@ class ChatRoomScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: true,
         title: Row(
           children: [
             CircleAvatar(
@@ -117,7 +118,8 @@ class ChatRoomScreen extends StatelessWidget {
 
               return ListView.builder(
                 reverse: true,
-                padding: const EdgeInsets.all(16),
+                controller: controller.scrollController,
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
                 itemCount: messages.length,
                 itemBuilder: (context, index) {
                   final message = messages[index];
@@ -127,6 +129,36 @@ class ChatRoomScreen extends StatelessWidget {
               );
             }),
           ),
+          // Typing indicator
+          Obx(() {
+            if (!controller.isContactTyping.value)
+              return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Get.theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _TypingDot(delay: 0),
+                        const SizedBox(width: 4),
+                        _TypingDot(delay: 150),
+                        const SizedBox(width: 4),
+                        _TypingDot(delay: 300),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
           _buildMessageInput(controller),
         ],
       ),
@@ -167,8 +199,9 @@ class ChatRoomScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10,
                     color: isMe
-                        ? Get.theme.colorScheme.onPrimary.withOpacity(0.7)
-                        : Get.theme.colorScheme.onSurface.withOpacity(0.6),
+                        ? Get.theme.colorScheme.onPrimary.withValues(alpha: 0.7)
+                        : Get.theme.colorScheme.onSurface
+                            .withValues(alpha: 0.6),
                   ),
                 ),
                 if (isMe) ...[
@@ -181,8 +214,9 @@ class ChatRoomScreen extends StatelessWidget {
                             : Icons.access_time,
                     size: 12,
                     color: isMe
-                        ? Get.theme.colorScheme.onPrimary.withOpacity(0.7)
-                        : Get.theme.colorScheme.onSurface.withOpacity(0.6),
+                        ? Get.theme.colorScheme.onPrimary.withValues(alpha: 0.7)
+                        : Get.theme.colorScheme.onSurface
+                            .withValues(alpha: 0.6),
                   ),
                 ],
               ],
@@ -200,7 +234,7 @@ class ChatRoomScreen extends StatelessWidget {
         color: Get.theme.colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -260,5 +294,58 @@ class ChatRoomScreen extends StatelessWidget {
     } else {
       return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     }
+  }
+}
+
+class _TypingDot extends StatefulWidget {
+  final int delay;
+  const _TypingDot({required this.delay});
+
+  @override
+  State<_TypingDot> createState() => _TypingDotState();
+}
+
+class _TypingDotState extends State<_TypingDot>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _anim = Tween<double>(begin: 0, end: -6).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
+    Future.delayed(Duration(milliseconds: widget.delay), () {
+      if (mounted) _ctrl.repeat(reverse: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _anim,
+      builder: (_, __) => Transform.translate(
+        offset: Offset(0, _anim.value),
+        child: Container(
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.5),
+          ),
+        ),
+      ),
+    );
   }
 }

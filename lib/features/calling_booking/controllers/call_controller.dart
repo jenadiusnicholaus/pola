@@ -13,6 +13,8 @@ class CallController extends GetxController {
 
   // Observable state
   var isCheckingCredits = false.obs;
+  var isRinging =
+      false.obs; // Track if call is ringing (waiting for consultant to accept)
   var isCallConnected = false.obs;
   var isConsultantConnected = false.obs; // NEW: Track if consultant joined
   var error = ''.obs;
@@ -26,6 +28,8 @@ class CallController extends GetxController {
 
   Consultant? _currentConsultant;
   bool _isEndingCall = false; // Prevent multiple simultaneous endCall() calls
+  bool _isEndCallScheduled =
+      false; // Prevent multiple scheduled endCall() calls
 
   // Getters
   List<CreditBundle> get availableBundles => _availableBundles;
@@ -107,6 +111,15 @@ class CallController extends GetxController {
     _setupCallbacks();
   }
 
+  void _resetCallState() {
+    _isEndingCall = false;
+    _isEndCallScheduled = false;
+    isConsultantConnected.value = false;
+    isCallConnected.value = false;
+    isRinging.value = false;
+    callDuration.value = '00:00';
+  }
+
   void _setupCallbacks() {
     // Duration update callback
     _nexaconService.onDurationUpdate = (duration) {
@@ -122,11 +135,30 @@ class CallController extends GetxController {
     _nexaconService.onOtherUserJoined = () {
       print('✅ Other user joined the call, timer started');
       isConsultantConnected.value = true;
+      isRinging.value = false; // Stop ringing when consultant joins
     };
 
     // Other user left callback - end call when other party disconnects
     _nexaconService.onOtherUserLeft = () {
       print('🚪 ❗ OTHER USER LEFT - Triggering endCall IMMEDIATELY');
+      print(
+          '🚪 isCallConnected: ${isCallConnected.value}, isConsultantConnected: ${isConsultantConnected.value}');
+      print('🚪 isRinging: ${isRinging.value}, _isEndingCall: $_isEndingCall');
+
+      // Only end call if the WebRTC peer actually joined (isConsultantConnected = true)
+      // isCallConnected is set too early (at call initiation), so we cannot rely on it here
+      if (!isConsultantConnected.value) {
+        print(
+            '⚠️ OTHER USER LEFT but peer never joined via WebRTC - ignoring to prevent premature end');
+        return;
+      }
+
+      // Prevent multiple scheduled endCall calls
+      if (_isEndCallScheduled) {
+        print('⚠️ endCall already scheduled, skipping duplicate');
+        return;
+      }
+      _isEndCallScheduled = true;
       // Small delay to ensure Nexacon state is updated
       Future.delayed(const Duration(milliseconds: 200), () {
         if (!_isEndingCall) {
@@ -135,6 +167,7 @@ class CallController extends GetxController {
         } else {
           print('⚠️ endCall already in progress, skipping');
         }
+        _isEndCallScheduled = false;
       });
     };
 
@@ -169,12 +202,25 @@ class CallController extends GetxController {
     required String callerName,
     String callerPhone = '',
   }) async {
+    _resetCallState();
     error.value = '';
     isCheckingCredits.value = true;
 
     try {
       debugPrint('📞 Joining incoming call: $callId');
       debugPrint('📡 Channel: $channelName');
+
+      // Set call ID for duration recording
+      try {
+        final callIdInt = int.parse(callId);
+        _nexaconService.setCallId(callIdInt);
+        debugPrint('📞 Call ID set for incoming call: $callIdInt');
+      } catch (e) {
+        debugPrint('⚠️ Could not parse call ID: $callId');
+      }
+
+      // Setup callbacks for duration updates and call events
+      _setupCallbacks();
 
       // Get user's phone number for Nexacon authentication
       final phoneNumber = _getUserPhoneNumber();
@@ -228,6 +274,7 @@ class CallController extends GetxController {
   }
 
   Future<void> initiateCall(Consultant consultant) async {
+    _resetCallState();
     _currentConsultant = consultant;
     error.value = '';
     isCheckingCredits.value = true;
@@ -334,8 +381,23 @@ class CallController extends GetxController {
       // Set call ID for backend recording
       _nexaconService.setCallId(initiateResult['call_id']);
 
-      // Consultant's phone number is their NX ID
-      final consultantPhone = consultant.userDetails.phoneNumber;
+      // Mark as ringing - waiting for consultant to accept
+      isRinging.value = true;
+      isCheckingCredits.value = false;
+
+      // Fetch consultant's actual registered phone number from backend
+      String? consultantPhone;
+      try {
+        final consultantDetails =
+            await _callService.getConsultantDetails(consultant.id);
+        consultantPhone = consultantDetails.userDetails.phoneNumber;
+        print('📱 Fetched consultant phone from backend: $consultantPhone');
+      } catch (e) {
+        print('⚠️ Failed to fetch consultant details: $e');
+        // Fallback to profile phone number
+        consultantPhone = consultant.userDetails.phoneNumber;
+      }
+
       if (consultantPhone == null || consultantPhone.isEmpty) {
         debugPrint(
           '❌ Consultant has no phone number — cannot route Nexacon call',
@@ -419,40 +481,81 @@ class CallController extends GetxController {
           print('📞 Call was connected, recording duration...');
           callSummary = await _nexaconService.endCall(recordCall: true);
         } else {
-          // Call was not answered - cancel it so callee gets notified
-          print('📵 Call was not answered, cancelling...');
-          await _callService.cancelCall(callId: callId.toString());
-          // Clear call ID since we cancelled
-          _nexaconService.clearCallId();
+          // Call was not answered - try to cancel it so callee gets notified
+          print('📵 Call was not answered, attempting to cancel...');
+          final cancelResult =
+              await _callService.cancelCall(callId: callId.toString());
+
+          if (cancelResult['success'] == true) {
+            // Clear call ID since we cancelled
+            _nexaconService.clearCallId();
+          } else if (cancelResult['is_ended'] == true) {
+            // Call is already completed — just clear state, nothing to record
+            print('⚠️ Call already completed, skipping API call');
+            _nexaconService.clearCallId();
+          } else if (cancelResult['is_active'] == true) {
+            // Call is active — must use endCall to record duration
+            print('⚠️ Call is active, using endCall to record duration...');
+            callSummary = await _nexaconService.endCall(recordCall: true);
+          } else {
+            // Other error - still try to end call
+            print('⚠️ Cancel failed with error: ${cancelResult['message']}');
+            print('📞 Attempting endCall as fallback...');
+            callSummary = await _nexaconService.endCall(recordCall: true);
+          }
         }
       } else {
         print('⚠️ No call ID available');
       }
 
-      // Navigate back immediately - try multiple methods to ensure it works
+      // Navigate back after call ends
       print('🔙 Attempting to navigate back...');
 
       bool navigationSuccess = false;
 
-      // Method 1: Direct Navigator pop (most reliable)
-      if (Get.context != null) {
-        try {
-          Navigator.of(Get.context!).pop();
-          navigationSuccess = true;
-          print('✅ Navigation successful via Navigator.pop()');
-        } catch (e) {
-          print('⚠️ Navigator.pop() failed: $e');
-        }
-      }
+      // For incoming calls (callee), the navigation stack may be empty if the
+      // app was cold-started from an FCM notification. Always navigate to /home
+      // to avoid a black screen when there is nothing to pop back to.
+      final isIncomingCall = _currentConsultant == null;
 
-      // Method 2: Try GetX navigation if first method failed
-      if (!navigationSuccess && Get.isRegistered<CallController>()) {
+      if (isIncomingCall) {
         try {
-          Get.back();
+          Get.offAllNamed('/home');
           navigationSuccess = true;
-          print('✅ Navigation successful via Get.back()');
+          print('✅ Navigation successful via Get.offAllNamed /home (incoming)');
         } catch (e) {
-          print('⚠️ Get.back() failed: $e');
+          print('⚠️ Get.offAllNamed /home failed: $e');
+        }
+      } else {
+        // Outgoing call — pop back to where we came from
+        if (Get.context != null) {
+          try {
+            Navigator.of(Get.context!).pop();
+            navigationSuccess = true;
+            print('✅ Navigation successful via Navigator.pop()');
+          } catch (e) {
+            print('⚠️ Navigator.pop() failed: $e');
+          }
+        }
+
+        if (!navigationSuccess) {
+          try {
+            Get.back();
+            navigationSuccess = true;
+            print('✅ Navigation successful via Get.back()');
+          } catch (e) {
+            print('⚠️ Get.back() failed: $e');
+          }
+        }
+
+        if (!navigationSuccess) {
+          try {
+            Get.offAllNamed('/consultants');
+            navigationSuccess = true;
+            print('✅ Navigation successful via Get.offAllNamed /consultants');
+          } catch (e) {
+            print('⚠️ Get.offAllNamed failed: $e');
+          }
         }
       }
 
@@ -485,6 +588,16 @@ class CallController extends GetxController {
         _isEndingCall = false;
       });
     }
+  }
+
+  void toggleMute() {
+    isMuted.value = !isMuted.value;
+    _nexaconService.toggleMute();
+  }
+
+  void toggleSpeaker() {
+    isSpeakerOn.value = !isSpeakerOn.value;
+    _nexaconService.toggleSpeaker();
   }
 
   void _handleCallEnded(int durationSeconds) {
@@ -596,8 +709,11 @@ class CallController extends GetxController {
   @override
   void onClose() {
     // Clean up: stop timer and leave call
-    _nexaconService.stopDurationTimer();
-    _nexaconService.leaveRoom();
+    // Only cleanup if not already in progress
+    if (!_isEndingCall) {
+      _nexaconService.stopDurationTimer();
+      _nexaconService.leaveRoom();
+    }
     // Note: We don't dispose the service - it should persist across calls
     super.onClose();
   }

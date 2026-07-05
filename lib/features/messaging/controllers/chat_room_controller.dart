@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/message.dart';
@@ -12,10 +13,15 @@ class ChatRoomController extends GetxController {
   final TokenStorageService _tokenStorage = Get.find<TokenStorageService>();
 
   final TextEditingController messageController = TextEditingController();
+  final ScrollController scrollController = ScrollController();
   final RxList<Message> messages = <Message>[].obs;
   final RxBool isOnline = false.obs;
   final RxBool isTyping = false.obs;
   final RxBool isSending = false.obs;
+  final RxBool isContactTyping = false.obs;
+
+  final List<StreamSubscription> _subscriptions = [];
+  Timer? _contactTypingTimer;
 
   String get myNxId {
     final userData = _tokenStorage.userData;
@@ -28,12 +34,20 @@ class ChatRoomController extends GetxController {
 
   String _formatPhoneNumberWithCountryCode(String phone) {
     final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
+    String formatted;
+
     if (digits.startsWith('0')) {
-      return '255${digits.substring(1)}';
+      formatted = '+255${digits.substring(1)}';
     } else if (digits.startsWith('255')) {
-      return digits;
+      formatted = '+$digits';
+    } else if (digits.length == 9) {
+      // Local 9-digit number without country code or leading 0
+      formatted = '+255$digits';
+    } else {
+      formatted = digits; // assume already international
     }
-    return digits;
+
+    return '$formatted@nxservice.quantumvision-tech.com';
   }
 
   ChatRoomController({
@@ -59,97 +73,106 @@ class ChatRoomController extends GetxController {
   }
 
   void _listenToMessages() {
-    _messagingService.messageStream.listen((messageData) {
-      // Ensure messageData is a Map
-      if (messageData is! Map) return;
+    _subscriptions.add(
+      _messagingService.messageStream.listen((data) {
+        final from = data['from']?.toString();
+        if (from == contactId) {
+          final message = Message.fromJson(data);
+          messages.insertAll(0, [message]);
+          _scrollToBottom();
+          _messagingService.sendReadReceipt(contactId, message.id);
+        }
+      }),
+    );
 
-      final dataMap = messageData as Map<dynamic, dynamic>;
-      final from = dataMap['from']?.toString();
-      if (from == contactId) {
-        final message = Message.fromJson(Map<String, dynamic>.from(dataMap));
-        messages.add(message);
-        // Scroll to bottom
-        // TODO: Implement scroll to bottom
-      }
-    });
+    _subscriptions.add(
+      _messagingService.presenceStream.listen((data) {
+        final from = data['from']?.toString();
+        if (from == contactId) {
+          final type = data['type']?.toString();
+          isOnline.value = type == null || type == 'available';
+        }
+      }),
+    );
 
-    _messagingService.presenceStream.listen((presence) {
-      if (presence is! Map) return;
+    _subscriptions.add(
+      _messagingService.typingStream.listen((data) {
+        final from = data['from']?.toString();
+        if (from == contactId) {
+          isContactTyping.value = true;
+          _contactTypingTimer?.cancel();
+          _contactTypingTimer = Timer(const Duration(seconds: 3), () {
+            isContactTyping.value = false;
+          });
+        }
+      }),
+    );
 
-      final dataMap = presence as Map<dynamic, dynamic>;
-      final from = dataMap['from']?.toString();
-      if (from == contactId) {
-        final type = dataMap['type']?.toString();
-        final isOnline = type == null || type == 'available';
-        this.isOnline.value = isOnline;
-      }
-    });
-
-    _messagingService.typingStream.listen((typing) {
-      if (typing is! Map) return;
-
-      final dataMap = typing as Map<dynamic, dynamic>;
-      final from = dataMap['from']?.toString();
-      if (from == contactId) {
-        // TODO: Show typing indicator
-      }
-    });
-
-    _messagingService.readReceiptStream.listen((receipt) {
-      if (receipt is! Map) return;
-
-      final dataMap = receipt as Map<dynamic, dynamic>;
-      final from = dataMap['from']?.toString();
-      if (from == contactId) {
-        // Update message read status
-        final messageId = dataMap['message_id']?.toString();
-        if (messageId != null) {
-          for (int i = 0; i < messages.length; i++) {
-            if (messages[i].id == messageId) {
-              messages[i] = Message(
-                id: messages[i].id,
-                content: messages[i].content,
-                senderId: messages[i].senderId,
-                senderName: messages[i].senderName,
-                timestamp: messages[i].timestamp,
-                isSent: messages[i].isSent,
-                isDelivered: messages[i].isDelivered,
-                isRead: true,
-                avatarUrl: messages[i].avatarUrl,
-              );
-              break;
+    _subscriptions.add(
+      _messagingService.readReceiptStream.listen((data) {
+        final from = data['from']?.toString();
+        if (from == contactId) {
+          final messageId = data['message_id']?.toString();
+          if (messageId != null) {
+            for (int i = 0; i < messages.length; i++) {
+              if (messages[i].id == messageId) {
+                final m = messages[i];
+                messages[i] = Message(
+                  id: m.id,
+                  content: m.content,
+                  senderId: m.senderId,
+                  senderName: m.senderName,
+                  timestamp: m.timestamp,
+                  isSent: m.isSent,
+                  isDelivered: m.isDelivered,
+                  isRead: true,
+                  avatarUrl: m.avatarUrl,
+                );
+                break;
+              }
             }
           }
         }
-      }
-    });
+      }),
+    );
 
-    _messagingService.deliveryReceiptStream.listen((receipt) {
-      if (receipt is! Map) return;
-
-      final dataMap = receipt as Map<dynamic, dynamic>;
-      final from = dataMap['from']?.toString();
-      if (from == contactId) {
-        // Update message delivered status
-        final messageId = dataMap['message_id']?.toString();
-        if (messageId != null) {
-          for (int i = 0; i < messages.length; i++) {
-            if (messages[i].id == messageId) {
-              messages[i] = Message(
-                id: messages[i].id,
-                content: messages[i].content,
-                senderId: messages[i].senderId,
-                senderName: messages[i].senderName,
-                timestamp: messages[i].timestamp,
-                isSent: messages[i].isSent,
-                isDelivered: true,
-                isRead: messages[i].isRead,
-                avatarUrl: messages[i].avatarUrl,
-              );
-              break;
+    _subscriptions.add(
+      _messagingService.deliveryReceiptStream.listen((data) {
+        final from = data['from']?.toString();
+        if (from == contactId) {
+          final messageId = data['message_id']?.toString();
+          if (messageId != null) {
+            for (int i = 0; i < messages.length; i++) {
+              if (messages[i].id == messageId) {
+                final m = messages[i];
+                messages[i] = Message(
+                  id: m.id,
+                  content: m.content,
+                  senderId: m.senderId,
+                  senderName: m.senderName,
+                  timestamp: m.timestamp,
+                  isSent: m.isSent,
+                  isDelivered: true,
+                  isRead: m.isRead,
+                  avatarUrl: m.avatarUrl,
+                );
+                break;
+              }
             }
           }
         }
+      }),
+    );
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (scrollController.hasClients) {
+        scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
       }
     });
   }
@@ -183,9 +206,10 @@ class ChatRoomController extends GetxController {
       timestamp: DateTime.now(),
       isSent: true,
     );
-    messages.add(message);
+    messages.insertAll(0, [message]);
     messageController.clear();
     isTyping.value = false;
+    _scrollToBottom();
 
     try {
       _messagingService.sendRealTimeMessage(
@@ -194,20 +218,7 @@ class ChatRoomController extends GetxController {
       );
     } catch (e) {
       print('Error sending message: $e');
-      // Remove message if failed
       messages.removeWhere((m) => m.id == messageId);
-      // Update message status to indicate failure
-      final failedMessage = Message(
-        id: messageId,
-        content: content,
-        senderId: myNxId,
-        senderName: 'Me',
-        timestamp: DateTime.now(),
-        isSent: false,
-        isDelivered: false,
-        isRead: false,
-      );
-      messages.add(failedMessage);
     } finally {
       isSending.value = false;
     }
@@ -215,7 +226,12 @@ class ChatRoomController extends GetxController {
 
   @override
   void onClose() {
+    for (final sub in _subscriptions) {
+      sub.cancel();
+    }
+    _contactTypingTimer?.cancel();
     messageController.dispose();
+    scrollController.dispose();
     super.onClose();
   }
 }

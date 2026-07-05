@@ -39,13 +39,30 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
 
   Future<void> _loadContacts() async {
     try {
+      debugPrint('📨 _loadContacts started');
+      debugPrint('📨 isConnected: ${_messagingService.isConnected.value}');
+
+      // Ensure SDK is connected before fetching contacts
+      if (!_messagingService.isConnected.value) {
+        debugPrint('🔌 Initializing messaging connection...');
+        await _messagingService.initializeConnection();
+        debugPrint('✅ Messaging connected');
+      }
+
+      debugPrint('📨 Fetching contacts...');
       final contacts = await _messagingService.getContacts();
+      debugPrint('✅ Received ${contacts.length} contacts');
+      for (var c in contacts) {
+        debugPrint('   - Contact: $c');
+      }
+
       setState(() {
         _contacts = contacts;
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading contacts: $e');
+      debugPrint('❌ Error loading contacts: $e');
+      debugPrint('❌ Stack trace: ${StackTrace.current}');
       setState(() {
         _isLoading = false;
       });
@@ -64,7 +81,7 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
           SliverAppBar(
             floating: true,
             snap: true,
-            automaticallyImplyLeading: false,
+            automaticallyImplyLeading: true,
             backgroundColor: theme.colorScheme.surface,
             foregroundColor: theme.colorScheme.onSurface,
             elevation: 0,
@@ -148,7 +165,7 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
                 indicatorColor: theme.colorScheme.primary,
                 labelColor: theme.colorScheme.primary,
                 unselectedLabelColor:
-                    theme.colorScheme.onSurface.withOpacity(0.6),
+                    theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 dividerColor: Colors.transparent,
                 tabs: const [
                   Tab(text: 'All'),
@@ -216,7 +233,7 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: theme.colorScheme.shadow.withOpacity(0.05),
+            color: theme.colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -303,7 +320,7 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
                               color: message['unreadCount'] > 0
                                   ? theme.colorScheme.primary
                                   : theme.colorScheme.onSurface
-                                      .withOpacity(0.6),
+                                      .withValues(alpha: 0.6),
                               fontWeight: message['unreadCount'] > 0
                                   ? FontWeight.w500
                                   : FontWeight.normal,
@@ -323,7 +340,7 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
                               color: message['isRead']
                                   ? theme.colorScheme.primary
                                   : theme.colorScheme.onSurface
-                                      .withOpacity(0.6),
+                                      .withValues(alpha: 0.6),
                             ),
                           if (message['isSent']) const SizedBox(width: 4),
                           Expanded(
@@ -333,7 +350,7 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
                                 color: message['unreadCount'] > 0
                                     ? theme.colorScheme.onSurface
                                     : theme.colorScheme.onSurface
-                                        .withOpacity(0.7),
+                                        .withValues(alpha: 0.7),
                                 fontWeight: message['unreadCount'] > 0
                                     ? FontWeight.w500
                                     : FontWeight.normal,
@@ -383,13 +400,13 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
           Icon(
             Icons.chat_bubble_outline,
             size: 80,
-            color: theme.colorScheme.onSurface.withOpacity(0.3),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 24),
           Text(
             'No Messages Yet',
             style: theme.textTheme.headlineSmall?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.7),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -397,7 +414,7 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
           Text(
             'Start a conversation with colleagues\nand fellow students',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.5),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
             textAlign: TextAlign.center,
           ),
@@ -529,7 +546,8 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
                     Text(
                       'Message composition feature is coming soon!\nYou\'ll be able to start new conversations here.',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                       textAlign: TextAlign.center,
                     ),

@@ -20,16 +20,7 @@ class RegistrationScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Obx(() => Text(controller.getPageTitle())),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (controller.isFirstPage) {
-              Get.back();
-            } else {
-              controller.previousPage();
-            }
-          },
-        ),
+        automaticallyImplyLeading: true,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(8.0),
           child: Obx(() => LinearProgressIndicator(

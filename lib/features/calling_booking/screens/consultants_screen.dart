@@ -479,38 +479,99 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
 
   Future<void> _handleMessageConsultant(
       BuildContext context, Consultant consultant) async {
+    debugPrint('📱 _handleMessageConsultant started');
+
+    // 1. Subscription check
+    if (!NavigationHelper.checkPermissionOrShowUpgrade(
+        context, PermissionFeature.talkToLawyer)) {
+      debugPrint('🔒 Subscription check failed');
+      return;
+    }
+    debugPrint('✅ Subscription check passed');
+
+    // 2. Resolve NX ID from consultant phone
+    final rawPhone = consultant.userDetails.phoneNumber ?? '';
+    debugPrint('📞 Raw phone: $rawPhone');
+
+    if (rawPhone.isEmpty) {
+      Get.snackbar(
+        'Cannot Message',
+        'This consultant has no phone number registered.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+    final nxId = _formatAsNxId(rawPhone);
+    final contactName = consultant.userDetails.fullName;
+    final contactAvatar = consultant.userDetails.profilePicture;
+
+    debugPrint('🆔 Formatted NX ID: $nxId');
+    debugPrint('👤 Contact name: $contactName');
+
+    // 3. Show loading while connecting
+    Get.dialog(
+      const Center(child: CircularProgressIndicator()),
+      barrierDismissible: false,
+    );
+
     try {
-      // Get the contact ID and name
-      final contactId = consultant.userDetails.phoneNumber ??
-          consultant.userDetails.id.toString();
-
-      final contactName = consultant.userDetails.fullName;
-      final contactAvatar = consultant.userDetails.profilePicture;
-
-      // Add to contacts via messaging service
-      try {
-        await _messagingService.addContact(contactId);
-      } catch (e) {
-        // Contact might already exist, continue anyway
-        print('Contact might already exist: $e');
+      // 4. Ensure Nexacon messaging SDK is connected
+      debugPrint('🔌 isConnected: ${_messagingService.isConnected.value}');
+      if (!_messagingService.isConnected.value) {
+        debugPrint('🔌 Initializing messaging connection...');
+        await _messagingService.initializeConnection();
+        debugPrint('✅ Messaging connected');
+      } else {
+        debugPrint('✅ Messaging already connected');
       }
 
-      // Navigate to chat room
-      Get.to(
-        () => ChatRoomScreen(
-          contactId: contactId,
-          contactName: contactName,
-          contactAvatar: contactAvatar,
-        ),
-      );
+      // 5. Register consultant as a contact in SDK (idempotent)
+      debugPrint('📨 Adding contact $nxId...');
+      try {
+        final result = await _messagingService.addContact(nxId);
+        debugPrint('✅ Contact $nxId added: $result');
+      } catch (e) {
+        debugPrint('⚠️ addContact error: $e (may already exist)');
+      }
+
+      Get.back(); // dismiss loader
+
+      // 6. Open chat room
+      debugPrint('🚀 Opening chat room...');
+      Get.to(() => ChatRoomScreen(
+            contactId: nxId,
+            contactName: contactName,
+            contactAvatar: contactAvatar,
+          ));
     } catch (e) {
-      print('Error adding to contacts: $e');
+      Get.back(); // dismiss loader
+      debugPrint('❌ Messaging init failed: $e');
+      debugPrint('❌ Stack trace: ${StackTrace.current}');
       Get.snackbar(
-        'Error',
-        'Failed to add contact: $e',
+        'Connection Error',
+        'Could not connect to messaging. Please try again.',
         snackPosition: SnackPosition.BOTTOM,
       );
     }
+  }
+
+  /// Format a phone number into Nexacon NX ID (e.g. 0712345678 → +255712345678@nxservice.quantumvision-tech.com)
+  String _formatAsNxId(String phone) {
+    final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
+    String formatted;
+
+    if (digits.startsWith('0')) {
+      formatted = '+255${digits.substring(1)}';
+    } else if (digits.startsWith('255')) {
+      formatted = '+$digits';
+    } else if (digits.length == 9) {
+      // Local 9-digit number without country code or leading 0
+      formatted = '+255$digits';
+    } else {
+      formatted = digits; // assume already international
+    }
+
+    return '$formatted@nxservice.quantumvision-tech.com';
   }
 
   Widget _buildStatChip(BuildContext context, IconData icon, String label) {

@@ -24,7 +24,7 @@ class NotificationController extends GetxController {
 
   // Auto-refresh timer
   Timer? _refreshTimer;
-  static const Duration _refreshInterval = Duration(seconds: 30);
+  static const Duration _refreshInterval = Duration(seconds: 60);
 
   @override
   void onInit() {

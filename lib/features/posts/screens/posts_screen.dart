@@ -41,7 +41,7 @@ class _PostsScreenState extends State<PostsScreen> {
           SliverAppBar(
             floating: true,
             snap: true,
-            automaticallyImplyLeading: false,
+            automaticallyImplyLeading: true,
             title: const Text('Community Posts'),
             actions: [
               IconButton(

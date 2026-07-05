@@ -86,11 +86,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () => Get.back(),
-          tooltip: 'Back',
-        ),
+        automaticallyImplyLeading: true,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -585,7 +581,10 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                color: Theme.of(context)
+                    .colorScheme
+                    .surfaceVariant
+                    .withOpacity(0.3),
                 child: Row(
                   children: [
                     _buildToolbarButton(
@@ -650,7 +649,10 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
             margin: const EdgeInsets.only(top: 16),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.15),
+              color: Theme.of(context)
+                  .colorScheme
+                  .primaryContainer
+                  .withOpacity(0.15),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
@@ -700,7 +702,10 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                   icon: const Icon(Icons.delete_outline_rounded),
                   color: Theme.of(context).colorScheme.error,
                   style: IconButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.errorContainer.withOpacity(0.5),
+                    backgroundColor: Theme.of(context)
+                        .colorScheme
+                        .errorContainer
+                        .withOpacity(0.5),
                   ),
                 ),
               ],
@@ -1027,7 +1032,8 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
       } catch (fallbackError) {
         NavigationHelper.showSafeSnackbar(
           title: 'Error',
-          message: 'Unable to select image. Please try again or contact support.',
+          message:
+              'Unable to select image. Please try again or contact support.',
           backgroundColor: Colors.red,
           colorText: Colors.white,
         );

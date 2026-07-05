@@ -48,14 +48,13 @@ class NexaconCallService extends GetxService {
           _isTimerStarted = true;
           onOtherUserJoined?.call();
         }
-      } else if (state == CallState.ended) {
-        print('📞 Call ended');
-        onOtherUserLeft?.call();
       } else if (state == CallState.calling) {
         print('📞 Call is ringing...');
       } else if (state == CallState.idle) {
         print('📞 Call is idle');
       }
+      // NOTE: We don't trigger onOtherUserLeft on CallState.ended here
+      // to avoid duplicate calls with onCallEnded callback
     };
 
     sdk.onIncomingCall = (callerName) {
@@ -205,15 +204,20 @@ class NexaconCallService extends GetxService {
     try {
       print('✅ Accepting incoming call as: $phoneNumber');
       print('   Channel: $channelName | Caller phone: $callerPhone');
+      print('   SDK instance: ${_sdk != null ? "exists" : "null"}');
 
       // Reuse pre-warmed SDK connection if available
       if (_sdk == null) {
+        print('⚠️ No pre-warmed SDK, creating new instance');
         _sdk = _createSdk();
+      } else {
+        print('✅ Reusing pre-warmed SDK instance');
       }
 
       if (callerPhone.isNotEmpty) {
         // Fast path: bypass NX invitation wait using FCM caller data directly
         print('📲 Using acceptFromNotification (callerPhone=$callerPhone)');
+        print('   This should establish WebRTC connection with caller');
         await _sdk!.acceptFromNotification(
           username: phoneNumber,
           roomId: channelName,
@@ -222,7 +226,8 @@ class NexaconCallService extends GetxService {
           audio: audio,
           video: video,
         );
-        print('✅ Call accepted via notification path');
+        print(
+            '✅ Call accepted via notification path - WebRTC should be connecting');
       } else {
         // Fallback: wait for NX invitation signal (callerPhone not available)
         print('⚠️ No callerPhone — falling back to acceptWhenReady');
@@ -236,6 +241,7 @@ class NexaconCallService extends GetxService {
       }
     } catch (e) {
       print('❌ Error accepting call: $e');
+      print('❌ Stack trace: ${StackTrace.current}');
       rethrow;
     } finally {
       _incomingCallCompleter = null;
@@ -251,6 +257,8 @@ class NexaconCallService extends GetxService {
       }
       print('🚪 Leaving call...');
       await _sdk!.endCall();
+      _sdk =
+          null; // Always null out SDK after call ends so next call gets a fresh instance
       _isTimerStarted = false;
       print('✅ Left call successfully');
     } catch (e) {

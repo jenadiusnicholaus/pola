@@ -115,9 +115,9 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
           for (var field in formFields) {
             final fieldName = field['field_name'] as String;
             final fieldType = field['field_type'] as String? ?? 'text';
-            
+
             fieldControllers[fieldName] = TextEditingController();
-            
+
             if (fieldType == 'signature') {
               signatureControllers[fieldName] = SignatureController(
                 penStrokeWidth: 3,
@@ -183,26 +183,27 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
       final formData = <String, dynamic>{};
 
       if (!isBlank) {
-            // Validate all signatures
-            for (var field in formFields) {
-               final fieldName = field['field_name'] as String;
-               final fieldType = field['field_type'] as String? ?? 'text';
-               final required = field['is_required'] as bool? ?? false;
-               
-               if (fieldType == 'signature' && required) {
-                 final sigController = signatureControllers[fieldName];
-                 if (sigController == null || sigController.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Please provide your signature for ${field['label_en'] ?? fieldName}'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                    setState(() => isLoading = false);
-                    return;
-                 }
-               }
+        // Validate all signatures
+        for (var field in formFields) {
+          final fieldName = field['field_name'] as String;
+          final fieldType = field['field_type'] as String? ?? 'text';
+          final required = field['is_required'] as bool? ?? false;
+
+          if (fieldType == 'signature' && required) {
+            final sigController = signatureControllers[fieldName];
+            if (sigController == null || sigController.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                      'Please provide your signature for ${field['label_en'] ?? fieldName}'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              setState(() => isLoading = false);
+              return;
             }
+          }
+        }
 
         for (var entry in fieldControllers.entries) {
           formData[entry.key] = entry.value.text;
@@ -263,10 +264,7 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Get.back(),
-        ),
+        automaticallyImplyLeading: true,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -557,18 +555,22 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
       case 'dropdown':
       case 'select':
         // Safe cast handling for options array which can come in various formats
-        final optionsRaw = selectedLanguage == 'sw' && field['options_sw'] != null && (field['options_sw'] as List).isNotEmpty
+        final optionsRaw = selectedLanguage == 'sw' &&
+                field['options_sw'] != null &&
+                (field['options_sw'] as List).isNotEmpty
             ? field['options_sw']
             : (field['options'] ?? []);
-            
+
         final List<String> optionsList = (optionsRaw as List)
             .map((e) => e.toString())
             .where((e) => e.isNotEmpty)
             .toList();
 
         // Ensure current value in controller is valid, or empty it
-        if (controller.text.isNotEmpty && !optionsList.contains(controller.text)) {
-           controller.text = ''; // Clear invalid selection when language/options change
+        if (controller.text.isNotEmpty &&
+            !optionsList.contains(controller.text)) {
+          controller.text =
+              ''; // Clear invalid selection when language/options change
         }
 
         return DropdownButtonFormField<String>(
@@ -580,7 +582,9 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
             helperText: helpText,
             helperMaxLines: 2,
             border: const OutlineInputBorder(),
-            suffixIcon: required ? const Icon(Icons.star, size: 12, color: Colors.red) : null,
+            suffixIcon: required
+                ? const Icon(Icons.star, size: 12, color: Colors.red)
+                : null,
           ),
           items: optionsList.map((String value) {
             return DropdownMenuItem<String>(
@@ -592,20 +596,27 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
             if (newValue != null) {
               controller.text = newValue;
               // Trigger a state update so the UI reflects the change if needed elsewhere
-              // Though TextEditingController usually handles its own updates for text fields, 
+              // Though TextEditingController usually handles its own updates for text fields,
               // for dropdowns it's good practice to ensure the broader form knows.
-              setState(() {}); 
+              setState(() {});
             }
           },
-          validator: required ? (value) => value == null || value.isEmpty ? 'This field is required' : null : null,
+          validator: required
+              ? (value) => value == null || value.isEmpty
+                  ? 'This field is required'
+                  : null
+              : null,
         );
 
       case 'radio':
-        final optionsRaw = selectedLanguage == 'sw' && field['options_sw'] != null && (field['options_sw'] as List).isNotEmpty
+        final optionsRaw = selectedLanguage == 'sw' &&
+                field['options_sw'] != null &&
+                (field['options_sw'] as List).isNotEmpty
             ? field['options_sw']
             : (field['options'] ?? []);
-            
-        final List<String> optionsList = (optionsRaw as List).map((e) => e.toString()).toList();
+
+        final List<String> optionsList =
+            (optionsRaw as List).map((e) => e.toString()).toList();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -614,7 +625,10 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
               children: [
                 Text(
                   label,
-                  style: TextStyle(color: Colors.grey[800], fontSize: 14, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                      color: Colors.grey[800],
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500),
                 ),
                 if (required) ...[
                   const SizedBox(width: 4),
@@ -669,7 +683,8 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
                 height: 0,
                 child: TextFormField(
                   controller: controller,
-                  validator: (value) => value?.isEmpty ?? true ? 'Please select an option' : null,
+                  validator: (value) =>
+                      value?.isEmpty ?? true ? 'Please select an option' : null,
                 ),
               ),
           ],
@@ -695,11 +710,13 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
                     style: const TextStyle(fontSize: 14),
                   ),
                 ),
-                if (required) const Icon(Icons.star, size: 10, color: Colors.red),
+                if (required)
+                  const Icon(Icons.star, size: 10, color: Colors.red),
               ],
             ),
-            subtitle: helpText != null && helpText.isNotEmpty 
-                ? Text(helpText, style: TextStyle(color: Colors.grey[500], fontSize: 12))
+            subtitle: helpText != null && helpText.isNotEmpty
+                ? Text(helpText,
+                    style: TextStyle(color: Colors.grey[500], fontSize: 12))
                 : null,
             value: controller.text == 'true',
             onChanged: (bool? value) {
@@ -715,7 +732,7 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
       case 'signature':
         final sigController = signatureControllers[fieldName];
         if (sigController == null) return const SizedBox.shrink();
-        
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -723,7 +740,10 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
               children: [
                 Text(
                   label,
-                  style: TextStyle(color: Colors.grey[800], fontSize: 14, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                      color: Colors.grey[800],
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500),
                 ),
                 if (required) ...[
                   const SizedBox(width: 4),
@@ -750,7 +770,9 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
               child: Column(
                 children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
+                    borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(4),
+                        topRight: Radius.circular(4)),
                     child: Signature(
                       controller: sigController,
                       height: 150,
@@ -759,16 +781,19 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
                   ),
                   Container(
                     decoration: BoxDecoration(
-                      border: Border(top: BorderSide(color: Colors.grey.shade300)),
+                      border:
+                          Border(top: BorderSide(color: Colors.grey.shade300)),
                       color: Colors.grey.shade100,
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           placeholder ?? 'Sign above',
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                          style: TextStyle(
+                              color: Colors.grey.shade600, fontSize: 12),
                         ),
                         TextButton.icon(
                           onPressed: () => sigController.clear(),
@@ -776,7 +801,8 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
                           label: const Text('Clear'),
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.red,
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 0),
                             minimumSize: Size.zero,
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
@@ -862,16 +888,17 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
             border: const OutlineInputBorder(),
             prefixIcon: const Icon(Icons.calendar_month_outlined),
             suffixIcon: Row(
-               mainAxisSize: MainAxisSize.min,
-               children: [
-                 if (controller.text.isNotEmpty)
-                    IconButton(
-                      icon: const Icon(Icons.clear, size: 16),
-                      onPressed: () => setState(() => controller.clear()),
-                    ),
-                 if (required) const Icon(Icons.star, size: 12, color: Colors.red),
-                 const SizedBox(width: 8),
-               ],
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (controller.text.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.clear, size: 16),
+                    onPressed: () => setState(() => controller.clear()),
+                  ),
+                if (required)
+                  const Icon(Icons.star, size: 12, color: Colors.red),
+                const SizedBox(width: 8),
+              ],
             ),
           ),
           readOnly: true,
@@ -883,7 +910,7 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
                 initialDate = DateTime.parse(controller.text);
               } catch (_) {}
             }
-          
+
             final date = await showDatePicker(
               context: context,
               initialDate: initialDate,
@@ -893,8 +920,8 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
                 return Theme(
                   data: Theme.of(context).copyWith(
                     colorScheme: Theme.of(context).colorScheme.copyWith(
-                      primary: Theme.of(context).colorScheme.primary,
-                    ),
+                          primary: Theme.of(context).colorScheme.primary,
+                        ),
                   ),
                   child: child!,
                 );

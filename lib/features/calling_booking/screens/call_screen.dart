@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/call_controller.dart';
 import '../models/consultant_models.dart';
-import '../../../routes/app_routes.dart';
-import '../../messaging/screens/chat_room_screen.dart';
-import '../../messaging/services/nexacon_messaging_service.dart';
 
 class CallScreen extends StatefulWidget {
   final Consultant? consultant;
@@ -34,24 +31,22 @@ class _CallScreenState extends State<CallScreen> {
   CallController? controller;
   bool _hasError = false;
   String _errorMessage = '';
-  final NexaconMessagingService _messagingService =
-      Get.find<NexaconMessagingService>();
+
+  static const Color _kBg = Color(0xFF1B2B34);
+  static const Color _kAccent = Color(0xFF2ECC71);
 
   @override
   void initState() {
     super.initState();
 
     try {
-      // Validate required parameters
       if (widget.isIncoming) {
-        // Incoming call - need callId and channelName
         if (widget.callId == null || widget.channelName == null) {
           _hasError = true;
           _errorMessage = 'Missing call information';
           return;
         }
       } else {
-        // Outgoing call - need consultant
         if (widget.consultant == null) {
           _hasError = true;
           _errorMessage = 'No consultant data provided';
@@ -59,12 +54,9 @@ class _CallScreenState extends State<CallScreen> {
         }
       }
 
-      // Initialize controller
       controller = Get.put(CallController());
 
-      // Start call based on type
       if (widget.isIncoming) {
-        // Join existing channel for incoming call
         controller!.joinIncomingCall(
           callId: widget.callId!,
           channelName: widget.channelName!,
@@ -72,7 +64,6 @@ class _CallScreenState extends State<CallScreen> {
           callerPhone: widget.callerPhone ?? '',
         );
       } else {
-        // Initiate new call to consultant
         controller!.initiateCall(widget.consultant!);
       }
     } catch (e) {
@@ -83,623 +74,518 @@ class _CallScreenState extends State<CallScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  void dispose() {
+    controller = null;
+    super.dispose();
+  }
 
-    // Show error if initialization failed
+  String get _displayName {
+    if (widget.isIncoming) return widget.callerName ?? 'Unknown';
+    return widget.consultant?.userDetails.fullName ?? 'Unknown';
+  }
+
+  String get _avatarLetter {
+    if (widget.isIncoming) {
+      final n = widget.callerName ?? '';
+      return n.isNotEmpty ? n[0].toUpperCase() : '?';
+    }
+    final f = widget.consultant?.userDetails.firstName ?? '';
+    return f.isNotEmpty ? f[0].toUpperCase() : '?';
+  }
+
+  String get _subtitle {
+    if (!widget.isIncoming) {
+      return widget.consultant?.consultantType ?? '';
+    }
+    return '';
+  }
+
+  @override
+  Widget build(BuildContext context) {
     if (_hasError || controller == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Call'),
+      return _ErrorScaffold(message: _errorMessage);
+    }
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) controller?.endCall();
+      },
+      child: Scaffold(
+        backgroundColor: _kBg,
+        body: Obx(() {
+          final hasError = controller!.error.value.isNotEmpty;
+          if (hasError) return _buildErrorBody();
+          return _buildCallBody();
+        }),
+      ),
+    );
+  }
+
+  Widget _buildCallBody() {
+    final connected = controller!.isConsultantConnected.value;
+
+    return SafeArea(
+      child: Column(
+        children: [
+          const SizedBox(height: 56),
+
+          // ── Avatar ──────────────────────────────────────────────────────
+          Center(
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF2C3E50),
+                border: Border.all(
+                  color: connected ? _kAccent : Colors.white24,
+                  width: 2.5,
+                ),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                _avatarLetter,
+                style: const TextStyle(
+                  fontSize: 48,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 28),
+
+          // ── Name ────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              _displayName,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
+
+          if (_subtitle.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              _subtitle.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.white54,
+                letterSpacing: 1.4,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 16),
+
+          // ── Status / Duration ───────────────────────────────────────
+          Obx(() {
+            final c = controller!;
+            if (c.isConsultantConnected.value) {
+              return Column(
+                children: [
+                  Text(
+                    c.callDuration.value,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w300,
+                      color: Colors.white,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _kAccent,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'Connected',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: _kAccent,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            }
+            if (c.isRinging.value) {
+              return CallStatusDots(
+                label: 'Ringing',
+                color: Colors.white70,
+              );
+            }
+            return CallStatusDots(
+              label: 'Calling',
+              color: Colors.white54,
+            );
+          }),
+
+          const Spacer(),
+
+          // ── Credits badge (only when connected) ─────────────────────
+          Obx(() {
+            if (!controller!.isConsultantConnected.value) {
+              return const SizedBox.shrink();
+            }
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 7),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white12),
+              ),
+              child: Obx(() => Text(
+                    '${controller!.creditsRemaining.value} min remaining',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  )),
+            );
+          }),
+
+          // ── Controls row ─────────────────────────────────────────────
+          Obx(() {
+            final connected = controller!.isConsultantConnected.value;
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(32, 8, 32, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _ControlButton(
+                    icon: controller!.isMuted.value
+                        ? Icons.mic_off_rounded
+                        : Icons.mic_rounded,
+                    label: controller!.isMuted.value ? 'Unmute' : 'Mute',
+                    enabled: connected,
+                    active: controller!.isMuted.value,
+                    activeColor: Colors.white24,
+                    onTap: connected ? () => controller?.toggleMute() : null,
+                  ),
+                  _EndCallButton(
+                    onTap: () => controller?.endCall(),
+                  ),
+                  _ControlButton(
+                    icon: controller!.isSpeakerOn.value
+                        ? Icons.volume_up_rounded
+                        : Icons.volume_down_rounded,
+                    label: 'Speaker',
+                    enabled: connected,
+                    active: controller!.isSpeakerOn.value,
+                    activeColor: _kAccent.withValues(alpha: 0.25),
+                    onTap: connected ? () => controller?.toggleSpeaker() : null,
+                  ),
+                ],
+              ),
+            );
+          }),
+
+          const SizedBox(height: 16),
+          const Text(
+            'Powered by nexacon.africa',
+            style: TextStyle(fontSize: 11, color: Colors.white24),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorBody() {
+    final isCredits = controller!.isInsufficientCreditsError;
+    return SafeArea(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                isCredits
+                    ? Icons.account_balance_wallet_outlined
+                    : Icons.error_outline,
+                size: 80,
+                color: isCredits ? _kAccent : Colors.redAccent,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                isCredits ? 'Insufficient Credits' : 'Call Failed',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                controller!.error.value,
+                style: const TextStyle(fontSize: 14, color: Colors.white60),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              TextButton(
+                onPressed: () => Get.back(),
+                child: const Text(
+                  'Go Back',
+                  style: TextStyle(color: _kAccent, fontSize: 16),
+                ),
+              ),
+            ],
+          ),
         ),
-        body: Center(
+      ),
+    );
+  }
+}
+
+/// Bouncing-dots status label — "Calling" / "Ringing" with 3 animated dots.
+/// Public so it can be reused from incoming_call_screen.dart.
+class CallStatusDots extends StatefulWidget {
+  final String label;
+  final Color color;
+
+  const CallStatusDots({super.key, required this.label, required this.color});
+
+  @override
+  State<CallStatusDots> createState() => _CallStatusDotsState();
+}
+
+class _CallStatusDotsState extends State<CallStatusDots>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          widget.label,
+          style: TextStyle(
+            fontSize: 17,
+            color: widget.color,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+        const SizedBox(width: 4),
+        _BounceDot(controller: _ctrl, delay: 0.0, color: widget.color),
+        const SizedBox(width: 3),
+        _BounceDot(controller: _ctrl, delay: 0.2, color: widget.color),
+        const SizedBox(width: 3),
+        _BounceDot(controller: _ctrl, delay: 0.4, color: widget.color),
+      ],
+    );
+  }
+}
+
+class _BounceDot extends StatelessWidget {
+  final AnimationController controller;
+  final double delay;
+  final Color color;
+
+  const _BounceDot({
+    required this.controller,
+    required this.delay,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (_, __) {
+        final t = ((controller.value - delay) % 1.0);
+        final dy = t < 0.5 ? -6.0 * (t / 0.5) : -6.0 * (1.0 - (t - 0.5) / 0.5);
+        return Transform.translate(
+          offset: Offset(0, dy),
+          child: Container(
+            width: 5,
+            height: 5,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color,
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ─── Control button (mute / speaker) ────────────────────────────────────────
+class _ControlButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool enabled;
+  final bool active;
+  final Color activeColor;
+  final VoidCallback? onTap;
+
+  const _ControlButton({
+    required this.icon,
+    required this.label,
+    required this.enabled,
+    required this.active,
+    required this.activeColor,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: active
+                  ? activeColor
+                  : Colors.white.withValues(alpha: enabled ? 0.12 : 0.05),
+            ),
+            child: Icon(
+              icon,
+              color: enabled ? Colors.white : Colors.white30,
+              size: 26,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: enabled ? Colors.white60 : Colors.white24,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── End call button ─────────────────────────────────────────────────────────
+class _EndCallButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _EndCallButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.redAccent.shade700,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.red.withValues(alpha: 0.4),
+                  blurRadius: 16,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.call_end_rounded,
+              color: Colors.white,
+              size: 32,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'End',
+            style: TextStyle(fontSize: 12, color: Colors.white60),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Error scaffold ───────────────────────────────────────────────────────────
+class _ErrorScaffold extends StatelessWidget {
+  final String message;
+  const _ErrorScaffold({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF1B2B34),
+      body: SafeArea(
+        child: Center(
           child: Padding(
             padding: const EdgeInsets.all(32),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: theme.colorScheme.error,
-                ),
+                const Icon(Icons.error_outline,
+                    size: 64, color: Colors.redAccent),
                 const SizedBox(height: 16),
                 Text(
-                  _errorMessage.isNotEmpty
-                      ? _errorMessage
-                      : 'Failed to load call',
-                  style: const TextStyle(fontSize: 16),
+                  message.isNotEmpty ? message : 'Failed to load call',
+                  style: const TextStyle(fontSize: 16, color: Colors.white70),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton(
+                TextButton(
                   onPressed: () => Get.back(),
-                  child: const Text('Go Back'),
+                  child: const Text(
+                    'Go Back',
+                    style: TextStyle(color: Color(0xFF2ECC71), fontSize: 16),
+                  ),
                 ),
               ],
             ),
           ),
         ),
-      );
-    }
-
-    return WillPopScope(
-      onWillPop: () async {
-        // Call endCall which will handle navigation itself
-        controller?.endCall();
-        // Return true to allow the pop, endCall() will handle cleanup
-        return true;
-      },
-      child: Obx(() {
-        // Only show back button if there's an error or call is not connected
-        final bool showBackButton = controller!.error.value.isNotEmpty ||
-            !controller!.isCallConnected.value;
-
-        return Scaffold(
-          backgroundColor: theme.colorScheme.surface,
-          appBar: AppBar(
-            title: Text(
-              controller!.error.value.isNotEmpty
-                  ? (controller!.isInsufficientCreditsError
-                      ? 'Insufficient Credits'
-                      : 'Call Failed')
-                  : 'Voice Call',
-            ),
-            automaticallyImplyLeading: showBackButton,
-            leading: showBackButton
-                ? BackButton(
-                    onPressed: () {
-                      controller?.endCall();
-                      Get.back();
-                    },
-                  )
-                : null,
-          ),
-          body: SafeArea(
-            child: Obx(() {
-              // Show error screen only for critical errors (insufficient credits)
-              if (controller!.error.value.isNotEmpty &&
-                  controller!.isInsufficientCreditsError) {
-                // Debug logging
-                print('🔍 Showing insufficient credits screen');
-                print(
-                    '📦 Available bundles count: ${controller!.availableBundles.length}');
-                print('💬 Error message: ${controller!.error.value}');
-                print(
-                    '🎯 isInsufficientCreditsError: ${controller!.isInsufficientCreditsError}');
-
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 40),
-                      Icon(
-                        controller!.isInsufficientCreditsError
-                            ? Icons.account_balance_wallet_outlined
-                            : Icons.error_outline,
-                        size: 80,
-                        color: controller!.isInsufficientCreditsError
-                            ? theme.colorScheme.primary.withOpacity(0.5)
-                            : theme.colorScheme.error.withOpacity(0.5),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        controller!.isInsufficientCreditsError
-                            ? 'Insufficient Credits'
-                            : 'Call Failed',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        controller!.error.value,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-
-                      // Show available bundles only if it's a credit error
-                      if (controller!.isInsufficientCreditsError &&
-                          controller!.availableBundles.isNotEmpty) ...[
-                        const SizedBox(height: 32),
-                        Text(
-                          'Available Packages',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        ...controller!.availableBundles.map((bundle) {
-                          return Obx(() {
-                            final isSelected =
-                                controller!.selectedBundleId.value == bundle.id;
-                            return InkWell(
-                              onTap: () => controller!.selectBundle(bundle.id),
-                              borderRadius: BorderRadius.circular(12),
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? theme.colorScheme.primaryContainer
-                                          .withOpacity(0.3)
-                                      : theme
-                                          .colorScheme.surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? theme.colorScheme.primary
-                                        : theme.colorScheme.outline
-                                            .withOpacity(0.3),
-                                    width: isSelected ? 2 : 1,
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: Row(
-                                            children: [
-                                              if (isSelected)
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          right: 8),
-                                                  child: Icon(
-                                                    Icons.check_circle,
-                                                    color: theme
-                                                        .colorScheme.primary,
-                                                    size: 20,
-                                                  ),
-                                                ),
-                                              Expanded(
-                                                child: Text(
-                                                  bundle.name,
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: theme
-                                                        .colorScheme.onSurface,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 6,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: isSelected
-                                                ? theme.colorScheme.primary
-                                                : theme.colorScheme
-                                                    .primaryContainer,
-                                            borderRadius:
-                                                BorderRadius.circular(20),
-                                          ),
-                                          child: Text(
-                                            bundle.priceFormatted,
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                              color: isSelected
-                                                  ? theme.colorScheme.onPrimary
-                                                  : theme.colorScheme
-                                                      .onPrimaryContainer,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.access_time,
-                                          size: 16,
-                                          color: theme
-                                              .colorScheme.onSurfaceVariant,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '${bundle.minutes} minutes',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: theme
-                                                .colorScheme.onSurfaceVariant,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        Icon(
-                                          Icons.calendar_today,
-                                          size: 16,
-                                          color: theme
-                                              .colorScheme.onSurfaceVariant,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'Valid ${bundle.validityDays} days',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: theme
-                                                .colorScheme.onSurfaceVariant,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    if (bundle.description.isNotEmpty) ...[
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        bundle.description,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: theme
-                                              .colorScheme.onSurfaceVariant,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            );
-                          });
-                        }).toList(),
-                      ],
-
-                      const SizedBox(height: 32),
-                      Obx(() {
-                        final selectedBundle = controller!.selectedBundle;
-                        return Column(
-                          children: [
-                            if (selectedBundle != null)
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                margin: const EdgeInsets.only(bottom: 16),
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.primaryContainer
-                                      .withOpacity(0.3),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: theme.colorScheme.primary
-                                        .withOpacity(0.5),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Selected Package',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: theme
-                                                .colorScheme.onSurfaceVariant,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          selectedBundle.name,
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: theme.colorScheme.onSurface,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Text(
-                                      selectedBundle.priceFormatted,
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: theme.colorScheme.primary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                onPressed: selectedBundle != null
-                                    ? () {
-                                        Get.toNamed(
-                                          AppRoutes.payment,
-                                          arguments: {'bundle': selectedBundle},
-                                        );
-                                      }
-                                    : null,
-                                icon: const Icon(Icons.shopping_cart),
-                                label: Text(selectedBundle != null
-                                    ? 'Checkout - ${selectedBundle.priceFormatted}'
-                                    : 'Select a Package'),
-                                style: ElevatedButton.styleFrom(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 16),
-                                  backgroundColor: selectedBundle != null
-                                      ? theme.colorScheme.primary
-                                      : theme
-                                          .colorScheme.surfaceContainerHighest,
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      }),
-                      const SizedBox(height: 12),
-                    ],
-                  ),
-                );
-              }
-
-              // Call in progress
-              return SingleChildScrollView(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: MediaQuery.of(context).size.height,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Top section - Consultant info
-                      Padding(
-                        padding: const EdgeInsets.all(32.0),
-                        child: Column(
-                          children: [
-                            const SizedBox(height: 40),
-                            // Avatar
-                            CircleAvatar(
-                              radius: 60,
-                              backgroundColor:
-                                  theme.colorScheme.surfaceContainerHighest,
-                              backgroundImage: widget.callerPhoto != null &&
-                                      widget.callerPhoto!.isNotEmpty
-                                  ? NetworkImage(widget.callerPhoto!)
-                                  : null,
-                              child: widget.callerPhoto == null ||
-                                      widget.callerPhoto!.isEmpty
-                                  ? Text(
-                                      widget.consultant != null
-                                          ? widget.consultant!.userDetails
-                                              .firstName[0]
-                                              .toUpperCase()
-                                          : widget.callerName?.isNotEmpty ==
-                                                  true
-                                              ? widget.callerName![0]
-                                                  .toUpperCase()
-                                              : 'C',
-                                      style: TextStyle(
-                                        fontSize: 48,
-                                        fontWeight: FontWeight.bold,
-                                        color:
-                                            theme.colorScheme.onSurfaceVariant,
-                                      ),
-                                    )
-                                  : null,
-                            ),
-                            const SizedBox(height: 24),
-                            // Name
-                            Text(
-                              widget.consultant != null
-                                  ? widget.consultant!.userDetails.fullName
-                                  : widget.callerName ?? 'Unknown',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 8),
-                            // Type
-                            if (widget.consultant != null)
-                              Text(
-                                widget.consultant!.consultantType.toUpperCase(),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.6),
-                                  letterSpacing: 1.2,
-                                ),
-                              ),
-                            const SizedBox(height: 24),
-                            // Call status
-                            Text(
-                              controller!.isConsultantConnected.value
-                                  ? 'Connected'
-                                  : 'Ringing...',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: theme.colorScheme.onSurface
-                                    .withOpacity(0.6),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            // Duration
-                            Text(
-                              controller!.callDuration.value,
-                              style: TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.w300,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Bottom section - Controls
-                      Padding(
-                        padding: const EdgeInsets.all(32.0),
-                        child: Column(
-                          children: [
-                            // Credits remaining
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color:
-                                    theme.colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                '${controller!.creditsRemaining.value} minutes remaining',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                            // Call controls
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                // Note: With ZegoCloud prebuilt UI, mute/speaker/end call
-                                // buttons are handled by the ZegoUIKitPrebuiltCall widget
-                                // These controls are for reference/fallback only
-
-                                // Message button - add to contacts and chat
-                                _buildCallButton(
-                                  icon: Icons.chat,
-                                  label: 'Message',
-                                  onPressed: _addToContactsAndChat,
-                                  backgroundColor:
-                                      theme.colorScheme.primaryContainer,
-                                  iconColor:
-                                      theme.colorScheme.onPrimaryContainer,
-                                  size: 60,
-                                ),
-
-                                // End call button
-                                _buildCallButton(
-                                  icon: Icons.call_end,
-                                  label: 'End Call',
-                                  onPressed: () => controller?.endCall(),
-                                  backgroundColor: theme.colorScheme.error,
-                                  iconColor: theme.colorScheme.onError,
-                                  size: 70,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }),
-          ),
-        );
-      }),
+      ),
     );
-  }
-
-  Widget _buildCallButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onPressed,
-    required Color backgroundColor,
-    required Color iconColor,
-    double size = 60,
-  }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            shape: BoxShape.circle,
-          ),
-          child: IconButton(
-            icon: Icon(icon, color: iconColor),
-            iconSize: size * 0.45,
-            onPressed: onPressed,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-          ),
-        ),
-      ],
-    );
-  }
-
-  @override
-  void dispose() {
-    // Don't call endCall here as it's already handled by back navigation
-    super.dispose();
-  }
-
-  Future<void> _addToContactsAndChat() async {
-    try {
-      // Get the contact ID and name
-      final contactId = widget.isIncoming
-          ? widget.callerPhone ?? widget.callerName ?? 'unknown'
-          : widget.consultant?.userDetails.phoneNumber ??
-              widget.consultant?.userDetails.id.toString() ??
-              'unknown';
-
-      final contactName = widget.isIncoming
-          ? widget.callerName ?? 'Unknown'
-          : widget.consultant?.userDetails.fullName ?? 'Unknown';
-
-      final contactAvatar = widget.isIncoming
-          ? widget.callerPhoto
-          : widget.consultant?.userDetails.profilePicture;
-
-      // Add to contacts via messaging service
-      try {
-        await _messagingService.addContact(contactId);
-      } catch (e) {
-        // Contact might already exist, continue anyway
-        print('Contact might already exist: $e');
-      }
-
-      // Navigate to chat room
-      Get.to(
-        () => ChatRoomScreen(
-          contactId: contactId,
-          contactName: contactName,
-          contactAvatar: contactAvatar,
-        ),
-      );
-    } catch (e) {
-      print('Error adding to contacts: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to add contact: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
   }
 }

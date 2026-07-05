@@ -74,7 +74,13 @@ class OnlineStatusService extends GetxService {
   /// Send heartbeat to backend
   Future<void> _sendHeartbeat() async {
     try {
-      await _dio.post('/api/v1/notification/heartbeat/');
+      await _dio.post(
+        '/api/v1/notification/heartbeat/',
+        options: Options(
+          receiveTimeout: const Duration(seconds: 30),
+          sendTimeout: const Duration(seconds: 15),
+        ),
+      );
       debugPrint('💓 Heartbeat sent');
     } catch (e) {
       debugPrint('❌ Heartbeat error: $e');

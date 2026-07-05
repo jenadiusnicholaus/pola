@@ -110,18 +110,7 @@ class _CallScreenState extends State<CallScreen> {
                       : 'Call Failed')
                   : 'Voice Call',
             ),
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () {
-                // If there's an error, go back directly
-                if (controller!.error.value.isNotEmpty) {
-                  Get.back();
-                } else {
-                  // If call is in progress, show end call dialog
-                  _showEndCallDialog();
-                }
-              },
-            ),
+            automaticallyImplyLeading: true,
           ),
           body: SafeArea(
             child: Obx(() {

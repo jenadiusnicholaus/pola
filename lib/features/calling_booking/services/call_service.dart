@@ -125,6 +125,30 @@ class CallService {
         'message': response.data['message'] ?? 'Call cancelled',
       };
     } catch (e) {
+      // Check if error is due to call already being active or completed
+      if (e is DioException && e.response?.statusCode == 400) {
+        final errorData = e.response?.data;
+        if (errorData is Map && errorData['error'] == 'invalid_status') {
+          final statusMessage = errorData['message']?.toString() ?? '';
+          debugPrint('⚠️ Call cannot be cancelled (status: $statusMessage)');
+
+          if (statusMessage.contains('active')) {
+            // Call is active — must use endCall to record duration
+            return {
+              'success': false,
+              'message': 'Call is active - use endCall instead',
+              'is_active': true,
+            };
+          } else {
+            // Call is already completed/ended — just clear state
+            return {
+              'success': false,
+              'message': 'Call already completed - skipping',
+              'is_ended': true,
+            };
+          }
+        }
+      }
       debugPrint('❌ Error cancelling call: $e');
       return {
         'success': false,

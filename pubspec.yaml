@@ -72,7 +72,7 @@ dependencies:
   path_provider: ^2.1.2
   open_filex: ^4.5.0
 
-  # Nexacon SDK for voice/video calls (local path for custom fixes)
+  # Nexacon SDK for voice/video/messaging calls (local path while pub.dev indexes 1.3.3)
   nexacon_sdk:
     path: /Users/mac/development/sdks/nexacon-flutter-sdk
 

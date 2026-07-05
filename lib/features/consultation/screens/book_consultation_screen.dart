@@ -32,7 +32,7 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
   bool _isLoading = false;
   String? _errorMessage;
   PhysicalBookingResponse? _bookingResponse;
-  
+
   // Payment provider selection
   String _selectedProvider = 'Mpesa';
 
@@ -50,7 +50,8 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
       debugPrint('   Consultant ID: ${consultant.id}');
       debugPrint('   User ID: ${consultant.userDetails.id}');
       debugPrint('   Name: ${consultant.userDetails.fullName}');
-      debugPrint('   Offers Physical: ${consultant.offersPhysicalConsultations}');
+      debugPrint(
+          '   Offers Physical: ${consultant.offersPhysicalConsultations}');
       debugPrint('   Type: ${consultant.consultantType}');
 
       // Pre-fill location
@@ -137,8 +138,9 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
       // TODO: TEMPORARY WORKAROUND - Backend nearby lawyers API returns wrong IDs
       // Remove this hardcoded ID once backend fixes the data
       final validConsultantId = 3; // Using a known valid profile ID for testing
-      debugPrint('⚠️ TEMP: Using hardcoded consultant_id: $validConsultantId instead of ${consultant.id}');
-      
+      debugPrint(
+          '⚠️ TEMP: Using hardcoded consultant_id: $validConsultantId instead of ${consultant.id}');
+
       final response = await _service.createPhysicalBooking(
         consultantId: validConsultantId, // TEMP: was consultant.id
         scheduledDate: _getScheduledDateTime(),
@@ -201,7 +203,8 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
         _pollForConfirmation();
       } else {
         setState(() {
-          _errorMessage = paymentResult?['error'] ?? 'Payment initiation failed';
+          _errorMessage =
+              paymentResult?['error'] ?? 'Payment initiation failed';
           _isLoading = false;
         });
       }
@@ -272,10 +275,7 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: Text(_getAppBarTitle()),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Get.back(),
-        ),
+        automaticallyImplyLeading: true,
       ),
       body: _buildCurrentStep(theme),
     );
@@ -495,7 +495,8 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
         // Back button
         Center(
           child: TextButton(
-            onPressed: () => setState(() => _currentStep = _BookingStep.details),
+            onPressed: () =>
+                setState(() => _currentStep = _BookingStep.details),
             child: Text(
               'Back to details',
               style: TextStyle(color: Colors.grey.shade600),
@@ -550,7 +551,8 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.phone_android, color: Colors.grey.shade700, size: 20),
+                  Icon(Icons.phone_android,
+                      color: Colors.grey.shade700, size: 20),
                   const SizedBox(width: 10),
                   Text(
                     _phoneController.text,
@@ -615,7 +617,8 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
             const SizedBox(height: 20),
             if (_selectedDate != null && _selectedTime != null)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(10),
@@ -728,7 +731,8 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
                 ),
                 const SizedBox(height: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(4),
@@ -796,7 +800,9 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
             ),
             const SizedBox(width: 10),
             Text(
-              hasDate ? DateFormat('d MMM').format(_selectedDate!) : 'Select date',
+              hasDate
+                  ? DateFormat('d MMM').format(_selectedDate!)
+                  : 'Select date',
               style: TextStyle(
                 fontSize: 14,
                 color: hasDate ? Colors.black87 : Colors.grey.shade500,
@@ -847,7 +853,7 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
   Widget _buildDurationSelector(ThemeData theme) {
     // Duration options: 15min, 30min, 45min, 1hr, 1.5hr, 2hr, 2.5hr, 3hr
     final durations = [15, 30, 45, 60, 90, 120, 150, 180];
-    
+
     String formatDuration(int mins) {
       if (mins < 60) return '$mins min';
       final hours = mins ~/ 60;
@@ -868,12 +874,14 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
             child: GestureDetector(
               onTap: () => setState(() => _durationMinutes = mins),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 decoration: BoxDecoration(
                   color: isSelected ? theme.primaryColor : Colors.white,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isSelected ? theme.primaryColor : Colors.grey.shade300,
+                    color:
+                        isSelected ? theme.primaryColor : Colors.grey.shade300,
                   ),
                 ),
                 child: Center(
@@ -921,7 +929,8 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
               value: provider['id'] as String,
               child: Row(
                 children: [
-                  Icon(Icons.phone_android, color: theme.primaryColor, size: 20),
+                  Icon(Icons.phone_android,
+                      color: theme.primaryColor, size: 20),
                   const SizedBox(width: 12),
                   Text(provider['name'] as String),
                 ],
@@ -961,7 +970,8 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
             : null,
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: Colors.grey.shade300),

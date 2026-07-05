@@ -12,6 +12,8 @@ class NotificationService extends GetxService {
         headers: {
           'Content-Type': 'application/json',
         },
+        receiveTimeout: const Duration(seconds: 60),
+        sendTimeout: const Duration(seconds: 30),
       );
 
   /// Base URL for notifications API
