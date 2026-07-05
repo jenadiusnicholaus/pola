@@ -4,6 +4,7 @@ import 'package:nexacon_sdk/nexacon_sdk.dart';
 import 'package:get/get.dart';
 import '../../../config/nexacon_config.dart';
 import '../../../services/token_storage_service.dart';
+import '../../../utils/phone_formatter.dart';
 
 /// Service wrapper for Nexacon SDK messaging functionality
 /// Handles real-time messaging, contact management, and message history
@@ -127,7 +128,7 @@ class NexaconMessagingService extends GetxService {
     }
 
     // Format phone number with country code
-    final formattedPhone = _formatPhoneNumberWithCountryCode(phone);
+    final formattedPhone = PhoneFormatter.formatAsNxId(phone);
     print('📡 Initializing messaging connection with phone: $formattedPhone');
 
     try {
@@ -215,24 +216,6 @@ class NexaconMessagingService extends GetxService {
     }
   }
 
-  String _formatPhoneNumberWithCountryCode(String phone) {
-    final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
-    String formatted;
-
-    if (digits.startsWith('0')) {
-      formatted = '+255${digits.substring(1)}';
-    } else if (digits.startsWith('255')) {
-      formatted = '+$digits';
-    } else if (digits.length == 9) {
-      // Local 9-digit number without country code or leading 0
-      formatted = '+255$digits';
-    } else {
-      formatted = digits; // assume already international
-    }
-
-    return '$formatted@nxservice.quantumvision-tech.com';
-  }
-
   /// Send a direct message to a user
   Future<Map<String, dynamic>> sendMessage({
     required String to,
@@ -310,8 +293,8 @@ class NexaconMessagingService extends GetxService {
   }
 
   /// Add a contact
-  Future<Map<String, dynamic>> addContact(String nxid) async {
-    print('📨 addContact called with nxid: $nxid');
+  Future<Map<String, dynamic>> addContact(String nxid, {String? name}) async {
+    print('📨 addContact called with nxid: $nxid, name: $name');
     print('📨 _sdk: ${_sdk != null ? "exists" : "null"}');
     print('📨 _sdk.client: ${_sdk?.client != null ? "exists" : "null"}');
 
@@ -323,6 +306,7 @@ class NexaconMessagingService extends GetxService {
 
     print('📨 Calling client.messaging.addContact...');
     try {
+      // SDK doesn't support name parameter, just pass nxid
       final result = await client.messaging.addContact(nxid);
       print('✅ addContact result: $result');
       return result;

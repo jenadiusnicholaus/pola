@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../models/message.dart';
 import '../services/nexacon_messaging_service.dart';
 import '../../../services/token_storage_service.dart';
+import '../../../utils/phone_formatter.dart';
 
 class ChatRoomController extends GetxController {
   final String contactId;
@@ -27,27 +28,9 @@ class ChatRoomController extends GetxController {
     final userData = _tokenStorage.userData;
     final phone = userData?['phone_number'] as String?;
     if (phone != null && phone.isNotEmpty) {
-      return _formatPhoneNumberWithCountryCode(phone);
+      return PhoneFormatter.formatAsNxId(phone);
     }
     return 'user_nxid';
-  }
-
-  String _formatPhoneNumberWithCountryCode(String phone) {
-    final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
-    String formatted;
-
-    if (digits.startsWith('0')) {
-      formatted = '+255${digits.substring(1)}';
-    } else if (digits.startsWith('255')) {
-      formatted = '+$digits';
-    } else if (digits.length == 9) {
-      // Local 9-digit number without country code or leading 0
-      formatted = '+255$digits';
-    } else {
-      formatted = digits; // assume already international
-    }
-
-    return '$formatted@nxservice.quantumvision-tech.com';
   }
 
   ChatRoomController({

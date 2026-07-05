@@ -6,6 +6,7 @@ import '../models/consultant_models.dart';
 import '../../../widgets/profile_avatar.dart';
 import '../../../services/permission_service.dart';
 import '../../../utils/navigation_helper.dart';
+import '../../../utils/phone_formatter.dart';
 import '../../messaging/screens/chat_room_screen.dart';
 import '../../messaging/services/nexacon_messaging_service.dart';
 
@@ -501,7 +502,7 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
       );
       return;
     }
-    final nxId = _formatAsNxId(rawPhone);
+    final nxId = PhoneFormatter.formatAsNxId(rawPhone);
     final contactName = consultant.userDetails.fullName;
     final contactAvatar = consultant.userDetails.profilePicture;
 
@@ -553,25 +554,6 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
         snackPosition: SnackPosition.BOTTOM,
       );
     }
-  }
-
-  /// Format a phone number into Nexacon NX ID (e.g. 0712345678 → +255712345678@nxservice.quantumvision-tech.com)
-  String _formatAsNxId(String phone) {
-    final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
-    String formatted;
-
-    if (digits.startsWith('0')) {
-      formatted = '+255${digits.substring(1)}';
-    } else if (digits.startsWith('255')) {
-      formatted = '+$digits';
-    } else if (digits.length == 9) {
-      // Local 9-digit number without country code or leading 0
-      formatted = '+255$digits';
-    } else {
-      formatted = digits; // assume already international
-    }
-
-    return '$formatted@nxservice.quantumvision-tech.com';
   }
 
   Widget _buildStatChip(BuildContext context, IconData icon, String label) {
