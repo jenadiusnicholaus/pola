@@ -1,7 +1,9 @@
 /// Utility for formatting phone numbers with Tanzania country code
 class PhoneFormatter {
+  static const String _nxDomain = 'nxservice.quantumvision-tech.com';
+
   /// Format phone number with Tanzania country code if missing
-  /// Returns formatted phone number with +255 prefix
+  /// Returns formatted phone number with +255 prefix (e.g. +255712345678)
   static String formatWithCountryCode(String phone) {
     // Remove any non-digit characters
     final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
@@ -25,9 +27,32 @@ class PhoneFormatter {
     return '+255$digits';
   }
 
-  /// Format phone number as Nexacon NX ID
-  /// Returns formatted phone number with +255 prefix (no domain suffix)
+  /// Format phone number as Nexacon NX JID (XMPP format)
+  /// Returns e.g. +255712345678@nxservice.quantumvision-tech.com
   static String formatAsNxId(String phone) {
-    return formatWithCountryCode(phone);
+    // Strip any existing domain
+    final stripped = phone.contains('@') ? phone.split('@')[0] : phone;
+    // Get digits only
+    final digits = stripped.replaceAll(RegExp(r'[^\d]'), '');
+    String formatted;
+
+    if (digits.startsWith('255')) {
+      formatted = '+$digits';
+    } else if (digits.startsWith('0')) {
+      formatted = '+255${digits.substring(1)}';
+    } else if (digits.length == 9 || digits.length == 10) {
+      formatted = '+255$digits';
+    } else {
+      formatted = '+255$digits';
+    }
+
+    return '$formatted@$_nxDomain';
+  }
+
+  /// Normalize a JID or phone to plain digits with 255 prefix for comparison
+  static String normalize(String nxIdOrPhone) {
+    final local =
+        nxIdOrPhone.contains('@') ? nxIdOrPhone.split('@')[0] : nxIdOrPhone;
+    return local.replaceAll(RegExp(r'[^\d]'), '');
   }
 }

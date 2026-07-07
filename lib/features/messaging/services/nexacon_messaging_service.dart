@@ -11,6 +11,7 @@ import '../../../utils/phone_formatter.dart';
 class NexaconMessagingService extends GetxService {
   NexaconSDK? _sdk;
   MessagingManager? _messagingManager;
+  NexaconClient? _httpClient; // Separate client for HTTP API calls
   final TokenStorageService _tokenStorage = Get.find<TokenStorageService>();
 
   // Broadcast stream controllers — emit one Map per event (not a full List)
@@ -75,10 +76,33 @@ class NexaconMessagingService extends GetxService {
     print('✅ NexaconMessagingService initialized');
   }
 
+  /// Force re-initialize: try refresh token first, fall back to full re-init
+  Future<void> forceReinitialize() async {
+    print('🔄 forceReinitialize: attempting token refresh...');
+    isConnected.value = false;
+
+    // Always clear stored credentials and fetch fresh ones for 403 errors
+    // This ensures we get a fresh NX token and WebSocket connection
+    print('🔄 Clearing stored NX credentials and fetching fresh ones...');
+    await _tokenStorage.clearNxTokenData();
+    _sdk = null;
+    await initializeConnection();
+  }
+
   /// Initialize SDK connection for messaging
   /// This establishes the NX connection required for real-time chat
   Future<void> initializeConnection() async {
     print('🚀 initializeConnection() called');
+
+    // Create separate HTTP client for API calls
+    if (_httpClient == null) {
+      print('📦 Creating HTTP client for API calls');
+      _httpClient = NexaconClient(
+        apiKey: NexaconConfig.apiKey,
+        secretKey: NexaconConfig.secretKey,
+        baseUrl: 'https://nxservice.quantumvision-tech.com/api/v1.0',
+      );
+    }
 
     if (_sdk == null) {
       print('📦 Creating new SDK instance');
@@ -136,11 +160,15 @@ class NexaconMessagingService extends GetxService {
       final hasNxData = await _tokenStorage.hasNxTokenData();
       print('🔐 Has stored NX data: $hasNxData');
 
+      String? nxtoken;
+      String? nxid;
+      String? wsUrl;
+
       if (hasNxData) {
         // Use stored credentials to avoid API call
-        final nxtoken = await _tokenStorage.getNxToken();
-        final nxid = await _tokenStorage.getNxJid();
-        String? wsUrl = await _tokenStorage.getNxWsUrl();
+        nxtoken = await _tokenStorage.getNxToken();
+        nxid = await _tokenStorage.getNxJid();
+        wsUrl = await _tokenStorage.getNxWsUrl();
 
         print('🔑 Stored token: ${nxtoken?.substring(0, 20)}...');
         print('🆔 Stored JID: $nxid');
@@ -151,63 +179,90 @@ class NexaconMessagingService extends GetxService {
         }
 
         print('✅ Using stored NX credentials');
-        await _sdk!.initialize(
-          username: formattedPhone,
-          nxtoken: nxtoken,
-          nxid: nxid,
-          wsUrl: wsUrl,
-        );
       } else {
-        // Let SDK fetch credentials and store them after initialization
-        print('🔐 No stored NX credentials, letting SDK fetch from API...');
+        // Fetch NX token directly via auth API without WebSocket connection
+        print('🔐 No stored NX credentials, fetching from API...');
 
-        // Initialize SDK without credentials - it will fetch them and return them
-        final credentials = await _sdk!.initialize(username: formattedPhone);
+        final credentials =
+            await _httpClient!.auth.getNxToken(username: formattedPhone);
 
-        // Store the credentials returned by SDK
-        await _tokenStorage.storeNxTokenData(
-          token: credentials['token'],
-          jid: credentials['jid'],
-          wsUrl: credentials['nxws'],
-        );
-        print('✅ NX credentials stored for future use');
+        nxtoken = credentials['token'];
+        nxid = credentials['jid'];
+        wsUrl = credentials['nxws'];
+
+        // Store the credentials returned by SDK (including refresh_token if present)
+        if (nxtoken != null && nxid != null && wsUrl != null) {
+          await _tokenStorage.storeNxTokenData(
+            token: nxtoken,
+            jid: nxid,
+            wsUrl: wsUrl,
+            refreshToken: credentials['refresh_token'] as String?,
+          );
+          print('✅ NX credentials stored for future use');
+        } else {
+          throw Exception('Failed to get valid NX credentials from API');
+        }
+      }
+
+      // Set the NX token on the client for HTTP API calls
+      if (nxtoken != null) {
+        _httpClient!.setToken(nxtoken);
+        print('✅ NX token set on client for HTTP API calls');
+      } else {
+        throw Exception('NX token is null, cannot set on client');
+      }
+
+      // Try to establish NX WebSocket connection for real-time messaging
+      // If this fails, we can still use HTTP API calls
+      try {
+        print('🔌 Attempting to establish NX WebSocket connection...');
+        final nxManager = _sdk!.xmppManager;
+        if (nxManager == null) {
+          print('⚠️ NX manager not available, skipping WebSocket connection');
+        } else {
+          final nxConnected = await nxManager.connect(
+            jid: nxid!,
+            password: nxtoken,
+            wsUrl: wsUrl!,
+          );
+
+          if (nxConnected) {
+            print('✅ NX WebSocket connection established');
+
+            // Create MessagingManager from nxManager for sending messages
+            _messagingManager = MessagingManager(nxManager);
+            print('📨 MessagingManager created');
+
+            // Set up streams from NX manager
+            nxManager.messageStream.listen((message) {
+              print('📩 Message received from NX stream');
+              _messageCtrl.add(message);
+            });
+
+            nxManager.presenceStream.listen((presence) {
+              print('👤 Presence received from NX stream');
+              _presenceCtrl.add(presence);
+            });
+
+            nxManager.deliveryReceiptStream.listen((receipt) {
+              print('📬 Delivery receipt received from NX stream');
+              _deliveryReceiptCtrl.add(receipt);
+            });
+
+            isConnected.value = true;
+            print('✅ Messaging streams connected to NX manager');
+          } else {
+            print(
+                '⚠️ NX WebSocket connection failed, but HTTP API calls will still work');
+          }
+        }
+      } catch (e) {
+        print('⚠️ NX WebSocket connection failed: $e');
+        print('⚠️ HTTP API calls will still work with the NX token');
       }
 
       print('✅ Messaging SDK initialized successfully');
       print('📦 SDK client: ${_sdk?.client != null ? "exists" : "null"}');
-
-      // Use the NX manager directly from SDK (already connected)
-      final nxManager = _sdk!.xmppManager;
-      print('🔌 NX Manager: ${nxManager != null ? "found" : "null"}');
-
-      if (nxManager == null) {
-        throw Exception('NX manager not available after SDK initialization');
-      }
-
-      // Create MessagingManager from nxManager for sending messages
-      _messagingManager = MessagingManager(nxManager);
-      print('📨 MessagingManager created');
-      print(
-          '📨 SDK client after init: ${_sdk?.client != null ? "exists" : "null"}');
-
-      // Set up streams from NX manager
-      nxManager.messageStream.listen((message) {
-        print('📩 Message received from NX stream');
-        _messageCtrl.add(message);
-      });
-
-      nxManager.presenceStream.listen((presence) {
-        print('👤 Presence received from NX stream');
-        _presenceCtrl.add(presence);
-      });
-
-      nxManager.deliveryReceiptStream.listen((receipt) {
-        print('📬 Delivery receipt received from NX stream');
-        _deliveryReceiptCtrl.add(receipt);
-      });
-
-      isConnected.value = true;
-      print('✅ Messaging streams connected to NX manager');
       print('✅ isConnected: ${isConnected.value}');
     } catch (e) {
       print('❌ Failed to initialize messaging connection: $e');
@@ -292,11 +347,9 @@ class NexaconMessagingService extends GetxService {
     }
   }
 
-  /// Add a contact
+  /// Add a contact with optional display name
   Future<Map<String, dynamic>> addContact(String nxid, {String? name}) async {
     print('📨 addContact called with nxid: $nxid, name: $name');
-    print('📨 _sdk: ${_sdk != null ? "exists" : "null"}');
-    print('📨 _sdk.client: ${_sdk?.client != null ? "exists" : "null"}');
 
     final client = _sdk?.client;
     if (client == null) {
@@ -304,10 +357,9 @@ class NexaconMessagingService extends GetxService {
       throw Exception('Messaging service not initialized - client is null');
     }
 
-    print('📨 Calling client.messaging.addContact...');
+    print('📨 Calling client.messaging.addContact with nxid and name...');
     try {
-      // SDK doesn't support name parameter, just pass nxid
-      final result = await client.messaging.addContact(nxid);
+      final result = await client.messaging.addContact(nxid, name: name);
       print('✅ addContact result: $result');
       return result;
     } catch (e) {
@@ -327,15 +379,16 @@ class NexaconMessagingService extends GetxService {
   }
 
   /// Get message history
-  Future<Map<String, dynamic>> getMessageHistory({
+  Future<MessageHistoryResponse> getMessageHistory({
     DateTime? startDate,
     DateTime? endDate,
     String? sender,
+    String? peer,
     String? messageType,
     int page = 1,
     int pageSize = 20,
   }) async {
-    final client = _sdk?.client;
+    final client = _httpClient;
     if (client == null) {
       throw Exception('Messaging service not initialized');
     }
@@ -344,48 +397,74 @@ class NexaconMessagingService extends GetxService {
       startDate: startDate,
       endDate: endDate,
       sender: sender,
+      peer: peer,
       messageType: messageType,
       page: page,
       pageSize: pageSize,
     );
   }
 
-  /// Get message history for a specific conversation
-  Future<List<Map<String, dynamic>>> getConversationHistory(
+  /// Get message history for a specific conversation (both sent and received)
+  Future<List<NexaconMessage>> getConversationHistory(
     String contactNxid, {
     int pageSize = 50,
   }) async {
-    final history = await getMessageHistory(
-      sender: contactNxid,
-      messageType: 'chat',
-      pageSize: pageSize,
-    );
+    debugPrint('📨 getConversationHistory called for contact: $contactNxid');
 
-    debugPrint(
-        '📨 getConversationHistory response type: ${history.runtimeType}');
-    debugPrint('📨 getConversationHistory response: $history');
+    try {
+      MessageHistoryResponse history;
+      // Strip domain suffix from peer for API compatibility (API expects phone number only)
+      final peer = contactNxid.split('@').first;
+      debugPrint('📨 About to call getMessageHistory with peer: $peer');
+      // Use peer parameter to fetch messages for this specific contact
+      history = await getMessageHistory(
+        peer: peer,
+        messageType: 'chat',
+        pageSize: pageSize,
+      );
+      debugPrint('📨 getMessageHistory returned successfully');
 
-    // Handle different response formats from SDK
-    if (history is List) {
-      return (history as List<dynamic>)
-          .map((e) => e as Map<String, dynamic>)
-          .toList();
+      debugPrint(
+          '📨 getConversationHistory: SDK response type: ${history.runtimeType}');
+      debugPrint(
+          '📨 getConversationHistory: history.messages type: ${history.messages.runtimeType}');
+      debugPrint(
+          '📨 getConversationHistory: history.messages value: ${history.messages}');
+
+      debugPrint('📨 Conversation messages: ${history.messages.length}');
+
+      // Sort by timestamp ascending (oldest first for display)
+      final sortedMessages = List<NexaconMessage>.from(history.messages);
+      sortedMessages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+      return sortedMessages;
+    } on APIException catch (e) {
+      if (e.statusCode == 403) {
+        debugPrint('⚠️ 403 error - NX token invalid, refreshing...');
+        await forceReinitialize();
+        // Retry after token refresh
+        final peer = contactNxid.split('@').first;
+        final history = await getMessageHistory(
+          peer: peer,
+          messageType: 'chat',
+          pageSize: pageSize,
+        );
+        debugPrint('📨 getMessageHistory returned successfully after retry');
+
+        // Sort by timestamp ascending (oldest first for display)
+        final sortedMessages = List<NexaconMessage>.from(history.messages);
+        sortedMessages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+        return sortedMessages;
+      } else {
+        rethrow;
+      }
+    } catch (e) {
+      debugPrint('❌ getConversationHistory error: $e');
+      debugPrint('❌ Error type: ${e.runtimeType}');
+      debugPrint('❌ Stack trace: ${StackTrace.current}');
+      rethrow;
     }
-
-    // If it's an int (count), return empty list (no messages)
-    if (history is int) {
-      debugPrint('📨 Response is int (count): $history - returning empty list');
-      return [];
-    }
-
-    // If it's a Map, look for messages field
-    final messages = history['messages'];
-    if (messages is List) {
-      return messages.map((e) => e as Map<String, dynamic>).toList();
-    }
-
-    debugPrint('📨 Unknown response format, returning empty list');
-    return [];
   }
 
   @override

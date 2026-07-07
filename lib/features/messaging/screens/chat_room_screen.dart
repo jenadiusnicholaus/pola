@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/chat_room_controller.dart';
 import '../models/message.dart';
+import '../../../utils/phone_formatter.dart';
 
 class ChatRoomScreen extends StatelessWidget {
   final String contactId;
@@ -123,7 +124,13 @@ class ChatRoomScreen extends StatelessWidget {
                 itemCount: messages.length,
                 itemBuilder: (context, index) {
                   final message = messages[index];
-                  final isMe = message.senderId == controller.myNxId;
+                  final normalizedSenderId =
+                      PhoneFormatter.normalize(message.senderId);
+                  final normalizedMyId =
+                      PhoneFormatter.normalize(controller.myNxId);
+                  final isMe = normalizedSenderId == normalizedMyId;
+                  debugPrint(
+                      '📨 Rendering message: id=${message.id}, senderId=${message.senderId}, myNxId=${controller.myNxId}, isMe=$isMe');
                   return _buildMessageBubble(message, isMe);
                 },
               );

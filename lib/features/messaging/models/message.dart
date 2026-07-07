@@ -22,17 +22,19 @@ class Message {
   });
 
   factory Message.fromJson(Map<String, dynamic> json) {
-    // Handle timestamp that might be int or string
+    // Handle timestamp: API returns microseconds, convert to milliseconds
     int timestampMs;
     if (json['timestamp'] != null) {
+      int raw;
       if (json['timestamp'] is int) {
-        timestampMs = json['timestamp'] as int;
-      } else if (json['timestamp'] is String) {
-        timestampMs = int.tryParse(json['timestamp'] as String) ??
-            DateTime.now().millisecondsSinceEpoch;
+        raw = json['timestamp'] as int;
       } else {
-        timestampMs = DateTime.now().millisecondsSinceEpoch;
+        raw = int.tryParse(json['timestamp'].toString()) ??
+            DateTime.now().millisecondsSinceEpoch;
       }
+      // If timestamp looks like microseconds (>= year 2100 in ms = 4102444800000)
+      // divide by 1000 to convert to milliseconds
+      timestampMs = raw > 4102444800000 ? raw ~/ 1000 : raw;
     } else {
       timestampMs = DateTime.now().millisecondsSinceEpoch;
     }
@@ -41,7 +43,11 @@ class Message {
       id: json['id']?.toString() ??
           json['message_id']?.toString() ??
           DateTime.now().millisecondsSinceEpoch.toString(),
-      content: json['message']?.toString() ?? json['content']?.toString() ?? '',
+      // API uses 'body', fallback to 'message' / 'content' for XMPP stream events
+      content: json['body']?.toString() ??
+          json['message']?.toString() ??
+          json['content']?.toString() ??
+          '',
       senderId: json['from']?.toString() ?? json['sender_id']?.toString() ?? '',
       senderName: json['sender_name']?.toString() ?? 'Unknown',
       timestamp: DateTime.fromMillisecondsSinceEpoch(timestampMs),

@@ -527,9 +527,10 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
       }
 
       // 5. Register consultant as a contact in SDK (idempotent)
-      debugPrint('📨 Adding contact $nxId...');
+      debugPrint('📨 Adding contact $nxId with name $contactName...');
       try {
-        final result = await _messagingService.addContact(nxId);
+        final result =
+            await _messagingService.addContact(nxId, name: contactName);
         debugPrint('✅ Contact $nxId added: $result');
       } catch (e) {
         debugPrint('⚠️ addContact error: $e (may already exist)');

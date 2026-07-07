@@ -48,18 +48,47 @@ class ChatRoomController extends GetxController {
 
   void _loadConversationHistory() async {
     try {
+      print('📨 _loadConversationHistory: contactId=$contactId');
       final history = await _messagingService.getConversationHistory(contactId);
-      messages.value = history.map((e) => Message.fromJson(e)).toList();
+      print(
+          '📨 _loadConversationHistory: received ${history.length} messages from API');
+      print(
+          '📨 _loadConversationHistory: first message sample: ${history.isNotEmpty ? history.first.body : "empty"}');
+
+      // Convert NexaconMessage to app's Message model
+      // Use displayText for call messages, body for normal messages
+      final parsed = history
+          .map((m) => Message(
+                id: m.id,
+                content: m.isCallMessage ? m.displayText : m.body,
+                senderId: m.from,
+                senderName: 'Unknown', // NexaconMessage doesn't have senderName
+                timestamp:
+                    DateTime.fromMillisecondsSinceEpoch(m.timestamp ~/ 1000),
+                isRead: true,
+              ))
+          .toList();
+
+      messages.value = parsed;
+      print('📨 Loaded ${parsed.length} messages (${history.length} total)');
     } catch (e) {
-      print('Error loading conversation history: $e');
+      print('❌ Error loading conversation history: $e');
+      print('❌ Error type: ${e.runtimeType}');
+      print('❌ Stack trace: ${StackTrace.current}');
     }
+  }
+
+  bool _matchesContact(String? from) {
+    if (from == null) return false;
+    return PhoneFormatter.normalize(from) ==
+        PhoneFormatter.normalize(contactId);
   }
 
   void _listenToMessages() {
     _subscriptions.add(
       _messagingService.messageStream.listen((data) {
         final from = data['from']?.toString();
-        if (from == contactId) {
+        if (_matchesContact(from)) {
           final message = Message.fromJson(data);
           messages.insertAll(0, [message]);
           _scrollToBottom();
@@ -71,7 +100,7 @@ class ChatRoomController extends GetxController {
     _subscriptions.add(
       _messagingService.presenceStream.listen((data) {
         final from = data['from']?.toString();
-        if (from == contactId) {
+        if (_matchesContact(from)) {
           final type = data['type']?.toString();
           isOnline.value = type == null || type == 'available';
         }
@@ -81,7 +110,7 @@ class ChatRoomController extends GetxController {
     _subscriptions.add(
       _messagingService.typingStream.listen((data) {
         final from = data['from']?.toString();
-        if (from == contactId) {
+        if (_matchesContact(from)) {
           isContactTyping.value = true;
           _contactTypingTimer?.cancel();
           _contactTypingTimer = Timer(const Duration(seconds: 3), () {
@@ -94,7 +123,7 @@ class ChatRoomController extends GetxController {
     _subscriptions.add(
       _messagingService.readReceiptStream.listen((data) {
         final from = data['from']?.toString();
-        if (from == contactId) {
+        if (_matchesContact(from)) {
           final messageId = data['message_id']?.toString();
           if (messageId != null) {
             for (int i = 0; i < messages.length; i++) {
@@ -122,7 +151,7 @@ class ChatRoomController extends GetxController {
     _subscriptions.add(
       _messagingService.deliveryReceiptStream.listen((data) {
         final from = data['from']?.toString();
-        if (from == contactId) {
+        if (_matchesContact(from)) {
           final messageId = data['message_id']?.toString();
           if (messageId != null) {
             for (int i = 0; i < messages.length; i++) {
@@ -180,6 +209,10 @@ class ChatRoomController extends GetxController {
     isSending.value = true;
     final messageId = DateTime.now().millisecondsSinceEpoch.toString();
 
+    print('📤 sendMessage: content=$content');
+    print('📤 myNxId=$myNxId');
+    print('📤 contactId=$contactId');
+
     // Add optimistic message
     final message = Message(
       id: messageId,
@@ -189,7 +222,10 @@ class ChatRoomController extends GetxController {
       timestamp: DateTime.now(),
       isSent: true,
     );
+    print(
+        '📤 Adding optimistic message: ${message.id}, senderId=${message.senderId}');
     messages.insertAll(0, [message]);
+    print('📤 Total messages after insert: ${messages.length}');
     messageController.clear();
     isTyping.value = false;
     _scrollToBottom();

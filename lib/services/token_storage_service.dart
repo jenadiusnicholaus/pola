@@ -14,6 +14,7 @@ class TokenStorageService extends GetxController {
   static const String _nxTokenKey = 'nx_token';
   static const String _nxJidKey = 'nx_jid';
   static const String _nxWsUrlKey = 'nx_ws_url';
+  static const String _nxRefreshTokenKey = 'nx_refresh_token';
 
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
     aOptions: AndroidOptions(
@@ -483,15 +484,30 @@ class TokenStorageService extends GetxController {
     required String token,
     required String jid,
     required String wsUrl,
+    String? refreshToken,
   }) async {
     try {
       await _secureStorage.write(key: _nxTokenKey, value: token);
       await _secureStorage.write(key: _nxJidKey, value: jid);
       await _secureStorage.write(key: _nxWsUrlKey, value: wsUrl);
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        await _secureStorage.write(
+            key: _nxRefreshTokenKey, value: refreshToken);
+      }
       debugPrint('✅ NX token data stored successfully');
     } catch (e) {
       debugPrint('❌ Error storing NX token data: $e');
       throw Exception('Failed to store NX token data');
+    }
+  }
+
+  /// Get stored NX refresh token
+  Future<String?> getNxRefreshToken() async {
+    try {
+      return await _secureStorage.read(key: _nxRefreshTokenKey);
+    } catch (e) {
+      debugPrint('❌ Error getting NX refresh token: $e');
+      return null;
     }
   }
 
@@ -531,6 +547,19 @@ class TokenStorageService extends GetxController {
     final jid = await getNxJid();
     final wsUrl = await getNxWsUrl();
     return token != null && jid != null && wsUrl != null;
+  }
+
+  /// Clear stored NX token data (forces fresh credentials on next init)
+  Future<void> clearNxTokenData() async {
+    try {
+      await _secureStorage.delete(key: _nxTokenKey);
+      await _secureStorage.delete(key: _nxJidKey);
+      await _secureStorage.delete(key: _nxWsUrlKey);
+      await _secureStorage.delete(key: _nxRefreshTokenKey);
+      debugPrint('✅ NX token data cleared');
+    } catch (e) {
+      debugPrint('❌ Error clearing NX token data: $e');
+    }
   }
 
   /// Force logout - clear everything and navigate to login
