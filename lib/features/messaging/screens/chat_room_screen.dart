@@ -3,6 +3,9 @@ import 'package:get/get.dart';
 import '../controllers/chat_room_controller.dart';
 import '../models/message.dart';
 import '../../../utils/phone_formatter.dart';
+import '../../calling_booking/services/nexacon_call_service.dart';
+import '../../calling_booking/screens/call_screen.dart';
+import '../../../services/token_storage_service.dart';
 
 class ChatRoomScreen extends StatelessWidget {
   final String contactId;
@@ -15,6 +18,52 @@ class ChatRoomScreen extends StatelessWidget {
     required this.contactName,
     this.contactAvatar,
   });
+
+  void _initiateCall(BuildContext context, {required bool isVideo}) async {
+    try {
+      // Get user's phone number
+      final tokenStorage = Get.find<TokenStorageService>();
+      final userData = tokenStorage.userData;
+      final myPhone = userData?['phone_number'] as String? ??
+          userData?['phone'] as String? ??
+          userData?['phoneNumber'] as String?;
+
+      if (myPhone == null || myPhone.isEmpty) {
+        Get.snackbar(
+          'Error',
+          'Unable to start call. Please try again.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+
+      // Get or create call service
+      final callService = Get.find<NexaconCallService>();
+
+      // Navigate to call screen
+      Get.to(
+        () => CallScreen(
+          callerName: contactName,
+          callerPhone: contactId.split('@').first,
+          isIncoming: false,
+        ),
+      );
+
+      // Initiate the call
+      await callService.initiateCall(
+        username: myPhone,
+        to: contactId.split('@').first,
+        name: contactName,
+      );
+    } catch (e) {
+      print('❌ Error initiating call: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to start call. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,15 +118,8 @@ class ChatRoomScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.call),
-            onPressed: () {
-              // TODO: Implement voice call
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.videocam),
-            onPressed: () {
-              // TODO: Implement video call
-            },
+            onPressed: () => _initiateCall(context, isVideo: false),
+            tooltip: 'Audio call',
           ),
         ],
       ),

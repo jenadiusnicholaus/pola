@@ -64,8 +64,16 @@ class NexaconCallService extends GetxService {
     };
 
     sdk.onCallEnded = (reason) {
-      print('📞 Call ended: $reason');
-      onOtherUserLeft?.call();
+      print('📞 Call ended by SDK: $reason');
+      // Only trigger onOtherUserLeft if the call was actually connected
+      // This prevents premature call ending when call is just being established
+      if (_isTimerStarted) {
+        print('📞 Call was connected, triggering onOtherUserLeft');
+        onOtherUserLeft?.call();
+      } else {
+        print(
+            '📞 Call ended before connection, not triggering onOtherUserLeft');
+      }
     };
 
     sdk.onError = (error) {
@@ -332,7 +340,14 @@ class NexaconCallService extends GetxService {
           print('✅ Call recorded: $finalDuration seconds');
           callSummary = result;
         } catch (e) {
-          print('❌ Error recording call: $e');
+          // Check if error is because call is already completed
+          final errorMsg = e.toString().toLowerCase();
+          if (errorMsg.contains('completed') ||
+              errorMsg.contains('invalid_status')) {
+            print('⚠️ Call already completed - skipping end call API');
+          } else {
+            print('❌ Error recording call: $e');
+          }
         }
       } else {
         if (callId == null) print('⚠️ No call ID — cannot record');

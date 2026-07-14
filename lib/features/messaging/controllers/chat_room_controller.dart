@@ -26,10 +26,22 @@ class ChatRoomController extends GetxController {
 
   String get myNxId {
     final userData = _tokenStorage.userData;
-    final phone = userData?['phone_number'] as String?;
+    print('🔍 myNxId getter - userData keys: ${userData?.keys.toList()}');
+
+    // Try multiple possible phone number field names
+    final phone = userData?['phone_number'] as String? ??
+        userData?['phone'] as String? ??
+        userData?['phoneNumber'] as String?;
+
+    print('🔍 myNxId getter - phone: $phone');
+
     if (phone != null && phone.isNotEmpty) {
-      return PhoneFormatter.formatAsNxId(phone);
+      final nxId = PhoneFormatter.formatAsNxId(phone);
+      print('🔍 myNxId getter - formatted NxId: $nxId');
+      return nxId;
     }
+
+    print('⚠️ myNxId getter - returning fallback user_nxid');
     return 'user_nxid';
   }
 
@@ -48,12 +60,27 @@ class ChatRoomController extends GetxController {
 
   void _loadConversationHistory() async {
     try {
+      print('📨 _loadConversationHistory: START');
       print('📨 _loadConversationHistory: contactId=$contactId');
+      print('📨 _loadConversationHistory: calling getConversationHistory...');
+
       final history = await _messagingService.getConversationHistory(contactId);
+
       print(
-          '📨 _loadConversationHistory: received ${history.length} messages from API');
+          '📨 _loadConversationHistory: SUCCESS - received ${history.length} messages from API');
       print(
-          '📨 _loadConversationHistory: first message sample: ${history.isNotEmpty ? history.first.body : "empty"}');
+          '📨 _loadConversationHistory: history type: ${history.runtimeType}');
+
+      if (history.isNotEmpty) {
+        print('📨 _loadConversationHistory: first message:');
+        print('   - id: ${history.first.id}');
+        print('   - from: ${history.first.from}');
+        print('   - to: ${history.first.to}');
+        print('   - body: ${history.first.body}');
+        print('   - timestamp: ${history.first.timestamp}');
+      } else {
+        print('📨 _loadConversationHistory: NO MESSAGES RETURNED');
+      }
 
       // Convert NexaconMessage to app's Message model
       // Use displayText for call messages, body for normal messages
@@ -231,13 +258,19 @@ class ChatRoomController extends GetxController {
     _scrollToBottom();
 
     try {
-      _messagingService.sendRealTimeMessage(
+      await _messagingService.sendMessage(
         to: contactId,
         message: content,
       );
+      print('✅ Message sent successfully');
     } catch (e) {
-      print('Error sending message: $e');
+      print('❌ Error sending message: $e');
       messages.removeWhere((m) => m.id == messageId);
+      Get.snackbar(
+        'Error',
+        'Failed to send message. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } finally {
       isSending.value = false;
     }

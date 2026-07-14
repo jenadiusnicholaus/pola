@@ -271,44 +271,49 @@ class NexaconMessagingService extends GetxService {
     }
   }
 
-  /// Send a direct message to a user
+  /// Send a message using HTTP API (reliable delivery)
   Future<Map<String, dynamic>> sendMessage({
     required String to,
     required String message,
-    String messageType = 'chat',
   }) async {
-    final client = _sdk?.client;
-    if (client == null) {
+    print('📤 sendMessage called');
+    print('📤 To (original): $to');
+    print('📤 Message: $message');
+    print('📤 HTTP Client: ${_httpClient != null ? "initialized" : "null"}');
+
+    if (_httpClient == null) {
+      print('❌ HTTP Client not initialized');
       throw Exception('Messaging service not initialized');
     }
 
-    return await client.messaging.send(
-      to: to,
-      message: message,
-      messageType: messageType,
-    );
-  }
+    // Strip domain suffix for API compatibility (API expects phone number only)
+    final recipient = to.split('@').first;
+    print('📤 To (stripped): $recipient');
 
-  /// Send a message using MessagingManager (real-time)
-  void sendRealTimeMessage({
-    required String to,
-    required String message,
-  }) {
-    print('📤 sendRealTimeMessage called');
-    print('📤 To: $to');
-    print('📤 Message: $message');
-    print(
-        '📤 MessagingManager: ${_messagingManager != null ? "initialized" : "null"}');
-    print('📤 isConnected: ${isConnected.value}');
+    try {
+      print('📤 Sending message via HTTP API...');
+      final response = await _httpClient!.messaging.send(
+        to: recipient,
+        message: message,
+        messageType: 'chat',
+      );
+      print('✅ Message sent successfully: $response');
 
-    if (_messagingManager == null) {
-      print('❌ MessagingManager not initialized');
-      throw Exception('MessagingManager not initialized');
+      // Also send via WebSocket if available for real-time delivery
+      if (_messagingManager != null) {
+        try {
+          _messagingManager!.sendMessage(to: to, message: message);
+          print('✅ Message also sent via WebSocket for real-time delivery');
+        } catch (e) {
+          print('⚠️ WebSocket send failed (message already sent via HTTP): $e');
+        }
+      }
+
+      return response;
+    } catch (e) {
+      print('❌ Failed to send message: $e');
+      rethrow;
     }
-
-    print('📤 Sending message via MessagingManager...');
-    _messagingManager!.sendMessage(to: to, message: message);
-    print('✅ Message sent');
   }
 
   /// Send typing indicator
@@ -405,6 +410,11 @@ class NexaconMessagingService extends GetxService {
   }
 
   /// Get message history for a specific conversation (both sent and received)
+  ///
+  /// Enhanced API automatically resolves peer identifiers:
+  /// - Supports phone with/without + prefix (e.g., 255788811169 or +255788811169)
+  /// - Supports full JID (e.g., +255788811189@nxservice.quantumvision-tech.com)
+  /// - Returns ALL messages between you and peer (sent OR received)
   Future<List<NexaconMessage>> getConversationHistory(
     String contactNxid, {
     int pageSize = 50,
@@ -413,13 +423,18 @@ class NexaconMessagingService extends GetxService {
 
     try {
       MessageHistoryResponse history;
-      // Strip domain suffix from peer for API compatibility (API expects phone number only)
-      final peer = contactNxid.split('@').first;
-      debugPrint('📨 About to call getMessageHistory with peer: $peer');
-      // Use peer parameter to fetch messages for this specific contact
+      // Enhanced API handles all peer formats automatically:
+      // - Bare phone: 255788811169
+      // - With + prefix: +255788811169
+      // - Full JID: +255788811189@nxservice.quantumvision-tech.com
+      // Just pass the contactNxid as-is, API will resolve it
+      final peer = contactNxid.split('@').first; // Strip domain if present
+      debugPrint(
+          '📨 Calling getMessageHistory with peer: $peer (API will auto-resolve)');
+
+      // Don't filter by messageType to get all messages (chat, sms, etc.)
       history = await getMessageHistory(
         peer: peer,
-        messageType: 'chat',
         pageSize: pageSize,
       );
       debugPrint('📨 getMessageHistory returned successfully');
@@ -446,7 +461,6 @@ class NexaconMessagingService extends GetxService {
         final peer = contactNxid.split('@').first;
         final history = await getMessageHistory(
           peer: peer,
-          messageType: 'chat',
           pageSize: pageSize,
         );
         debugPrint('📨 getMessageHistory returned successfully after retry');
@@ -463,6 +477,36 @@ class NexaconMessagingService extends GetxService {
       debugPrint('❌ getConversationHistory error: $e');
       debugPrint('❌ Error type: ${e.runtimeType}');
       debugPrint('❌ Stack trace: ${StackTrace.current}');
+      rethrow;
+    }
+  }
+
+  /// Get ALL messages for the current user (sent and received)
+  ///
+  /// Enhanced API feature: Returns all your messages without filtering by peer
+  /// Useful for displaying a unified message inbox or search across all conversations
+  Future<List<NexaconMessage>> getAllMessages({
+    int pageSize = 100,
+    int page = 1,
+  }) async {
+    debugPrint('📨 getAllMessages called (page: $page, pageSize: $pageSize)');
+
+    try {
+      // Call getMessageHistory without peer parameter to get ALL messages
+      final history = await getMessageHistory(
+        pageSize: pageSize,
+        page: page,
+      );
+      debugPrint(
+          '📨 getAllMessages returned ${history.messages.length} messages');
+
+      // Sort by timestamp descending (newest first for inbox view)
+      final sortedMessages = List<NexaconMessage>.from(history.messages);
+      sortedMessages.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+      return sortedMessages;
+    } catch (e) {
+      debugPrint('❌ getAllMessages error: $e');
       rethrow;
     }
   }

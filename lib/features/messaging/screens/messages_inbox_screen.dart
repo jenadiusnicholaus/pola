@@ -5,6 +5,7 @@ import '../services/nexacon_messaging_service.dart';
 import '../../calling_booking/controllers/consultant_controller.dart';
 import '../../calling_booking/models/consultant_models.dart';
 import '../../../utils/phone_formatter.dart';
+import '../../../services/token_storage_service.dart';
 
 /// Professional Messages Inbox Screen
 /// Modern messaging interface with professional design
@@ -25,13 +26,18 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
   final ConsultantController _consultantController =
       Get.put(ConsultantController(), tag: 'messaging_inbox');
 
+  List<Map<String, dynamic>> _contacts = [];
+  bool _isLoadingContacts = false;
+  Map<String, Map<String, dynamic>> _lastMessages =
+      {}; // Store last message per contact
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    debugPrint('📨 MessagesInboxScreen: initState, calling _loadContacts');
-    _loadContacts();
-    debugPrint('📨 MessagesInboxScreen: calling fetchConsultants');
+    debugPrint('📨 MessagesInboxScreen: initState, calling _loadAllMessages');
+    _loadAllMessages();
+    debugPrint('📨 MessagesInboxScreen: calling fetchConsultants for fallback');
     _consultantController.fetchConsultants();
   }
 
@@ -42,20 +48,88 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
     super.dispose();
   }
 
-  Future<void> _loadContacts({bool retry = false}) async {
+  Future<void> _loadAllMessages({bool retry = false}) async {
+    setState(() => _isLoadingContacts = true);
+
     try {
-      debugPrint('📨 _loadContacts: ensuring messaging connection');
+      debugPrint('📨 _loadAllMessages: ensuring messaging connection');
       if (retry) {
         await _messagingService.forceReinitialize();
       } else if (!_messagingService.isConnected.value) {
         await _messagingService.initializeConnection();
       }
+
+      // Fetch ALL messages to build contact list with last message
+      debugPrint('📨 _loadAllMessages: fetching all messages from API');
+      final allMessages = await _messagingService.getAllMessages(pageSize: 100);
+      debugPrint(
+          '📨 _loadAllMessages: received ${allMessages.length} messages');
+
+      // Build contacts list from messages and extract last message per contact
+      final contactsMap = <String, Map<String, dynamic>>{};
+      final lastMessagesMap = <String, Map<String, dynamic>>{};
+
+      for (final msg in allMessages) {
+        // Determine peer (the other person in the conversation)
+        // Get my JID from token storage
+        final userData = Get.find<TokenStorageService>().userData;
+        final myPhone = userData?['phone_number'] as String? ??
+            userData?['phone'] as String?;
+        final myJid =
+            myPhone != null ? PhoneFormatter.formatAsNxId(myPhone) : '';
+
+        final peer =
+            msg.from.contains(myJid.split('@').first) ? msg.to : msg.from;
+        final peerPhone = peer.split('@').first;
+
+        // Store last message for this peer
+        if (!lastMessagesMap.containsKey(peerPhone)) {
+          // Get clean message text (use displayText for call messages)
+          String messageText = msg.isCallMessage ? msg.displayText : msg.body;
+
+          // Truncate long messages and clean up JSON
+          if (messageText.length > 50) {
+            messageText = messageText.substring(0, 50) + '...';
+          }
+
+          // If message looks like JSON, show a friendly text instead
+          if (messageText.trim().startsWith('{') ||
+              messageText.trim().startsWith('[')) {
+            messageText = msg.isCallMessage ? msg.displayText : 'Message';
+          }
+
+          lastMessagesMap[peerPhone] = {
+            'body': messageText,
+            'timestamp': msg.timestamp,
+            'isFromMe': msg.from.contains(myJid.split('@').first),
+          };
+        }
+
+        // Add peer to contacts if not already there
+        if (!contactsMap.containsKey(peerPhone)) {
+          contactsMap[peerPhone] = {
+            'nxid': peer,
+            'name': peerPhone, // Will be updated if we have a name
+          };
+        }
+      }
+
+      debugPrint(
+          '📨 _loadAllMessages: found ${contactsMap.length} unique contacts');
+
+      setState(() {
+        _contacts = contactsMap.values.toList();
+        _lastMessages = lastMessagesMap;
+        _isLoadingContacts = false;
+      });
     } catch (e) {
-      debugPrint('❌ Error initializing messaging: $e');
+      debugPrint('❌ Error loading messages: $e');
+      setState(() => _isLoadingContacts = false);
+
       if (!retry &&
           (e.toString().contains('timeout') ||
               e.toString().contains('Authentication'))) {
-        _loadContacts(retry: true);
+        _loadAllMessages(retry: true);
       }
     }
   }
@@ -191,56 +265,56 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
   }
 
   Widget _buildMessagesList(String filter) {
-    return Obx(() {
-      final consultants = _consultantController.consultants;
-      final isLoading = _consultantController.isLoading.value;
+    // Show actual contacts from messaging API
+    if (_isLoadingContacts) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-      debugPrint(
-          '📨 _buildMessagesList: filter=$filter, consultants=${consultants.length}, isLoading=$isLoading');
+    final query = _searchController.text.toLowerCase();
 
-      if (isLoading) {
-        return const Center(child: CircularProgressIndicator());
+    // Filter contacts based on search query
+    final filtered = _contacts.where((contact) {
+      if (filter == 'groups') return false; // no groups for now
+      final name = (contact['name'] ?? '').toString().toLowerCase();
+      final nxid = (contact['nxid'] ?? '').toString().toLowerCase();
+      if (query.isNotEmpty) {
+        return name.contains(query) || nxid.contains(query);
       }
+      return true;
+    }).toList();
 
-      final query = _searchController.text.toLowerCase();
+    debugPrint('📨 _buildMessagesList: filtered=${filtered.length} contacts');
 
-      final filtered = consultants.where((c) {
-        if (filter == 'groups') return false; // no groups for now
-        final name = c.userDetails.fullName.toLowerCase();
-        final phone = c.userDetails.phoneNumber ?? '';
-        if (query.isNotEmpty) {
-          return name.contains(query) || phone.contains(query);
-        }
-        return true;
-      }).toList();
+    if (filtered.isEmpty) {
+      return _buildEmptyState();
+    }
 
-      debugPrint(
-          '📨 _buildMessagesList: filtered=${filtered.length} consultants');
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: filtered.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 1),
+      itemBuilder: (context, index) {
+        final contact = filtered[index];
+        final name = contact['name']?.toString() ?? 'Unknown';
+        final nxid = contact['nxid']?.toString() ?? '';
+        final phone = nxid.split('@').first;
 
-      if (filtered.isEmpty) {
-        return _buildEmptyState();
-      }
+        // Get last message for this contact
+        final lastMsg = _lastMessages[phone];
+        final lastMsgText = lastMsg?['body']?.toString() ?? '';
+        final timestamp = lastMsg?['timestamp'] as int?;
 
-      return ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: filtered.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 1),
-        itemBuilder: (context, index) {
-          final consultant = filtered[index];
-          final name = consultant.userDetails.fullName;
-          final phone = consultant.userDetails.phoneNumber ?? '';
-          final avatar = consultant.userDetails.profilePicture;
-          final nxId = PhoneFormatter.formatAsNxId(phone);
-          return _buildConsultantTile(
-            name: name,
-            phone: phone,
-            avatar: avatar,
-            nxId: nxId,
-            onTap: () => _handleMessageConsultant(consultant),
-          );
-        },
-      );
-    });
+        return _buildConsultantTile(
+          name: name,
+          phone: phone,
+          avatar: null,
+          nxId: nxid,
+          lastMessage: lastMsgText,
+          timestamp: timestamp,
+          onTap: () => _handleMessageContact(name, nxid),
+        );
+      },
+    );
   }
 
   Widget _buildConsultantTile({
@@ -248,9 +322,24 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
     required String phone,
     required String? avatar,
     required String nxId,
+    String? lastMessage,
+    int? timestamp,
     required VoidCallback onTap,
   }) {
     final theme = Theme.of(context);
+
+    // Format timestamp
+    String timeStr = '';
+    if (timestamp != null) {
+      final dt = DateTime.fromMillisecondsSinceEpoch(timestamp ~/ 1000);
+      final now = DateTime.now();
+      if (dt.year == now.year && dt.month == now.month && dt.day == now.day) {
+        timeStr =
+            '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      } else {
+        timeStr = '${dt.day}/${dt.month}';
+      }
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -300,28 +389,41 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        name,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              name,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (timeStr.isNotEmpty)
+                            Text(
+                              timeStr,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.5),
+                              ),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        phone.isNotEmpty ? phone : nxId,
+                        lastMessage?.isNotEmpty == true
+                            ? lastMessage!
+                            : (phone.isNotEmpty ? phone : nxId),
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurface
                               .withValues(alpha: 0.6),
                         ),
                         overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
                     ],
                   ),
-                ),
-                Icon(
-                  Icons.chat_bubble_outline,
-                  color: theme.colorScheme.primary,
                 ),
               ],
             ),
@@ -532,6 +634,29 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
     );
+  }
+
+  Future<void> _handleMessageContact(String name, String nxid) async {
+    debugPrint('📨 Opening chat with contact: $name ($nxid)');
+
+    try {
+      // Ensure messaging is connected
+      if (!_messagingService.isConnected.value) {
+        Get.dialog(const Center(child: CircularProgressIndicator()),
+            barrierDismissible: false);
+        await _messagingService.initializeConnection();
+        Get.back();
+      }
+
+      Get.to(() => ChatRoomScreen(
+            contactId: nxid,
+            contactName: name,
+            contactAvatar: null,
+          ));
+    } catch (e) {
+      debugPrint('❌ Error opening chat: $e');
+      Get.snackbar('Error', 'Could not open chat. Please try again.');
+    }
   }
 
   Future<void> _handleMessageConsultant(Consultant consultant) async {
