@@ -35,14 +35,14 @@ class DocumentPaymentService {
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = response.data as Map<String, dynamic>;
         debugPrint('✅ Payment initiated successfully');
-        
+
         // Handle both response formats:
         // Format 1: { "transaction": { "id": "..." } }
         // Format 2: { "transactionId": "..." } (AzamPay direct response)
-        final transactionId = data['transaction']?['id'] ?? 
-                              data['transactionId'] ?? 
-                              data['transaction_id'];
-        
+        final transactionId = data['transaction']?['id'] ??
+            data['transactionId'] ??
+            data['transaction_id'];
+
         debugPrint('   Transaction ID: $transactionId');
 
         return {
@@ -77,17 +77,27 @@ class DocumentPaymentService {
 
       if (response.statusCode == 200) {
         final data = response.data as Map<String, dynamic>;
-        final payment = data['payment'] as Map<String, dynamic>;
+        // Backend may return payment data at top level or nested under 'payment'
+        final payment = data['payment'] is Map<String, dynamic>
+            ? data['payment'] as Map<String, dynamic>
+            : data;
 
+        final rawStatus = (payment['status'] as String?)?.toLowerCase() ??
+            (data['status'] as String?)?.toLowerCase() ??
+            'pending';
+        final isFulfilled =
+            payment['is_fulfilled'] == true || data['is_fulfilled'] == true;
         final status =
-            (payment['status'] as String?)?.toLowerCase() ?? 'pending';
+            (rawStatus == 'completed' || isFulfilled) ? 'completed' : rawStatus;
         debugPrint('📊 Payment Status: $status');
 
         return {
           'status': status,
           'payment': payment,
-          'document_accessible': payment['document_accessible'] ?? false,
-          'download_url': payment['download_url'],
+          'document_accessible': payment['document_accessible'] ??
+              data['document_accessible'] ??
+              false,
+          'download_url': payment['download_url'] ?? data['download_url'],
         };
       }
 

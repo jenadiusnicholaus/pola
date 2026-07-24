@@ -79,15 +79,15 @@ class SubscriptionService extends GetxService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
-        
+
         // Handle different response formats from backend
         // Backend may return transactionId directly or nested in transaction object
-        String? transactionId = data['transactionId']?.toString() 
-            ?? data['transaction_id']?.toString()
-            ?? data['transaction']?['id']?.toString();
-        
+        String? transactionId = data['transactionId']?.toString() ??
+            data['transaction_id']?.toString() ??
+            data['transaction']?['id']?.toString();
+
         debugPrint('💳 Parsed transactionId: $transactionId');
-        
+
         return SubscriptionResult(
           success: data['success'] ?? true,
           message: data['message'] ?? 'Payment initiated',
@@ -127,19 +127,37 @@ class SubscriptionService extends GetxService {
           );
         }
 
-        final payment = data['payment'];
+        // Backend may return payment data at top level or nested under 'payment'
+        final payment =
+            data['payment'] is Map<String, dynamic> ? data['payment'] : data;
 
-        if (payment == null) {
+        if (payment == null || payment is! Map<String, dynamic>) {
           return PaymentStatus(
             status: 'error',
             message: 'Invalid payment data received',
           );
         }
 
+        final rawStatus = (payment['status'] as String?)?.toLowerCase() ??
+            (data['status'] as String?)?.toLowerCase() ??
+            'unknown';
+        final isFulfilled =
+            payment['is_fulfilled'] == true || data['is_fulfilled'] == true;
+        final status =
+            (rawStatus == 'completed' || rawStatus == 'success' || isFulfilled)
+                ? 'completed'
+                : (rawStatus == 'failed' || rawStatus == 'cancelled')
+                    ? 'failed'
+                    : rawStatus;
+        final message = payment['message'] ?? data['message'] ?? '';
+        final transactionId = payment['id']?.toString() ??
+            payment['transaction_id']?.toString() ??
+            data['transaction_id']?.toString();
+
         return PaymentStatus(
-          status: payment['status'] ?? 'unknown',
-          message: payment['message'] ?? data['message'] ?? '',
-          transactionId: payment['id']?.toString(),
+          status: status,
+          message: message,
+          transactionId: transactionId,
         );
       }
 

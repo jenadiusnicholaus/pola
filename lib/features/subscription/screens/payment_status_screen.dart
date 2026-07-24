@@ -6,6 +6,7 @@ import '../services/subscription_service.dart';
 import '../../../features/profile/services/profile_service.dart';
 import '../../../features/home/controllers/home_controller.dart';
 import '../../../services/permission_service.dart';
+import '../../../shared/widgets/success_view.dart';
 
 class PaymentStatusScreen extends StatefulWidget {
   final String transactionId;
@@ -107,12 +108,14 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen>
         try {
           final permissionService = Get.find<PermissionService>();
           permissionService.debugSubscriptionStatus();
-          debugPrint('🔐 canViewNearbyLawyers: ${permissionService.canViewNearbyLawyers}');
-          debugPrint('🔐 isSubscriptionActive: ${permissionService.isSubscriptionActive}');
+          debugPrint(
+              '🔐 canViewNearbyLawyers: ${permissionService.canViewNearbyLawyers}');
+          debugPrint(
+              '🔐 isSubscriptionActive: ${permissionService.isSubscriptionActive}');
         } catch (e) {
           debugPrint('Error debugging permissions: $e');
         }
-        
+
         // Refresh home controller to rebuild UI
         try {
           final homeController = Get.find<HomeController>();
@@ -401,104 +404,74 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen>
   }
 
   void _showSuccessDialog() {
+    final theme = Theme.of(context);
+
     Get.dialog(
       PopScope(
         canPop: false,
-        child: AlertDialog(
-          title: const Row(
-            children: [
-              Icon(Icons.celebration, color: Colors.amber, size: 32),
-              SizedBox(width: 12),
-              Expanded(child: Text('Welcome to Premium!')),
-            ],
-          ),
-          content: SingleChildScrollView(
+        child: SuccessView.dialog(
+          title: 'Welcome to Premium!',
+          message:
+              'Your subscription is now active! Start using your premium features right away.',
+          primaryButtonLabel: 'Get Started',
+          onPrimaryPressed: () async {
+            // Refresh profile one more time before going home
+            try {
+              final profileService = Get.find<ProfileService>();
+              await profileService.fetchProfile(forceRefresh: true);
+
+              // Refresh home controller
+              final homeController = Get.find<HomeController>();
+              homeController.update();
+            } catch (e) {
+              debugPrint('Error refreshing before navigation: $e');
+            }
+
+            Get.until((route) => route.isFirst); // Go back to home
+          },
+          details: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: theme.colorScheme.primary.withOpacity(0.2),
+              ),
+            ),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Your subscription is now active!',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.green.shade200),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.check_circle,
-                              color: Colors.green, size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            'You can now:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
-                          ),
-                        ],
+                Row(
+                  children: [
+                    Icon(Icons.check_circle,
+                        color: theme.colorScheme.primary, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'You can now:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
                       ),
-                      const SizedBox(height: 8),
-                      _buildSuccessFeature('Apply for consultation services'),
-                      _buildSuccessFeature('Access all premium features'),
-                      _buildSuccessFeature('Earn from consultations'),
-                      _buildSuccessFeature('Unlimited access to legal library'),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Start using your premium features right away!',
-                  style: TextStyle(fontSize: 14),
-                ),
+                const SizedBox(height: 8),
+                _buildSuccessFeature('Apply for consultation services', theme),
+                _buildSuccessFeature('Access all premium features', theme),
+                _buildSuccessFeature('Earn from consultations', theme),
+                _buildSuccessFeature(
+                    'Unlimited access to legal library', theme),
               ],
             ),
           ),
-          actions: [
-            ElevatedButton.icon(
-              onPressed: () async {
-                // Refresh profile one more time before going home
-                try {
-                  final profileService = Get.find<ProfileService>();
-                  await profileService.fetchProfile(forceRefresh: true);
-                  
-                  // Refresh home controller
-                  final homeController = Get.find<HomeController>();
-                  homeController.update();
-                } catch (e) {
-                  debugPrint('Error refreshing before navigation: $e');
-                }
-                
-                Get.until((route) => route.isFirst); // Go back to home
-              },
-              icon: const Icon(Icons.arrow_forward),
-              label: const Text('Get Started'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
-            ),
-          ],
         ),
       ),
       barrierDismissible: false,
     );
   }
 
-  Widget _buildSuccessFeature(String text) {
+  Widget _buildSuccessFeature(String text, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.only(left: 8, bottom: 4),
       child: Row(
@@ -508,7 +481,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen>
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 13),
+              style: theme.textTheme.bodyMedium?.copyWith(fontSize: 13),
             ),
           ),
         ],

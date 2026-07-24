@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/chat_room_controller.dart';
 import '../models/message.dart';
 import '../../../utils/phone_formatter.dart';
 import '../../calling_booking/services/nexacon_call_service.dart';
+import '../../calling_booking/controllers/consultant_controller.dart';
 import '../../calling_booking/screens/call_screen.dart';
 import '../../../services/token_storage_service.dart';
 
@@ -21,7 +23,33 @@ class ChatRoomScreen extends StatelessWidget {
 
   void _initiateCall(BuildContext context, {required bool isVideo}) async {
     try {
-      // Get user's phone number
+      // Format contact phone
+      final phone = contactId.split('@').first;
+
+      // Try to find the contact in loaded consultants to use proper call flow
+      // (backend FCM notification + shared room)
+      final consultantController = Get.find<ConsultantController>();
+      final consultants = consultantController.consultants;
+      final matchingConsultant = consultants.firstWhereOrNull((c) {
+        final consultantPhone = c.userDetails.phoneNumber ?? '';
+        final normalizedConsultant = PhoneFormatter.normalize(consultantPhone);
+        final normalizedContact = PhoneFormatter.normalize(phone);
+        return normalizedConsultant == normalizedContact ||
+            consultantPhone.contains(phone) ||
+            phone.contains(consultantPhone);
+      });
+
+      if (matchingConsultant != null) {
+        // Use the proper CallController flow with backend notification.
+        // CallScreen will create the controller and initiate the call.
+        print(
+            '📞 Found matching consultant: ${matchingConsultant.userDetails.fullName}, using CallController');
+        Get.to(() =>
+            CallScreen(consultant: matchingConsultant, isIncoming: false));
+        return;
+      }
+
+      // Fallback: direct Nexacon call for non-consultant contacts
       final tokenStorage = Get.find<TokenStorageService>();
       final userData = tokenStorage.userData;
       final myPhone = userData?['phone_number'] as String? ??
@@ -37,23 +65,37 @@ class ChatRoomScreen extends StatelessWidget {
         return;
       }
 
-      // Get or create call service
       final callService = Get.find<NexaconCallService>();
 
       // Navigate to call screen
       Get.to(
         () => CallScreen(
           callerName: contactName,
-          callerPhone: contactId.split('@').first,
+          callerPhone: phone,
           isIncoming: false,
         ),
       );
 
-      // Initiate the call
-      await callService.initiateCall(
+      // Initiate the call with timeout handling
+      await callService
+          .initiateCall(
         username: myPhone,
-        to: contactId.split('@').first,
+        to: phone,
         name: contactName,
+      )
+          .timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Call response timeout - recipient may be offline');
+        },
+      );
+    } on TimeoutException catch (e) {
+      print('⏰ Call timeout: $e');
+      Get.back(); // Close call screen if timeout
+      Get.snackbar(
+        'Call Failed',
+        'Could not reach $contactName. They may be offline.',
+        snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
       print('❌ Error initiating call: $e');
