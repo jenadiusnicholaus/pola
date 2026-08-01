@@ -21,24 +21,38 @@ class Message {
     this.avatarUrl,
   });
 
-  factory Message.fromJson(Map<String, dynamic> json) {
-    // Handle timestamp: API returns microseconds, convert to milliseconds
-    int timestampMs;
-    if (json['timestamp'] != null) {
-      int raw;
-      if (json['timestamp'] is int) {
-        raw = json['timestamp'] as int;
-      } else {
-        raw = int.tryParse(json['timestamp'].toString()) ??
-            DateTime.now().millisecondsSinceEpoch;
-      }
-      // If timestamp looks like microseconds (>= year 2100 in ms = 4102444800000)
-      // divide by 1000 to convert to milliseconds
-      timestampMs = raw > 4102444800000 ? raw ~/ 1000 : raw;
+  /// Parse an epoch timestamp that may be in seconds, milliseconds, or microseconds.
+  static DateTime parseTimestamp(dynamic value) {
+    if (value == null) return DateTime.now();
+
+    int raw;
+    if (value is int) {
+      raw = value;
     } else {
-      timestampMs = DateTime.now().millisecondsSinceEpoch;
+      raw = int.tryParse(value.toString()) ??
+          DateTime.now().millisecondsSinceEpoch;
     }
 
+    // Distinguish common epoch units by magnitude.
+    // - seconds: ~1.7e9 (won't exceed 1e12 for centuries)
+    // - milliseconds: ~1.7e12
+    // - microseconds: ~1.7e15
+    late final int ms;
+    if (raw > 1000000000000000) {
+      // microseconds -> milliseconds
+      ms = raw ~/ 1000;
+    } else if (raw > 1000000000000) {
+      // already milliseconds
+      ms = raw;
+    } else {
+      // seconds -> milliseconds
+      ms = raw * 1000;
+    }
+
+    return DateTime.fromMillisecondsSinceEpoch(ms);
+  }
+
+  factory Message.fromJson(Map<String, dynamic> json) {
     return Message(
       id: json['id']?.toString() ??
           json['message_id']?.toString() ??
@@ -50,7 +64,7 @@ class Message {
           '',
       senderId: json['from']?.toString() ?? json['sender_id']?.toString() ?? '',
       senderName: json['sender_name']?.toString() ?? 'Unknown',
-      timestamp: DateTime.fromMillisecondsSinceEpoch(timestampMs),
+      timestamp: parseTimestamp(json['timestamp']),
       isSent: json['is_sent'] == true,
       isDelivered: json['is_delivered'] == true,
       isRead: json['is_read'] == true,
@@ -104,8 +118,7 @@ class Contact {
       unreadCount: json['unread_count'] ?? 0,
       lastMessage: json['last_message'],
       lastMessageTime: json['last_message_time'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(
-              json['last_message_time'] as int)
+          ? Message.parseTimestamp(json['last_message_time'])
           : null,
     );
   }

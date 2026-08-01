@@ -37,6 +37,11 @@ class AppInitializer {
   final RxString currentTask = ''.obs;
   final RxBool isComplete = false.obs;
 
+  /// Completer that signals when device registration for returning users is done.
+  /// main.dart awaits this before navigating, so the verification screen
+  /// isn't overridden by a race to /home.
+  final Completer<bool> deviceCheckCompleter = Completer<bool>();
+
   /// Initialize all app services with parallel loading where possible
   Future<void> initialize({
     required Future<void> Function(FlutterErrorDetails) onError,
@@ -204,6 +209,31 @@ class AppInitializer {
             debugPrint('🚀 Starting messaging connection initialization...');
             await messagingService.initializeConnection();
             debugPrint('✅ Messaging connection established');
+
+            // Check device status and handle accordingly
+            try {
+              final deviceService = Get.find<DeviceRegistrationService>();
+              final checkResult = await deviceService.checkAndHandleDevice();
+
+              if (checkResult.needsVerification) {
+                final isTakeover = checkResult.needsTakeover;
+                debugPrint(
+                    '${isTakeover ? "🔄" : "🔐"} Returning user device needs ${isTakeover ? "takeover " : ""}verification — navigating to OTP screen');
+                Get.offAllNamed('/device-verification', arguments: {
+                  'device_id': checkResult.deviceId ?? '',
+                  'device_name': 'this device',
+                  'is_takeover': isTakeover,
+                  'new_user_email': checkResult.newUserEmail ?? '',
+                  'takeover_message': checkResult.message,
+                });
+                deviceCheckCompleter.complete(true);
+              } else {
+                deviceCheckCompleter.complete(false);
+              }
+            } catch (e) {
+              debugPrint('⚠️ Device check for returning user failed: $e');
+              deviceCheckCompleter.complete(false);
+            }
           } else {
             debugPrint('⏭️ User not logged in, skipping messaging connection');
           }

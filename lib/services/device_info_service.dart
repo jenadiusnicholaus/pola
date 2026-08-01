@@ -35,6 +35,12 @@ class DeviceInfoService {
     return newDeviceId;
   }
 
+  /// Clear stored device ID so a new one is generated on next call
+  void clearDeviceId() {
+    _storage.remove(_deviceIdKey);
+    debugPrint('🧹 Cleared stored device ID');
+  }
+
   /// Get FCM token for push notifications
   Future<String?> getFcmToken() async {
     try {

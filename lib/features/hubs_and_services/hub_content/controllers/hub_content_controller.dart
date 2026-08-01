@@ -10,9 +10,10 @@ import '../../../../routes/app_routes.dart';
 
 class HubContentController extends GetxController {
   final String hubType;
+  final bool skipInitialFetch;
   final HubContentService _service = Get.find<HubContentService>();
 
-  HubContentController({required this.hubType});
+  HubContentController({required this.hubType, this.skipInitialFetch = false});
 
   // Observable variables
   final List<HubContentItem> _content = [];
@@ -75,7 +76,9 @@ class HubContentController extends GetxController {
     super.onInit();
     debugPrint('🏛️ HubContentController initialized for hubType: "$hubType"');
     _setupScrollListener();
-    fetchInitialContent();
+    if (!skipInitialFetch) {
+      fetchInitialContent();
+    }
   }
 
   @override
@@ -715,10 +718,12 @@ class HubContentController extends GetxController {
       }
     } catch (e) {
       print('❌ Error fetching bookmarked content for $hubType: $e');
-      // Don't show user-facing error for bookmarks endpoint 404 -
-      // the endpoint may not be implemented yet on backend
+      // Don't show user-facing error for bookmarks endpoint 404/403 -
+      // the endpoint may not be implemented yet or user lacks hub access
       if (!e.toString().contains('404') &&
-          !e.toString().contains('Not found')) {
+          !e.toString().contains('Not found') &&
+          !e.toString().contains('403') &&
+          !e.toString().contains('Forbidden')) {
         NavigationHelper.showSafeSnackbar(
           title: 'Error',
           message: 'Failed to fetch bookmarked content: $e',

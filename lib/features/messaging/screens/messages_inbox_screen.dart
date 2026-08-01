@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'chat_room_screen.dart';
 import '../services/nexacon_messaging_service.dart';
+import '../models/message.dart';
 import '../../calling_booking/controllers/consultant_controller.dart';
 import '../../calling_booking/models/consultant_models.dart';
 import '../../../utils/phone_formatter.dart';
@@ -331,7 +332,7 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
     // Format timestamp
     String timeStr = '';
     if (timestamp != null) {
-      final dt = DateTime.fromMillisecondsSinceEpoch(timestamp ~/ 1000);
+      final dt = Message.parseTimestamp(timestamp);
       final now = DateTime.now();
       if (dt.year == now.year && dt.month == now.month && dt.day == now.day) {
         timeStr =

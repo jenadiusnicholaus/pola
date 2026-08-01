@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -215,8 +216,11 @@ class FCMService extends GetxService {
     // Request permissions
     await _requestPermissions();
 
-    // Register FCM token with backend
-    await registerDeviceToken();
+    // NOTE: Initial device registration is handled by LoginController._registerDevice()
+    // which passes the FCM token. We only listen for token refreshes here to update
+    // an already-registered device's FCM token.
+    debugPrint(
+        '📱 Skipping initial registerDeviceToken — handled by login flow');
 
     // Setup FCM listeners
     _setupFCMListeners();
@@ -452,6 +456,18 @@ class FCMService extends GetxService {
       await _deviceService.registerDevice(fcmToken: fcmToken);
 
       debugPrint('✅ FCM token registered with backend');
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 400) {
+        final errorData = e.response?.data;
+        if (errorData is Map &&
+            errorData['error'] ==
+                'This device is already registered to another account') {
+          debugPrint(
+              '⚠️ Device already registered to another account — skipping FCM registration');
+          return;
+        }
+      }
+      debugPrint('❌ Error registering FCM token: $e');
     } catch (e) {
       debugPrint('❌ Error registering FCM token: $e');
     }

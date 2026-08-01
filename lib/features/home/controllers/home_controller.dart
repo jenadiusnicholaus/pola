@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/token_storage_service.dart';
 import '../../../services/permission_service.dart';
+import '../../../services/device_registration_service.dart';
 import '../../profile/services/profile_service.dart';
 import '../../../utils/navigation_helper.dart';
 
@@ -28,6 +29,7 @@ class HomeController extends GetxController {
     // Verify session and refresh profile on initialization
     _verifySession();
     _refreshProfileData();
+    _checkDeviceStatus();
   }
 
   @override
@@ -55,6 +57,31 @@ class HomeController extends GetxController {
     if (!isValid) {
       debugPrint('❌ Invalid session detected in HomeController');
       // AuthService will handle navigation to login
+    }
+  }
+
+  /// Check device status — if device needs verification or takeover,
+  /// navigate to the device verification screen
+  Future<void> _checkDeviceStatus() async {
+    try {
+      debugPrint('🔍 Checking device status from HomeController...');
+      final deviceService = Get.find<DeviceRegistrationService>();
+      final checkResult = await deviceService.checkAndHandleDevice();
+
+      if (checkResult.needsVerification) {
+        final isTakeover = checkResult.needsTakeover;
+        debugPrint(
+            '${isTakeover ? "🔄" : "🔐"} Device needs ${isTakeover ? "takeover " : ""}verification from home — navigating to OTP screen');
+        Get.offAllNamed('/device-verification', arguments: {
+          'device_id': checkResult.deviceId ?? '',
+          'device_name': 'this device',
+          'is_takeover': isTakeover,
+          'new_user_email': checkResult.newUserEmail ?? '',
+          'takeover_message': checkResult.message,
+        });
+      }
+    } catch (e) {
+      debugPrint('⚠️ Device check from HomeController failed: $e');
     }
   }
 
@@ -162,7 +189,8 @@ class HomeController extends GetxController {
 
     NavigationHelper.showSafeSnackbar(
       title: 'Token Status',
-      message: 'Logged In: $isLoggedIn\nAccess Token: ${hasAccessToken ? 'Present' : 'Missing'}\nRefresh Token: ${hasRefreshToken ? 'Present' : 'Missing'}',
+      message:
+          'Logged In: $isLoggedIn\nAccess Token: ${hasAccessToken ? 'Present' : 'Missing'}\nRefresh Token: ${hasRefreshToken ? 'Present' : 'Missing'}',
     );
   }
 
@@ -206,6 +234,7 @@ class HomeController extends GetxController {
   void onAppResumed() {
     debugPrint('📱 App resumed - verifying session');
     _verifySession();
+    _checkDeviceStatus();
   }
 
   /// Handle app paused (when app goes to background)

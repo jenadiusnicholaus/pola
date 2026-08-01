@@ -225,8 +225,8 @@ class LoginController extends GetxController {
         // Fetch user profile immediately after successful login
         await _fetchUserProfile();
 
-        // Register device in background (don't block login flow)
-        _registerDevice();
+        // Register device and check if verification is needed
+        final verificationNeeded = await _registerDevice();
 
         // Show success message
         NavigationHelper.showSafeSnackbar(
@@ -236,9 +236,11 @@ class LoginController extends GetxController {
           colorText: Colors.white,
         );
 
-        // Navigate to home screen
-        debugPrint('🏠 Navigating to home screen...');
-        Get.offAllNamed('/home');
+        // Navigate to home screen only if device verification is not required
+        if (!verificationNeeded) {
+          debugPrint('🏠 Navigating to home screen...');
+          Get.offAllNamed('/home');
+        }
       } else {
         throw Exception('Failed to process login tokens');
       }
@@ -246,7 +248,8 @@ class LoginController extends GetxController {
       debugPrint('❌ Error processing login response: $e');
       NavigationHelper.showSafeSnackbar(
         title: 'Error',
-        message: 'Login successful but failed to process response: ${e.toString()}',
+        message:
+            'Login successful but failed to process response: ${e.toString()}',
         backgroundColor: Colors.orange,
         colorText: Colors.white,
       );
@@ -455,8 +458,9 @@ class LoginController extends GetxController {
     debugPrint('🔒 Forgot password requested (not implemented yet)');
   }
 
-  // Register device after successful login
-  void _registerDevice() async {
+  // Register device after successful login.
+  // Returns true if device verification is required (OTP screen shown).
+  Future<bool> _registerDevice() async {
     try {
       debugPrint('📱 Registering device after login...');
       final deviceRegistrationService = Get.find<DeviceRegistrationService>();
@@ -471,11 +475,46 @@ class LoginController extends GetxController {
       }
 
       // Register device with FCM token
-      await deviceRegistrationService.registerDevice(fcmToken: fcmToken);
+      final result =
+          await deviceRegistrationService.registerDevice(fcmToken: fcmToken);
       debugPrint('✅ Device registration completed with FCM token');
+
+      // Handle device takeover flow
+      if (result != null && result.deviceTakeoverRequired) {
+        debugPrint('🔄 Device takeover required, navigating to OTP screen...');
+        Get.offAllNamed(
+          '/device-verification',
+          arguments: {
+            'device_id': result.rawDeviceId ?? '',
+            'device_name': result.rawDeviceName ?? 'this device',
+            'is_takeover': true,
+            'new_user_email': result.newUserEmail ?? '',
+            'takeover_message': result.message,
+          },
+        );
+        return true;
+      }
+
+      // Handle normal verification flow
+      if (result != null && result.verificationRequired && !result.isVerified) {
+        debugPrint(
+            '🔐 Device verification required, navigating to OTP screen...');
+        final devicePk = result.devicePkForVerification;
+        final deviceName = result.deviceNameForVerification;
+        debugPrint('📱 Device PK for verification: $devicePk');
+        Get.offAllNamed(
+          '/device-verification',
+          arguments: {
+            'device_id': devicePk,
+            'device_name': deviceName,
+            'is_takeover': false,
+          },
+        );
+        return true;
+      }
     } catch (e) {
       debugPrint('⚠️ Device registration failed (non-blocking): $e');
-      // Don't show error to user - this is a background operation
     }
+    return false;
   }
 }
