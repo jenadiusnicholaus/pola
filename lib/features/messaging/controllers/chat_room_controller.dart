@@ -251,10 +251,11 @@ class ChatRoomController extends GetxController {
       await _messagingService.ensureInitialized();
     } catch (e) {
       print('❌ Messaging service not ready: $e');
-      Get.snackbar(
-        'Error',
-        'Messaging service not initialized. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
+      ScaffoldMessenger.of(Get.context!).showSnackBar(
+        const SnackBar(
+          content: Text('Messaging service not initialized. Please try again.'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
@@ -292,10 +293,11 @@ class ChatRoomController extends GetxController {
     } catch (e) {
       print('❌ Error sending message: $e');
       messages.removeWhere((m) => m.id == messageId);
-      Get.snackbar(
-        'Error',
-        'Failed to send message. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
+      ScaffoldMessenger.of(Get.context!).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to send message. Please try again.'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     } finally {
       isSending.value = false;

@@ -217,6 +217,35 @@ class _OtpInputSectionState extends State<_OtpInputSection> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 20),
+                ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: pinController,
+                  builder: (context, value, _) {
+                    final canVerify =
+                        value.text.length == 6 && !controller.isVerifying.value;
+                    return SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: canVerify
+                            ? () {
+                                focusNode.unfocus();
+                                controller.verifyOtp(value.text);
+                              }
+                            : null,
+                        child: controller.isVerifying.value
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text('Verify'),
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
           ),

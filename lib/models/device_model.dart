@@ -185,12 +185,13 @@ class DeviceRegistrationResult {
     this.currentOwnerEmail,
   });
 
-  /// The numeric primary key (id) to use in OTP verification URLs.
-  /// The backend endpoints expect the pk (e.g. /devices/2/verify_otp/),
-  /// not the string device_id.
+  /// The string device_id (UUID) to use in OTP verification URLs.
+  /// The backend's UserDeviceViewSet uses lookup_field = 'device_id',
+  /// so detail actions (verify_otp, trust, untrust, etc.) expect the
+  /// UUID device_id, not the numeric pk.
   String get devicePkForVerification {
-    if (device != null) return device!.id.toString();
-    if (rawDevicePk != null) return rawDevicePk.toString();
+    if (device != null) return device!.deviceId;
+    if (rawDeviceId != null) return rawDeviceId!;
     return '';
   }
 

@@ -341,6 +341,31 @@ class NexaconMessagingService extends GetxService {
       }
 
       return response;
+    } on AuthenticationException catch (e) {
+      print(
+          '⚠️ Authentication failed, refreshing NX credentials and retrying: $e');
+      await forceReinitialize();
+
+      if (_httpClient == null) {
+        throw Exception('Messaging service not initialized after retry');
+      }
+
+      final response = await _httpClient!.messaging.send(
+        to: recipient,
+        message: message,
+        messageType: 'chat',
+      );
+      print('✅ Message sent successfully after retry: $response');
+
+      if (_messagingManager != null) {
+        try {
+          _messagingManager!.sendMessage(to: to, message: message);
+        } catch (e) {
+          print('⚠️ WebSocket send failed after retry: $e');
+        }
+      }
+
+      return response;
     } catch (e) {
       print('❌ Failed to send message: $e');
       rethrow;
