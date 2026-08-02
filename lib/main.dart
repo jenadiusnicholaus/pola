@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:no_screenshot/no_screenshot.dart';
 import 'constants/app_theme.dart';
 import 'constants/app_colors.dart';
 import 'constants/app_strings.dart';
@@ -13,6 +14,13 @@ import 'utils/navigation_helper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Block screenshots and screen recording app-wide
+  try {
+    await NoScreenshot.instance.screenshotOff();
+  } catch (e) {
+    debugPrint('⚠️ Failed to disable screenshots: $e');
+  }
 
   // Use the optimized AppInitializer for parallel service loading
   final initializer = AppInitializer();

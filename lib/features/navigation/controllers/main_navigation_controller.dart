@@ -13,6 +13,6 @@ class MainNavigationController extends GetxController {
   void navigateToHome() => changePage(0);
   void navigateToPosts() => changePage(1);
   void navigateToBookings() => changePage(2);
-  void navigateToHelp() => changePage(3);
+  void navigateToInbox() => changePage(3);
   void navigateToBookmarks() => changePage(4);
 }

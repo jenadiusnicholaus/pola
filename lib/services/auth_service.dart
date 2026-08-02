@@ -428,4 +428,117 @@ class AuthService extends GetxController {
       };
     }
   }
+
+  /// Request a password-reset OTP by email.
+  /// Returns `{ success, message, debugOtp? }` — debugOtp only in backend DEBUG mode.
+  Future<Map<String, dynamic>> requestPasswordReset(String email) async {
+    try {
+      final response = await _apiService.post(
+        EnvironmentConfig.resetPasswordUrl,
+        data: {'email': email.trim().toLowerCase()},
+      );
+      final data = response.data is Map
+          ? Map<String, dynamic>.from(response.data as Map)
+          : <String, dynamic>{};
+      return {
+        'success': true,
+        'message': data['message'] ??
+            'If an account exists with that email, a password reset code has been sent.',
+        if (data['debug_otp'] != null) 'debugOtp': data['debug_otp'].toString(),
+      };
+    } on dio.DioException catch (e) {
+      return {
+        'success': false,
+        'error': _extractErrorMessage(e, 'Failed to request password reset'),
+      };
+    } catch (e) {
+      return {'success': false, 'error': 'Unexpected error: $e'};
+    }
+  }
+
+  /// Verify OTP before allowing the user to set a new password.
+  Future<Map<String, dynamic>> verifyPasswordResetOtp({
+    required String email,
+    required String otp,
+  }) async {
+    try {
+      final response = await _apiService.post(
+        EnvironmentConfig.verifyResetOtpUrl,
+        data: {
+          'email': email.trim().toLowerCase(),
+          'otp': otp.trim(),
+        },
+      );
+      final data = response.data is Map
+          ? Map<String, dynamic>.from(response.data as Map)
+          : <String, dynamic>{};
+      return {
+        'success': true,
+        'message': data['message'] ?? 'OTP verified successfully.',
+      };
+    } on dio.DioException catch (e) {
+      return {
+        'success': false,
+        'error': _extractErrorMessage(e, 'Invalid or expired reset code'),
+      };
+    } catch (e) {
+      return {'success': false, 'error': 'Unexpected error: $e'};
+    }
+  }
+
+  /// Confirm password reset with OTP + new password.
+  Future<Map<String, dynamic>> confirmPasswordReset({
+    required String email,
+    required String otp,
+    required String newPassword,
+    required String newPasswordConfirm,
+  }) async {
+    try {
+      final response = await _apiService.post(
+        EnvironmentConfig.confirmResetPasswordUrl,
+        data: {
+          'email': email.trim().toLowerCase(),
+          'otp': otp.trim(),
+          'new_password': newPassword,
+          'new_password_confirm': newPasswordConfirm,
+        },
+      );
+      final data = response.data is Map
+          ? Map<String, dynamic>.from(response.data as Map)
+          : <String, dynamic>{};
+      return {
+        'success': true,
+        'message': data['message'] ??
+            'Password has been reset successfully. You can now log in.',
+      };
+    } on dio.DioException catch (e) {
+      return {
+        'success': false,
+        'error': _extractErrorMessage(e, 'Failed to reset password'),
+      };
+    } catch (e) {
+      return {'success': false, 'error': 'Unexpected error: $e'};
+    }
+  }
+
+  String _extractErrorMessage(dio.DioException e, String fallback) {
+    final data = e.response?.data;
+    if (data is Map) {
+      if (data['detail'] != null) return data['detail'].toString();
+      if (data['message'] != null) return data['message'].toString();
+      if (data['error'] != null) return data['error'].toString();
+      // DRF field errors: { field: ["msg"] }
+      for (final entry in data.entries) {
+        final value = entry.value;
+        if (value is List && value.isNotEmpty) {
+          return value.first.toString();
+        }
+        if (value is String && value.isNotEmpty) {
+          return value;
+        }
+      }
+    }
+    if (data is String && data.isNotEmpty) return data;
+    return fallback;
+  }
 }

@@ -311,65 +311,83 @@ class _HubThreadCardState extends State<HubThreadCard> {
       padding: const EdgeInsets.all(16),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            // Like button
-            _buildActionButton(
-              icon: widget.content.isLiked
-                  ? Icons.favorite
-                  : Icons.favorite_border,
-              label: '${widget.content.likesCount}',
-              isActive: widget.content.isLiked,
-              onTap: () => widget.controller.toggleLike(widget.content),
-              theme: theme,
-            ),
+        child: Obx(() {
+          // Always read the latest item from reactive lists so like/bookmark update live
+          HubContentItem current = widget.content;
+          final lists = [
+            widget.controller.content,
+            widget.controller.trendingContent,
+            widget.controller.recentContent,
+            widget.controller.filteredContent,
+            widget.controller.searchResults,
+            widget.controller.bookmarkedContent,
+          ];
+          for (final list in lists) {
+            final index = list.indexWhere((item) => item.id == widget.content.id);
+            if (index != -1) {
+              current = list[index];
+              break;
+            }
+          }
 
-            const SizedBox(width: 16),
+          return Row(
+            children: [
+              // Like button
+              _buildActionButton(
+                icon: current.isLiked ? Icons.favorite : Icons.favorite_border,
+                label: '${current.likesCount}',
+                isActive: current.isLiked,
+                onTap: () => widget.controller.toggleLike(current),
+                theme: theme,
+              ),
 
-            // Comments button
-            _buildActionButton(
-              icon: Icons.comment_outlined,
-              label: '${widget.content.commentsCount}',
-              isActive: false,
-              onTap: () => _showTikTokCommentsModal(context),
-              theme: theme,
-            ),
+              const SizedBox(width: 16),
 
-            const SizedBox(width: 16),
+              // Comments button
+              _buildActionButton(
+                icon: Icons.comment_outlined,
+                label: '${current.commentsCount}',
+                isActive: false,
+                onTap: () => _showTikTokCommentsModal(context),
+                theme: theme,
+              ),
 
-            // Bookmark button
-            _buildActionButton(
-              icon: widget.content.isBookmarked
-                  ? Icons.bookmark
-                  : Icons.bookmark_outline,
-              label: '${widget.content.bookmarksCount}',
-              isActive: widget.content.isBookmarked,
-              onTap: () => widget.controller.toggleBookmark(widget.content),
-              theme: theme,
-            ),
+              const SizedBox(width: 16),
 
-            const SizedBox(width: 16),
+              // Bookmark button
+              _buildActionButton(
+                icon: current.isBookmarked
+                    ? Icons.bookmark
+                    : Icons.bookmark_outline,
+                label: '${current.bookmarksCount}',
+                isActive: current.isBookmarked,
+                onTap: () => widget.controller.toggleBookmark(current),
+                theme: theme,
+              ),
 
-            // Views count
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.visibility_outlined,
-                  size: 16,
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '${widget.content.viewsCount}',
-                  style: theme.textTheme.bodySmall?.copyWith(
+              const SizedBox(width: 16),
+
+              // Views count
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.visibility_outlined,
+                    size: 16,
                     color: theme.colorScheme.onSurface.withOpacity(0.6),
                   ),
-                ),
-              ],
-            ),
-          ],
-        ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${current.viewsCount}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        }),
       ),
     );
   }

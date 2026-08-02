@@ -4,17 +4,60 @@ import '../controllers/login_controller.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Initialize the login controller - delete existing to prevent duplicate GlobalKey
-    if (Get.isRegistered<LoginController>()) {
-      Get.delete<LoginController>();
-    }
-    final controller = Get.put(LoginController());
+  State<LoginScreen> createState() => _LoginScreenState();
+}
 
+class _LoginScreenState extends State<LoginScreen> {
+  late final LoginController controller;
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.isRegistered<LoginController>()
+        ? Get.find<LoginController>()
+        : Get.put(LoginController());
+    _restoreSavedCredentials();
+  }
+
+  Future<void> _restoreSavedCredentials() async {
+    final saved = await controller.loadSavedCredentials();
+    if (!mounted || saved == null) return;
+
+    if (saved.email.isNotEmpty) {
+      _emailController.text = saved.email;
+    }
+    if (saved.password.isNotEmpty) {
+      _passwordController.text = saved.password;
+    }
+  }
+
+  void _submitLogin() {
+    controller.login(
+      formKey: _formKey,
+      email: _emailController.text,
+      password: _passwordController.text,
+    );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    if (Get.isRegistered<LoginController>()) {
+      Get.delete<LoginController>(force: true);
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [
@@ -56,22 +99,22 @@ class LoginScreen extends StatelessWidget {
                   const SizedBox(height: 32),
 
                   // Login Form
-                  _buildLoginForm(context, controller),
+                  _buildLoginForm(context),
 
                   const SizedBox(height: 24),
 
                   // Login Button
-                  _buildLoginButton(context, controller),
+                  _buildLoginButton(context),
 
                   const SizedBox(height: 24),
 
                   // Additional Options
-                  _buildAdditionalOptions(context, controller),
+                  _buildAdditionalOptions(context),
 
                   const SizedBox(height: 40),
 
                   // Register Link
-                  _buildRegisterLink(context, controller),
+                  _buildRegisterLink(context),
                 ],
               ),
             ),
@@ -159,15 +202,15 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLoginForm(BuildContext context, LoginController controller) {
+  Widget _buildLoginForm(BuildContext context) {
     return Form(
-      key: controller.formKey,
+      key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Email Field
           TextFormField(
-            controller: controller.emailController,
+            controller: _emailController,
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
             validator: controller.validateEmail,
@@ -211,11 +254,11 @@ class LoginScreen extends StatelessWidget {
 
           // Password Field
           Obx(() => TextFormField(
-                controller: controller.passwordController,
+                controller: _passwordController,
                 obscureText: !controller.isPasswordVisible,
                 textInputAction: TextInputAction.done,
                 validator: controller.validatePassword,
-                onFieldSubmitted: (_) => controller.login(),
+                onFieldSubmitted: (_) => _submitLogin(),
                 decoration: InputDecoration(
                   labelText: 'Password',
                   hintText: 'Enter your password',
@@ -271,9 +314,9 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLoginButton(BuildContext context, LoginController controller) {
+  Widget _buildLoginButton(BuildContext context) {
     return Obx(() => ElevatedButton(
-          onPressed: controller.isLoading ? null : controller.login,
+          onPressed: controller.isLoading ? null : _submitLogin,
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Theme.of(context).colorScheme.onPrimary,
@@ -305,8 +348,7 @@ class LoginScreen extends StatelessWidget {
         ));
   }
 
-  Widget _buildAdditionalOptions(
-      BuildContext context, LoginController controller) {
+  Widget _buildAdditionalOptions(BuildContext context) {
     return Column(
       children: [
         // Remember Me and Forgot Password Row
@@ -354,7 +396,7 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRegisterLink(BuildContext context, LoginController controller) {
+  Widget _buildRegisterLink(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 

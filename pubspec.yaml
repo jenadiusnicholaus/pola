@@ -110,6 +110,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_isolate: ^2.1.0
   signature: ^6.3.0
+  no_screenshot: ^1.2.0
 
 dev_dependencies:
   flutter_test:

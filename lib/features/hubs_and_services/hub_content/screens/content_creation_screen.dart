@@ -86,7 +86,11 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
+          onPressed: () => NavigationHelper.safeBack(),
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -100,24 +104,31 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onPrimary
+                      .withOpacity(0.85),
                 ),
               ),
           ],
         ),
         centerTitle: false,
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         elevation: 0,
         scrolledUnderElevation: 2,
         actions: [
           Obx(() => controller.isLoading.value
-              ? const Center(
+              ? Center(
                   child: Padding(
-                    padding: EdgeInsets.only(right: 16),
+                    padding: const EdgeInsets.only(right: 16),
                     child: SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
                     ),
                   ),
                 )
@@ -129,7 +140,8 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                     label: const Text('Publish',
                         style: TextStyle(fontWeight: FontWeight.bold)),
                     style: TextButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor:
+                          Theme.of(context).colorScheme.onPrimary,
                     ),
                   ),
                 )),

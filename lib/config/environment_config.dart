@@ -98,6 +98,15 @@ class EnvironmentConfig {
   static String get profilePictureEndpoint =>
       dotenv.env['PROFILE_PICTURE_ENDPOINT'] ??
       '/api/v1/authentication/profile-picture/';
+  static String get resetPasswordEndpoint =>
+      dotenv.env['RESET_PASSWORD_ENDPOINT'] ??
+      '/api/v1/authentication/reset-password/';
+  static String get verifyResetOtpEndpoint =>
+      dotenv.env['VERIFY_RESET_OTP_ENDPOINT'] ??
+      '/api/v1/authentication/verify-reset-otp/';
+  static String get confirmResetPasswordEndpoint =>
+      dotenv.env['CONFIRM_RESET_PASSWORD_ENDPOINT'] ??
+      '/api/v1/authentication/confirm-reset-password/';
 
   // Complete authentication URLs
   static String get loginUrl => '$baseUrl$loginEndpoint';
@@ -106,6 +115,10 @@ class EnvironmentConfig {
   static String get logoutUrl => '$baseUrl$logoutEndpoint';
   static String get profileUrl => '$baseUrl$profileEndpoint';
   static String get profilePictureUrl => '$baseUrl$profilePictureEndpoint';
+  static String get resetPasswordUrl => '$baseUrl$resetPasswordEndpoint';
+  static String get verifyResetOtpUrl => '$baseUrl$verifyResetOtpEndpoint';
+  static String get confirmResetPasswordUrl =>
+      '$baseUrl$confirmResetPasswordEndpoint';
 
   // Legal Education endpoints
   static String get legalEducationTopicsEndpoint =>
