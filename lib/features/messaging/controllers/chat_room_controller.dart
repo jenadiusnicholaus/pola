@@ -53,15 +53,27 @@ class ChatRoomController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadConversationHistory();
+    _initializeAndLoad();
+  }
+
+  Future<void> _initializeAndLoad() async {
+    try {
+      await _messagingService.ensureInitialized();
+    } catch (e) {
+      print('❌ Chat could not initialize messaging: $e');
+    }
+
     _listenToMessages();
     _checkOnlineStatus();
+    _loadConversationHistory();
   }
 
   void _loadConversationHistory() async {
     try {
       print('📨 _loadConversationHistory: START');
       print('📨 _loadConversationHistory: contactId=$contactId');
+
+      await _messagingService.ensureInitialized();
       print('📨 _loadConversationHistory: calling getConversationHistory...');
 
       final history = await _messagingService.getConversationHistory(contactId);
@@ -86,17 +98,19 @@ class ChatRoomController extends GetxController {
       // Use displayText for call messages, body for normal messages
       final parsed = history
           .map((m) => Message(
-                id: m.id,
+                id: m.id.isNotEmpty
+                    ? m.id
+                    : DateTime.now().millisecondsSinceEpoch.toString(),
                 content: m.isCallMessage ? m.displayText : m.body,
                 senderId: m.from,
                 senderName: 'Unknown', // NexaconMessage doesn't have senderName
-                timestamp:
-                    DateTime.fromMillisecondsSinceEpoch(m.timestamp ~/ 1000),
+                timestamp: Message.parseTimestamp(m.timestamp),
                 isRead: true,
               ))
           .toList();
 
-      messages.value = parsed;
+      // Newest first so a reversed ListView renders latest messages at the bottom.
+      messages.value = parsed.reversed.toList();
       print('📨 Loaded ${parsed.length} messages (${history.length} total)');
     } catch (e) {
       print('❌ Error loading conversation history: $e');
@@ -233,6 +247,19 @@ class ChatRoomController extends GetxController {
     final content = messageController.text.trim();
     if (content.isEmpty) return;
 
+    try {
+      await _messagingService.ensureInitialized();
+    } catch (e) {
+      print('❌ Messaging service not ready: $e');
+      ScaffoldMessenger.of(Get.context!).showSnackBar(
+        const SnackBar(
+          content: Text('Messaging service not initialized. Please try again.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     isSending.value = true;
     final messageId = DateTime.now().millisecondsSinceEpoch.toString();
 
@@ -266,10 +293,11 @@ class ChatRoomController extends GetxController {
     } catch (e) {
       print('❌ Error sending message: $e');
       messages.removeWhere((m) => m.id == messageId);
-      Get.snackbar(
-        'Error',
-        'Failed to send message. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
+      ScaffoldMessenger.of(Get.context!).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to send message. Please try again.'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     } finally {
       isSending.value = false;

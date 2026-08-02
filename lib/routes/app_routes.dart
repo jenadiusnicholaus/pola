@@ -37,6 +37,7 @@ import '../features/auth/screens/device_verification_screen.dart';
 import '../features/auth/screens/forgot_password_screen.dart';
 import '../features/auth/screens/reset_password_screen.dart';
 import '../features/auth/screens/set_new_password_screen.dart';
+import '../features/auth/controllers/device_verification_controller.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -247,6 +248,11 @@ class AppRoutes {
     GetPage(
       name: deviceVerification,
       page: () => const DeviceVerificationScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<DeviceVerificationController>(
+          () => DeviceVerificationController(),
+        );
+      }),
     ),
   ];
 

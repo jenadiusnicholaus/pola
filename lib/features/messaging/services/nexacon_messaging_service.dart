@@ -32,6 +32,16 @@ class NexaconMessagingService extends GetxService {
   // Connection state
   final isConnected = false.obs;
 
+  Completer<void>? _initCompleter;
+  bool _httpReady = false;
+
+  /// Ensure the HTTP client/connection is initialized before use.
+  /// Safe to call repeatedly and from anywhere; will not re-initialize if ready.
+  Future<void> ensureInitialized() async {
+    if (_httpReady) return;
+    await initializeConnection();
+  }
+
   /// Initialize the messaging service with Nexacon SDK
   Future<void> initialize(NexaconSDK? sdk) async {
     if (sdk != null) {
@@ -92,182 +102,203 @@ class NexaconMessagingService extends GetxService {
   /// Initialize SDK connection for messaging
   /// This establishes the NX connection required for real-time chat
   Future<void> initializeConnection() async {
+    if (_httpReady) return;
+    if (_initCompleter != null) return _initCompleter!.future;
+
     print('🚀 initializeConnection() called');
-
-    // Create separate HTTP client for API calls
-    if (_httpClient == null) {
-      print('📦 Creating HTTP client for API calls');
-      _httpClient = NexaconClient(
-        apiKey: NexaconConfig.apiKey,
-        secretKey: NexaconConfig.secretKey,
-        baseUrl: 'https://nxservice.quantumvision-tech.com/api/v1.0',
-      );
-    }
-
-    if (_sdk == null) {
-      print('📦 Creating new SDK instance');
-      _sdk = NexaconSDK(
-        apiKey: NexaconConfig.apiKey,
-        secretKey: NexaconConfig.secretKey,
-      );
-    } else {
-      print('📦 SDK instance already exists');
-    }
-
-    // Get user's phone number for NX ID
-    final userData = _tokenStorage.userData;
-    print('👤 User data: ${userData != null ? "found" : "null"}');
-    print('👤 User data keys: ${userData?.keys.toList()}');
-    print('👤 Full user data: $userData');
-
-    // Try multiple possible phone number fields
-    String? phone = userData?['phone_number'] as String?;
-    if (phone == null || phone.isEmpty) {
-      phone = userData?['phone'] as String?;
-    }
-    if (phone == null || phone.isEmpty) {
-      phone = userData?['mobile'] as String?;
-    }
-    if (phone == null || phone.isEmpty) {
-      phone = userData?['contact_number'] as String?;
-    }
-    if (phone == null || phone.isEmpty) {
-      phone = userData?['phoneNumber'] as String?;
-    }
-    if (phone == null || phone.isEmpty) {
-      phone = userData?['username'] as String?;
-    }
-    // Check nested contact object
-    if (phone == null || phone.isEmpty) {
-      final contact = userData?['contact'] as Map<String, dynamic>?;
-      phone = contact?['phone_number'] as String?;
-    }
-
-    print('📱 Phone: $phone');
-
-    if (phone == null || phone.isEmpty) {
-      print('❌ User phone number not found in any field');
-      throw Exception(
-          'User phone number not found. Cannot initialize messaging.');
-    }
-
-    // Format phone number with country code
-    final formattedPhone = PhoneFormatter.formatAsNxId(phone);
-    print('📡 Initializing messaging connection with phone: $formattedPhone');
+    _initCompleter = Completer<void>();
 
     try {
-      // Check if we have stored NX token data
-      final hasNxData = await _tokenStorage.hasNxTokenData();
-      print('🔐 Has stored NX data: $hasNxData');
-
-      String? nxtoken;
-      String? nxid;
-      String? wsUrl;
-
-      if (hasNxData) {
-        // Use stored credentials to avoid API call
-        nxtoken = await _tokenStorage.getNxToken();
-        nxid = await _tokenStorage.getNxJid();
-        wsUrl = await _tokenStorage.getNxWsUrl();
-
-        print('🔑 Stored token: ${nxtoken?.substring(0, 20)}...');
-        print('🆔 Stored JID: $nxid');
-        print('🌐 Stored WS URL: $wsUrl');
-
-        if (wsUrl != null && wsUrl.startsWith('https://')) {
-          wsUrl = wsUrl.replaceFirst('https://', 'wss://');
-        }
-
-        print('✅ Using stored NX credentials');
-      } else {
-        // Fetch NX token directly via auth API without WebSocket connection
-        print('🔐 No stored NX credentials, fetching from API...');
-
-        final credentials =
-            await _httpClient!.auth.getNxToken(username: formattedPhone);
-
-        nxtoken = credentials['token'];
-        nxid = credentials['jid'];
-        wsUrl = credentials['nxws'];
-
-        // Store the credentials returned by SDK (including refresh_token if present)
-        if (nxtoken != null && nxid != null && wsUrl != null) {
-          await _tokenStorage.storeNxTokenData(
-            token: nxtoken,
-            jid: nxid,
-            wsUrl: wsUrl,
-            refreshToken: credentials['refresh_token'] as String?,
-          );
-          print('✅ NX credentials stored for future use');
-        } else {
-          throw Exception('Failed to get valid NX credentials from API');
-        }
+      // Create separate HTTP client for API calls
+      if (_httpClient == null) {
+        print('📦 Creating HTTP client for API calls');
+        _httpClient = NexaconClient(
+          apiKey: NexaconConfig.apiKey,
+          secretKey: NexaconConfig.secretKey,
+          baseUrl: 'https://nxservice.quantumvision-tech.com/api/v1.0',
+        );
       }
 
-      // Set the NX token on the client for HTTP API calls
-      if (nxtoken != null) {
-        _httpClient!.setToken(nxtoken);
-        print('✅ NX token set on client for HTTP API calls');
+      if (_sdk == null) {
+        print('📦 Creating new SDK instance');
+        _sdk = NexaconSDK(
+          apiKey: NexaconConfig.apiKey,
+          secretKey: NexaconConfig.secretKey,
+        );
       } else {
-        throw Exception('NX token is null, cannot set on client');
+        print('📦 SDK instance already exists');
       }
 
-      // Try to establish NX WebSocket connection for real-time messaging
-      // If this fails, we can still use HTTP API calls
+      // Get user's phone number for NX ID
+      final userData = _tokenStorage.userData;
+      print('👤 User data: ${userData != null ? "found" : "null"}');
+      print('👤 User data keys: ${userData?.keys.toList()}');
+      print('👤 Full user data: $userData');
+
+      // Try multiple possible phone number fields
+      String? phone = userData?['phone_number'] as String?;
+      if (phone == null || phone.isEmpty) {
+        phone = userData?['phone'] as String?;
+      }
+      if (phone == null || phone.isEmpty) {
+        phone = userData?['mobile'] as String?;
+      }
+      if (phone == null || phone.isEmpty) {
+        phone = userData?['contact_number'] as String?;
+      }
+      if (phone == null || phone.isEmpty) {
+        phone = userData?['phoneNumber'] as String?;
+      }
+      if (phone == null || phone.isEmpty) {
+        phone = userData?['username'] as String?;
+      }
+      // Check nested contact object
+      if (phone == null || phone.isEmpty) {
+        final contact = userData?['contact'] as Map<String, dynamic>?;
+        phone = contact?['phone_number'] as String?;
+      }
+
+      print('📱 Phone: $phone');
+
+      if (phone == null || phone.isEmpty) {
+        print('❌ User phone number not found in any field');
+        _httpReady = false;
+        if (!_initCompleter!.isCompleted) {
+          _initCompleter!.complete();
+        }
+        return;
+      }
+
+      // Format phone number with country code
+      final formattedPhone = PhoneFormatter.formatAsNxId(phone);
+      print('📡 Initializing messaging connection with phone: $formattedPhone');
+
       try {
-        print('🔌 Attempting to establish NX WebSocket connection...');
-        final nxManager = _sdk!.xmppManager;
-        if (nxManager == null) {
-          print('⚠️ NX manager not available, skipping WebSocket connection');
+        // Check if we have stored NX token data
+        final hasNxData = await _tokenStorage.hasNxTokenData();
+        print('🔐 Has stored NX data: $hasNxData');
+
+        String? nxtoken;
+        String? nxid;
+        String? wsUrl;
+
+        if (hasNxData) {
+          // Use stored credentials to avoid API call
+          nxtoken = await _tokenStorage.getNxToken();
+          nxid = await _tokenStorage.getNxJid();
+          wsUrl = await _tokenStorage.getNxWsUrl();
+
+          print('🔑 Stored token: ${nxtoken?.substring(0, 20)}...');
+          print('🆔 Stored JID: $nxid');
+          print('🌐 Stored WS URL: $wsUrl');
+
+          if (wsUrl != null && wsUrl.startsWith('https://')) {
+            wsUrl = wsUrl.replaceFirst('https://', 'wss://');
+          }
+
+          print('✅ Using stored NX credentials');
         } else {
-          final nxConnected = await nxManager.connect(
-            jid: nxid!,
-            password: nxtoken,
-            wsUrl: wsUrl!,
-          );
+          // Fetch NX token directly via auth API without WebSocket connection
+          print('🔐 No stored NX credentials, fetching from API...');
 
-          if (nxConnected) {
-            print('✅ NX WebSocket connection established');
+          final credentials =
+              await _httpClient!.auth.getNxToken(username: formattedPhone);
 
-            // Create MessagingManager from nxManager for sending messages
-            _messagingManager = MessagingManager(nxManager);
-            print('📨 MessagingManager created');
+          nxtoken = credentials['token'];
+          nxid = credentials['jid'];
+          wsUrl = credentials['nxws'];
 
-            // Set up streams from NX manager
-            nxManager.messageStream.listen((message) {
-              print('📩 Message received from NX stream');
-              _messageCtrl.add(message);
-            });
-
-            nxManager.presenceStream.listen((presence) {
-              print('👤 Presence received from NX stream');
-              _presenceCtrl.add(presence);
-            });
-
-            nxManager.deliveryReceiptStream.listen((receipt) {
-              print('📬 Delivery receipt received from NX stream');
-              _deliveryReceiptCtrl.add(receipt);
-            });
-
-            isConnected.value = true;
-            print('✅ Messaging streams connected to NX manager');
+          // Store the credentials returned by SDK (including refresh_token if present)
+          if (nxtoken != null && nxid != null && wsUrl != null) {
+            await _tokenStorage.storeNxTokenData(
+              token: nxtoken,
+              jid: nxid,
+              wsUrl: wsUrl,
+              refreshToken: credentials['refresh_token'] as String?,
+            );
+            print('✅ NX credentials stored for future use');
           } else {
-            print(
-                '⚠️ NX WebSocket connection failed, but HTTP API calls will still work');
+            throw Exception('Failed to get valid NX credentials from API');
           }
         }
-      } catch (e) {
-        print('⚠️ NX WebSocket connection failed: $e');
-        print('⚠️ HTTP API calls will still work with the NX token');
-      }
 
-      print('✅ Messaging SDK initialized successfully');
-      print('📦 SDK client: ${_sdk?.client != null ? "exists" : "null"}');
-      print('✅ isConnected: ${isConnected.value}');
-    } catch (e) {
-      print('❌ Failed to initialize messaging connection: $e');
-      print('❌ Stack trace: ${StackTrace.current}');
-      rethrow;
+        // Set the NX token on the client for HTTP API calls
+        if (nxtoken != null) {
+          _httpClient!.setToken(nxtoken);
+          print('✅ NX token set on client for HTTP API calls');
+        } else {
+          throw Exception('NX token is null, cannot set on client');
+        }
+
+        // Try to establish NX WebSocket connection for real-time messaging
+        // If this fails, we can still use HTTP API calls
+        try {
+          print('🔌 Attempting to establish NX WebSocket connection...');
+          final nxManager = _sdk!.xmppManager;
+          if (nxManager == null) {
+            print('⚠️ NX manager not available, skipping WebSocket connection');
+          } else {
+            final nxConnected = await nxManager.connect(
+              jid: nxid!,
+              password: nxtoken,
+              wsUrl: wsUrl!,
+            );
+
+            if (nxConnected) {
+              print('✅ NX WebSocket connection established');
+
+              // Create MessagingManager from nxManager for sending messages
+              _messagingManager = MessagingManager(nxManager);
+              print('📨 MessagingManager created');
+
+              // Set up streams from NX manager
+              nxManager.messageStream.listen((message) {
+                print('📩 Message received from NX stream');
+                _messageCtrl.add(message);
+              });
+
+              nxManager.presenceStream.listen((presence) {
+                print('👤 Presence received from NX stream');
+                _presenceCtrl.add(presence);
+              });
+
+              nxManager.deliveryReceiptStream.listen((receipt) {
+                print('📬 Delivery receipt received from NX stream');
+                _deliveryReceiptCtrl.add(receipt);
+              });
+
+              isConnected.value = true;
+              print('✅ Messaging streams connected to NX manager');
+            } else {
+              print(
+                  '⚠️ NX WebSocket connection failed, but HTTP API calls will still work');
+            }
+          }
+        } catch (e) {
+          print('⚠️ NX WebSocket connection failed: $e');
+          print('⚠️ HTTP API calls will still work with the NX token');
+        }
+
+        print('✅ Messaging SDK initialized successfully');
+        print('📦 SDK client: ${_sdk?.client != null ? "exists" : "null"}');
+        print('✅ isConnected: ${isConnected.value}');
+
+        _httpReady = true;
+        if (!_initCompleter!.isCompleted) {
+          _initCompleter!.complete();
+        }
+      } catch (e) {
+        print('❌ Failed to initialize messaging connection: $e');
+        print('❌ Stack trace: ${StackTrace.current}');
+        rethrow;
+      }
+    } catch (e, st) {
+      _httpReady = false;
+      if (!_initCompleter!.isCompleted) {
+        _initCompleter!.completeError(e, st);
+      }
+    } finally {
+      _initCompleter = null;
     }
   }
 
@@ -306,6 +337,31 @@ class NexaconMessagingService extends GetxService {
           print('✅ Message also sent via WebSocket for real-time delivery');
         } catch (e) {
           print('⚠️ WebSocket send failed (message already sent via HTTP): $e');
+        }
+      }
+
+      return response;
+    } on AuthenticationException catch (e) {
+      print(
+          '⚠️ Authentication failed, refreshing NX credentials and retrying: $e');
+      await forceReinitialize();
+
+      if (_httpClient == null) {
+        throw Exception('Messaging service not initialized after retry');
+      }
+
+      final response = await _httpClient!.messaging.send(
+        to: recipient,
+        message: message,
+        messageType: 'chat',
+      );
+      print('✅ Message sent successfully after retry: $response');
+
+      if (_messagingManager != null) {
+        try {
+          _messagingManager!.sendMessage(to: to, message: message);
+        } catch (e) {
+          print('⚠️ WebSocket send failed after retry: $e');
         }
       }
 

@@ -357,6 +357,25 @@ class EnvironmentConfig {
   static String getDeviceUpdateFcmTokenUrl(String deviceId) =>
       '$deviceSecurityBaseUrl$deviceId/update_fcm_token/';
 
+  /// Get URL to send verification OTP for a device
+  static String getSendVerificationOtpUrl(String deviceId) =>
+      '$deviceSecurityBaseUrl$deviceId/send_verification_otp/';
+
+  /// Get URL to verify OTP for a device
+  static String getVerifyOtpUrl(String deviceId) =>
+      '$deviceSecurityBaseUrl$deviceId/verify_otp/';
+
+  /// URL to verify OTP for device takeover
+  static String get verifyOtpForTakeoverEndpoint =>
+      '${deviceSecurityBaseEndpoint}verify_otp_for_takeover/';
+  static String get verifyOtpForTakeoverUrl =>
+      '$baseUrl$verifyOtpForTakeoverEndpoint';
+
+  /// URL to check device status (registered, verified, takeover required, etc.)
+  static String get checkDeviceEndpoint =>
+      '${deviceSecurityBaseEndpoint}check_device/';
+  static String get checkDeviceUrl => '$baseUrl$checkDeviceEndpoint';
+
   // Subscription endpoints
   static String get subscriptionPlansEndpoint =>
       dotenv.env['SUBSCRIPTION_PLANS_ENDPOINT'] ??

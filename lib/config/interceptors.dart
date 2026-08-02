@@ -97,14 +97,7 @@ class ApiInterceptors {
                 errorData['error'] ==
                     'This device is already registered to another account') {
               debugPrint(
-                  '🔴 Device already registered error detected. Redirecting to verification screen.');
-              // Use string route to avoid circular dependency, or assume it's valid
-              if (getx.Get.currentRoute != '/device-verification') {
-                // Short delay to ensure navigation stack is ready
-                Future.delayed(const Duration(milliseconds: 100), () {
-                  getx.Get.offAllNamed('/device-verification');
-                });
-              }
+                  '🔴 Device already registered to another account. User should contact support.');
             }
           } catch (_) {
             // Ignore parse errors

@@ -47,8 +47,9 @@ class _BookmarksContentState extends State<_BookmarksContent> {
         controller = Get.find<HubContentController>(tag: hubType);
       } catch (e) {
         // Create controller lazily; it's lightweight and will fetch when asked
-        controller =
-            Get.put(HubContentController(hubType: hubType), tag: hubType);
+        controller = Get.put(
+            HubContentController(hubType: hubType, skipInitialFetch: true),
+            tag: hubType);
       }
       controllers[hubType] = controller;
     }

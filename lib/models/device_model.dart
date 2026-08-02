@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class DeviceInfo {
   final String deviceId;
   final String? deviceName;
@@ -144,5 +146,106 @@ class RegisteredDevice {
       default:
         return '❓';
     }
+  }
+}
+
+class DeviceRegistrationResult {
+  final RegisteredDevice? device;
+  final int? rawDevicePk;
+  final String? rawDeviceId;
+  final String? rawDeviceName;
+  final bool isRegistered;
+  final bool isVerified;
+  final bool verificationRequired;
+  final bool otpSent;
+  final String message;
+  final String? currentDeviceId;
+  final String? currentDeviceName;
+  // Device takeover fields
+  final bool deviceTakeoverRequired;
+  final String? actionRequired;
+  final String? newUserEmail;
+  final String? currentOwnerEmail;
+
+  DeviceRegistrationResult({
+    this.device,
+    this.rawDevicePk,
+    this.rawDeviceId,
+    this.rawDeviceName,
+    required this.isRegistered,
+    required this.isVerified,
+    this.verificationRequired = false,
+    this.otpSent = false,
+    required this.message,
+    this.currentDeviceId,
+    this.currentDeviceName,
+    this.deviceTakeoverRequired = false,
+    this.actionRequired,
+    this.newUserEmail,
+    this.currentOwnerEmail,
+  });
+
+  /// The string device_id (UUID) to use in OTP verification URLs.
+  /// The backend's UserDeviceViewSet uses lookup_field = 'device_id',
+  /// so detail actions (verify_otp, trust, untrust, etc.) expect the
+  /// UUID device_id, not the numeric pk.
+  String get devicePkForVerification {
+    if (device != null) return device!.deviceId;
+    if (rawDeviceId != null) return rawDeviceId!;
+    return '';
+  }
+
+  String get deviceNameForVerification =>
+      device?.deviceName ?? rawDeviceName ?? 'this device';
+
+  factory DeviceRegistrationResult.fromJson(Map<String, dynamic> json) {
+    final isTakeover = json['device_takeover_required'] as bool? ?? false;
+
+    // For takeover responses, don't try to parse a RegisteredDevice —
+    // the response is flat (device_id, new_user_email, etc.) not a device object
+    final deviceData = isTakeover ? json : (json['device'] ?? json);
+    RegisteredDevice? device;
+    if (!isTakeover) {
+      try {
+        device = RegisteredDevice.fromJson(deviceData as Map<String, dynamic>);
+      } catch (e) {
+        debugPrint('⚠️ RegisteredDevice.fromJson failed: $e');
+        device = null;
+      }
+    }
+
+    // Extract id (numeric pk), device_id, and device_name directly from raw JSON as fallback
+    final rawDevicePk = (deviceData is Map<String, dynamic>)
+        ? (deviceData['id'] as int?)
+        : null;
+    final rawDeviceId = (deviceData is Map<String, dynamic>)
+        ? deviceData['device_id']?.toString()
+        : null;
+    final rawDeviceName = (deviceData is Map<String, dynamic>)
+        ? deviceData['device_name']?.toString()
+        : null;
+
+    debugPrint(
+        '📱 DeviceRegistrationResult: device=${device != null}, rawDevicePk=$rawDevicePk, rawDeviceId=$rawDeviceId, rawDeviceName=$rawDeviceName, isTakeover=$isTakeover');
+
+    final currentDevice = json['current_device'] as Map<String, dynamic>?;
+
+    return DeviceRegistrationResult(
+      device: device,
+      rawDevicePk: rawDevicePk,
+      rawDeviceId: rawDeviceId,
+      rawDeviceName: rawDeviceName,
+      isRegistered: json['is_registered'] as bool? ?? true,
+      isVerified: json['is_verified'] as bool? ?? (isTakeover ? false : true),
+      verificationRequired: json['verification_required'] as bool? ?? false,
+      otpSent: json['otp_sent'] as bool? ?? false,
+      message: json['message'] as String? ?? 'Device registered',
+      currentDeviceId: currentDevice?['device_id'] as String?,
+      currentDeviceName: currentDevice?['device_name'] as String?,
+      deviceTakeoverRequired: isTakeover,
+      actionRequired: json['action_required'] as String?,
+      newUserEmail: json['new_user_email'] as String?,
+      currentOwnerEmail: json['current_owner_email'] as String?,
+    );
   }
 }

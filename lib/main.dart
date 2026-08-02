@@ -24,7 +24,7 @@ void main() async {
 
   // Use the optimized AppInitializer for parallel service loading
   final initializer = AppInitializer();
-  
+
   await initializer.initialize(
     onError: (details) async {
       debugPrint('❌ Initialization error: ${details.exception}');
@@ -106,7 +106,8 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
         final isValidSession = await authService.verifySession();
 
         if (isValidSession) {
-          debugPrint('✅ Valid session confirmed - redirecting to home page');
+          debugPrint(
+              '✅ Valid session confirmed - checking device verification...');
 
           // Show token info for debugging
           final refreshExpiry =
@@ -114,7 +115,26 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
           debugPrint('🕒 Refresh token expires: $refreshExpiry');
 
           await Future.delayed(const Duration(milliseconds: 500));
-          Get.offAllNamed(AppRoutes.home);
+
+          // Wait for background device registration to complete
+          // before deciding where to navigate (avoids race condition
+          // where /home overrides /device-verification)
+          final appInitializer = AppInitializer();
+          bool verificationShown = false;
+          try {
+            verificationShown = await appInitializer.deviceCheckCompleter.future
+                .timeout(const Duration(seconds: 15), onTimeout: () {
+              debugPrint('⏰ Device check timed out, proceeding to home');
+              return false;
+            });
+          } catch (e) {
+            debugPrint('⚠️ Device check completer error: $e');
+          }
+
+          if (!verificationShown) {
+            debugPrint('🏠 Navigating to home screen...');
+            Get.offAllNamed(AppRoutes.home);
+          }
           return;
         } else {
           debugPrint('❌ Session validation failed - redirecting to login');
@@ -179,7 +199,7 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Justice scale icon
-                     const Text(
+                    const Text(
                       '⚖️',
                       style: TextStyle(
                         fontSize: 80,

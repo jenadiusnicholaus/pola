@@ -111,6 +111,8 @@ dependencies:
   flutter_isolate: ^2.1.0
   signature: ^6.3.0
   no_screenshot: ^1.2.0
+  pinput: ^6.0.2
+  smart_auth: ^2.0.0
 
 dev_dependencies:
   flutter_test:
