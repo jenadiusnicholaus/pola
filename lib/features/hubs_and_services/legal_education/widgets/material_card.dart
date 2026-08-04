@@ -70,10 +70,14 @@ class MaterialCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 16,
-                    color: theme.colorScheme.onSurface.withOpacity(0.4),
+                  Text(
+                    'READ MORE',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                      fontSize: 11,
+                    ),
                   ),
                 ],
               ),

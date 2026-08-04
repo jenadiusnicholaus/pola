@@ -106,11 +106,15 @@ class SubtopicCard extends StatelessWidget {
 
               const SizedBox(width: 8),
 
-              // Trailing Arrow
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 14,
-                color: theme.colorScheme.onSurface.withOpacity(0.3),
+              // Trailing action label
+              Text(
+                'READ MORE',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                  fontSize: 11,
+                ),
               ),
             ],
           ),

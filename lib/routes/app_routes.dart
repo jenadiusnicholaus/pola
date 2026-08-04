@@ -7,6 +7,7 @@ import '../features/auth/screens/login_screen.dart';
 import '../features/navigation/screens/main_navigation_screen.dart';
 import '../features/settings/screens/settings_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
+import '../features/profile/screens/edit_profile_screen.dart';
 import '../features/hubs_and_services/legal_education/screens/legal_education_screen.dart';
 import '../features/hubs_and_services/legal_education/screens/topic_materials_screen.dart';
 import '../features/hubs_and_services/legal_education/screens/material_viewer_screen.dart';
@@ -33,6 +34,9 @@ import '../features/consultation/screens/book_consultation_screen.dart';
 import '../features/subscription/screens/subscription_plans_screen.dart';
 import '../features/notifications/screens/notifications_screen.dart';
 import '../features/auth/screens/device_verification_screen.dart';
+import '../features/auth/screens/forgot_password_screen.dart';
+import '../features/auth/screens/reset_password_screen.dart';
+import '../features/auth/screens/set_new_password_screen.dart';
 import '../features/auth/controllers/device_verification_controller.dart';
 
 class AppRoutes {
@@ -40,8 +44,12 @@ class AppRoutes {
   static const String landing = '/landing';
   static const String registration = '/registration';
   static const String login = '/login';
+  static const String forgotPassword = '/forgot-password';
+  static const String resetPassword = '/reset-password';
+  static const String setNewPassword = '/set-new-password';
   static const String home = '/home';
   static const String profile = '/profile';
+  static const String editProfile = '/edit-profile';
   static const String settings = '/settings';
   static const String legalEducation = '/legal-education';
   static const String topicMaterials = '/topic-materials';
@@ -90,12 +98,28 @@ class AppRoutes {
       page: () => const LoginScreen(),
     ),
     GetPage(
+      name: forgotPassword,
+      page: () => const ForgotPasswordScreen(),
+    ),
+    GetPage(
+      name: resetPassword,
+      page: () => const ResetPasswordScreen(),
+    ),
+    GetPage(
+      name: setNewPassword,
+      page: () => const SetNewPasswordScreen(),
+    ),
+    GetPage(
       name: home,
       page: () => const MainNavigationScreen(),
     ),
     GetPage(
       name: profile,
       page: () => const ProfileScreen(),
+    ),
+    GetPage(
+      name: editProfile,
+      page: () => const EditProfileScreen(),
     ),
     GetPage(
       name: settings,

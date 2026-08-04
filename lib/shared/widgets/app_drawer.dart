@@ -237,7 +237,7 @@ class AppDrawer extends StatelessWidget {
           activeIcon: Icons.bookmark,
           title: 'Bookmarks',
           subtitle: 'Saved content',
-          onTap: () => _navigateToTab(context, 3),
+          onTap: () => _navigateToTab(context, 4),
         ),
       ],
     );

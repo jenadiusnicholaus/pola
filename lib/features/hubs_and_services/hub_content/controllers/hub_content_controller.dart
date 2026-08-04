@@ -16,19 +16,19 @@ class HubContentController extends GetxController {
   HubContentController({required this.hubType, this.skipInitialFetch = false});
 
   // Observable variables
-  final List<HubContentItem> _content = [];
-  final List<HubContentItem> _trendingContent = [];
-  final List<HubContentItem> _recentContent = [];
-  final List<HubContentItem> _filteredContent = [];
-  final List<HubContentItem> _searchResults = [];
-  final List<HubContentItem> _bookmarkedContent = [];
+  final RxList<HubContentItem> _content = <HubContentItem>[].obs;
+  final RxList<HubContentItem> _trendingContent = <HubContentItem>[].obs;
+  final RxList<HubContentItem> _recentContent = <HubContentItem>[].obs;
+  final RxList<HubContentItem> _filteredContent = <HubContentItem>[].obs;
+  final RxList<HubContentItem> _searchResults = <HubContentItem>[].obs;
+  final RxList<HubContentItem> _bookmarkedContent = <HubContentItem>[].obs;
 
-  List<HubContentItem> get content => _content;
-  List<HubContentItem> get trendingContent => _trendingContent;
-  List<HubContentItem> get recentContent => _recentContent;
-  List<HubContentItem> get filteredContent => _filteredContent;
-  List<HubContentItem> get searchResults => _searchResults;
-  List<HubContentItem> get bookmarkedContent => _bookmarkedContent;
+  RxList<HubContentItem> get content => _content;
+  RxList<HubContentItem> get trendingContent => _trendingContent;
+  RxList<HubContentItem> get recentContent => _recentContent;
+  RxList<HubContentItem> get filteredContent => _filteredContent;
+  RxList<HubContentItem> get searchResults => _searchResults;
+  RxList<HubContentItem> get bookmarkedContent => _bookmarkedContent;
 
   final RxBool isLoading = false.obs;
   final RxBool isLoadingMore = false.obs;
@@ -427,19 +427,19 @@ class HubContentController extends GetxController {
       int finalLikesCount = optimisticLikesCount;
 
       if (result.containsKey('is_liked')) {
-        finalLikeState = result['is_liked'] ?? finalLikeState;
+        finalLikeState = result['is_liked'] == true;
       }
       if (result.containsKey('likes_count')) {
-        finalLikesCount = result['likes_count'] ?? finalLikesCount;
+        finalLikesCount = result['likes_count'] is int
+            ? result['likes_count'] as int
+            : int.tryParse('${result['likes_count']}') ?? finalLikesCount;
       }
 
-      if (finalLikeState != optimisticLikeState ||
-          finalLikesCount != optimisticLikesCount) {
-        _updateContentInLists(contentItem.copyWith(
-          isLiked: finalLikeState,
-          likesCount: finalLikesCount,
-        ));
-      }
+      // Always reconcile UI with server response
+      _updateContentInLists(contentItem.copyWith(
+        isLiked: finalLikeState,
+        likesCount: finalLikesCount,
+      ));
 
       print(
           '✅ Like confirmed: ${finalLikeState ? 'Liked' : 'Unliked'} ($finalLikesCount likes)');
@@ -834,7 +834,13 @@ class HubContentController extends GetxController {
 
     print('🔄 Updated content ${updatedItem.id} in $updatesCount lists');
 
-    // Force UI update
+    // Ensure Obx listeners (RxList) refresh even when item is replaced in-place
+    _content.refresh();
+    _trendingContent.refresh();
+    _recentContent.refresh();
+    _filteredContent.refresh();
+    _searchResults.refresh();
+    _bookmarkedContent.refresh();
     update();
   }
 

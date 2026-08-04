@@ -7,7 +7,7 @@ import '../widgets/role_specific_info.dart';
 import '../widgets/subscription_card.dart';
 import '../../user_verification/widgets/profile_verification_card.dart';
 import '../../consultation/widgets/consultant_status_card.dart';
-import '../../../utils/navigation_helper.dart';
+import '../../../routes/app_routes.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -46,12 +46,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.edit),
-            onPressed: () {
-              // TODO: Navigate to edit profile screen
-              NavigationHelper.showSafeSnackbar(
-                title: 'Coming Soon',
-                message: 'Profile editing feature will be available soon',
-              );
+            onPressed: () async {
+              final updated = await Get.toNamed(AppRoutes.editProfile);
+              if (updated == true) {
+                await controller.loadProfileSilently();
+              }
             },
             tooltip: 'Edit Profile',
           ),
@@ -193,7 +192,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 16),
 
                       // Address Information
-                      if (profile.address.regionName != null)
+                      if (profile.address.regionName != null ||
+                          profile.address.districtName != null ||
+                          (profile.address.ward != null &&
+                              profile.address.ward!.isNotEmpty) ||
+                          (profile.address.officeAddress != null &&
+                              profile.address.officeAddress!.isNotEmpty))
                         ProfileInfoCard(
                           title: 'Address',
                           icon: Icons.location_on,
@@ -204,9 +208,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             if (profile.address.districtName != null)
                               _buildInfoRow(
                                   'District', profile.address.districtName!),
-                            if (profile.address.ward != null)
+                            if (profile.address.ward != null &&
+                                profile.address.ward!.isNotEmpty)
                               _buildInfoRow('Ward', profile.address.ward!),
-                            if (profile.address.officeAddress != null)
+                            if (profile.address.officeAddress != null &&
+                                profile.address.officeAddress!.isNotEmpty)
                               _buildInfoRow('Office Address',
                                   profile.address.officeAddress!),
                           ],

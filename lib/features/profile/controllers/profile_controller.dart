@@ -65,6 +65,15 @@ class ProfileController extends GetxController {
     }
   }
 
+  /// Reload profile after edit without success snackbar
+  Future<void> loadProfileSilently() async {
+    try {
+      await _profileService.fetchProfile(forceRefresh: true);
+    } catch (e) {
+      debugPrint('❌ Error reloading profile: $e');
+    }
+  }
+
   /// Update profile data
   Future<void> updateProfile(Map<String, dynamic> updates) async {
     try {

@@ -9,6 +9,7 @@ import '../../../services/auth_service.dart';
 import '../../../services/device_registration_service.dart';
 import '../../../config/environment_config.dart';
 import '../../../utils/navigation_helper.dart';
+import '../../../routes/app_routes.dart';
 import '../models/login_data.dart';
 import '../../profile/services/profile_service.dart';
 
@@ -20,13 +21,6 @@ class LoginController extends GetxController {
   static const String _keyRememberMe = 'remember_me';
   static const String _keySavedEmail = 'saved_email';
   static const String _keySavedPassword = 'saved_password';
-
-  // Form controllers
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-
-  // Form key for validation
-  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   // Loading states
   final RxBool _isLoading = false.obs;
@@ -44,16 +38,6 @@ class LoginController extends GetxController {
   void onInit() {
     super.onInit();
     debugPrint('🔑 Login Controller initialized');
-
-    // Load saved credentials if any
-    _loadSavedCredentials();
-  }
-
-  @override
-  void onClose() {
-    emailController.dispose();
-    passwordController.dispose();
-    super.onClose();
   }
 
   void togglePasswordVisibility() {
@@ -99,50 +83,53 @@ class LoginController extends GetxController {
     }
   }
 
-  Future<void> _loadSavedCredentials() async {
+  /// Returns saved email/password when remember-me is enabled.
+  Future<({String email, String password})?> loadSavedCredentials() async {
     try {
       debugPrint('📱 Loading saved credentials (if any)');
 
-      // Check if remember me was enabled
       final rememberMeValue = await _secureStorage.read(key: _keyRememberMe);
+      if (isClosed) return null;
 
-      if (rememberMeValue == 'true') {
-        final savedEmail = await _secureStorage.read(key: _keySavedEmail);
-        final savedPassword = await _secureStorage.read(key: _keySavedPassword);
-
-        if (savedEmail != null && savedEmail.isNotEmpty) {
-          emailController.text = savedEmail;
-          debugPrint('✅ Loaded saved email: $savedEmail');
-        }
-
-        if (savedPassword != null && savedPassword.isNotEmpty) {
-          passwordController.text = savedPassword;
-          debugPrint(
-              '✅ Loaded saved password (length: ${savedPassword.length})');
-        }
-
-        _rememberMe.value = true;
-        debugPrint('✅ Remember me is enabled');
-      } else {
+      if (rememberMeValue != 'true') {
         debugPrint('ℹ️ No saved credentials found or remember me disabled');
+        return null;
       }
+
+      final savedEmail = await _secureStorage.read(key: _keySavedEmail);
+      final savedPassword = await _secureStorage.read(key: _keySavedPassword);
+      if (isClosed) return null;
+
+      _rememberMe.value = true;
+      debugPrint('✅ Remember me is enabled');
+
+      return (
+        email: savedEmail ?? '',
+        password: savedPassword ?? '',
+      );
     } catch (e) {
       debugPrint('⚠️ Error loading saved credentials: $e');
+      return null;
     }
   }
 
-  Future<void> login() async {
+  Future<void> login({
+    required GlobalKey<FormState> formKey,
+    required String email,
+    required String password,
+  }) async {
     debugPrint('🔑 Starting login process...');
 
     // Validate form
-    if (!formKey.currentState!.validate()) {
+    if (!(formKey.currentState?.validate() ?? false)) {
       debugPrint('❌ Form validation failed');
       return;
     }
 
+    final trimmedEmail = email.trim();
+
     // Check if fields are empty (additional validation)
-    if (emailController.text.trim().isEmpty ||
-        passwordController.text.trim().isEmpty) {
+    if (trimmedEmail.isEmpty || password.isEmpty) {
       NavigationHelper.showSafeSnackbar(
         title: 'Validation Error',
         message: 'Please fill in all required fields',
@@ -156,8 +143,8 @@ class LoginController extends GetxController {
     try {
       // Prepare login data
       final loginData = LoginData(
-        email: emailController.text.trim(),
-        password: passwordController.text,
+        email: trimmedEmail,
+        password: password,
       );
 
       debugPrint('📤 Sending login request for: ${loginData.email}');
@@ -172,7 +159,11 @@ class LoginController extends GetxController {
       debugPrint('📥 Login response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        await _handleLoginSuccess(response.data);
+        await _handleLoginSuccess(
+          response.data,
+          email: loginData.email,
+          password: loginData.password,
+        );
       } else {
         _handleLoginError(response);
       }
@@ -192,7 +183,11 @@ class LoginController extends GetxController {
     }
   }
 
-  Future<void> _handleLoginSuccess(Map<String, dynamic> responseData) async {
+  Future<void> _handleLoginSuccess(
+    Map<String, dynamic> responseData, {
+    required String email,
+    required String password,
+  }) async {
     debugPrint('✅ Login successful!');
     debugPrint('👤 Response data keys: ${responseData.keys.toList()}');
 
@@ -219,7 +214,7 @@ class LoginController extends GetxController {
       if (loginSuccess) {
         // Save credentials if remember me is checked
         if (_rememberMe.value) {
-          await _saveCredentials();
+          await _saveCredentials(email: email, password: password);
         }
 
         // Fetch user profile immediately after successful login
@@ -329,17 +324,18 @@ class LoginController extends GetxController {
     );
   }
 
-  Future<void> _saveCredentials() async {
+  Future<void> _saveCredentials({
+    required String email,
+    required String password,
+  }) async {
     try {
       debugPrint('💾 Saving login credentials...');
 
       if (_rememberMe.value) {
         // Save credentials securely
         await _secureStorage.write(key: _keyRememberMe, value: 'true');
-        await _secureStorage.write(
-            key: _keySavedEmail, value: emailController.text.trim());
-        await _secureStorage.write(
-            key: _keySavedPassword, value: passwordController.text);
+        await _secureStorage.write(key: _keySavedEmail, value: email.trim());
+        await _secureStorage.write(key: _keySavedPassword, value: password);
 
         debugPrint('✅ Credentials saved securely');
       } else {
@@ -430,14 +426,12 @@ class LoginController extends GetxController {
     return null;
   }
 
-  // Helper method to clear form
-  void clearForm() async {
-    emailController.clear();
-    passwordController.clear();
+  // Helper method to clear remember-me state
+  Future<void> clearRememberedCredentials() async {
     _isPasswordVisible.value = false;
     _rememberMe.value = false;
     await _clearSavedCredentials();
-    debugPrint('🧹 Login form cleared');
+    debugPrint('🧹 Login remembered credentials cleared');
   }
 
   // Navigate to registration
@@ -448,14 +442,7 @@ class LoginController extends GetxController {
 
   // Navigate to forgot password (TODO: implement)
   void goToForgotPassword() {
-    // TODO: Implement forgot password functionality
-    NavigationHelper.showSafeSnackbar(
-      title: 'Coming Soon',
-      message: 'Forgot password functionality will be available soon.',
-      backgroundColor: Colors.blue,
-      colorText: Colors.white,
-    );
-    debugPrint('🔒 Forgot password requested (not implemented yet)');
+    Get.toNamed(AppRoutes.forgotPassword);
   }
 
   // Register device after successful login.
