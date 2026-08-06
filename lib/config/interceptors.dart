@@ -5,8 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart' as getx;
 import '../services/token_storage_service.dart';
 import '../services/auth_service.dart';
+import '../services/device_info_service.dart';
 
 class ApiInterceptors {
+  static bool _handlingDeviceReplaced = false;
+
   // Add comprehensive interceptors to Dio instance
   static void addInterceptors(Dio dio) {
     final interceptorList = dio.interceptors as List<Interceptor>;
@@ -45,6 +48,16 @@ class ApiInterceptors {
   static Interceptor createAuthInterceptor() {
     return InterceptorsWrapper(
       onRequest: (options, handler) async {
+        // Attach stable device id for single-device enforcement
+        try {
+          final deviceId = await DeviceInfoService().getDeviceId();
+          if (deviceId.isNotEmpty) {
+            options.headers['X-Device-Id'] = deviceId;
+          }
+        } catch (e) {
+          debugPrint('⚠️ Could not attach X-Device-Id: $e');
+        }
+
         // Get TokenStorageService instance
         try {
           final tokenStorage = getx.Get.find<TokenStorageService>();
@@ -83,6 +96,36 @@ class ApiInterceptors {
     );
   }
 
+  static bool _isDeviceReplacedError(dynamic errorData) {
+    if (errorData is! Map) return false;
+    final code = errorData['code']?.toString() ?? '';
+    final error = errorData['error']?.toString() ?? '';
+    return code == 'device_replaced' || error == 'device_replaced';
+  }
+
+  static Future<void> _forceLogoutDeviceReplaced() async {
+    if (_handlingDeviceReplaced) return;
+    _handlingDeviceReplaced = true;
+    try {
+      debugPrint(
+          '📱 Device replaced — forcing logout to login screen');
+      try {
+        final authService = getx.Get.find<AuthService>();
+        await authService.forceLogoutToLogin();
+      } catch (_) {
+        try {
+          final tokenStorage = getx.Get.find<TokenStorageService>();
+          await tokenStorage.clearTokens();
+        } catch (_) {}
+        getx.Get.offAllNamed('/login');
+      }
+    } finally {
+      Future.delayed(const Duration(seconds: 2), () {
+        _handlingDeviceReplaced = false;
+      });
+    }
+  }
+
   static Interceptor createErrorInterceptor(Dio dio) {
     return InterceptorsWrapper(
       onError: (error, handler) async {
@@ -105,6 +148,17 @@ class ApiInterceptors {
 
           switch (error.response!.statusCode) {
             case 401:
+              // Single-device: another device took over — do not refresh token
+              try {
+                final errorData = error.response!.data is String
+                    ? jsonDecode(error.response!.data)
+                    : error.response!.data;
+                if (_isDeviceReplacedError(errorData)) {
+                  await _forceLogoutDeviceReplaced();
+                  break;
+                }
+              } catch (_) {}
+
               debugPrint(
                   '🔒 Authentication failed - Attempting token refresh...');
 

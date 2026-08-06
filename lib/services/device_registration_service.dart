@@ -700,10 +700,28 @@ class DeviceRegistrationService extends GetxService {
             message: regResult.message,
           );
         }
+        // Reclaim: verified device that is no longer current
+        if (regResult != null &&
+            regResult.verificationRequired &&
+            regResult.isVerified) {
+          return DeviceCheckResult(
+            deviceRegistered: true,
+            isVerified: true,
+            isCurrentDevice: false,
+            actionRequired: 'device_replaced',
+            deviceId: regResult.devicePkForVerification,
+            message: regResult.message,
+            deviceReplaced: true,
+          );
+        }
         return checkResult;
 
       case 'verify_otp':
         debugPrint('🔐 Device needs OTP verification');
+        return checkResult;
+
+      case 'device_replaced':
+        debugPrint('📱 Device was replaced — force logout to login');
         return checkResult;
 
       case 'verify_otp_for_takeover':
@@ -730,6 +748,7 @@ class DeviceCheckResult {
   final String? newUserEmail;
   final String? currentOwnerEmail;
   final String message;
+  final bool deviceReplaced;
 
   DeviceCheckResult({
     required this.deviceRegistered,
@@ -740,28 +759,42 @@ class DeviceCheckResult {
     this.newUserEmail,
     this.currentOwnerEmail,
     required this.message,
+    this.deviceReplaced = false,
   });
 
   factory DeviceCheckResult.fromJson(Map<String, dynamic> json) {
+    final action = json['action_required'] as String?;
+    final replacedFlag = json['device_replaced'] as bool?;
+    final replaced = replacedFlag == true ||
+        action == 'device_replaced' ||
+        (json['is_verified'] == true &&
+            json['is_current_device'] == false &&
+            action == 'verify_otp');
     return DeviceCheckResult(
       deviceRegistered: json['device_registered'] as bool? ?? false,
       isVerified: json['is_verified'] as bool? ?? false,
       isCurrentDevice: json['is_current_device'] as bool? ?? false,
-      actionRequired: json['action_required'] as String?,
+      actionRequired: action,
       deviceId: json['device_id']?.toString(),
       newUserEmail: json['new_user_email'] as String?,
       currentOwnerEmail: json['current_owner_email'] as String?,
       message: json['message'] as String? ?? '',
+      deviceReplaced: replaced,
     );
   }
 
   /// Whether the device needs any action (verification, takeover, or registration)
   bool get needsAction => actionRequired != null && actionRequired != 'null';
 
-  /// Whether the device needs OTP verification (normal or takeover)
+  /// Whether another device took over — app should force logout to login
+  bool get wasReplacedByAnotherDevice =>
+      deviceReplaced || actionRequired == 'device_replaced';
+
+  /// Whether the device needs OTP verification (normal or takeover — not replace logout)
   bool get needsVerification =>
-      actionRequired == 'verify_otp' ||
-      actionRequired == 'verify_otp_for_takeover';
+      !wasReplacedByAnotherDevice &&
+      (actionRequired == 'verify_otp' ||
+          actionRequired == 'verify_otp_for_takeover');
 
   /// Whether the device needs takeover verification specifically
   bool get needsTakeover => actionRequired == 'verify_otp_for_takeover';

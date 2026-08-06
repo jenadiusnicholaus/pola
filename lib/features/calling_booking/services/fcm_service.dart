@@ -10,6 +10,7 @@ import '../screens/incoming_call_screen.dart';
 import '../controllers/call_controller.dart';
 import '../services/nexacon_call_service.dart';
 import '../../../services/device_registration_service.dart';
+import '../../../services/auth_service.dart';
 import '../../../config/environment_config.dart';
 import '../../notifications/controllers/notification_controller.dart';
 import 'dart:io' show Platform;
@@ -538,6 +539,9 @@ class FCMService extends GetxService {
       case 'missed_call':
         _handleMissedCall(message.data);
         break;
+      case 'force_logout':
+        _handleForceLogout(message.data);
+        break;
       // Handle general notifications (mentions, replies, etc.)
       case 'mention':
       case 'reply':
@@ -952,5 +956,23 @@ class FCMService extends GetxService {
       colorText: Colors.white,
       icon: const Icon(Icons.phone_missed, color: Colors.white),
     );
+  }
+
+  /// Another device verified OTP — force this device out to login
+  Future<void> _handleForceLogout(Map<String, dynamic> data) async {
+    debugPrint('📱 force_logout received: $data');
+    try {
+      if (Get.isRegistered<AuthService>()) {
+        await Get.find<AuthService>().forceLogoutToLogin(
+          message: data['message']?.toString() ??
+              'Your account was signed in on another device. Please log in again.',
+        );
+      } else {
+        Get.offAllNamed('/login');
+      }
+    } catch (e) {
+      debugPrint('❌ Error handling force_logout: $e');
+      Get.offAllNamed('/login');
+    }
   }
 }

@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:dio/dio.dart' as dio;
 import '../config/environment_config.dart';
 import 'api_service.dart';
 import 'token_storage_service.dart';
 import '../features/profile/services/profile_service.dart';
+import '../features/calling_booking/services/online_status_service.dart';
 import '../utils/navigation_helper.dart';
 import 'dart:async';
 
@@ -216,30 +218,81 @@ class AuthService extends GetxController {
   Future<void> logout() async {
     try {
       debugPrint('👋 Logging out user');
-
-      // Cancel the refresh timer
-      _tokenRefreshTimer?.cancel();
-
-      // Clear stored tokens and user data
-      await _tokenStorage.clearTokens();
-
-      // Clear profile cache
-      try {
-        final profileService = Get.find<ProfileService>();
-        profileService.clearCache();
-        debugPrint('🧹 Profile cache cleared');
-      } catch (e) {
-        debugPrint('⚠️ ProfileService not found or error clearing cache: $e');
-      }
-
-      // Navigate to login screen and clear all previous routes
-      Get.offAllNamed('/login');
-
+      await _clearLocalSession();
+      _goToLogin();
       debugPrint('✅ User logged out successfully - all data cleared');
     } catch (e) {
       debugPrint('❌ Error during logout: $e');
-      // Still try to navigate to login even if there's an error
-      Get.offAllNamed('/login');
+      _goToLogin();
+    }
+  }
+
+  /// Force logout (e.g. another device took over) and always open login.
+  Future<void> forceLogoutToLogin({
+    String message =
+        'Your account was signed in on another device. Please log in again.',
+  }) async {
+    debugPrint('📱 forceLogoutToLogin: $message');
+    try {
+      await _clearLocalSession();
+    } catch (e) {
+      debugPrint('⚠️ Error clearing session during force logout: $e');
+    }
+
+    _goToLogin();
+
+    Future.delayed(const Duration(milliseconds: 400), () {
+      try {
+        if (Get.isSnackbarOpen) return;
+        Get.snackbar(
+          'Signed out',
+          message,
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 4),
+          backgroundColor: const Color(0xFFE65100),
+          colorText: const Color(0xFFFFFFFF),
+        );
+      } catch (_) {}
+    });
+  }
+
+  /// Clear tokens, profile cache, and stop background authenticated work.
+  Future<void> _clearLocalSession() async {
+    _tokenRefreshTimer?.cancel();
+
+    try {
+      if (Get.isRegistered<OnlineStatusService>()) {
+        Get.find<OnlineStatusService>().stopHeartbeat();
+      }
+    } catch (e) {
+      debugPrint('⚠️ Could not stop heartbeat on logout: $e');
+    }
+
+    await _tokenStorage.clearTokens();
+    debugPrint('🧹 All tokens and user data cleared');
+
+    try {
+      Get.find<ProfileService>().clearCache();
+      debugPrint('🧹 Profile cache cleared');
+    } catch (e) {
+      debugPrint('⚠️ ProfileService not found or error clearing cache: $e');
+    }
+  }
+
+  void _goToLogin() {
+    void navigate() {
+      try {
+        if (Get.currentRoute == '/login') return;
+        Get.offAllNamed('/login');
+      } catch (e) {
+        debugPrint('❌ Navigate to login failed: $e');
+      }
+    }
+
+    try {
+      WidgetsBinding.instance.addPostFrameCallback((_) => navigate());
+    } catch (_) {
+      navigate();
     }
   }
 
@@ -522,23 +575,95 @@ class AuthService extends GetxController {
   }
 
   String _extractErrorMessage(dio.DioException e, String fallback) {
+    final status = e.response?.statusCode;
+    final statusFallback = _messageForStatusCode(status, fallback);
     final data = e.response?.data;
+
     if (data is Map) {
-      if (data['detail'] != null) return data['detail'].toString();
-      if (data['message'] != null) return data['message'].toString();
-      if (data['error'] != null) return data['error'].toString();
+      final candidates = <dynamic>[
+        data['detail'],
+        data['message'],
+        data['error'],
+      ];
+      for (final candidate in candidates) {
+        final text = _sanitizeErrorText(candidate?.toString());
+        if (text != null) return text;
+      }
       // DRF field errors: { field: ["msg"] }
       for (final entry in data.entries) {
         final value = entry.value;
         if (value is List && value.isNotEmpty) {
-          return value.first.toString();
+          final text = _sanitizeErrorText(value.first.toString());
+          if (text != null) return text;
         }
-        if (value is String && value.isNotEmpty) {
-          return value;
+        if (value is String) {
+          final text = _sanitizeErrorText(value);
+          if (text != null) return text;
         }
       }
+      return statusFallback;
     }
-    if (data is String && data.isNotEmpty) return data;
-    return fallback;
+
+    if (data is String) {
+      final text = _sanitizeErrorText(data);
+      if (text != null) return text;
+    }
+
+    if (e.type == dio.DioExceptionType.connectionTimeout ||
+        e.type == dio.DioExceptionType.receiveTimeout ||
+        e.type == dio.DioExceptionType.sendTimeout) {
+      return 'Connection timed out. Please try again.';
+    }
+    if (e.type == dio.DioExceptionType.connectionError) {
+      return 'Cannot reach the server. Check your connection.';
+    }
+
+    return statusFallback;
+  }
+
+  /// Drop HTML / empty bodies so snackbars never show Django debug pages.
+  String? _sanitizeErrorText(String? raw) {
+    if (raw == null) return null;
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return null;
+
+    final lower = trimmed.toLowerCase();
+    if (lower.contains('<!doctype') ||
+        lower.contains('<html') ||
+        lower.contains('<head') ||
+        lower.contains('<body') ||
+        lower.contains('<title') ||
+        lower.contains('</html>')) {
+      return null;
+    }
+
+    // Keep snackbars readable
+    if (trimmed.length > 180) {
+      return '${trimmed.substring(0, 177)}...';
+    }
+    return trimmed;
+  }
+
+  String _messageForStatusCode(int? status, String fallback) {
+    switch (status) {
+      case 400:
+        return 'Invalid request. Please check your details.';
+      case 401:
+        return 'Unauthorized. Please try again.';
+      case 403:
+        return 'You do not have permission to do that.';
+      case 404:
+        return 'Service not found. Please try again later.';
+      case 429:
+        return 'Too many attempts. Please wait and try again.';
+      case 500:
+      case 502:
+      case 503:
+      case 504:
+        return 'Server error. Please try again later.';
+      default:
+        if (status != null) return '$fallback (HTTP $status)';
+        return fallback;
+    }
   }
 }

@@ -60,13 +60,24 @@ class HomeController extends GetxController {
     }
   }
 
-  /// Check device status — if device needs verification or takeover,
-  /// navigate to the device verification screen
+  /// Check device status — if another device took over, force logout to login.
+  /// Otherwise if OTP/takeover is needed, open verification.
   Future<void> _checkDeviceStatus() async {
     try {
       debugPrint('🔍 Checking device status from HomeController...');
       final deviceService = Get.find<DeviceRegistrationService>();
       final checkResult = await deviceService.checkAndHandleDevice();
+
+      if (checkResult.wasReplacedByAnotherDevice) {
+        debugPrint(
+            '📱 Device replaced — forcing logout to login from home');
+        await _authService.forceLogoutToLogin(
+          message: checkResult.message.isNotEmpty
+              ? checkResult.message
+              : 'Your account was signed in on another device. Please log in again.',
+        );
+        return;
+      }
 
       if (checkResult.needsVerification) {
         final isTakeover = checkResult.needsTakeover;
