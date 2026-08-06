@@ -482,8 +482,8 @@ class LoginController extends GetxController {
         return true;
       }
 
-      // Handle normal verification flow
-      if (result != null && result.verificationRequired && !result.isVerified) {
+      // Handle normal verification OR reclaim of demoted device
+      if (result != null && result.verificationRequired) {
         debugPrint(
             '🔐 Device verification required, navigating to OTP screen...');
         final devicePk = result.devicePkForVerification;
