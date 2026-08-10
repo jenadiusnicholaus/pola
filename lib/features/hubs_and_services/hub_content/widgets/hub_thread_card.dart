@@ -315,15 +315,16 @@ class _HubThreadCardState extends State<HubThreadCard> {
           // Always read the latest item from reactive lists so like/bookmark update live
           HubContentItem current = widget.content;
           final lists = [
-            widget.controller.content,
-            widget.controller.trendingContent,
-            widget.controller.recentContent,
-            widget.controller.filteredContent,
-            widget.controller.searchResults,
-            widget.controller.bookmarkedContent,
+            widget.controller.content.value,
+            widget.controller.trendingContent.value,
+            widget.controller.recentContent.value,
+            widget.controller.filteredContent.value,
+            widget.controller.searchResults.value,
+            widget.controller.bookmarkedContent.value,
           ];
           for (final list in lists) {
-            final index = list.indexWhere((item) => item.id == widget.content.id);
+            final index =
+                list.indexWhere((item) => item.id == widget.content.id);
             if (index != -1) {
               current = list[index];
               break;

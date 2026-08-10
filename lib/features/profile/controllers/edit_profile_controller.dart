@@ -85,11 +85,10 @@ class EditProfileController extends GetxController {
 
   Future<void> loadDistrictsForRegion(int regionId) async {
     try {
-      final districts =
-          await lookupService.fetchDistricts(regionId: regionId);
-      filteredDistricts.assignAll(districts);
+      final districts = await lookupService.fetchDistricts(regionId: regionId);
+      filteredDistricts.value.assignAll(districts);
     } catch (e) {
-      filteredDistricts.clear();
+      filteredDistricts.value.clear();
       NavigationHelper.showSafeSnackbar(
         title: 'Error',
         message: 'Failed to load districts. Please try again.',
@@ -100,7 +99,7 @@ class EditProfileController extends GetxController {
   void onRegionChanged(int? regionId) {
     selectedRegion.value = regionId;
     selectedDistrict.value = null;
-    filteredDistricts.clear();
+    filteredDistricts.value.clear();
     if (regionId != null) {
       loadDistrictsForRegion(regionId);
     }

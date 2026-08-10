@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class Message {
   final String id;
   final String content;
@@ -21,6 +23,54 @@ class Message {
     this.avatarUrl,
   });
 
+  /// Whether this message represents a call invitation (p2p/group call link)
+  bool get isCallMessage =>
+      content.contains('Incoming p2p call') ||
+      content.contains('Incoming group call') ||
+      content.contains('nx-group-call');
+
+  /// Whether this represents a missed/ended call notification
+  bool get isCallEndMessage =>
+      content.contains('"type":"call_end"') || content.contains('call_end');
+
+  /// Whether this is a call type (call invite or call end) message
+  bool get isCallType => isCallMessage || isCallEndMessage;
+
+  /// Whether the call is a video call (fallback: p2p calls treated as voice unless specified)
+  bool get isVideoCall => content.toLowerCase().contains('type=video');
+
+  /// Clean, user-friendly display text for call messages
+  String get displayText {
+    if (isCallMessage) {
+      return isVideoCall ? 'Video call' : 'Voice call';
+    }
+    if (isCallEndMessage) {
+      return 'Call ended';
+    }
+    return _extractHumanText(content);
+  }
+
+  /// Extract plain text from a raw body that may be JSON-wrapped.
+  /// Falls back to the original content if parsing fails.
+  static String _extractHumanText(String raw) {
+    if (raw.trim().startsWith('{')) {
+      try {
+        final map = jsonDecode(raw) as Map<String, dynamic>;
+        final type = map['type']?.toString();
+        if (type == 'chat' || type == null) {
+          final extracted =
+              map['message']?.toString() ??
+              map['body']?.toString() ??
+              map['content']?.toString();
+          if (extracted != null && extracted.isNotEmpty) return extracted;
+        }
+      } catch (_) {
+        // Not valid JSON, show as-is
+      }
+    }
+    return raw;
+  }
+
   /// Parse an epoch timestamp that may be in seconds, milliseconds, or microseconds.
   static DateTime parseTimestamp(dynamic value) {
     if (value == null) return DateTime.now();
@@ -29,7 +79,8 @@ class Message {
     if (value is int) {
       raw = value;
     } else {
-      raw = int.tryParse(value.toString()) ??
+      raw =
+          int.tryParse(value.toString()) ??
           DateTime.now().millisecondsSinceEpoch;
     }
 
@@ -54,11 +105,13 @@ class Message {
 
   factory Message.fromJson(Map<String, dynamic> json) {
     return Message(
-      id: json['id']?.toString() ??
+      id:
+          json['id']?.toString() ??
           json['message_id']?.toString() ??
           DateTime.now().millisecondsSinceEpoch.toString(),
       // API uses 'body', fallback to 'message' / 'content' for XMPP stream events
-      content: json['body']?.toString() ??
+      content:
+          json['body']?.toString() ??
           json['message']?.toString() ??
           json['content']?.toString() ??
           '',

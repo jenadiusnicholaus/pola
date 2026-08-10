@@ -162,7 +162,8 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
           child: ListView.builder(
             controller: controller.scrollController,
             padding: const EdgeInsets.all(16),
-            itemCount: controller.consultants.length +
+            itemCount:
+                controller.consultants.length +
                 (controller.hasMore.value ? 1 : 0),
             addAutomaticKeepAlives: true,
             addRepaintBoundaries: true,
@@ -170,12 +171,14 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
             itemBuilder: (context, index) {
               if (index == controller.consultants.length) {
                 // Loading indicator at bottom
-                return Obx(() => controller.isLoadingMore.value
-                    ? const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Center(child: CircularProgressIndicator()),
-                      )
-                    : const SizedBox.shrink());
+                return Obx(
+                  () => controller.isLoadingMore.value
+                      ? const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      : const SizedBox.shrink(),
+                );
               }
               final consultant = controller.consultants[index];
               return RepaintBoundary(
@@ -199,8 +202,10 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
-            Get.toNamed('/consultant-detail',
-                arguments: {'consultant': consultant});
+            Get.toNamed(
+              '/consultant-detail',
+              arguments: {'consultant': consultant},
+            );
           },
           borderRadius: BorderRadius.circular(12),
           splashColor: theme.colorScheme.primary.withOpacity(0.1),
@@ -322,8 +327,9 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color:
-                                  theme.colorScheme.onSurface.withOpacity(0.7),
+                              color: theme.colorScheme.onSurface.withOpacity(
+                                0.7,
+                              ),
                             ),
                           ),
                         ],
@@ -356,21 +362,30 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
                       child: OutlinedButton.icon(
                         onPressed: () =>
                             _handleMessageConsultant(context, consultant),
-                        icon: Icon(Icons.chat,
-                            size: 15, color: theme.colorScheme.primary),
-                        label: Text('Message',
-                            style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.primary)),
+                        icon: Icon(
+                          Icons.chat,
+                          size: 15,
+                          color: theme.colorScheme.primary,
+                        ),
+                        label: Text(
+                          'Message',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(
-                            color: theme.colorScheme.outlineVariant
-                                .withOpacity(0.5),
+                            color: theme.colorScheme.outlineVariant.withOpacity(
+                              0.5,
+                            ),
                             width: 1,
                           ),
                           padding: const EdgeInsets.symmetric(
-                              vertical: 10, horizontal: 14),
+                            vertical: 10,
+                            horizontal: 14,
+                          ),
                           minimumSize: const Size(0, 38),
                         ),
                       ),
@@ -384,13 +399,19 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
                         child: OutlinedButton.icon(
                           onPressed: () =>
                               _handleCallConsultant(context, consultant),
-                          icon: Icon(Icons.phone,
-                              size: 15, color: theme.colorScheme.primary),
-                          label: Text('Call',
-                              style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: theme.colorScheme.primary)),
+                          icon: Icon(
+                            Icons.phone,
+                            size: 15,
+                            color: theme.colorScheme.primary,
+                          ),
+                          label: Text(
+                            'Call',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(
                               color: theme.colorScheme.outlineVariant
@@ -398,7 +419,9 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
                               width: 1,
                             ),
                             padding: const EdgeInsets.symmetric(
-                                vertical: 10, horizontal: 14),
+                              vertical: 10,
+                              horizontal: 14,
+                            ),
                             minimumSize: const Size(0, 38),
                           ),
                         ),
@@ -415,8 +438,11 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
                         child: OutlinedButton.icon(
                           onPressed: () =>
                               _handleBookConsultation(context, consultant),
-                          icon: Icon(Icons.calendar_today,
-                              size: 15, color: theme.colorScheme.primary),
+                          icon: Icon(
+                            Icons.calendar_today,
+                            size: 15,
+                            color: theme.colorScheme.primary,
+                          ),
                           label: Text(
                             'Book',
                             style: TextStyle(
@@ -432,7 +458,9 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
                               width: 1,
                             ),
                             padding: const EdgeInsets.symmetric(
-                                vertical: 10, horizontal: 14),
+                              vertical: 10,
+                              horizontal: 14,
+                            ),
                             minimumSize: const Size(0, 38),
                           ),
                         ),
@@ -451,40 +479,43 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
   void _handleCallConsultant(BuildContext context, Consultant consultant) {
     // Check permission to talk to lawyer
     if (!NavigationHelper.checkPermissionOrShowUpgrade(
-        context, PermissionFeature.talkToLawyer)) {
+      context,
+      PermissionFeature.talkToLawyer,
+    )) {
       return;
     }
 
     // Navigate to call screen
-    Get.toNamed(
-      '/call',
-      arguments: {
-        'consultant': consultant,
-      },
-    );
+    Get.toNamed('/call', arguments: {'consultant': consultant});
   }
 
   void _handleBookConsultation(BuildContext context, Consultant consultant) {
     // Check permission to book consultation
     if (!NavigationHelper.checkPermissionOrShowUpgrade(
-        context, PermissionFeature.bookConsultation)) {
+      context,
+      PermissionFeature.bookConsultation,
+    )) {
       return;
     }
 
     // Navigate to booking screen - Book button is for physical consultations
-    Get.toNamed('/book-consultation', arguments: {
-      'consultant': consultant,
-      'bookingType': 'physical',
-    });
+    Get.toNamed(
+      '/book-consultation',
+      arguments: {'consultant': consultant, 'bookingType': 'physical'},
+    );
   }
 
   Future<void> _handleMessageConsultant(
-      BuildContext context, Consultant consultant) async {
+    BuildContext context,
+    Consultant consultant,
+  ) async {
     debugPrint('📱 _handleMessageConsultant started');
 
     // 1. Subscription check
     if (!NavigationHelper.checkPermissionOrShowUpgrade(
-        context, PermissionFeature.talkToLawyer)) {
+      context,
+      PermissionFeature.talkToLawyer,
+    )) {
       debugPrint('🔒 Subscription check failed');
       return;
     }
@@ -526,25 +557,21 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
         debugPrint('✅ Messaging already connected');
       }
 
-      // 5. Register consultant as a contact in SDK (idempotent)
-      debugPrint('📨 Adding contact $nxId with name $contactName...');
-      try {
-        final result =
-            await _messagingService.addContact(nxId, name: contactName);
-        debugPrint('✅ Contact $nxId added: $result');
-      } catch (e) {
-        debugPrint('⚠️ addContact error: $e (may already exist)');
-      }
+      // 5. Note: Contact management not yet implemented in nexacon_messaging
+      // The contact will be added automatically when first message is sent
+      debugPrint('📨 Contact $nxId will be added on first message');
 
       Get.back(); // dismiss loader
 
       // 6. Open chat room
       debugPrint('🚀 Opening chat room...');
-      Get.to(() => ChatRoomScreen(
-            contactId: nxId,
-            contactName: contactName,
-            contactAvatar: contactAvatar,
-          ));
+      Get.to(
+        () => ChatRoomScreen(
+          contactId: nxId,
+          contactName: contactName,
+          contactAvatar: contactAvatar,
+        ),
+      );
     } catch (e) {
       Get.back(); // dismiss loader
       debugPrint('❌ Messaging init failed: $e');
@@ -568,8 +595,11 @@ class _ConsultantsScreenState extends State<ConsultantsScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon,
-              size: 14, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+          Icon(
+            icon,
+            size: 14,
+            color: theme.colorScheme.onSurface.withOpacity(0.6),
+          ),
           const SizedBox(width: 4),
           Text(
             label,

@@ -18,8 +18,9 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen> {
   final TextEditingController _searchController = TextEditingController();
   final NexaconMessagingService _messagingService =
       Get.find<NexaconMessagingService>();
-  final ConsultantController _consultantController =
-      Get.put(ConsultantController());
+  final ConsultantController _consultantController = Get.put(
+    ConsultantController(),
+  );
 
   @override
   void dispose() {
@@ -92,8 +93,9 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen> {
                       Text(
                         'Check back later for available lawyers.',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.7),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.7,
+                          ),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -112,9 +114,9 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen> {
 
                   // Filter by search
                   if (_searchController.text.isNotEmpty &&
-                      !name
-                          .toLowerCase()
-                          .contains(_searchController.text.toLowerCase()) &&
+                      !name.toLowerCase().contains(
+                        _searchController.text.toLowerCase(),
+                      ) &&
                       !phone.contains(_searchController.text)) {
                     return const SizedBox.shrink();
                   }
@@ -150,15 +152,19 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen> {
   }
 
   Future<void> _handleMessageConsultant(Consultant consultant) async {
-    Get.dialog(const Center(child: CircularProgressIndicator()),
-        barrierDismissible: false);
+    Get.dialog(
+      const Center(child: CircularProgressIndicator()),
+      barrierDismissible: false,
+    );
 
     try {
       final rawPhone = consultant.userDetails.phoneNumber ?? '';
       if (rawPhone.isEmpty) {
         Get.back();
-        Get.snackbar('Cannot Message',
-            'This consultant has no phone number registered.');
+        Get.snackbar(
+          'Cannot Message',
+          'This consultant has no phone number registered.',
+        );
         return;
       }
 
@@ -173,19 +179,17 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen> {
         await _messagingService.initializeConnection();
       }
 
-      // Add consultant as contact
-      try {
-        await _messagingService.addContact(nxId, name: contactName);
-      } catch (e) {
-        debugPrint('⚠️ addContact error: $e (may already exist)');
-      }
+      // Note: Contact management not yet implemented in nexacon_messaging
+      // The contact will be added automatically when first message is sent
 
       Get.back();
-      Get.to(() => ChatRoomScreen(
-            contactId: nxId,
-            contactName: contactName,
-            contactAvatar: contactAvatar,
-          ));
+      Get.to(
+        () => ChatRoomScreen(
+          contactId: nxId,
+          contactName: contactName,
+          contactAvatar: contactAvatar,
+        ),
+      );
     } catch (e) {
       Get.back();
       debugPrint('❌ Error starting chat: $e');

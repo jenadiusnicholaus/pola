@@ -258,12 +258,12 @@ class HubContentCard extends StatelessWidget {
                       if (controller != null) {
                         // Check all possible lists for the most up-to-date version
                         final allLists = [
-                          controller!.searchResults,
-                          controller!.content,
-                          controller!.trendingContent,
-                          controller!.recentContent,
-                          controller!.filteredContent,
-                          controller!.bookmarkedContent,
+                          controller!.searchResults.value,
+                          controller!.content.value,
+                          controller!.trendingContent.value,
+                          controller!.recentContent.value,
+                          controller!.filteredContent.value,
+                          controller!.bookmarkedContent.value,
                         ];
 
                         for (final list in allLists) {
@@ -318,12 +318,12 @@ class HubContentCard extends StatelessWidget {
                       if (controller != null) {
                         // Check all possible lists for the most up-to-date version
                         final allLists = [
-                          controller!.searchResults,
-                          controller!.content,
-                          controller!.trendingContent,
-                          controller!.recentContent,
-                          controller!.filteredContent,
-                          controller!.bookmarkedContent,
+                          controller!.searchResults.value,
+                          controller!.content.value,
+                          controller!.trendingContent.value,
+                          controller!.recentContent.value,
+                          controller!.filteredContent.value,
+                          controller!.bookmarkedContent.value,
                         ];
 
                         for (final list in allLists) {
@@ -376,12 +376,12 @@ class HubContentCard extends StatelessWidget {
                         if (controller != null) {
                           // Check all possible lists for the most up-to-date version
                           final allLists = [
-                            controller!.searchResults,
-                            controller!.content,
-                            controller!.trendingContent,
-                            controller!.recentContent,
-                            controller!.filteredContent,
-                            controller!.bookmarkedContent,
+                            controller!.searchResults.value,
+                            controller!.content.value,
+                            controller!.trendingContent.value,
+                            controller!.recentContent.value,
+                            controller!.filteredContent.value,
+                            controller!.bookmarkedContent.value,
                           ];
 
                           for (final list in allLists) {
@@ -1084,10 +1084,11 @@ class HubContentCard extends StatelessWidget {
     );
   }
 
-  void _showLimitReachedDialog(BuildContext context, PermissionService permissionService) {
+  void _showLimitReachedDialog(
+      BuildContext context, PermissionService permissionService) {
     final theme = Theme.of(context);
     final isTrial = permissionService.isTrialSubscription;
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1156,7 +1157,8 @@ class HubContentCard extends StatelessWidget {
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
               'Later',
-              style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+              style: TextStyle(
+                  color: theme.colorScheme.onSurface.withOpacity(0.6)),
             ),
           ),
           ElevatedButton(

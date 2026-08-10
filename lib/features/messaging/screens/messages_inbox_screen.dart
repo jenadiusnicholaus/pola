@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'chat_room_screen.dart';
@@ -6,7 +8,6 @@ import '../models/message.dart';
 import '../../calling_booking/controllers/consultant_controller.dart';
 import '../../calling_booking/models/consultant_models.dart';
 import '../../../utils/phone_formatter.dart';
-import '../../../services/token_storage_service.dart';
 
 /// Professional Messages Inbox Screen
 /// Modern messaging interface with professional design
@@ -24,8 +25,10 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
   bool _isSearching = false;
   final NexaconMessagingService _messagingService =
       Get.find<NexaconMessagingService>();
-  final ConsultantController _consultantController =
-      Get.put(ConsultantController(), tag: 'messaging_inbox');
+  final ConsultantController _consultantController = Get.put(
+    ConsultantController(),
+    tag: 'messaging_inbox',
+  );
 
   List<Map<String, dynamic>> _contacts = [];
   bool _isLoadingContacts = false;
@@ -49,6 +52,31 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
     super.dispose();
   }
 
+  /// Whether a message body should appear in the inbox preview.
+  /// JSON with a non-chat 'type' (call_invitation, call_response, webrtc, etc.) is hidden.
+  bool _isDisplayableMessage(String body) {
+    if (body.isEmpty) return false;
+
+    // Human-readable call invite - show as a call preview
+    if (body.contains('Incoming p2p call') ||
+        body.contains('Incoming group call')) {
+      return true;
+    }
+
+    if (body.trim().startsWith('{')) {
+      try {
+        final map = jsonDecode(body) as Map<String, dynamic>;
+        final type = map['type']?.toString() ?? '';
+        if (type == 'chat' || type.isEmpty) return true;
+        return false; // call_invitation, call_response, webrtc, etc.
+      } catch (_) {
+        // Not valid JSON
+      }
+    }
+
+    return true;
+  }
+
   Future<void> _loadAllMessages({bool retry = false}) async {
     setState(() => _isLoadingContacts = true);
 
@@ -64,45 +92,69 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
       debugPrint('📨 _loadAllMessages: fetching all messages from API');
       final allMessages = await _messagingService.getAllMessages(pageSize: 100);
       debugPrint(
-          '📨 _loadAllMessages: received ${allMessages.length} messages');
+        '📨 _loadAllMessages: received ${allMessages.length} messages',
+      );
 
       // Build contacts list from messages and extract last message per contact
       final contactsMap = <String, Map<String, dynamic>>{};
       final lastMessagesMap = <String, Map<String, dynamic>>{};
 
       for (final msg in allMessages) {
-        // Determine peer (the other person in the conversation)
-        // Get my JID from token storage
-        final userData = Get.find<TokenStorageService>().userData;
-        final myPhone = userData?['phone_number'] as String? ??
-            userData?['phone'] as String?;
-        final myJid =
-            myPhone != null ? PhoneFormatter.formatAsNxId(myPhone) : '';
+        // Skip WebRTC / call signaling JSON (anything with a non-chat type)
+        if (!_isDisplayableMessage(msg.body)) {
+          continue;
+        }
 
-        final peer =
-            msg.from.contains(myJid.split('@').first) ? msg.to : msg.from;
-        final peerPhone = peer.split('@').first;
+        // Determine peer (the other person in the conversation)
+        // Use is_me from API: if I sent it, peer = to; if I received it, peer = from
+        final peer = msg.isMe ? msg.to : msg.from;
+        final peerPhone = peer.split('@').first.replaceAll('+', '');
 
         // Store last message for this peer
         if (!lastMessagesMap.containsKey(peerPhone)) {
-          // Get clean message text (use displayText for call messages)
-          String messageText = msg.isCallMessage ? msg.displayText : msg.body;
+          // Get clean, friendly message text
+          String messageText = msg.body;
 
-          // Truncate long messages and clean up JSON
-          if (messageText.length > 50) {
-            messageText = messageText.substring(0, 50) + '...';
+          // Try to unwrap JSON chat messages
+          if (messageText.trim().startsWith('{')) {
+            try {
+              final map = jsonDecode(messageText) as Map<String, dynamic>;
+              final type = map['type']?.toString() ?? '';
+              if (type == 'chat' || type.isEmpty) {
+                final extracted =
+                    map['message']?.toString() ??
+                    map['body']?.toString() ??
+                    map['content']?.toString() ??
+                    '';
+                if (extracted.isNotEmpty) messageText = extracted;
+              }
+            } catch (_) {
+              // Not valid JSON, leave as-is
+            }
           }
 
-          // If message looks like JSON, show a friendly text instead
-          if (messageText.trim().startsWith('{') ||
-              messageText.trim().startsWith('[')) {
-            messageText = msg.isCallMessage ? msg.displayText : 'Message';
+          if (messageText.contains('Incoming p2p call') ||
+              messageText.contains('Incoming group call')) {
+            messageText = messageText.toLowerCase().contains('type=video')
+                ? '📹 Video call'
+                : '📞 Voice call';
+          } else {
+            // Truncate long messages
+            if (messageText.length > 50) {
+              messageText = '${messageText.substring(0, 50)}...';
+            }
+
+            // If message still looks like JSON, show a friendly text instead
+            if (messageText.trim().startsWith('{') ||
+                messageText.trim().startsWith('[')) {
+              messageText = 'Message';
+            }
           }
 
           lastMessagesMap[peerPhone] = {
             'body': messageText,
             'timestamp': msg.timestamp,
-            'isFromMe': msg.from.contains(myJid.split('@').first),
+            'isFromMe': msg.isMe,
           };
         }
 
@@ -116,7 +168,8 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
       }
 
       debugPrint(
-          '📨 _loadAllMessages: found ${contactsMap.length} unique contacts');
+        '📨 _loadAllMessages: found ${contactsMap.length} unique contacts',
+      );
 
       setState(() {
         _contacts = contactsMap.values.toList();
@@ -177,7 +230,8 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
                               IconButton(
                                 onPressed: _toggleSearch,
                                 icon: Icon(
-                                    _isSearching ? Icons.close : Icons.search),
+                                  _isSearching ? Icons.close : Icons.search,
+                                ),
                                 style: IconButton.styleFrom(
                                   backgroundColor:
                                       theme.colorScheme.surfaceContainerHighest,
@@ -210,8 +264,9 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
                               ),
                               fillColor:
                                   theme.colorScheme.surfaceContainerHighest,
-                              contentPadding:
-                                  const EdgeInsets.symmetric(vertical: 0),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 0,
+                              ),
                             ),
                           ),
                         ),
@@ -230,8 +285,9 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
                 controller: _tabController,
                 indicatorColor: theme.colorScheme.primary,
                 labelColor: theme.colorScheme.primary,
-                unselectedLabelColor:
-                    theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                unselectedLabelColor: theme.colorScheme.onSurface.withValues(
+                  alpha: 0.6,
+                ),
                 dividerColor: Colors.transparent,
                 tabs: const [
                   Tab(text: 'All'),
@@ -405,8 +461,9 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
                             Text(
                               timeStr,
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.5),
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.5,
+                                ),
                               ),
                             ),
                         ],
@@ -417,8 +474,9 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
                             ? lastMessage!
                             : (phone.isNotEmpty ? phone : nxId),
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.6),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
                         ),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
@@ -470,10 +528,7 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
           ),
         ],
@@ -507,8 +562,9 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
               ),
               child: Row(
                 children: [
@@ -576,8 +632,9 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
                         Text(
                           'Check back later for available lawyers.',
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.7),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.7,
+                            ),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -593,13 +650,12 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
                     final name = consultant.userDetails.fullName;
                     final phone = consultant.userDetails.phoneNumber ?? '';
                     final avatar = consultant.userDetails.profilePicture;
-                    final nxId = PhoneFormatter.formatAsNxId(phone);
 
                     // Filter by search
                     if (_searchController.text.isNotEmpty &&
-                        !name
-                            .toLowerCase()
-                            .contains(_searchController.text.toLowerCase()) &&
+                        !name.toLowerCase().contains(
+                          _searchController.text.toLowerCase(),
+                        ) &&
                         !phone.contains(_searchController.text)) {
                       return const SizedBox.shrink();
                     }
@@ -643,17 +699,21 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
     try {
       // Ensure messaging is connected
       if (!_messagingService.isConnected.value) {
-        Get.dialog(const Center(child: CircularProgressIndicator()),
-            barrierDismissible: false);
+        Get.dialog(
+          const Center(child: CircularProgressIndicator()),
+          barrierDismissible: false,
+        );
         await _messagingService.initializeConnection();
         Get.back();
       }
 
-      Get.to(() => ChatRoomScreen(
-            contactId: nxid,
-            contactName: name,
-            contactAvatar: null,
-          ));
+      Get.to(
+        () => ChatRoomScreen(
+          contactId: nxid,
+          contactName: name,
+          contactAvatar: null,
+        ),
+      );
     } catch (e) {
       debugPrint('❌ Error opening chat: $e');
       Get.snackbar('Error', 'Could not open chat. Please try again.');
@@ -662,15 +722,19 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
 
   Future<void> _handleMessageConsultant(Consultant consultant) async {
     Get.back();
-    Get.dialog(const Center(child: CircularProgressIndicator()),
-        barrierDismissible: false);
+    Get.dialog(
+      const Center(child: CircularProgressIndicator()),
+      barrierDismissible: false,
+    );
 
     try {
       final rawPhone = consultant.userDetails.phoneNumber ?? '';
       if (rawPhone.isEmpty) {
         Get.back();
-        Get.snackbar('Cannot Message',
-            'This consultant has no phone number registered.');
+        Get.snackbar(
+          'Cannot Message',
+          'This consultant has no phone number registered.',
+        );
         return;
       }
 
@@ -685,19 +749,17 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
         await _messagingService.initializeConnection();
       }
 
-      // Add consultant as contact
-      try {
-        await _messagingService.addContact(nxId, name: contactName);
-      } catch (e) {
-        debugPrint('⚠️ addContact error: $e (may already exist)');
-      }
+      // Note: Contact management not yet implemented in nexacon_messaging
+      // The contact will be added automatically when first message is sent
 
       Get.back();
-      Get.to(() => ChatRoomScreen(
-            contactId: nxId,
-            contactName: contactName,
-            contactAvatar: contactAvatar,
-          ));
+      Get.to(
+        () => ChatRoomScreen(
+          contactId: nxId,
+          contactName: contactName,
+          contactAvatar: contactAvatar,
+        ),
+      );
     } catch (e) {
       Get.back();
       debugPrint('❌ Error starting chat: $e');

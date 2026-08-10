@@ -165,15 +165,16 @@ class EditProfileScreen extends StatelessWidget {
                   final loading = controller.lookupService.isLoadingRegions;
                   return DropdownButtonFormField<int>(
                     value: controller.selectedRegion.value,
-                    decoration: _decoration('Region', Icons.map_outlined)
-                        .copyWith(
+                    decoration:
+                        _decoration('Region', Icons.map_outlined).copyWith(
                       helperText: loading ? 'Loading regions...' : null,
                     ),
                     items: regions
                         .map(
                           (Region r) => DropdownMenuItem<int>(
                             value: r.id,
-                            child: Text(r.name, overflow: TextOverflow.ellipsis),
+                            child:
+                                Text(r.name, overflow: TextOverflow.ellipsis),
                           ),
                         )
                         .toList(),
@@ -184,24 +185,27 @@ class EditProfileScreen extends StatelessWidget {
                 Obx(() {
                   final loading = controller.lookupService.isLoadingDistricts;
                   final districts = controller.filteredDistricts;
-                  final regionSelected = controller.selectedRegion.value != null;
+                  final regionSelected =
+                      controller.selectedRegion.value != null;
                   return DropdownButtonFormField<int>(
-                    value: districts.any((d) => d.id == controller.selectedDistrict.value)
+                    value: districts.value.any(
+                            (d) => d.id == controller.selectedDistrict.value)
                         ? controller.selectedDistrict.value
                         : null,
-                    decoration: _decoration('District', Icons.location_city)
-                        .copyWith(
+                    decoration:
+                        _decoration('District', Icons.location_city).copyWith(
                       helperText: !regionSelected
                           ? 'Select a region first'
                           : loading
                               ? 'Loading districts...'
                               : null,
                     ),
-                    items: districts
+                    items: districts.value
                         .map(
                           (District d) => DropdownMenuItem<int>(
                             value: d.id,
-                            child: Text(d.name, overflow: TextOverflow.ellipsis),
+                            child:
+                                Text(d.name, overflow: TextOverflow.ellipsis),
                           ),
                         )
                         .toList(),

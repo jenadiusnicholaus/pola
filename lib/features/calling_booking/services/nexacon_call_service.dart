@@ -72,7 +72,8 @@ class NexaconCallService extends GetxService {
         onOtherUserLeft?.call();
       } else {
         print(
-            '📞 Call ended before connection, not triggering onOtherUserLeft');
+          '📞 Call ended before connection, not triggering onOtherUserLeft',
+        );
       }
     };
 
@@ -149,13 +150,14 @@ class NexaconCallService extends GetxService {
       // Connect first — then wait for the call invitation to arrive
       await _sdk!.initialize(username: phoneNumber, name: name);
       print(
-          '✅ NX pre-warm connection established — waiting for call invitation...');
+        '✅ NX pre-warm connection established — waiting for call invitation...',
+      );
 
-      // Initialize messaging service with the SDK
+      // Initialize messaging service
       if (Get.isRegistered<NexaconMessagingService>()) {
         final messagingService = Get.find<NexaconMessagingService>();
-        await messagingService.initialize(_sdk!);
-        print('✅ NexaconMessagingService initialized with SDK');
+        await messagingService.initialize();
+        print('✅ NexaconMessagingService initialized');
       }
 
       await _incomingCallCompleter!.future.timeout(
@@ -186,11 +188,11 @@ class NexaconCallService extends GetxService {
       await _sdk!.initialize(username: phoneNumber, name: name);
       print('✅ NX pre-warm complete — ready to initiate call');
 
-      // Initialize messaging service with the SDK
+      // Initialize messaging service
       if (Get.isRegistered<NexaconMessagingService>()) {
         final messagingService = Get.find<NexaconMessagingService>();
-        await messagingService.initialize(_sdk!);
-        print('✅ NexaconMessagingService initialized with SDK');
+        await messagingService.initialize();
+        print('✅ NexaconMessagingService initialized');
       }
     } catch (e) {
       print('⚠️ Pre-warm failed (non-fatal): $e');
@@ -235,7 +237,8 @@ class NexaconCallService extends GetxService {
           video: video,
         );
         print(
-            '✅ Call accepted via notification path - WebRTC should be connecting');
+          '✅ Call accepted via notification path - WebRTC should be connecting',
+        );
       } else {
         // Fallback: wait for NX invitation signal (callerPhone not available)
         print('⚠️ No callerPhone — falling back to acceptWhenReady');

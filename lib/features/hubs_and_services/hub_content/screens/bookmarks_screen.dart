@@ -177,7 +177,7 @@ class _BookmarksContentState extends State<_BookmarksContent> {
       final hubType = entry.key;
       final controller = entry.value;
 
-      for (final content in controller.bookmarkedContent) {
+      for (final content in controller.bookmarkedContent.value) {
         allBookmarks.add(BookmarkedItem(
           content: content,
           hubType: hubType,

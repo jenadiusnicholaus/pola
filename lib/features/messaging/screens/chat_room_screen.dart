@@ -43,16 +43,19 @@ class ChatRoomScreen extends StatelessWidget {
         // Use the proper CallController flow with backend notification.
         // CallScreen will create the controller and initiate the call.
         print(
-            '📞 Found matching consultant: ${matchingConsultant.userDetails.fullName}, using CallController');
-        Get.to(() =>
-            CallScreen(consultant: matchingConsultant, isIncoming: false));
+          '📞 Found matching consultant: ${matchingConsultant.userDetails.fullName}, using CallController',
+        );
+        Get.to(
+          () => CallScreen(consultant: matchingConsultant, isIncoming: false),
+        );
         return;
       }
 
       // Fallback: direct Nexacon call for non-consultant contacts
       final tokenStorage = Get.find<TokenStorageService>();
       final userData = tokenStorage.userData;
-      final myPhone = userData?['phone_number'] as String? ??
+      final myPhone =
+          userData?['phone_number'] as String? ??
           userData?['phone'] as String? ??
           userData?['phoneNumber'] as String?;
 
@@ -78,17 +81,15 @@ class ChatRoomScreen extends StatelessWidget {
 
       // Initiate the call with timeout handling
       await callService
-          .initiateCall(
-        username: myPhone,
-        to: phone,
-        name: contactName,
-      )
+          .initiateCall(username: myPhone, to: phone, name: contactName)
           .timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          throw Exception('Call response timeout - recipient may be offline');
-        },
-      );
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw Exception(
+                'Call response timeout - recipient may be offline',
+              );
+            },
+          );
     } on TimeoutException catch (e) {
       print('⏰ Call timeout: $e');
       Get.back(); // Close call screen if timeout
@@ -110,10 +111,7 @@ class ChatRoomScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(
-      ChatRoomController(
-        contactId: contactId,
-        contactName: contactName,
-      ),
+      ChatRoomController(contactId: contactId, contactName: contactName),
       tag: contactId,
     );
 
@@ -124,8 +122,9 @@ class ChatRoomScreen extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 20,
-              backgroundImage:
-                  contactAvatar != null ? NetworkImage(contactAvatar!) : null,
+              backgroundImage: contactAvatar != null
+                  ? NetworkImage(contactAvatar!)
+                  : null,
               child: contactAvatar == null
                   ? Text(
                       contactName[0].toUpperCase(),
@@ -143,15 +142,17 @@ class ChatRoomScreen extends StatelessWidget {
                     contactName,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  Obx(() => Text(
-                        controller.isOnline.value ? 'Online' : 'Offline',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: controller.isOnline.value
-                              ? Colors.green
-                              : Colors.grey,
-                        ),
-                      )),
+                  Obx(
+                    () => Text(
+                      controller.isOnline.value ? 'Online' : 'Offline',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: controller.isOnline.value
+                            ? Colors.green
+                            : Colors.grey,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -183,18 +184,12 @@ class ChatRoomScreen extends StatelessWidget {
                       const SizedBox(height: 16),
                       Text(
                         'No messages yet',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 16),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Start a conversation with $contactName',
-                        style: TextStyle(
-                          color: Colors.grey[500],
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.grey[500], fontSize: 14),
                       ),
                     ],
                   ),
@@ -205,16 +200,32 @@ class ChatRoomScreen extends StatelessWidget {
                 reverse: true,
                 controller: controller.scrollController,
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-                itemCount: messages.length,
+                itemCount: messages.length + 1, // +1 for top loading indicator
                 itemBuilder: (context, index) {
+                  // Top loading indicator (shown when scrolling to top for more)
+                  if (index == messages.length) {
+                    return Obx(() {
+                      if (!controller.isLoadingMore.value) {
+                        return const SizedBox.shrink();
+                      }
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Center(
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                      );
+                    });
+                  }
+
                   final message = messages[index];
-                  final normalizedSenderId =
-                      PhoneFormatter.normalize(message.senderId);
-                  final normalizedMyId =
-                      PhoneFormatter.normalize(controller.myNxId);
-                  final isMe = normalizedSenderId == normalizedMyId;
-                  debugPrint(
-                      '📨 Rendering message: id=${message.id}, senderId=${message.senderId}, myNxId=${controller.myNxId}, isMe=$isMe');
+                  final isMe =
+                      message.isSent ||
+                      PhoneFormatter.normalize(message.senderId) ==
+                          PhoneFormatter.normalize(controller.myNxId);
                   return _buildMessageBubble(message, isMe);
                 },
               );
@@ -230,7 +241,9 @@ class ChatRoomScreen extends StatelessWidget {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: Get.theme.colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(16),
@@ -257,16 +270,35 @@ class ChatRoomScreen extends StatelessWidget {
   }
 
   Widget _buildMessageBubble(Message message, bool isMe) {
+    if (message.isCallType) {
+      return _buildCallBubble(message, isMe);
+    }
+
+    final radius = Radius.circular(18);
+    final tailRadius = const Radius.circular(4);
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: isMe
               ? Get.theme.colorScheme.primary
               : Get.theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.only(
+            topLeft: radius,
+            topRight: radius,
+            bottomLeft: isMe ? radius : tailRadius,
+            bottomRight: isMe ? tailRadius : radius,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
         ),
         constraints: const BoxConstraints(maxWidth: 280),
         child: Column(
@@ -274,8 +306,10 @@ class ChatRoomScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              message.content,
+              message.displayText,
               style: TextStyle(
+                fontSize: 15,
+                height: 1.3,
                 color: isMe
                     ? Get.theme.colorScheme.onPrimary
                     : Get.theme.colorScheme.onSurface,
@@ -291,8 +325,9 @@ class ChatRoomScreen extends StatelessWidget {
                     fontSize: 10,
                     color: isMe
                         ? Get.theme.colorScheme.onPrimary.withValues(alpha: 0.7)
-                        : Get.theme.colorScheme.onSurface
-                            .withValues(alpha: 0.6),
+                        : Get.theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
                   ),
                 ),
                 if (isMe) ...[
@@ -301,16 +336,65 @@ class ChatRoomScreen extends StatelessWidget {
                     message.isRead
                         ? Icons.done_all
                         : message.isDelivered
-                            ? Icons.done
-                            : Icons.access_time,
+                        ? Icons.done
+                        : Icons.access_time,
                     size: 12,
-                    color: isMe
-                        ? Get.theme.colorScheme.onPrimary.withValues(alpha: 0.7)
-                        : Get.theme.colorScheme.onSurface
-                            .withValues(alpha: 0.6),
+                    color: message.isRead
+                        ? Colors.lightBlueAccent
+                        : Get.theme.colorScheme.onPrimary.withValues(
+                            alpha: 0.7,
+                          ),
                   ),
                 ],
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Professional card-style bubble for call invite / call-ended events.
+  Widget _buildCallBubble(Message message, bool isMe) {
+    final isEnded = message.isCallEndMessage;
+    final icon = isEnded
+        ? Icons.call_end
+        : (message.isVideoCall ? Icons.videocam : Icons.call);
+    final label = isEnded ? 'Call ended' : message.displayText;
+
+    return Align(
+      alignment: Alignment.center,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: Get.theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isEnded ? Colors.redAccent : Get.theme.colorScheme.primary,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '${isMe ? 'You' : contactName}: $label',
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500,
+                color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.75),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              _formatTime(message.timestamp),
+              style: TextStyle(
+                fontSize: 10,
+                color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
             ),
           ],
         ),
@@ -359,12 +443,14 @@ class ChatRoomScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Obx(() => IconButton(
-                icon: controller.isTyping.value
-                    ? const Icon(Icons.send)
-                    : const Icon(Icons.mic),
-                onPressed: controller.sendMessage,
-              )),
+          Obx(
+            () => IconButton(
+              icon: controller.isTyping.value
+                  ? const Icon(Icons.send)
+                  : const Icon(Icons.mic),
+              onPressed: controller.sendMessage,
+            ),
+          ),
         ],
       ),
     );
@@ -408,9 +494,10 @@ class _TypingDotState extends State<_TypingDot>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
-    _anim = Tween<double>(begin: 0, end: -6).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _anim = Tween<double>(
+      begin: 0,
+      end: -6,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
     Future.delayed(Duration(milliseconds: widget.delay), () {
       if (mounted) _ctrl.repeat(reverse: true);
     });

@@ -222,7 +222,7 @@ class HubContentSearchDelegate extends SearchDelegate {
       isSearching.value = true;
       controller.searchContent(query).then((_) {
         _searchResults.clear();
-        _searchResults.addAll(controller.searchResults);
+        _searchResults.addAll(controller.searchResults.value);
         isSearching.value = false;
       }).catchError((error) {
         isSearching.value = false;

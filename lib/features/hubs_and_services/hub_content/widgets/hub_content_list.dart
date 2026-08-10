@@ -17,13 +17,13 @@ class HubContentList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      if (controller.isLoading.value && controller.content.isEmpty) {
+      if (controller.isLoading.value && controller.content.value.isEmpty) {
         return const SliverFillRemaining(
           child: Center(child: CircularProgressIndicator()),
         );
       }
 
-      if (controller.hasError.value && controller.content.isEmpty) {
+      if (controller.hasError.value && controller.content.value.isEmpty) {
         return SliverFillRemaining(
           child: Center(
             child: Column(
@@ -56,7 +56,7 @@ class HubContentList extends StatelessWidget {
         );
       }
 
-      if (controller.content.isEmpty) {
+      if (controller.content.value.isEmpty) {
         return SliverFillRemaining(
           child: Center(
             child: Column(
