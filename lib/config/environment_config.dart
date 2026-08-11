@@ -37,7 +37,7 @@ class EnvironmentConfig {
       case Environment.staging:
         return dotenv.env['STAGING_BASE_URL'] ?? 'http://185.237.253.223:8086';
       case Environment.production:
-        return dotenv.env['PROD_BASE_URL'] ?? 'https://api.production.com';
+        return dotenv.env['PROD_BASE_URL'] ?? 'https://api.pola.co.tz';
     }
   }
 

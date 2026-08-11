@@ -215,7 +215,20 @@ class AppInitializer {
               final deviceService = Get.find<DeviceRegistrationService>();
               final checkResult = await deviceService.checkAndHandleDevice();
 
-              if (checkResult.needsVerification) {
+              if (checkResult.wasReplacedByAnotherDevice) {
+                debugPrint(
+                    '📱 Returning user device was replaced — forcing logout to login');
+                try {
+                  await Get.find<AuthService>().forceLogoutToLogin(
+                    message: checkResult.message.isNotEmpty
+                        ? checkResult.message
+                        : 'Your account was signed in on another device. Please log in again.',
+                  );
+                } catch (_) {
+                  Get.offAllNamed('/login');
+                }
+                deviceCheckCompleter.complete(true);
+              } else if (checkResult.needsVerification) {
                 final isTakeover = checkResult.needsTakeover;
                 debugPrint(
                     '${isTakeover ? "🔄" : "🔐"} Returning user device needs ${isTakeover ? "takeover " : ""}verification — navigating to OTP screen');
