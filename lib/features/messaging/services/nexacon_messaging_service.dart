@@ -96,8 +96,7 @@ class NexaconMessagingService extends GetxService {
       print('👤 User data: ${userData != null ? "found" : "null"}');
 
       // Try multiple possible phone number fields
-      String? phone =
-          userData?['phone_number'] as String? ??
+      String? phone = userData?['phone_number'] as String? ??
           userData?['phone'] as String? ??
           userData?['mobile'] as String? ??
           userData?['contact_number'] as String? ??
@@ -317,8 +316,18 @@ class NexaconMessagingService extends GetxService {
   Future<NxPresenceStatus?> fetchPresence(String nxid) async {
     try {
       if (_messaging == null) return null;
-      final peer = nxid.split('@').first;
+      final peer = nxid.split('@').first.replaceAll('+', '');
+      debugPrint('👤 fetchPresence: peer=$peer');
       final result = await _messaging!.getPresence(peer);
+      debugPrint('👤 fetchPresence response: $result');
+
+      // Check is_online boolean first (used by heartbeat-style API)
+      final isOnline = result['is_online'];
+      if (isOnline is bool) {
+        return isOnline ? NxPresenceStatus.online : NxPresenceStatus.offline;
+      }
+
+      // Then check status string
       final status = result['status']?.toString().toLowerCase();
       switch (status) {
         case 'online':
@@ -329,12 +338,16 @@ class NexaconMessagingService extends GetxService {
         case 'busy':
         case 'dnd':
           return NxPresenceStatus.busy;
-        default:
+        case 'offline':
+        case 'unavailable':
           return NxPresenceStatus.offline;
+        default:
+          // Unknown status — don't assume offline, return null so
+          // callers can try alternate approaches.
+          return null;
       }
     } catch (e) {
-      // Non-critical: presence REST endpoint may be unavailable.
-      // Real-time presence stream (subscribeToPresence) is the primary source.
+      debugPrint('⚠️ fetchPresence error: $e');
       return null;
     }
   }

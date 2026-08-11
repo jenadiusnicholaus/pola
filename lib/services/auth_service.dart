@@ -17,6 +17,10 @@ class AuthService extends GetxController {
   static const Duration _refreshInterval =
       Duration(minutes: 15); // Check every 15 minutes
 
+  // Concurrent refresh lock — prevents the periodic timer and the
+  // interceptor from triggering two refresh calls at the same time.
+  Completer<bool>? _refreshLock;
+
   @override
   void onInit() {
     super.onInit();
@@ -68,15 +72,32 @@ class AuthService extends GetxController {
 
   /// Refresh the access token using the refresh token
   Future<bool> refreshAccessToken() async {
+    // If a refresh is already in progress, await its result (with timeout).
+    if (_refreshLock != null && !_refreshLock!.isCompleted) {
+      debugPrint('🔄 refreshAccessToken: already in progress, awaiting...');
+      try {
+        return await _refreshLock!.future.timeout(const Duration(seconds: 10),
+            onTimeout: () {
+          debugPrint('⏰ refreshAccessToken: timed out waiting for lock');
+          return false;
+        });
+      } catch (e) {
+        return false;
+      }
+    }
+    _refreshLock = Completer<bool>();
+
     try {
       if (_tokenStorage.refreshToken.isEmpty) {
         debugPrint('❌ No refresh token available');
+        _refreshLock!.complete(false);
         return false;
       }
 
       if (_tokenStorage.isRefreshTokenExpired()) {
         debugPrint('❌ Refresh token is expired');
         await _handleTokenExpiration();
+        _refreshLock!.complete(false);
         return false;
       }
 
@@ -87,7 +108,14 @@ class AuthService extends GetxController {
         data: {
           'refresh': _tokenStorage.refreshToken,
         },
-      );
+      ).timeout(const Duration(seconds: 15), onTimeout: () {
+        throw dio.DioException(
+          requestOptions:
+              dio.RequestOptions(path: EnvironmentConfig.refreshTokenUrl),
+          type: dio.DioExceptionType.connectionTimeout,
+          error: 'Refresh token request timed out after 15s',
+        );
+      });
 
       if (response.statusCode == 200) {
         final newAccessToken = response.data['access'] as String?;
@@ -95,14 +123,17 @@ class AuthService extends GetxController {
         if (newAccessToken != null) {
           await _tokenStorage.updateAccessToken(newAccessToken);
           debugPrint('✅ Access token refreshed successfully');
+          _refreshLock!.complete(true);
           return true;
         } else {
           debugPrint('❌ Invalid refresh response: missing access token');
+          _refreshLock!.complete(false);
           return false;
         }
       } else {
         debugPrint(
             '❌ Token refresh failed with status: ${response.statusCode}');
+        _refreshLock!.complete(false);
         return false;
       }
     } on dio.DioException catch (e) {
@@ -113,10 +144,14 @@ class AuthService extends GetxController {
         await _handleTokenExpiration();
       }
 
+      _refreshLock!.complete(false);
       return false;
     } catch (e) {
       debugPrint('❌ Unexpected error during token refresh: $e');
+      _refreshLock!.complete(false);
       return false;
+    } finally {
+      _refreshLock = null;
     }
   }
 

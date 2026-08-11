@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -7,6 +8,11 @@ import '../services/token_storage_service.dart';
 import '../services/auth_service.dart';
 
 class ApiInterceptors {
+  // Concurrent refresh lock — ensures only one refresh runs at a time.
+  // Multiple 401s will await the same Completer instead of each firing
+  // their own refreshAccessToken() call.
+  static Completer<bool>? _refreshCompleter;
+
   // Add comprehensive interceptors to Dio instance
   static void addInterceptors(Dio dio) {
     final interceptorList = dio.interceptors as List<Interceptor>;
@@ -21,6 +27,42 @@ class ApiInterceptors {
 
     // Error handling interceptor with retry capability
     interceptorList.add(createErrorInterceptor(dio));
+  }
+
+  /// Shared refresh helper. If a refresh is already in progress, awaits
+  /// its result instead of starting a second one. Includes a timeout so
+  /// concurrent callers don't hang forever if the first refresh is stuck.
+  static Future<bool> _refreshToken() async {
+    if (_refreshCompleter != null && !_refreshCompleter!.isCompleted) {
+      debugPrint('🔄 Token refresh already in progress, awaiting...');
+      try {
+        return await _refreshCompleter!.future
+            .timeout(const Duration(seconds: 10), onTimeout: () {
+          debugPrint('⏰ Timed out waiting for in-progress refresh');
+          return false;
+        });
+      } catch (e) {
+        return false;
+      }
+    }
+    _refreshCompleter = Completer<bool>();
+    try {
+      final authService = getx.Get.find<AuthService>();
+      final result = await authService
+          .refreshAccessToken()
+          .timeout(const Duration(seconds: 15), onTimeout: () {
+        debugPrint('⏰ refreshAccessToken itself timed out');
+        return false;
+      });
+      _refreshCompleter!.complete(result);
+      return result;
+    } catch (e) {
+      debugPrint('❌ Error during shared token refresh: $e');
+      _refreshCompleter!.complete(false);
+      return false;
+    } finally {
+      _refreshCompleter = null;
+    }
   }
 
   // Comprehensive logging interceptor
@@ -51,6 +93,28 @@ class ApiInterceptors {
 
           // IMPORTANT: Wait for token service to fully initialize
           await tokenStorage.waitForInitialization();
+
+          // If the access token is expired but the refresh token is still
+          // valid, refresh proactively before sending the request. This
+          // avoids a round-trip 401 → refresh → retry and keeps the user
+          // logged in as long as the refresh token hasn't expired.
+          //
+          // CRITICAL: Skip this for refresh token requests themselves,
+          // otherwise we deadlock (refresh request → interceptor tries
+          // to refresh → waits for same refresh to complete → hang).
+          final isRefreshRequest =
+              options.path.contains('/authentication/refresh') ||
+                  options.path.contains('/auth/refresh');
+
+          if (!isRefreshRequest &&
+              tokenStorage.isLoggedIn &&
+              tokenStorage.accessToken.isNotEmpty &&
+              tokenStorage.isAccessTokenExpired() &&
+              !tokenStorage.isRefreshTokenExpired()) {
+            debugPrint(
+                '🔄 Access token expired, proactively refreshing before request: ${options.uri}');
+            await _refreshToken();
+          }
 
           final token = tokenStorage.accessToken;
 
@@ -108,20 +172,27 @@ class ApiInterceptors {
               debugPrint(
                   '🔒 Authentication failed - Attempting token refresh...');
 
-              // Don't try to refresh if this IS the refresh token request (prevents infinite loop)
-              final isRefreshRequest = error.requestOptions.path
-                  .contains('/authentication/refresh/');
+              // Don't try to refresh if this is a public auth endpoint
+              // (login, register, refresh) — a 401 there means bad
+              // credentials or invalid refresh token, not an expired
+              // access token that can be refreshed.
+              final path = error.requestOptions.path;
+              final isAuthEndpoint = path.contains('/authentication/refresh') ||
+                  path.contains('/auth/refresh') ||
+                  path.contains('/authentication/login') ||
+                  path.contains('/auth/login') ||
+                  path.contains('/authentication/register') ||
+                  path.contains('/auth/register');
 
-              if (isRefreshRequest) {
+              if (isAuthEndpoint) {
                 debugPrint(
-                    '❌ Refresh token request failed - User needs to login again');
+                    '❌ Auth endpoint returned 401 — not attempting token refresh');
                 break;
               }
 
-              // Try to refresh the token
+              // Try to refresh the token (shared lock prevents concurrent refreshes)
               try {
-                final authService = getx.Get.find<AuthService>();
-                final tokenRefreshed = await authService.refreshAccessToken();
+                final tokenRefreshed = await _refreshToken();
 
                 if (tokenRefreshed) {
                   debugPrint(

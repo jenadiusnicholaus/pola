@@ -8,6 +8,7 @@ import '../models/message.dart';
 import '../../calling_booking/controllers/consultant_controller.dart';
 import '../../calling_booking/models/consultant_models.dart';
 import '../../../utils/phone_formatter.dart';
+import '../../../services/api_service.dart';
 
 /// Professional Messages Inbox Screen
 /// Modern messaging interface with professional design
@@ -121,8 +122,7 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
               final map = jsonDecode(messageText) as Map<String, dynamic>;
               final type = map['type']?.toString() ?? '';
               if (type == 'chat' || type.isEmpty) {
-                final extracted =
-                    map['message']?.toString() ??
+                final extracted = map['message']?.toString() ??
                     map['body']?.toString() ??
                     map['content']?.toString() ??
                     '';
@@ -162,7 +162,7 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
         if (!contactsMap.containsKey(peerPhone)) {
           contactsMap[peerPhone] = {
             'nxid': peer,
-            'name': peerPhone, // Will be updated if we have a name
+            'name': 'Loading...', // Will be resolved via user search API
           };
         }
       }
@@ -176,6 +176,9 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
         _lastMessages = lastMessagesMap;
         _isLoadingContacts = false;
       });
+
+      // Resolve phone numbers to user names via the user search API
+      _resolveContactNames();
     } catch (e) {
       debugPrint('❌ Error loading messages: $e');
       setState(() => _isLoadingContacts = false);
@@ -188,6 +191,102 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
     }
   }
 
+  /// Resolve phone-number contact names to real user names via the
+  /// user search API (/api/v1/authentication/users/search/?q=<phone>).
+  Future<void> _resolveContactNames() async {
+    final apiService = Get.find<ApiService>();
+    var updated = false;
+
+    for (final contact in _contacts) {
+      final nxid = contact['nxid']?.toString() ?? '';
+      final phoneWithPlus = nxid.split('@').first;
+      final phone = phoneWithPlus.replaceAll('+', '');
+      // Also try without the Tanzania country code (255)
+      final phoneNoCc = phone.startsWith('255') ? phone.substring(3) : phone;
+      final currentName = contact['name']?.toString() ?? '';
+
+      // Skip if already resolved to a real name
+      if (currentName != 'Loading...' &&
+          currentName != phone &&
+          currentName != phoneWithPlus &&
+          currentName.isNotEmpty) continue;
+
+      Map<String, dynamic>? user;
+      // Try searching with multiple phone formats
+      final queries = <String>[
+        phoneWithPlus,
+        phone,
+        if (phoneNoCc != phone) phoneNoCc,
+      ];
+
+      for (final query in queries) {
+        try {
+          final response = await apiService.get(
+            '/api/v1/authentication/users/search/',
+            queryParameters: {'q': query},
+          );
+          if (response.statusCode == 200) {
+            final results = response.data['results'] as List?;
+            if (results != null && results.isNotEmpty) {
+              // Find the user whose phone_number matches our contact
+              for (final r in results) {
+                final rPhoneRaw =
+                    (r['phone_number']?.toString() ?? '').replaceAll('+', '');
+                if (rPhoneRaw.isEmpty) continue;
+                // Match if phones are equal, or if one is the other
+                // with/without the 255 country code
+                if (rPhoneRaw == phone ||
+                    rPhoneRaw == phoneNoCc ||
+                    rPhoneRaw == '255$phoneNoCc' ||
+                    '255$rPhoneRaw' == phone) {
+                  user = r as Map<String, dynamic>;
+                  break;
+                }
+              }
+              // If no exact phone match, take the first result
+              user ??= results.first as Map<String, dynamic>;
+              break;
+            }
+          }
+        } catch (e) {
+          debugPrint('⚠️ User search for "$query" failed: $e');
+        }
+      }
+
+      if (user != null) {
+        final firstName = user['first_name']?.toString().trim() ?? '';
+        final lastName = user['last_name']?.toString().trim() ?? '';
+        final fullName = user['full_name']?.toString().trim() ?? '';
+        final username = user['username']?.toString().trim() ?? '';
+
+        // Prefer full_name, then first+last, then username
+        final displayName = fullName.isNotEmpty
+            ? fullName
+            : (firstName.isNotEmpty || lastName.isNotEmpty
+                ? '$firstName $lastName'.trim()
+                : username);
+
+        if (displayName.isNotEmpty) {
+          contact['name'] = displayName;
+          contact['avatar'] = user['profile_picture_url'];
+          updated = true;
+          debugPrint('👤 Resolved $phone → $displayName');
+        } else {
+          contact['name'] = 'User';
+          updated = true;
+        }
+      } else {
+        // Could not resolve — show a generic name instead of phone
+        contact['name'] = 'User';
+        updated = true;
+      }
+    }
+
+    if (updated) {
+      setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -196,127 +295,31 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
       backgroundColor: theme.colorScheme.surfaceContainerLowest,
       body: CustomScrollView(
         slivers: [
-          // Modern App Bar
+          // Professional App Bar
           SliverAppBar(
             floating: true,
             snap: true,
+            pinned: false,
             automaticallyImplyLeading: true,
             backgroundColor: theme.colorScheme.surface,
             foregroundColor: theme.colorScheme.onSurface,
-            elevation: 0,
-            expandedHeight: _isSearching ? 130 : 70,
-            flexibleSpace: FlexibleSpaceBar(
-              background: SafeArea(
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Messages',
-                              style: theme.textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              IconButton(
-                                onPressed: _toggleSearch,
-                                icon: Icon(
-                                  _isSearching ? Icons.close : Icons.search,
-                                ),
-                                style: IconButton.styleFrom(
-                                  backgroundColor:
-                                      theme.colorScheme.surfaceContainerHighest,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              IconButton(
-                                onPressed: _showComposeDialog,
-                                icon: const Icon(Icons.edit_outlined),
-                                style: IconButton.styleFrom(
-                                  backgroundColor: theme.colorScheme.primary,
-                                  foregroundColor: theme.colorScheme.onPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      if (_isSearching) ...[
-                        const SizedBox(height: 12),
-                        Flexible(
-                          child: TextField(
-                            controller: _searchController,
-                            decoration: InputDecoration(
-                              hintText: 'Search conversations...',
-                              prefixIcon: const Icon(Icons.search),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(25),
-                                borderSide: BorderSide.none,
-                              ),
-                              fillColor:
-                                  theme.colorScheme.surfaceContainerHighest,
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 0,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
+            elevation: 0.5,
+            surfaceTintColor: Colors.transparent,
+            title: Text(
+              'Inbox',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.5,
               ),
             ),
-          ),
-
-          // Filter Tabs
-          SliverPersistentHeader(
-            delegate: _SliverTabBarDelegate(
-              TabBar(
-                controller: _tabController,
-                indicatorColor: theme.colorScheme.primary,
-                labelColor: theme.colorScheme.primary,
-                unselectedLabelColor: theme.colorScheme.onSurface.withValues(
-                  alpha: 0.6,
-                ),
-                dividerColor: Colors.transparent,
-                tabs: const [
-                  Tab(text: 'All'),
-                  Tab(text: 'Unread'),
-                  Tab(text: 'Groups'),
-                ],
-              ),
-            ),
-            pinned: true,
+            centerTitle: false,
           ),
 
           // Messages Content
-          SliverFillRemaining(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildMessagesList('all'),
-                _buildMessagesList('unread'),
-                _buildMessagesList('groups'),
-              ],
-            ),
+          SliverToBoxAdapter(
+            child: _buildMessagesList('all'),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showComposeDialog,
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
-        child: const Icon(Icons.chat_bubble_outline),
       ),
     );
   }
@@ -348,6 +351,8 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
 
     return ListView.separated(
       padding: const EdgeInsets.all(16),
+      physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
       itemCount: filtered.length,
       separatorBuilder: (context, index) => const SizedBox(height: 1),
       itemBuilder: (context, index) {
@@ -364,7 +369,7 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
         return _buildConsultantTile(
           name: name,
           phone: phone,
-          avatar: null,
+          avatar: contact['avatar'] as String?,
           nxId: nxid,
           lastMessage: lastMsgText,
           timestamp: timestamp,
@@ -472,7 +477,7 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
                       Text(
                         lastMessage?.isNotEmpty == true
                             ? lastMessage!
-                            : (phone.isNotEmpty ? phone : nxId),
+                            : 'Tap to start chatting',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurface.withValues(
                             alpha: 0.6,
@@ -654,8 +659,8 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
                     // Filter by search
                     if (_searchController.text.isNotEmpty &&
                         !name.toLowerCase().contains(
-                          _searchController.text.toLowerCase(),
-                        ) &&
+                              _searchController.text.toLowerCase(),
+                            ) &&
                         !phone.contains(_searchController.text)) {
                       return const SizedBox.shrink();
                     }

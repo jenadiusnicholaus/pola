@@ -10,6 +10,8 @@ class Message {
   final bool isDelivered;
   final bool isRead;
   final String? avatarUrl;
+  final String? roomId;
+  final bool callEnded;
 
   Message({
     required this.id,
@@ -21,7 +23,25 @@ class Message {
     this.isDelivered = false,
     this.isRead = false,
     this.avatarUrl,
+    this.roomId,
+    this.callEnded = false,
   });
+
+  Message copyWith({bool? callEnded, bool? isDelivered, bool? isRead}) {
+    return Message(
+      id: id,
+      content: content,
+      senderId: senderId,
+      senderName: senderName,
+      timestamp: timestamp,
+      isSent: isSent,
+      isDelivered: isDelivered ?? this.isDelivered,
+      isRead: isRead ?? this.isRead,
+      avatarUrl: avatarUrl,
+      roomId: roomId,
+      callEnded: callEnded ?? this.callEnded,
+    );
+  }
 
   /// Whether this message represents a call invitation (p2p/group call link)
   bool get isCallMessage =>
@@ -29,9 +49,13 @@ class Message {
       content.contains('Incoming group call') ||
       content.contains('nx-group-call');
 
-  /// Whether this represents a missed/ended call notification
+  /// Whether this represents a missed/ended call notification.
+  /// True either when this message itself is a raw call_end event, or when
+  /// a call invite has since been marked ended (merged into the same bubble).
   bool get isCallEndMessage =>
-      content.contains('"type":"call_end"') || content.contains('call_end');
+      callEnded ||
+      content.contains('"type":"call_end"') ||
+      content.contains('call_end');
 
   /// Whether this is a call type (call invite or call end) message
   bool get isCallType => isCallMessage || isCallEndMessage;
@@ -41,6 +65,9 @@ class Message {
 
   /// Clean, user-friendly display text for call messages
   String get displayText {
+    if (callEnded) {
+      return 'Call ended';
+    }
     if (isCallMessage) {
       return isVideoCall ? 'Video call' : 'Voice call';
     }
@@ -48,6 +75,37 @@ class Message {
       return 'Call ended';
     }
     return _extractHumanText(content);
+  }
+
+  /// Extract the call room id from either a call invite URL
+  /// (.../nx-group-call/<roomId>?...) or a signaling JSON body's 'roomId' field.
+  static String? extractRoomId(String body) {
+    final urlMatch = RegExp(r'nx-group-call/([^?\s]+)').firstMatch(body);
+    if (urlMatch != null) return urlMatch.group(1);
+
+    if (body.trim().startsWith('{')) {
+      try {
+        final map = jsonDecode(body) as Map<String, dynamic>;
+        final roomId = map['roomId']?.toString();
+        if (roomId != null && roomId.isNotEmpty) return roomId;
+      } catch (_) {
+        // Not valid JSON
+      }
+    }
+    return null;
+  }
+
+  /// Whether a raw body represents a call_end signaling event.
+  static bool isCallEndBody(String body) {
+    if (body.trim().startsWith('{')) {
+      try {
+        final map = jsonDecode(body) as Map<String, dynamic>;
+        return map['type']?.toString() == 'call_end';
+      } catch (_) {
+        return false;
+      }
+    }
+    return false;
   }
 
   /// Extract plain text from a raw body that may be JSON-wrapped.
@@ -58,8 +116,7 @@ class Message {
         final map = jsonDecode(raw) as Map<String, dynamic>;
         final type = map['type']?.toString();
         if (type == 'chat' || type == null) {
-          final extracted =
-              map['message']?.toString() ??
+          final extracted = map['message']?.toString() ??
               map['body']?.toString() ??
               map['content']?.toString();
           if (extracted != null && extracted.isNotEmpty) return extracted;
@@ -79,8 +136,7 @@ class Message {
     if (value is int) {
       raw = value;
     } else {
-      raw =
-          int.tryParse(value.toString()) ??
+      raw = int.tryParse(value.toString()) ??
           DateTime.now().millisecondsSinceEpoch;
     }
 
@@ -105,13 +161,11 @@ class Message {
 
   factory Message.fromJson(Map<String, dynamic> json) {
     return Message(
-      id:
-          json['id']?.toString() ??
+      id: json['id']?.toString() ??
           json['message_id']?.toString() ??
           DateTime.now().millisecondsSinceEpoch.toString(),
       // API uses 'body', fallback to 'message' / 'content' for XMPP stream events
-      content:
-          json['body']?.toString() ??
+      content: json['body']?.toString() ??
           json['message']?.toString() ??
           json['content']?.toString() ??
           '',

@@ -1,13 +1,11 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/chat_room_controller.dart';
 import '../models/message.dart';
 import '../../../utils/phone_formatter.dart';
-import '../../calling_booking/services/nexacon_call_service.dart';
 import '../../calling_booking/controllers/consultant_controller.dart';
+import '../../calling_booking/models/consultant_models.dart';
 import '../../calling_booking/screens/call_screen.dart';
-import '../../../services/token_storage_service.dart';
 
 class ChatRoomScreen extends StatelessWidget {
   final String contactId;
@@ -27,17 +25,22 @@ class ChatRoomScreen extends StatelessWidget {
       final phone = contactId.split('@').first;
 
       // Try to find the contact in loaded consultants to use proper call flow
-      // (backend FCM notification + shared room)
-      final consultantController = Get.find<ConsultantController>();
-      final consultants = consultantController.consultants;
-      final matchingConsultant = consultants.firstWhereOrNull((c) {
-        final consultantPhone = c.userDetails.phoneNumber ?? '';
-        final normalizedConsultant = PhoneFormatter.normalize(consultantPhone);
-        final normalizedContact = PhoneFormatter.normalize(phone);
-        return normalizedConsultant == normalizedContact ||
-            consultantPhone.contains(phone) ||
-            phone.contains(consultantPhone);
-      });
+      // (backend FCM notification + shared room). ConsultantController may not
+      // be registered if the user navigated directly to chat, so guard it.
+      Consultant? matchingConsultant;
+      if (Get.isRegistered<ConsultantController>()) {
+        final consultantController = Get.find<ConsultantController>();
+        final consultants = consultantController.consultants;
+        matchingConsultant = consultants.firstWhereOrNull((c) {
+          final consultantPhone = c.userDetails.phoneNumber ?? '';
+          final normalizedConsultant =
+              PhoneFormatter.normalize(consultantPhone);
+          final normalizedContact = PhoneFormatter.normalize(phone);
+          return normalizedConsultant == normalizedContact ||
+              consultantPhone.contains(phone) ||
+              phone.contains(consultantPhone);
+        });
+      }
 
       if (matchingConsultant != null) {
         // Use the proper CallController flow with backend notification.
@@ -52,51 +55,14 @@ class ChatRoomScreen extends StatelessWidget {
       }
 
       // Fallback: direct Nexacon call for non-consultant contacts
-      final tokenStorage = Get.find<TokenStorageService>();
-      final userData = tokenStorage.userData;
-      final myPhone =
-          userData?['phone_number'] as String? ??
-          userData?['phone'] as String? ??
-          userData?['phoneNumber'] as String?;
-
-      if (myPhone == null || myPhone.isEmpty) {
-        Get.snackbar(
-          'Error',
-          'Unable to start call. Please try again.',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-        return;
-      }
-
-      final callService = Get.find<NexaconCallService>();
-
-      // Navigate to call screen
+      print('📞 No matching consultant, initiating direct call to $phone');
       Get.to(
         () => CallScreen(
           callerName: contactName,
           callerPhone: phone,
           isIncoming: false,
+          isDirectCall: true,
         ),
-      );
-
-      // Initiate the call with timeout handling
-      await callService
-          .initiateCall(username: myPhone, to: phone, name: contactName)
-          .timeout(
-            const Duration(seconds: 30),
-            onTimeout: () {
-              throw Exception(
-                'Call response timeout - recipient may be offline',
-              );
-            },
-          );
-    } on TimeoutException catch (e) {
-      print('⏰ Call timeout: $e');
-      Get.back(); // Close call screen if timeout
-      Get.snackbar(
-        'Call Failed',
-        'Could not reach $contactName. They may be offline.',
-        snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
       print('❌ Error initiating call: $e');
@@ -122,9 +88,8 @@ class ChatRoomScreen extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 20,
-              backgroundImage: contactAvatar != null
-                  ? NetworkImage(contactAvatar!)
-                  : null,
+              backgroundImage:
+                  contactAvatar != null ? NetworkImage(contactAvatar!) : null,
               child: contactAvatar == null
                   ? Text(
                       contactName[0].toUpperCase(),
@@ -143,14 +108,52 @@ class ChatRoomScreen extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Obx(
-                    () => Text(
-                      controller.isOnline.value ? 'Online' : 'Offline',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: controller.isOnline.value
-                            ? Colors.green
-                            : Colors.grey,
-                      ),
+                    () => Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: controller.isOnline.value
+                                ? const Color(0xFF00E676)
+                                : Colors.white.withValues(alpha: 0.4),
+                            border: Border.all(
+                              color: controller.isOnline.value
+                                  ? Colors.white
+                                  : Colors.white.withValues(alpha: 0.6),
+                              width: 1.5,
+                            ),
+                            boxShadow: controller.isOnline.value
+                                ? [
+                                    BoxShadow(
+                                      color: const Color(0xFF00E676)
+                                          .withValues(alpha: 0.6),
+                                      blurRadius: 6,
+                                      spreadRadius: 1,
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          controller.isOnline.value ? 'Online' : 'Offline',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                blurRadius: 2,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -158,13 +161,6 @@ class ChatRoomScreen extends StatelessWidget {
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.call),
-            onPressed: () => _initiateCall(context, isVideo: false),
-            tooltip: 'Audio call',
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -222,8 +218,7 @@ class ChatRoomScreen extends StatelessWidget {
                   }
 
                   final message = messages[index];
-                  final isMe =
-                      message.isSent ||
+                  final isMe = message.isSent ||
                       PhoneFormatter.normalize(message.senderId) ==
                           PhoneFormatter.normalize(controller.myNxId);
                   return _buildMessageBubble(message, isMe);
@@ -336,8 +331,8 @@ class ChatRoomScreen extends StatelessWidget {
                     message.isRead
                         ? Icons.done_all
                         : message.isDelivered
-                        ? Icons.done
-                        : Icons.access_time,
+                            ? Icons.done
+                            : Icons.access_time,
                     size: 12,
                     color: message.isRead
                         ? Colors.lightBlueAccent

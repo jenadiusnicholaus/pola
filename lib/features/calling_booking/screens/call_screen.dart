@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/call_controller.dart';
 import '../models/consultant_models.dart';
+import '../services/nexacon_call_service.dart';
+import '../../../services/token_storage_service.dart';
 
 class CallScreen extends StatefulWidget {
   final Consultant? consultant;
@@ -11,6 +13,7 @@ class CallScreen extends StatefulWidget {
   final String? callerName;
   final String? callerPhoto;
   final String? callerPhone;
+  final bool isDirectCall;
 
   const CallScreen({
     super.key,
@@ -21,6 +24,7 @@ class CallScreen extends StatefulWidget {
     this.callerName,
     this.callerPhoto,
     this.callerPhone,
+    this.isDirectCall = false,
   });
 
   @override
@@ -46,10 +50,16 @@ class _CallScreenState extends State<CallScreen> {
           _errorMessage = 'Missing call information';
           return;
         }
-      } else {
+      } else if (!widget.isDirectCall) {
         if (widget.consultant == null) {
           _hasError = true;
           _errorMessage = 'No consultant data provided';
+          return;
+        }
+      } else {
+        if (widget.callerPhone == null || widget.callerPhone!.isEmpty) {
+          _hasError = true;
+          _errorMessage = 'No contact phone provided';
           return;
         }
       }
@@ -63,6 +73,8 @@ class _CallScreenState extends State<CallScreen> {
           callerName: widget.callerName ?? 'Unknown',
           callerPhone: widget.callerPhone ?? '',
         );
+      } else if (widget.isDirectCall) {
+        _initiateDirectCall();
       } else {
         controller!.initiateCall(widget.consultant!);
       }
@@ -81,11 +93,12 @@ class _CallScreenState extends State<CallScreen> {
 
   String get _displayName {
     if (widget.isIncoming) return widget.callerName ?? 'Unknown';
+    if (widget.isDirectCall) return widget.callerName ?? 'Unknown';
     return widget.consultant?.userDetails.fullName ?? 'Unknown';
   }
 
   String get _avatarLetter {
-    if (widget.isIncoming) {
+    if (widget.isIncoming || widget.isDirectCall) {
       final n = widget.callerName ?? '';
       return n.isNotEmpty ? n[0].toUpperCase() : '?';
     }
@@ -94,10 +107,65 @@ class _CallScreenState extends State<CallScreen> {
   }
 
   String get _subtitle {
-    if (!widget.isIncoming) {
+    if (!widget.isIncoming && !widget.isDirectCall) {
       return widget.consultant?.consultantType ?? '';
     }
     return '';
+  }
+
+  Future<void> _initiateDirectCall() async {
+    try {
+      controller!.isCheckingCredits.value = true;
+
+      final nexaconService = Get.find<NexaconCallService>();
+      final tokenStorage = Get.find<TokenStorageService>();
+
+      final hasPermission = await nexaconService.requestPermissions();
+      if (!hasPermission) {
+        controller!.isCheckingCredits.value = false;
+        controller!.error.value =
+            'Microphone permission is required for voice calls';
+        return;
+      }
+
+      final userData = tokenStorage.userData;
+      String? myPhone = userData?['phone_number'] as String? ??
+          userData?['phone'] as String? ??
+          userData?['phoneNumber'] as String?;
+      if (myPhone == null || myPhone.isEmpty) {
+        final contact = userData?['contact'] as Map<String, dynamic>?;
+        myPhone = contact?['phone_number'] as String?;
+      }
+      if (myPhone == null || myPhone.isEmpty) {
+        controller!.isCheckingCredits.value = false;
+        controller!.error.value = 'Phone number is required to make calls';
+        return;
+      }
+
+      final digits = myPhone.replaceAll(RegExp(r'[^\d]'), '');
+      final formattedPhone =
+          digits.startsWith('255') ? '+$digits' : '+255$digits';
+
+      await nexaconService.prewarmForOutgoing(
+        phoneNumber: formattedPhone,
+        name: 'User',
+      );
+
+      controller!.isRinging.value = true;
+      controller!.isCheckingCredits.value = false;
+
+      await nexaconService.initiateCall(
+        username: formattedPhone,
+        to: widget.callerPhone!,
+        name: widget.callerName ?? 'User',
+      );
+
+      controller!.isCallConnected.value = true;
+    } catch (e) {
+      debugPrint('Error initiating direct call: $e');
+      controller!.isCheckingCredits.value = false;
+      controller!.error.value = 'Failed to initiate call: $e';
+    }
   }
 
   @override

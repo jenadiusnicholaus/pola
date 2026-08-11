@@ -30,6 +30,7 @@ class TokenStorageService extends GetxController {
 
   // Getters
   bool get isLoggedIn => _isLoggedIn.value;
+  RxBool get isLoggedInRx => _isLoggedIn;
   String get accessToken => _currentAccessToken.value;
   String get refreshToken => _currentRefreshToken.value;
   Map<String, dynamic>? get userData => _userData.value;
@@ -179,9 +180,11 @@ class TokenStorageService extends GetxController {
 
         return true;
       } catch (e) {
-        debugPrint('❌ Invalid JWT format or malformed token: $e');
-        await clearTokens();
-        return false;
+        // Don't clear tokens on decode errors — the token might still be
+        // valid but have an unexpected format. Keep the user logged in
+        // and let the API server reject it if truly invalid.
+        debugPrint('⚠️ JWT decode error (not clearing tokens): $e');
+        return true;
       }
     } catch (e) {
       debugPrint('❌ Error validating tokens: $e');
