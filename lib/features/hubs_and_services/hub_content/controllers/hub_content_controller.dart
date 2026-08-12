@@ -6,7 +6,6 @@ import '../utils/user_role_manager.dart';
 import '../../legal_education/models/legal_education_models.dart';
 import '../../../../services/permission_service.dart';
 import '../../../../utils/navigation_helper.dart';
-import '../../../../routes/app_routes.dart';
 
 class HubContentController extends GetxController {
   final String hubType;
@@ -1060,20 +1059,9 @@ class HubContentController extends GetxController {
           : PermissionFeature.forumComment;
 
       if (!permissionService.canAccess(feature)) {
-        if (context != null) {
-          NavigationHelper.checkPermissionOrShowUpgrade(context, feature);
-        } else {
-          NavigationHelper.showSafeSnackbar(
-            title: 'Upgrade Required',
-            message: permissionService.getPermissionDeniedMessage(feature),
-            backgroundColor: Colors.orange,
-            duration: const Duration(seconds: 4),
-            mainButton: TextButton(
-              onPressed: () => Get.toNamed(AppRoutes.subscriptionPlans),
-              child:
-                  const Text('Upgrade', style: TextStyle(color: Colors.white)),
-            ),
-          );
+        final ctx = context ?? Get.context;
+        if (ctx != null) {
+          NavigationHelper.checkPermissionOrShowUpgrade(ctx, feature);
         }
         return;
       }

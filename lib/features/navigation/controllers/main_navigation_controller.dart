@@ -6,6 +6,9 @@ class MainNavigationController extends GetxController {
 
   // Change page
   void changePage(int index) {
+    if (Get.isSnackbarOpen) {
+      Get.closeAllSnackbars();
+    }
     currentIndex.value = index;
   }
 
