@@ -187,15 +187,16 @@ class PermissionService extends GetxService {
       permissions?.canReceiveLegalUpdates ?? false;
 
   // ============ Forum Permissions ============
+  // Community Forum is free for all authenticated users (no subscription gate).
 
   /// Check if user can access forum
-  bool get canAccessForum => permissions?.canAccessForum ?? false;
+  bool get canAccessForum => true;
 
   /// Check if user can comment on forum posts
-  bool get canCommentForum => permissions?.canCommentForum ?? false;
+  bool get canCommentForum => true;
 
   /// Check if user can reply to forum posts
-  bool get canReplyForum => permissions?.canReplyForum ?? false;
+  bool get canReplyForum => true;
 
   /// Check if user can access student hub
   bool get canAccessStudentHub {
@@ -367,11 +368,11 @@ class PermissionService extends GetxService {
       case PermissionFeature.legalUpdates:
         return canReceiveLegalUpdates;
       case PermissionFeature.forum:
-        return canAccessForum;
+        return true; // Community forum is free
       case PermissionFeature.forumComment:
-        return canCommentForum;
+        return true; // Community forum is free
       case PermissionFeature.forumReply:
-        return canReplyForum;
+        return true; // Community forum is free
       case PermissionFeature.studentHub:
         return canAccessStudentHub;
       case PermissionFeature.purchaseConsultations:

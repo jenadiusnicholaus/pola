@@ -688,6 +688,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
                             : () async {
                                 await widget.controller.addComment(
                                     widget.content.id,
+                                    context: context,
                                     mentionedUserIds: mentionedUserIds);
                                 if (context.mounted &&
                                     textController.text.isEmpty) {
@@ -931,6 +932,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
                                 ? null
                                 : () => widget.controller.addComment(
                                       widget.content.id,
+                                      context: context,
                                       mentionedUserIds: mentionedUserIds,
                                     ),
                             child: Container(
@@ -1276,6 +1278,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
                     ? null
                     : () => widget.controller.addComment(
                           widget.content.id,
+                          context: context,
                           mentionedUserIds: mentionedUserIds,
                         ),
                 icon: isAdding
@@ -1414,6 +1417,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
                         ? null
                         : () => widget.controller.addComment(
                               widget.content.id,
+                              context: context,
                               mentionedUserIds: mentionedUserIds,
                             ),
                     icon: isAdding
@@ -1554,6 +1558,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
                         ? null
                         : () => widget.controller.addComment(
                               widget.content.id,
+                              context: context,
                               mentionedUserIds: mentionedUserIds,
                             ),
                     icon: isAdding
@@ -1965,6 +1970,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
                                               parentCommentId: parentComment.id,
                                               customText:
                                                   replyController.text.trim(),
+                                              context: context,
                                               mentionedUserIds:
                                                   mentionedUserIds,
                                             );

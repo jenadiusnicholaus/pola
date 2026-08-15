@@ -453,6 +453,18 @@ class _CreditPaymentScreenState extends State<CreditPaymentScreen> {
                 height: 1.5,
               ),
             ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: OutlinedButton(
+                onPressed: () {
+                  _pollTimer?.cancel();
+                  Get.back();
+                },
+                child: const Text('Cancel'),
+              ),
+            ),
           ],
         ),
       ),

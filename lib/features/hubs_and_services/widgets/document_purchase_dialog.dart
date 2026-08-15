@@ -517,6 +517,17 @@ class _DocumentPurchaseDialogState extends State<DocumentPurchaseDialog> {
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () {
+                _pollTimer?.cancel();
+                Get.back();
+              },
+              child: const Text('Cancel'),
+            ),
+          ),
         ],
       ),
     );

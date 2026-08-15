@@ -25,6 +25,12 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_scrollListener);
+    // Comment/upgrade snackbars must not linger on Home
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (Get.isSnackbarOpen) {
+        Get.closeAllSnackbars();
+      }
+    });
   }
 
   @override

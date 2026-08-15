@@ -212,11 +212,6 @@ class SubscriptionCard extends StatelessWidget {
             isExpired ? false : subscription.permissions.canGenerateDocuments,
             isExpired: isExpired,
           ),
-          _buildPermissionChip(
-            'Forum Access',
-            isExpired ? false : subscription.permissions.canAccessForum,
-            isExpired: isExpired,
-          ),
 
           // Upgrade button when expired
           if (isExpired) ...[

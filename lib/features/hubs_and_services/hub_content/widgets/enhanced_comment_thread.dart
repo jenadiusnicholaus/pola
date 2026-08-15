@@ -684,6 +684,7 @@ class _EnhancedCommentThreadState extends State<EnhancedCommentThread> {
                                                   widget.comment.id,
                                               customText:
                                                   replyController.text.trim(),
+                                              context: context,
                                               mentionedUserIds:
                                                   mentionedUserIds,
                                             );
