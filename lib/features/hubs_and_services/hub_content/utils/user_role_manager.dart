@@ -169,8 +169,8 @@ class UserRoleManager {
     // Advocates can create premium content in advocates hub
     if (hasPermission('can_generate_documents')) return true;
 
-    // For now, allow all users to create premium content in community forum
-    // This can be further restricted based on subscription later
+    // For now, allow all users to create premium content in students hub only
+    // Community forum does not support paid posts
     return true;
   }
 
@@ -233,8 +233,8 @@ class UserRoleManager {
         // Legal Education hub - only admins can create payable content
         return isAdmin();
       case 'forum':
-        // Forum - all users can create payable content (monetization)
-        return canCreateContentInHub(hubType);
+        // Community forum posts are always free (no monetization)
+        return false;
       default:
         // No pricing allowed in other hubs
         return false;

@@ -1153,7 +1153,11 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
       description: _descriptionController.text.trim(),
       content: '', // Pass empty string instead of content field
       language: controller.selectedLanguage.value,
-      price: _priceController.text.isNotEmpty ? _priceController.text : '0.00',
+      price: hubType == 'forum'
+          ? '0.00'
+          : (_priceController.text.isNotEmpty
+              ? _priceController.text
+              : '0.00'),
       videoUrl: _videoUrlController.text.trim().isNotEmpty
           ? _videoUrlController.text.trim()
           : null,

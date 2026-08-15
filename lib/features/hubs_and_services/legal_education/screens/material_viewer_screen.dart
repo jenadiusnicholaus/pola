@@ -308,18 +308,7 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
                     },
                   );
           }),
-          // Hide download when can_download is false
-          if (material.canDownload) ...[
-            const SizedBox(height: 20),
-            _buildSideAction(
-              theme,
-              Icons.download_outlined,
-              Icons.download_rounded,
-              false,
-              '${material.downloadsCount}',
-              () => _handleDownload(),
-            ),
-          ],
+          // Download action intentionally hidden for all languages
         ],
       ),
     );

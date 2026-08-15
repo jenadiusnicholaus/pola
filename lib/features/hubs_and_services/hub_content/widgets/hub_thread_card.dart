@@ -6,8 +6,6 @@ import '../utils/mention_parser.dart';
 import 'enhanced_comment_thread.dart';
 import 'mention_text_field.dart';
 import '../../../../utils/navigation_helper.dart';
-import '../../../../services/permission_service.dart';
-import '../../../../routes/app_routes.dart';
 import '../../../profile/services/profile_service.dart';
 
 class HubThreadCard extends StatefulWidget {
@@ -51,67 +49,6 @@ class _HubThreadCardState extends State<HubThreadCard> {
     }
 
     return uniqueUsers.values.toList();
-  }
-
-  bool get _canCommentOnForum {
-    try {
-      return Get.find<PermissionService>()
-          .canAccess(PermissionFeature.forumComment);
-    } catch (_) {
-      return true;
-    }
-  }
-
-  Widget _buildCommentUpgradeBanner(ThemeData theme) {
-    final permissionService = Get.find<PermissionService>();
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Upgrade Required',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: theme.colorScheme.onPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  permissionService
-                      .getPermissionDeniedMessage(PermissionFeature.forumComment),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onPrimary.withOpacity(0.9),
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          TextButton(
-            onPressed: () => Get.toNamed(AppRoutes.subscriptionPlans),
-            style: TextButton.styleFrom(
-              backgroundColor: theme.colorScheme.onPrimary,
-              foregroundColor: theme.colorScheme.primary,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-            child: const Text(
-              'Upgrade',
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   /// Build the current user's avatar for the comment input
@@ -932,9 +869,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
                       ),
                     ),
                   ),
-                  child: !_canCommentOnForum
-                      ? _buildCommentUpgradeBanner(theme)
-                      : Row(
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       // User profile picture
@@ -1265,10 +1200,6 @@ class _HubThreadCardState extends State<HubThreadCard> {
     final textController =
         widget.controller.commentControllers[widget.content.id]!;
     List<int> mentionedUserIds = []; // Track mentioned user IDs
-
-    if (!_canCommentOnForum) {
-      return _buildCommentUpgradeBanner(theme);
-    }
 
     return Container(
       padding: const EdgeInsets.all(16),

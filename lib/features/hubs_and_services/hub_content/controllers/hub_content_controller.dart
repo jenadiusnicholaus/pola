@@ -4,7 +4,6 @@ import '../services/hub_content_service.dart';
 import '../models/hub_content_models.dart';
 import '../utils/user_role_manager.dart';
 import '../../legal_education/models/legal_education_models.dart';
-import '../../../../services/permission_service.dart';
 import '../../../../utils/navigation_helper.dart';
 
 class HubContentController extends GetxController {
@@ -1051,24 +1050,7 @@ class HubContentController extends GetxController {
       String? customText,
       BuildContext? context,
       List<int>? mentionedUserIds}) async {
-    // Check forum comment/reply permission
-    try {
-      final permissionService = Get.find<PermissionService>();
-      final feature = parentCommentId != null
-          ? PermissionFeature.forumReply
-          : PermissionFeature.forumComment;
-
-      if (!permissionService.canAccess(feature)) {
-        final ctx = context ?? Get.context;
-        if (ctx != null) {
-          NavigationHelper.checkPermissionOrShowUpgrade(ctx, feature);
-        }
-        return;
-      }
-    } catch (e) {
-      debugPrint('⚠️ Permission check failed: $e');
-    }
-
+    // Community forum commenting is free — no subscription gate.
     try {
       initializeCommentController(contentId);
       final controller = commentControllers[contentId]!;

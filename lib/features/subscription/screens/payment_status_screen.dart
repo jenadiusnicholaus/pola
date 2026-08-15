@@ -143,16 +143,32 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen>
     super.dispose();
   }
 
+  void _cancelAndGoBack() {
+    _pollTimer?.cancel();
+    _animationController.stop();
+    Get.back();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return PopScope(
-      canPop: status != 'pending',
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          _pollTimer?.cancel();
+          _animationController.stop();
+        }
+      },
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Payment Status'),
-          automaticallyImplyLeading: status != 'pending',
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            tooltip: 'Cancel',
+            onPressed: _cancelAndGoBack,
+          ),
           elevation: 0,
         ),
         body: Center(
@@ -305,7 +321,21 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen>
 
   Widget _buildActionButtons(ThemeData theme) {
     if (status == 'pending') {
-      return const SizedBox.shrink();
+      return SizedBox(
+        width: double.infinity,
+        height: 50,
+        child: OutlinedButton.icon(
+          onPressed: _cancelAndGoBack,
+          icon: const Icon(Icons.close),
+          label: const Text('Cancel'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: theme.colorScheme.onSurface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      );
     }
 
     if (status == 'success') {
