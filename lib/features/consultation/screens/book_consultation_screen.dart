@@ -32,6 +32,7 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
   bool _isLoading = false;
   String? _errorMessage;
   PhysicalBookingResponse? _bookingResponse;
+  bool _cancelPolling = false;
 
   // Payment provider selection
   String _selectedProvider = 'Mpesa';
@@ -219,16 +220,19 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
   /// Poll for payment confirmation
   Future<void> _pollForConfirmation() async {
     if (_bookingResponse == null) return;
+    _cancelPolling = false;
 
     for (int i = 0; i < 60; i++) {
       // Poll for 5 minutes (60 x 5s)
       await Future.delayed(const Duration(seconds: 5));
 
-      if (!mounted) return;
+      if (!mounted || _cancelPolling) return;
 
       try {
         final status =
             await _service.checkBookingStatus(_bookingResponse!.booking!.id);
+
+        if (_cancelPolling || !mounted) return;
 
         if (status == 'confirmed') {
           setState(() => _currentStep = _BookingStep.success);
@@ -246,7 +250,7 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
     }
 
     // Timeout
-    if (mounted) {
+    if (mounted && !_cancelPolling) {
       setState(() {
         _errorMessage = 'Payment timeout. Check My Bookings for status.';
         _currentStep = _BookingStep.payment;
@@ -562,6 +566,17 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
                     ),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: 32),
+            TextButton(
+              onPressed: () {
+                _cancelPolling = true;
+                setState(() => _currentStep = _BookingStep.payment);
+              },
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.grey.shade600),
               ),
             ),
           ],

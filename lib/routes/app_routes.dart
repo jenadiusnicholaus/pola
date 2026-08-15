@@ -25,6 +25,9 @@ import '../features/calling_booking/screens/credit_payment_screen.dart';
 import '../features/calling_booking/screens/buy_credits_screen.dart';
 import '../features/doc_templates/screens/templates_list_screen.dart';
 import '../features/doc_templates/screens/generated_documents_screen.dart';
+import '../features/statutes/screens/statute_categories_screen.dart';
+import '../features/statutes/screens/statutes_list_screen.dart';
+import '../features/statutes/screens/statute_pdf_screen.dart';
 import '../features/nearbylawyers/screens/nearby_lawyers_screen.dart';
 import '../features/nearbylawyers/screens/lawyers_map_screen.dart';
 import '../features/auth/screens/change_role_screen.dart';
@@ -70,6 +73,9 @@ class AppRoutes {
   static const String buyCredits = '/buy-credits';
   static const String templates = '/templates';
   static const String myDocuments = '/my-documents';
+  static const String statutes = '/statutes';
+  static const String statutesLaws = '/statutes/laws';
+  static const String statutesPdf = '/statutes/pdf';
   static const String nearbyLawyers = '/nearby-lawyers';
   static const String lawyersMap = '/lawyers-map';
   static const String changeRole = '/change-role';
@@ -212,6 +218,18 @@ class AppRoutes {
     GetPage(
       name: myDocuments,
       page: () => const GeneratedDocumentsScreen(),
+    ),
+    GetPage(
+      name: statutes,
+      page: () => const StatuteCategoriesScreen(),
+    ),
+    GetPage(
+      name: statutesLaws,
+      page: () => const StatutesListScreen(),
+    ),
+    GetPage(
+      name: statutesPdf,
+      page: () => const StatutePdfScreen(),
     ),
     GetPage(
       name: nearbyLawyers,
