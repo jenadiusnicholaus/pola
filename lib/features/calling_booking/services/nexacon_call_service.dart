@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:nexacon_sdk/nexacon_sdk.dart';
+import 'package:nexacon_calls/nexacon_calls.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:get/get.dart';
 import '../../../config/nexacon_config.dart';

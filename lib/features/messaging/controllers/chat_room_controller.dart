@@ -57,7 +57,8 @@ class ChatRoomController extends GetxController {
     return 'user_nxid';
   }
 
-  ChatRoomController({required this.contactId, required this.contactName});
+  ChatRoomController({required String contactId, required this.contactName})
+      : contactId = PhoneFormatter.formatAsNxId(contactId);
 
   @override
   void onInit() {

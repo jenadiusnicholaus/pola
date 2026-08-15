@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/call_controller.dart';
 import '../models/consultant_models.dart';
 import '../services/nexacon_call_service.dart';
+import 'buy_credits_screen.dart';
 import '../../../services/token_storage_service.dart';
 
 class CallScreen extends StatefulWidget {
@@ -413,6 +414,33 @@ class _CallScreenState extends State<CallScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
+              if (isCredits) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _kAccent,
+                      foregroundColor: const Color(0xFF1B2B34),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () {
+                      Get.back();
+                      Get.to(() => const BuyCreditsScreen());
+                    },
+                    child: const Text(
+                      'Buy Credits',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               TextButton(
                 onPressed: () => Get.back(),
                 child: const Text(
