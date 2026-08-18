@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'dart:convert';
 import 'dart:async';
@@ -18,9 +19,55 @@ class TokenStorageService extends GetxController {
 
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
     aOptions: AndroidOptions(
-      encryptedSharedPreferences: true,
+      encryptedSharedPreferences: !kDebugMode,
     ),
   );
+
+  // GetStorage fallback for debug/emulator builds where flutter_secure_storage
+  // may fail due to broken Android Keystore. In release builds, only
+  // flutter_secure_storage is used.
+  static const String _gsNamespace = 'auth_tokens';
+  GetStorage? _gs;
+
+  /// Write a key-value pair using flutter_secure_storage, falling back to
+  /// GetStorage in debug mode if secure storage fails.
+  Future<void> _write(String key, String value) async {
+    _gs ??= GetStorage(_gsNamespace);
+    await _gs!.write(key, value);
+    try {
+      await _secureStorage.write(key: key, value: value);
+    } catch (e) {
+      debugPrint('⚠️ SecureStorage write failed for "$key": $e');
+    }
+  }
+
+  /// Read a value by key from flutter_secure_storage, falling back to
+  /// GetStorage in debug mode if secure storage fails.
+  Future<String?> _read(String key) async {
+    try {
+      final value = await _secureStorage.read(key: key);
+      if (value != null) return value;
+    } catch (e) {
+      debugPrint(
+          '⚠️ SecureStorage read failed for "$key", falling back to GetStorage: $e');
+    }
+    // Fallback
+    _gs ??= GetStorage(_gsNamespace);
+    return _gs!.read<String>(key);
+  }
+
+  /// Delete a key from both storage backends.
+  Future<void> _delete(String key) async {
+    try {
+      await _secureStorage.delete(key: key);
+    } catch (e) {
+      debugPrint('⚠️ SecureStorage delete failed for "$key": $e');
+    }
+    _gs ??= GetStorage(_gsNamespace);
+    if (_gs!.hasData(key)) {
+      await _gs!.remove(key);
+    }
+  }
 
   // Observable variables for reactive UI
   final RxBool _isLoggedIn = false.obs;
@@ -62,9 +109,9 @@ class TokenStorageService extends GetxController {
     try {
       debugPrint('🔐 Initializing token storage from secure storage...');
 
-      final accessToken = await _secureStorage.read(key: _accessTokenKey);
-      final refreshToken = await _secureStorage.read(key: _refreshTokenKey);
-      final userDataString = await _secureStorage.read(key: _userDataKey);
+      final accessToken = await _read(_accessTokenKey);
+      final refreshToken = await _read(_refreshTokenKey);
+      final userDataString = await _read(_userDataKey);
 
       if (accessToken != null && refreshToken != null) {
         _currentAccessToken.value = accessToken;
@@ -113,19 +160,18 @@ class TokenStorageService extends GetxController {
   }) async {
     try {
       // Store tokens
-      await _secureStorage.write(key: _accessTokenKey, value: accessToken);
-      await _secureStorage.write(key: _refreshTokenKey, value: refreshToken);
+      await _write(_accessTokenKey, accessToken);
+      await _write(_refreshTokenKey, refreshToken);
 
       // Store user data if provided
       if (userData != null) {
-        await _secureStorage.write(
-            key: _userDataKey, value: jsonEncode(userData));
+        await _write(_userDataKey, jsonEncode(userData));
         _userData.value = userData;
       }
 
       // Store current timestamp for expiration tracking
       final currentTime = DateTime.now().millisecondsSinceEpoch.toString();
-      await _secureStorage.write(key: _tokenExpirationKey, value: currentTime);
+      await _write(_tokenExpirationKey, currentTime);
 
       // Update reactive variables
       _currentAccessToken.value = accessToken;
@@ -144,7 +190,7 @@ class TokenStorageService extends GetxController {
   /// Update only the access token (used during token refresh)
   Future<void> updateAccessToken(String newAccessToken) async {
     try {
-      await _secureStorage.write(key: _accessTokenKey, value: newAccessToken);
+      await _write(_accessTokenKey, newAccessToken);
       _currentAccessToken.value = newAccessToken;
 
       debugPrint('🔄 Access token updated successfully');
@@ -261,13 +307,13 @@ class TokenStorageService extends GetxController {
   /// Clear all stored tokens and user data
   Future<void> clearTokens() async {
     try {
-      await _secureStorage.delete(key: _accessTokenKey);
-      await _secureStorage.delete(key: _refreshTokenKey);
-      await _secureStorage.delete(key: _tokenExpirationKey);
-      await _secureStorage.delete(key: _userDataKey);
-      await _secureStorage.delete(key: _nxTokenKey);
-      await _secureStorage.delete(key: _nxJidKey);
-      await _secureStorage.delete(key: _nxWsUrlKey);
+      await _delete(_accessTokenKey);
+      await _delete(_refreshTokenKey);
+      await _delete(_tokenExpirationKey);
+      await _delete(_userDataKey);
+      await _delete(_nxTokenKey);
+      await _delete(_nxJidKey);
+      await _delete(_nxWsUrlKey);
 
       // Clear reactive variables
       _currentAccessToken.value = '';
@@ -418,10 +464,7 @@ class TokenStorageService extends GetxController {
   Future<void> storeUserProfile(Map<String, dynamic> profileData) async {
     try {
       const String profileKey = 'user_profile';
-      await _secureStorage.write(
-        key: profileKey,
-        value: jsonEncode(profileData),
-      );
+      await _write(profileKey, jsonEncode(profileData));
       debugPrint('✅ User profile stored successfully');
     } catch (e) {
       debugPrint('❌ Error storing user profile: $e');
@@ -433,7 +476,7 @@ class TokenStorageService extends GetxController {
   Future<Map<String, dynamic>?> getUserProfile() async {
     try {
       const String profileKey = 'user_profile';
-      final profileString = await _secureStorage.read(key: profileKey);
+      final profileString = await _read(profileKey);
 
       if (profileString != null) {
         return jsonDecode(profileString) as Map<String, dynamic>;
@@ -449,7 +492,7 @@ class TokenStorageService extends GetxController {
   Future<void> clearUserProfile() async {
     try {
       const String profileKey = 'user_profile';
-      await _secureStorage.delete(key: profileKey);
+      await _delete(profileKey);
       debugPrint('🧹 User profile cleared');
     } catch (e) {
       debugPrint('❌ Error clearing user profile: $e');
@@ -459,13 +502,13 @@ class TokenStorageService extends GetxController {
   /// Clear stored tokens from secure storage (internal method)
   Future<void> _clearStoredTokens() async {
     try {
-      await _secureStorage.delete(key: _accessTokenKey);
-      await _secureStorage.delete(key: _refreshTokenKey);
-      await _secureStorage.delete(key: _userDataKey);
-      await _secureStorage.delete(key: _tokenExpirationKey);
-      await _secureStorage.delete(key: _nxTokenKey);
-      await _secureStorage.delete(key: _nxJidKey);
-      await _secureStorage.delete(key: _nxWsUrlKey);
+      await _delete(_accessTokenKey);
+      await _delete(_refreshTokenKey);
+      await _delete(_userDataKey);
+      await _delete(_tokenExpirationKey);
+      await _delete(_nxTokenKey);
+      await _delete(_nxJidKey);
+      await _delete(_nxWsUrlKey);
 
       // Clear user profile as well
       await clearUserProfile();
@@ -490,12 +533,11 @@ class TokenStorageService extends GetxController {
     String? refreshToken,
   }) async {
     try {
-      await _secureStorage.write(key: _nxTokenKey, value: token);
-      await _secureStorage.write(key: _nxJidKey, value: jid);
-      await _secureStorage.write(key: _nxWsUrlKey, value: wsUrl);
+      await _write(_nxTokenKey, token);
+      await _write(_nxJidKey, jid);
+      await _write(_nxWsUrlKey, wsUrl);
       if (refreshToken != null && refreshToken.isNotEmpty) {
-        await _secureStorage.write(
-            key: _nxRefreshTokenKey, value: refreshToken);
+        await _write(_nxRefreshTokenKey, refreshToken);
       }
       debugPrint('✅ NX token data stored successfully');
     } catch (e) {
@@ -507,7 +549,7 @@ class TokenStorageService extends GetxController {
   /// Get stored NX refresh token
   Future<String?> getNxRefreshToken() async {
     try {
-      return await _secureStorage.read(key: _nxRefreshTokenKey);
+      return await _read(_nxRefreshTokenKey);
     } catch (e) {
       debugPrint('❌ Error getting NX refresh token: $e');
       return null;
@@ -517,7 +559,7 @@ class TokenStorageService extends GetxController {
   /// Get stored NX token
   Future<String?> getNxToken() async {
     try {
-      return await _secureStorage.read(key: _nxTokenKey);
+      return await _read(_nxTokenKey);
     } catch (e) {
       debugPrint('❌ Error getting NX token: $e');
       return null;
@@ -527,7 +569,7 @@ class TokenStorageService extends GetxController {
   /// Get stored NX JID
   Future<String?> getNxJid() async {
     try {
-      return await _secureStorage.read(key: _nxJidKey);
+      return await _read(_nxJidKey);
     } catch (e) {
       debugPrint('❌ Error getting NX JID: $e');
       return null;
@@ -537,7 +579,7 @@ class TokenStorageService extends GetxController {
   /// Get stored NX WebSocket URL
   Future<String?> getNxWsUrl() async {
     try {
-      return await _secureStorage.read(key: _nxWsUrlKey);
+      return await _read(_nxWsUrlKey);
     } catch (e) {
       debugPrint('❌ Error getting NX WebSocket URL: $e');
       return null;
@@ -555,10 +597,10 @@ class TokenStorageService extends GetxController {
   /// Clear stored NX token data (forces fresh credentials on next init)
   Future<void> clearNxTokenData() async {
     try {
-      await _secureStorage.delete(key: _nxTokenKey);
-      await _secureStorage.delete(key: _nxJidKey);
-      await _secureStorage.delete(key: _nxWsUrlKey);
-      await _secureStorage.delete(key: _nxRefreshTokenKey);
+      await _delete(_nxTokenKey);
+      await _delete(_nxJidKey);
+      await _delete(_nxWsUrlKey);
+      await _delete(_nxRefreshTokenKey);
       debugPrint('✅ NX token data cleared');
     } catch (e) {
       debugPrint('❌ Error clearing NX token data: $e');
@@ -685,10 +727,7 @@ class TokenStorageService extends GetxController {
       _userData.value = profileData;
 
       // Store in both locations for backward compatibility
-      await _secureStorage.write(
-        key: _userDataKey,
-        value: jsonEncode(profileData),
-      );
+      await _write(_userDataKey, jsonEncode(profileData));
 
       await storeUserProfile(profileData);
 

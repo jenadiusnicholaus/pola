@@ -11,7 +11,8 @@ class StatuteCategoriesScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (controller.categories.isEmpty && !controller.isLoadingCategories.value) {
+      if (controller.categories.length == 0 &&
+          !controller.isLoadingCategories.value) {
         controller.loadCategories();
       }
     });
@@ -23,11 +24,12 @@ class StatuteCategoriesScreen extends StatelessWidget {
             : 'Tanzania Statutes & Laws'),
       ),
       body: Obx(() {
-        if (controller.isLoadingCategories.value && controller.categories.isEmpty) {
+        if (controller.isLoadingCategories.value &&
+            controller.categories.length == 0) {
           return const Center(child: CircularProgressIndicator());
         }
         if (controller.categoriesError.value.isNotEmpty &&
-            controller.categories.isEmpty) {
+            controller.categories.length == 0) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -45,7 +47,7 @@ class StatuteCategoriesScreen extends StatelessWidget {
             ),
           );
         }
-        if (controller.categories.isEmpty) {
+        if (controller.categories.length == 0) {
           return Center(
             child: Text(
               controller.isSwahili
@@ -69,7 +71,7 @@ class StatuteCategoriesScreen extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                   side: BorderSide(
-                    color: theme.colorScheme.outline.withOpacity(0.2),
+                    color: theme.colorScheme.outline.withValues(alpha: 0.2),
                   ),
                 ),
                 child: ListTile(
@@ -77,7 +79,7 @@ class StatuteCategoriesScreen extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   leading: CircleAvatar(
                     backgroundColor:
-                        theme.colorScheme.primary.withOpacity(0.12),
+                        theme.colorScheme.primary.withValues(alpha: 0.12),
                     child: Icon(Icons.gavel, color: theme.colorScheme.primary),
                   ),
                   title: Text(
@@ -85,7 +87,8 @@ class StatuteCategoriesScreen extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
-                    cat.localizedDescription(swahili: controller.isSwahili)
+                    cat
+                            .localizedDescription(swahili: controller.isSwahili)
                             .isEmpty
                         ? (controller.isSwahili
                             ? '${cat.statutesCount} sheria'

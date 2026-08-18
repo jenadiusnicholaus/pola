@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/notification_model.dart';
 import '../services/notification_service.dart';
+import '../../../services/token_storage_service.dart';
 
 /// Controller for managing notification state
 class NotificationController extends GetxController {
   final NotificationService _service = Get.find<NotificationService>();
+  final TokenStorageService _tokenStorage = Get.find<TokenStorageService>();
 
   // Observable state
   final List<NotificationModel> _notifications = [];
@@ -48,6 +50,7 @@ class NotificationController extends GetxController {
   void _startAutoRefresh() {
     _refreshTimer?.cancel();
     _refreshTimer = Timer.periodic(_refreshInterval, (_) {
+      if (!_tokenStorage.isLoggedIn) return;
       refreshUnreadCount();
     });
   }
@@ -55,6 +58,10 @@ class NotificationController extends GetxController {
   /// Refresh all notifications from server
   Future<void> refreshNotifications() async {
     if (isLoading.value) return;
+    if (!_tokenStorage.isLoggedIn) {
+      debugPrint('🔔 Skipping notifications refresh — user not logged in');
+      return;
+    }
 
     isLoading.value = true;
     error.value = '';
@@ -91,6 +98,10 @@ class NotificationController extends GetxController {
   /// Load more notifications (pagination)
   Future<void> loadMoreNotifications() async {
     if (isLoadingMore.value || !hasMoreData.value) return;
+    if (!_tokenStorage.isLoggedIn) {
+      debugPrint('🔔 Skipping load more notifications — user not logged in');
+      return;
+    }
 
     isLoadingMore.value = true;
 
@@ -122,6 +133,10 @@ class NotificationController extends GetxController {
 
   /// Refresh only the unread count (lightweight for badge updates)
   Future<void> refreshUnreadCount() async {
+    if (!_tokenStorage.isLoggedIn) {
+      debugPrint('🔔 Skipping unread count refresh — user not logged in');
+      return;
+    }
     try {
       unreadCount.value = await _service.getUnreadCount();
     } catch (e) {

@@ -5,8 +5,6 @@ import 'package:get/get.dart';
 import 'chat_room_screen.dart';
 import '../services/nexacon_messaging_service.dart';
 import '../models/message.dart';
-import '../../calling_booking/controllers/consultant_controller.dart';
-import '../../calling_booking/models/consultant_models.dart';
 import '../../../utils/phone_formatter.dart';
 import '../../../services/api_service.dart';
 
@@ -21,15 +19,8 @@ class MessagesInboxScreen extends StatefulWidget {
 
 class _MessagesInboxScreenState extends State<MessagesInboxScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  final TextEditingController _searchController = TextEditingController();
-  bool _isSearching = false;
   final NexaconMessagingService _messagingService =
       Get.find<NexaconMessagingService>();
-  final ConsultantController _consultantController = Get.put(
-    ConsultantController(),
-    tag: 'messaging_inbox',
-  );
 
   List<Map<String, dynamic>> _contacts = [];
   bool _isLoadingContacts = false;
@@ -39,22 +30,10 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
     debugPrint('📨 MessagesInboxScreen: initState, calling _loadAllMessages');
     _loadAllMessages();
-    debugPrint('📨 MessagesInboxScreen: calling fetchConsultants for fallback');
-    _consultantController.fetchConsultants();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  /// Whether a message body should appear in the inbox preview.
-  /// JSON with a non-chat 'type' (call_invitation, call_response, webrtc, etc.) is hidden.
   bool _isDisplayableMessage(String body) {
     if (body.isEmpty) return false;
 
@@ -330,20 +309,9 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
       return const Center(child: CircularProgressIndicator());
     }
 
-    final query = _searchController.text.toLowerCase();
+    final filtered = _contacts.toList();
 
-    // Filter contacts based on search query
-    final filtered = _contacts.where((contact) {
-      if (filter == 'groups') return false; // no groups for now
-      final name = (contact['name'] ?? '').toString().toLowerCase();
-      final nxid = (contact['nxid'] ?? '').toString().toLowerCase();
-      if (query.isNotEmpty) {
-        return name.contains(query) || nxid.contains(query);
-      }
-      return true;
-    }).toList();
-
-    debugPrint('📨 _buildMessagesList: filtered=${filtered.length} contacts');
+    debugPrint('📨 _buildMessagesList: ${filtered.length} contacts');
 
     if (filtered.isEmpty) {
       return _buildEmptyState();
@@ -521,180 +489,14 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
           Text(
             'Start a conversation with colleagues\nand fellow students',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              color: theme.colorScheme.onSurface.withValues(
+                alpha: 0.5,
+              ),
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 32),
-          ElevatedButton.icon(
-            onPressed: _showComposeDialog,
-            icon: const Icon(Icons.chat),
-            label: const Text('Start Conversation'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: theme.colorScheme.onPrimary,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-          ),
         ],
       ),
-    );
-  }
-
-  void _toggleSearch() {
-    setState(() {
-      _isSearching = !_isSearching;
-      if (!_isSearching) {
-        _searchController.clear();
-      }
-    });
-  }
-
-  void _showComposeDialog() {
-    final theme = Theme.of(context);
-
-    Get.bottomSheet(
-      Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(20),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    'Select Contact',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => Get.back(),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-            ),
-
-            // Search
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search contacts...',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  fillColor: theme.colorScheme.surfaceContainerHighest,
-                  filled: true,
-                ),
-                onChanged: (value) => setState(() {}),
-              ),
-            ),
-
-            // Consultants List
-            Expanded(
-              child: Obx(() {
-                final consultants = _consultantController.consultants;
-                final isLoading = _consultantController.isLoading.value;
-
-                if (isLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (consultants.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.person_outline,
-                          size: 64,
-                          color: theme.colorScheme.primary,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No lawyers available',
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Check back later for available lawyers.',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(
-                              alpha: 0.7,
-                            ),
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  itemCount: consultants.length,
-                  itemBuilder: (context, index) {
-                    final consultant = consultants[index];
-                    final name = consultant.userDetails.fullName;
-                    final phone = consultant.userDetails.phoneNumber ?? '';
-                    final avatar = consultant.userDetails.profilePicture;
-
-                    // Filter by search
-                    if (_searchController.text.isNotEmpty &&
-                        !name.toLowerCase().contains(
-                              _searchController.text.toLowerCase(),
-                            ) &&
-                        !phone.contains(_searchController.text)) {
-                      return const SizedBox.shrink();
-                    }
-
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: theme.colorScheme.primaryContainer,
-                        child: avatar != null
-                            ? ClipOval(
-                                child: Image.network(
-                                  avatar,
-                                  width: 40,
-                                  height: 40,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stack) =>
-                                      const Icon(Icons.person),
-                                ),
-                              )
-                            : const Icon(Icons.person),
-                      ),
-                      title: Text(name),
-                      subtitle: Text(phone),
-                      trailing: const Icon(Icons.message),
-                      onTap: () => _handleMessageConsultant(consultant),
-                    );
-                  },
-                );
-              }),
-            ),
-          ],
-        ),
-      ),
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
     );
   }
 
@@ -722,53 +524,6 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
     } catch (e) {
       debugPrint('❌ Error opening chat: $e');
       Get.snackbar('Error', 'Could not open chat. Please try again.');
-    }
-  }
-
-  Future<void> _handleMessageConsultant(Consultant consultant) async {
-    Get.back();
-    Get.dialog(
-      const Center(child: CircularProgressIndicator()),
-      barrierDismissible: false,
-    );
-
-    try {
-      final rawPhone = consultant.userDetails.phoneNumber ?? '';
-      if (rawPhone.isEmpty) {
-        Get.back();
-        Get.snackbar(
-          'Cannot Message',
-          'This consultant has no phone number registered.',
-        );
-        return;
-      }
-
-      final nxId = PhoneFormatter.formatAsNxId(rawPhone);
-      final contactName = consultant.userDetails.fullName;
-      final contactAvatar = consultant.userDetails.profilePicture;
-
-      debugPrint('📨 Messaging consultant: $contactName ($nxId)');
-
-      // Ensure messaging is connected
-      if (!_messagingService.isConnected.value) {
-        await _messagingService.initializeConnection();
-      }
-
-      // Note: Contact management not yet implemented in nexacon_messaging
-      // The contact will be added automatically when first message is sent
-
-      Get.back();
-      Get.to(
-        () => ChatRoomScreen(
-          contactId: nxId,
-          contactName: contactName,
-          contactAvatar: contactAvatar,
-        ),
-      );
-    } catch (e) {
-      Get.back();
-      debugPrint('❌ Error starting chat: $e');
-      Get.snackbar('Error', 'Could not start chat. Please try again.');
     }
   }
 }

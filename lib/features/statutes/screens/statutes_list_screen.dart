@@ -11,8 +11,7 @@ class StatutesListScreen extends StatelessWidget {
     final args = Get.arguments;
     if (args is Map) {
       controller.selectedCategoryId = args['categoryId'] as int?;
-      controller.selectedCategoryName =
-          (args['categoryName'] ?? '').toString();
+      controller.selectedCategoryName = (args['categoryName'] ?? '').toString();
     }
     final theme = Theme.of(context);
     final scrollController = ScrollController();
@@ -25,7 +24,7 @@ class StatutesListScreen extends StatelessWidget {
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (controller.laws.isEmpty && !controller.isLoadingLaws.value) {
+      if (controller.laws.length == 0 && !controller.isLoadingLaws.value) {
         controller.loadLaws(refresh: true);
       }
     });
@@ -37,10 +36,11 @@ class StatutesListScreen extends StatelessWidget {
             : controller.selectedCategoryName),
       ),
       body: Obx(() {
-        if (controller.isLoadingLaws.value && controller.laws.isEmpty) {
+        if (controller.isLoadingLaws.value && controller.laws.length == 0) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (controller.lawsError.value.isNotEmpty && controller.laws.isEmpty) {
+        if (controller.lawsError.value.isNotEmpty &&
+            controller.laws.length == 0) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -57,7 +57,7 @@ class StatutesListScreen extends StatelessWidget {
             ),
           );
         }
-        if (controller.laws.isEmpty) {
+        if (controller.laws.length == 0) {
           return Center(
             child: Text(
               controller.isSwahili
@@ -88,14 +88,14 @@ class StatutesListScreen extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                   side: BorderSide(
-                    color: theme.colorScheme.outline.withOpacity(0.2),
+                    color: theme.colorScheme.outline.withValues(alpha: 0.2),
                   ),
                 ),
                 child: ListTile(
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   leading: CircleAvatar(
-                    backgroundColor: Colors.red.withOpacity(0.1),
+                    backgroundColor: Colors.red.withValues(alpha: 0.1),
                     child: const Icon(Icons.picture_as_pdf, color: Colors.red),
                   ),
                   title: Text(
@@ -103,7 +103,8 @@ class StatutesListScreen extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
-                    law.localizedDescription(swahili: controller.isSwahili)
+                    law
+                            .localizedDescription(swahili: controller.isSwahili)
                             .isEmpty
                         ? '${law.fileSizeMb} MB'
                         : law.localizedDescription(

@@ -31,7 +31,7 @@ class StatutePdfScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: PDF(
+      body: const PDF(
         enableSwipe: true,
         swipeHorizontal: false,
         autoSpacing: true,
@@ -62,7 +62,8 @@ class StatutePdfScreen extends StatelessWidget {
                   onPressed: () async {
                     final uri = Uri.tryParse(law.fileUrl);
                     if (uri != null) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      await launchUrl(uri,
+                          mode: LaunchMode.externalApplication);
                     }
                   },
                   child: const Text('Open in browser'),

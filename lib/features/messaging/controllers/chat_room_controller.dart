@@ -546,9 +546,41 @@ class ChatRoomController extends GetxController {
     }
   }
 
+  /// Detects whether the given text contains a phone number.
+  /// Matches:
+  /// - International: +255XXXXXXXXX, 255XXXXXXXXX
+  /// - Local: 0XXXXXXXXX
+  /// - Generic: 7+ consecutive digits (with optional + prefix)
+  bool _containsPhoneNumber(String text) {
+    // Strip spaces and dashes to catch formatted numbers like "0712-345-678"
+    final cleaned = text.replaceAll(RegExp(r'[\s\-]'), '');
+
+    // Tanzanian international format: +255 / 255 followed by 9 digits
+    if (RegExp(r'\+?255\d{9}').hasMatch(cleaned)) return true;
+
+    // Tanzanian local format: 0 followed by 9 digits
+    if (RegExp(r'0\d{9}').hasMatch(cleaned)) return true;
+
+    // Generic: 7+ consecutive digits with optional + prefix
+    if (RegExp(r'\+?\d{7,}').hasMatch(cleaned)) return true;
+
+    return false;
+  }
+
   void sendMessage() async {
     final content = messageController.text.trim();
     if (content.isEmpty) return;
+
+    if (_containsPhoneNumber(content)) {
+      ScaffoldMessenger.of(Get.context!).showSnackBar(
+        const SnackBar(
+          content: Text('Phone numbers are not allowed in chat messages.'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
 
     try {
       await _messagingService.ensureInitialized();

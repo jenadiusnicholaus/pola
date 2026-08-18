@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../controllers/chat_room_controller.dart';
 import '../models/message.dart';
@@ -434,6 +435,9 @@ class ChatRoomScreen extends StatelessWidget {
                   vertical: 12,
                 ),
               ),
+              inputFormatters: [
+                _PhoneNumberBlockFormatter(),
+              ],
               onChanged: controller.onTyping,
             ),
           ),
@@ -519,6 +523,46 @@ class _TypingDotState extends State<_TypingDot>
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Strips phone-number-like sequences from the input as the user types.
+/// Removes 7+ consecutive digits (with optional + prefix) and Tanzanian
+/// formats (+255XXXXXXXXX, 0XXXXXXXXX) to prevent sharing phone numbers.
+class _PhoneNumberBlockFormatter extends TextInputFormatter {
+  static final _phoneRegex = RegExp(r'\+?\d{7,}');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final cleaned = newValue.text.replaceAll(_phoneRegex, '');
+    // If nothing changed, return as-is to preserve cursor position
+    if (cleaned == newValue.text) return newValue;
+
+    final lengthDiff = newValue.text.length - cleaned.length;
+    final newSelection = TextSelection.collapsed(
+      offset:
+          (newValue.selection.baseOffset - lengthDiff).clamp(0, cleaned.length),
+    );
+
+    // Defer the snackbar to avoid blocking the frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ScaffoldMessenger.of(Get.context!).showSnackBar(
+        const SnackBar(
+          content: Text('Phone numbers are not allowed in chat.'),
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    });
+
+    return TextEditingValue(
+      text: cleaned,
+      selection: newSelection,
     );
   }
 }

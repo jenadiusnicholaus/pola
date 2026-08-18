@@ -31,13 +31,13 @@ class StatutesController extends GetxController {
   Future<void> loadCategories({bool refresh = true}) async {
     if (refresh) {
       categoryPage.value = 1;
-      categories.clear();
+      categories.value = [];
     }
     isLoadingCategories.value = true;
     categoriesError.value = '';
     try {
       final result = await _service.fetchCategories(page: categoryPage.value);
-      categories.assignAll(result.items);
+      categories.value = result.items;
     } catch (e) {
       categoriesError.value = e.toString();
     } finally {
@@ -49,7 +49,7 @@ class StatutesController extends GetxController {
     selectedCategoryId = category.id;
     selectedCategoryName = category.localizedName(swahili: isSwahili);
     lawPage.value = 1;
-    laws.clear();
+    laws.value = [];
     await loadLaws(refresh: true);
     Get.toNamed('/statutes/laws', arguments: {
       'categoryId': category.id,
@@ -65,7 +65,7 @@ class StatutesController extends GetxController {
     } else {
       if (refresh) {
         lawPage.value = 1;
-        laws.clear();
+        laws.value = [];
       }
       isLoadingLaws.value = true;
       lawsError.value = '';
@@ -79,7 +79,7 @@ class StatutesController extends GetxController {
       if (loadMore) {
         laws.addAll(result.items);
       } else {
-        laws.assignAll(result.items);
+        laws.value = result.items;
       }
       hasMoreLaws.value = result.hasMore;
       lawsCount.value = result.count;

@@ -63,14 +63,17 @@ class HomeController extends GetxController {
   /// Check device status — if another device took over, force logout to login.
   /// Otherwise if OTP/takeover is needed, open verification.
   Future<void> _checkDeviceStatus() async {
+    if (!_tokenStorage.isLoggedIn) {
+      debugPrint('🔍 Skipping device status check — user not logged in');
+      return;
+    }
     try {
       debugPrint('🔍 Checking device status from HomeController...');
       final deviceService = Get.find<DeviceRegistrationService>();
       final checkResult = await deviceService.checkAndHandleDevice();
 
       if (checkResult.wasReplacedByAnotherDevice) {
-        debugPrint(
-            '📱 Device replaced — forcing logout to login from home');
+        debugPrint('📱 Device replaced — forcing logout to login from home');
         await _authService.forceLogoutToLogin(
           message: checkResult.message.isNotEmpty
               ? checkResult.message

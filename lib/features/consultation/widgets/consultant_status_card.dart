@@ -24,8 +24,10 @@ class ConsultantStatusCard extends StatelessWidget {
       final eligibility = controller.eligibility;
       if (eligibility == null) return const SizedBox.shrink();
 
-      // If user is already a consultant or has a pending application
-      if (eligibility.isConsultant || eligibility.status != 'none') {
+      // If user is already a consultant or has a pending/rejected application.
+      // Hide on API error states (e.g. 401) so users don't see raw error text.
+      if (eligibility.status != 'error' &&
+          (eligibility.isConsultant || eligibility.status != 'none')) {
         return _buildStatusCard(context, eligibility);
       }
 
@@ -38,7 +40,8 @@ class ConsultantStatusCard extends StatelessWidget {
     });
   }
 
-  Widget _buildStatusCard(BuildContext context, ConsultationEligibility eligibility) {
+  Widget _buildStatusCard(
+      BuildContext context, ConsultationEligibility eligibility) {
     final theme = Theme.of(context);
     Color statusColor = Colors.grey;
     IconData statusIcon = Icons.info_outline;
@@ -70,7 +73,8 @@ class ConsultantStatusCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Text(
                   'Consultant Status',
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -102,7 +106,8 @@ class ConsultantStatusCard extends StatelessWidget {
     );
   }
 
-  Widget _buildApplyCard(BuildContext context, ConsultationController controller) {
+  Widget _buildApplyCard(
+      BuildContext context, ConsultationController controller) {
     final theme = Theme.of(context);
 
     return Card(
@@ -110,7 +115,8 @@ class ConsultantStatusCard extends StatelessWidget {
       color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.5)),
+        side:
+            BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.5)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -153,7 +159,8 @@ class ConsultantStatusCard extends StatelessWidget {
     );
   }
 
-  void _showApplyDialog(BuildContext context, ConsultationController controller) async {
+  void _showApplyDialog(
+      BuildContext context, ConsultationController controller) async {
     final result = await Get.dialog<bool>(
       ConsultantApplicationDialog(
         consultantType: controller.userRole,

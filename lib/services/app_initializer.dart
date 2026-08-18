@@ -91,6 +91,9 @@ class AppInitializer {
 
     // GetStorage for local persistence
     await GetStorage.init();
+    // Initialize auth_tokens namespace used as fallback by
+    // TokenStorageService when flutter_secure_storage fails on emulators.
+    await GetStorage.init('auth_tokens');
     debugPrint('✅ GetStorage initialized');
 
     // Environment variables

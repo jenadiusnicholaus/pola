@@ -333,7 +333,7 @@ class CallController extends GetxController {
       );
       print('   message: ${creditCheck.message}');
 
-      if (!creditCheck.hasCredits) {
+      if (!creditCheck.hasCredits && creditCheck.activeCreditsCount == 0) {
         // Store available bundles for display
         _availableBundles.clear();
         _availableBundles.addAll(creditCheck.availableBundles);

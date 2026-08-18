@@ -8,9 +8,11 @@ import 'dart:convert';
 import '../models/verification_models.dart';
 import '../services/verification_service.dart';
 import '../../../utils/navigation_helper.dart';
+import '../../../services/token_storage_service.dart';
 
 class VerificationController extends GetxController {
   final VerificationService _verificationService = VerificationService();
+  final TokenStorageService _tokenStorage = Get.find<TokenStorageService>();
 
   // Observable state
   final Rx<VerificationStatus?> _verificationStatus =
@@ -82,6 +84,10 @@ class VerificationController extends GetxController {
 
   /// Load user's verification status
   Future<void> loadVerificationStatus() async {
+    if (!_tokenStorage.isLoggedIn) {
+      debugPrint('🔒 Skipping verification status load — user not logged in');
+      return;
+    }
     try {
       _isLoading.value = true;
       _error.value = '';
@@ -432,7 +438,8 @@ class VerificationController extends GetxController {
         if (fileSize > 15 * 1024 * 1024) {
           NavigationHelper.showSafeSnackbar(
             title: '⚠️ Image Too Large',
-            message: 'Captured image is too large. Please try again with lower quality.',
+            message:
+                'Captured image is too large. Please try again with lower quality.',
             backgroundColor: Colors.orange,
           );
           return;
@@ -551,7 +558,8 @@ class VerificationController extends GetxController {
         if (fileSize > 10 * 1024 * 1024) {
           NavigationHelper.showSafeSnackbar(
             title: '⚠️ File Too Large',
-            message: 'Image size must be less than 10MB. Please select a smaller image or reduce quality.',
+            message:
+                'Image size must be less than 10MB. Please select a smaller image or reduce quality.',
             backgroundColor: Colors.orange,
           );
           return;
@@ -679,7 +687,8 @@ class VerificationController extends GetxController {
                 finalError.toString().contains('invalid_image')) {
               NavigationHelper.showSafeSnackbar(
                 title: '📱 Image Format Issue',
-                message: 'Unable to load this image format. Please try taking a new photo with the camera instead.',
+                message:
+                    'Unable to load this image format. Please try taking a new photo with the camera instead.',
                 backgroundColor: Colors.orange,
                 duration: const Duration(seconds: 5),
               );
@@ -701,7 +710,8 @@ class VerificationController extends GetxController {
           if (fileSize > 10 * 1024 * 1024) {
             NavigationHelper.showSafeSnackbar(
               title: '⚠️ File Too Large',
-              message: 'Image size must be less than 10MB. Please select a smaller image.',
+              message:
+                  'Image size must be less than 10MB. Please select a smaller image.',
               backgroundColor: Colors.orange,
             );
             return;
@@ -739,7 +749,8 @@ class VerificationController extends GetxController {
       if (fileSize > maxSize) {
         NavigationHelper.showSafeSnackbar(
           title: '⚠️ File Too Large',
-          message: 'File size must be less than 10MB. Selected file is ${(fileSize / (1024 * 1024)).toStringAsFixed(1)}MB',
+          message:
+              'File size must be less than 10MB. Selected file is ${(fileSize / (1024 * 1024)).toStringAsFixed(1)}MB',
           backgroundColor: Colors.orange,
         );
         return;
@@ -807,7 +818,8 @@ class VerificationController extends GetxController {
       // Show success message
       NavigationHelper.showSafeSnackbar(
         title: '✅ Upload Successful',
-        message: '${_getDocumentDisplayName(documentType)} uploaded successfully!',
+        message:
+            '${_getDocumentDisplayName(documentType)} uploaded successfully!',
         backgroundColor: Colors.green,
         icon: const Icon(Icons.check_circle, color: Colors.white),
       );

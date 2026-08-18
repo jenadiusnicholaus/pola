@@ -5,11 +5,13 @@ import '../models/hub_content_models.dart';
 import '../utils/user_role_manager.dart';
 import '../../legal_education/models/legal_education_models.dart';
 import '../../../../utils/navigation_helper.dart';
+import '../../../../services/token_storage_service.dart';
 
 class HubContentController extends GetxController {
   final String hubType;
   final bool skipInitialFetch;
   final HubContentService _service = Get.find<HubContentService>();
+  final TokenStorageService _tokenStorage = Get.find<TokenStorageService>();
 
   HubContentController({required this.hubType, this.skipInitialFetch = false});
 
@@ -397,6 +399,10 @@ class HubContentController extends GetxController {
 
   /// Toggle like on content
   Future<void> toggleLike(HubContentItem contentItem) async {
+    if (!_tokenStorage.isLoggedIn) {
+      debugPrint('🔒 Skipping like toggle — user not logged in');
+      return;
+    }
     print(
         '❤️ ${contentItem.isLiked ? 'Unliking' : 'Liking'} content: ${contentItem.id}');
 
@@ -454,6 +460,10 @@ class HubContentController extends GetxController {
 
   /// Toggle bookmark on content
   Future<void> toggleBookmark(HubContentItem contentItem) async {
+    if (!_tokenStorage.isLoggedIn) {
+      debugPrint('🔒 Skipping bookmark toggle — user not logged in');
+      return;
+    }
     try {
       print('🔖 Toggling bookmark for content: ${contentItem.id}');
       print(
@@ -663,6 +673,10 @@ class HubContentController extends GetxController {
 
   /// Get user's bookmarked content
   Future<void> fetchBookmarkedContent({int page = 1}) async {
+    if (!_tokenStorage.isLoggedIn) {
+      debugPrint('🔒 Skipping bookmarked content fetch — user not logged in');
+      return;
+    }
     try {
       print(
           '🔖 Controller: Starting fetchBookmarkedContent for hubType: $hubType');
@@ -736,6 +750,10 @@ class HubContentController extends GetxController {
 
   /// Get user's liked content
   Future<void> fetchLikedContent({int page = 1}) async {
+    if (!_tokenStorage.isLoggedIn) {
+      debugPrint('🔒 Skipping liked content fetch — user not logged in');
+      return;
+    }
     try {
       isLoading.value = true;
 
