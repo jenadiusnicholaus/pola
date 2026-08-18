@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../utils/navigation_helper.dart';
 import '../services/document_payment_service.dart';
+import '../../../constants/payment_constants.dart';
 import 'dart:async';
 
 class DocumentPurchaseDialog extends StatefulWidget {
@@ -29,24 +30,15 @@ class _DocumentPurchaseDialogState extends State<DocumentPurchaseDialog> {
   final DocumentPaymentService _paymentService = DocumentPaymentService();
   final _phoneController = TextEditingController();
 
-  String _selectedProvider = 'Mpesa';
+  String _selectedProvider = PaymentProvider.defaultProvider;
   String _paymentStatus = 'idle'; // idle, pending, completed, failed
   int? _transactionId;
   Timer? _pollTimer;
   int _pollAttempts = 0;
   final int _maxPollAttempts = 60;
 
-  final List<Map<String, dynamic>> _providers = [
-    {'value': 'Mpesa', 'label': 'M-Pesa', 'icon': Icons.phone_android},
-    {'value': 'Airtel', 'label': 'Airtel Money', 'icon': Icons.phone_iphone},
-    {'value': 'Tigo', 'label': 'Tigo Pesa', 'icon': Icons.phone},
-    {
-      'value': 'Halopesa',
-      'label': 'Halo Pesa',
-      'icon': Icons.account_balance_wallet
-    },
-    {'value': 'Azampesa', 'label': 'Azam Pesa', 'icon': Icons.account_balance},
-  ];
+  final List<Map<String, dynamic>> _providers =
+      PaymentProvider.mobileProviders.map((p) => p.toMap()).toList();
 
   @override
   void initState() {

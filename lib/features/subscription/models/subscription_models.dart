@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pola/constants/payment_constants.dart';
 
 class SubscriptionPlan {
   final int id;
@@ -117,7 +118,7 @@ class SubscriptionPlan {
 class PaymentMethod {
   final String id;
   final String name;
-  final String provider; // 'tigo_pesa', 'airtel_money', 'm_pesa', 'halopesa'
+  final String provider; // matches backend PaymentProvider enum: Mpesa, Airtel, Tigo, Halopesa, Azampesa
   final IconData icon;
 
   PaymentMethod({
@@ -127,38 +128,9 @@ class PaymentMethod {
     required this.icon,
   });
 
-  static final List<PaymentMethod> availableMethods = [
-    PaymentMethod(
-      id: 'tigo',
-      name: 'Tigo Pesa',
-      provider: 'Tigo',
-      icon: Icons.phone_android,
-    ),
-    PaymentMethod(
-      id: 'airtel',
-      name: 'Airtel Money',
-      provider: 'Airtel',
-      icon: Icons.phone_iphone,
-    ),
-    PaymentMethod(
-      id: 'mpesa',
-      name: 'M-Pesa',
-      provider: 'Mpesa',
-      icon: Icons.phone,
-    ),
-    PaymentMethod(
-      id: 'halo',
-      name: 'Halopesa',
-      provider: 'Halopesa',
-      icon: Icons.payment,
-    ),
-    PaymentMethod(
-      id: 'azam',
-      name: 'Azam Pesa',
-      provider: 'Azampesa',
-      icon: Icons.account_balance_wallet,
-    ),
-  ];
+  static List<PaymentMethod> get availableMethods => PaymentProvider.mobileProviders
+      .map((p) => PaymentMethod(id: p.value.toLowerCase(), name: p.label, provider: p.value, icon: p.icon))
+      .toList();
 }
 
 class SubscriptionResult {

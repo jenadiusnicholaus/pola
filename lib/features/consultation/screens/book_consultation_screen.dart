@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../calling_booking/models/consultant_models.dart' as calling;
 import '../services/consultation_service.dart';
+import '../../../constants/payment_constants.dart';
 
 /// Physical Consultation Booking Screen
 /// Flow: Create Booking → Initiate Payment → Wait for Confirmation
@@ -35,7 +36,7 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
   bool _cancelPolling = false;
 
   // Payment provider selection
-  String _selectedProvider = 'Mpesa';
+  String _selectedProvider = PaymentProvider.defaultProvider;
 
   @override
   void initState() {
@@ -918,13 +919,9 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
   }
 
   Widget _buildProviderSelector(ThemeData theme) {
-    final providers = [
-      {'id': 'Mpesa', 'name': 'M-Pesa'},
-      {'id': 'Tigo', 'name': 'Tigo Pesa'},
-      {'id': 'Airtel', 'name': 'Airtel Money'},
-      {'id': 'Halopesa', 'name': 'Halotel'},
-      {'id': 'Azampesa', 'name': 'Azam Pesa'},
-    ];
+    final providers = PaymentProvider.mobileProviders
+        .map((p) => {'id': p.value, 'name': p.label})
+        .toList();
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
