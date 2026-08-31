@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:geolocator/geolocator.dart';
 import '../controllers/nearby_lawyers_controller.dart';
 import '../models/nearby_lawyer_model.dart';
 import '../../calling_booking/models/consultant_models.dart' as calling;
@@ -12,7 +13,10 @@ class NearbyLawyersScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(NearbyLawyersController());
+    // Reuse existing controller if already registered (avoids repeated API calls)
+    final controller = Get.isRegistered<NearbyLawyersController>()
+        ? Get.find<NearbyLawyersController>()
+        : Get.put(NearbyLawyersController(), permanent: true);
 
     return Scaffold(
       appBar: AppBar(
@@ -73,15 +77,50 @@ class NearbyLawyersScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Try increasing the search radius',
+                  'Current radius: ${controller.radius.toStringAsFixed(0)}km\nTry increasing the search radius or enable GPS',
                   style: TextStyle(
                       color:
                           theme.textTheme.bodyMedium?.color?.withOpacity(0.7)),
+                  textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: () => _showFilterDialog(context, controller),
-                  child: Text('Adjust Filters'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        // 1. Request location permission (shows system dialog)
+                        LocationPermission permission =
+                            await Geolocator.checkPermission();
+                        if (permission == LocationPermission.denied) {
+                          permission = await Geolocator.requestPermission();
+                        }
+                        if (permission == LocationPermission.deniedForever) {
+                          // Open app settings so user can grant manually
+                          await Geolocator.openAppSettings();
+                          return;
+                        }
+
+                        // 2. Check if GPS hardware is on
+                        final enabled =
+                            await Geolocator.isLocationServiceEnabled();
+                        if (!enabled) {
+                          // Open location settings to turn on GPS
+                          await Geolocator.openLocationSettings();
+                        }
+
+                        // 3. Refresh nearby list
+                        controller.refresh();
+                      },
+                      icon: Icon(Icons.gps_fixed),
+                      label: Text('Enable GPS'),
+                    ),
+                    SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: () => _showFilterDialog(context, controller),
+                      child: Text('Adjust Filters'),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -259,7 +298,7 @@ class NearbyLawyersScreen extends StatelessWidget {
     debugPrint('   lawyer.userId: ${lawyer.userId}');
     debugPrint('   lawyer.userDetails.id: ${lawyer.userDetails.id}');
     debugPrint('   lawyer.name: ${lawyer.userDetails.fullName}');
-    
+
     return calling.Consultant(
       id: lawyer.id,
       userDetails: calling.UserDetails(

@@ -45,7 +45,7 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
 
     if (arg is calling.Consultant) {
       consultant = arg;
-      _isLawFirm = consultant.consultantType.toLowerCase() == 'law_firm';
+      _isLawFirm = consultant.offersPhysicalConsultations;
 
       // Debug logging
       debugPrint('📋 Book Consultation Screen:');
@@ -137,14 +137,11 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
     });
 
     try {
-      // TODO: TEMPORARY WORKAROUND - Backend nearby lawyers API returns wrong IDs
-      // Remove this hardcoded ID once backend fixes the data
-      final validConsultantId = 3; // Using a known valid profile ID for testing
       debugPrint(
-          '⚠️ TEMP: Using hardcoded consultant_id: $validConsultantId instead of ${consultant.id}');
+          '📤 Creating physical booking for consultant_id: ${consultant.id}');
 
       final response = await _service.createPhysicalBooking(
-        consultantId: validConsultantId, // TEMP: was consultant.id
+        consultantId: consultant.id,
         scheduledDate: _getScheduledDateTime(),
         durationMinutes: _durationMinutes,
         meetingLocation: _locationController.text.trim(),
@@ -167,7 +164,7 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Error: $e';
+        _errorMessage = e.toString();
         _isLoading = false;
       });
     }
@@ -693,7 +690,7 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Physical consultations are only available for Law Firms.\n\nUse Call Credits to speak with individual lawyers.',
+                'This consultant does not offer physical consultations.\n\nUse Call Credits to speak with them directly.',
                 style: TextStyle(
                   fontSize: 15,
                   color: Colors.grey.shade600,

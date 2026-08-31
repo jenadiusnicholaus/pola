@@ -297,6 +297,12 @@ class _CallScreenState extends State<CallScreen> {
                 ],
               );
             }
+            if (c.isRemoteAccepted.value) {
+              return CallStatusDots(
+                label: 'Connecting',
+                color: Colors.white70,
+              );
+            }
             if (c.isRinging.value) {
               return CallStatusDots(
                 label: 'Ringing',

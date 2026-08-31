@@ -18,6 +18,8 @@ class UserProfile {
   final String? lastLogin;
   final String? idNumber;
   final String? profilePicture;
+  final int? associatedLawFirm;
+  final String? associatedLawFirmDisplay;
 
   UserProfile({
     required this.id,
@@ -38,6 +40,8 @@ class UserProfile {
     this.lastLogin,
     this.idNumber,
     this.profilePicture,
+    this.associatedLawFirm,
+    this.associatedLawFirmDisplay,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -61,6 +65,8 @@ class UserProfile {
       lastLogin: json['last_login'],
       idNumber: json['id_number'],
       profilePicture: json['profile_picture_url'] ?? json['profile_picture'],
+      associatedLawFirm: json['associated_law_firm'],
+      associatedLawFirmDisplay: json['associated_law_firm_display'],
     );
   }
 
@@ -498,6 +504,8 @@ class AdvocateProfile extends UserProfile {
     super.lastLogin,
     super.idNumber,
     super.profilePicture,
+    super.associatedLawFirm,
+    super.associatedLawFirmDisplay,
     this.rollNumber,
     this.regionalChapter,
     this.yearOfAdmissionToBar,
@@ -530,6 +538,8 @@ class AdvocateProfile extends UserProfile {
       lastLogin: json['last_login'],
       idNumber: json['id_number'],
       profilePicture: json['profile_picture_url'] ?? json['profile_picture'],
+      associatedLawFirm: json['associated_law_firm'],
+      associatedLawFirmDisplay: json['associated_law_firm_display'],
       rollNumber: json['roll_number'],
       regionalChapter: json['regional_chapter'] != null
           ? RegionalChapter.fromJson(json['regional_chapter'])
@@ -585,6 +595,8 @@ class LawyerProfile extends UserProfile {
     super.lastLogin,
     super.idNumber,
     super.profilePicture,
+    super.associatedLawFirm,
+    super.associatedLawFirmDisplay,
     this.yearsOfExperience,
     this.placeOfWork,
     this.specializations,
@@ -613,6 +625,8 @@ class LawyerProfile extends UserProfile {
       lastLogin: json['last_login'],
       idNumber: json['id_number'],
       profilePicture: json['profile_picture_url'] ?? json['profile_picture'],
+      associatedLawFirm: json['associated_law_firm'],
+      associatedLawFirmDisplay: json['associated_law_firm_display'],
       yearsOfExperience: json['years_of_experience'],
       placeOfWork: json['place_of_work'] != null
           ? PlaceOfWork.fromJson(json['place_of_work'])
@@ -661,6 +675,8 @@ class ParalegalProfile extends UserProfile {
     super.lastLogin,
     super.idNumber,
     super.profilePicture,
+    super.associatedLawFirm,
+    super.associatedLawFirmDisplay,
     this.yearsOfExperience,
     this.placeOfWork,
     this.operatingRegions,
@@ -688,6 +704,8 @@ class ParalegalProfile extends UserProfile {
       lastLogin: json['last_login'],
       idNumber: json['id_number'],
       profilePicture: json['profile_picture_url'] ?? json['profile_picture'],
+      associatedLawFirm: json['associated_law_firm'],
+      associatedLawFirmDisplay: json['associated_law_firm_display'],
       yearsOfExperience: json['years_of_experience'],
       placeOfWork: json['place_of_work'] != null
           ? PlaceOfWork.fromJson(json['place_of_work'])
@@ -730,6 +748,8 @@ class LawStudentProfile extends UserProfile {
     super.lastLogin,
     super.idNumber,
     super.profilePicture,
+    super.associatedLawFirm,
+    super.associatedLawFirmDisplay,
     this.universityName,
     this.academicRole,
     this.yearOfStudy,
@@ -756,6 +776,8 @@ class LawStudentProfile extends UserProfile {
       lastLogin: json['last_login'],
       idNumber: json['id_number'],
       profilePicture: json['profile_picture_url'] ?? json['profile_picture'],
+      associatedLawFirm: json['associated_law_firm'],
+      associatedLawFirmDisplay: json['associated_law_firm_display'],
       universityName: json['university_name'],
       academicRole: json['academic_role'] != null
           ? AcademicRole.fromJson(json['academic_role'])
@@ -785,6 +807,8 @@ class CitizenProfile extends UserProfile {
     super.lastLogin,
     super.idNumber,
     super.profilePicture,
+    super.associatedLawFirm,
+    super.associatedLawFirmDisplay,
   });
 
   factory CitizenProfile.fromJson(Map<String, dynamic> json) {
@@ -808,6 +832,8 @@ class CitizenProfile extends UserProfile {
       lastLogin: json['last_login'],
       idNumber: json['id_number'],
       profilePicture: json['profile_picture_url'] ?? json['profile_picture'],
+      associatedLawFirm: json['associated_law_firm'],
+      associatedLawFirmDisplay: json['associated_law_firm_display'],
     );
   }
 }

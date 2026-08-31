@@ -141,13 +141,19 @@ class ApiInterceptors {
               debugPrint('🔖 BOOKMARK REQUEST - Token added successfully');
             }
           } else {
-            debugPrint('⚠️ No access token found for request: ${options.uri}');
             debugPrint(
-                '⚠️ TokenStorageService state - isLoggedIn: ${tokenStorage.isLoggedIn}');
+                '⚠️ No access token in memory for request: ${options.uri}');
 
-            // Special logging for bookmarked endpoint
-            if (options.uri.toString().contains('bookmarked')) {
-              debugPrint('🔖 BOOKMARK REQUEST - NO TOKEN AVAILABLE!');
+            // Try to recover tokens from storage (may have been cleared
+            // from memory by a race condition or errant 401 handler)
+            await tokenStorage.reloadFromStorage();
+            final recoveredToken = tokenStorage.accessToken;
+            if (recoveredToken.isNotEmpty) {
+              options.headers['Authorization'] = 'Bearer $recoveredToken';
+              debugPrint('🔄 Recovered token from storage for: ${options.uri}');
+            } else {
+              debugPrint(
+                  '⚠️ No token in storage either — request will go unauthenticated: ${options.uri}');
             }
           }
         } catch (e) {
@@ -170,8 +176,7 @@ class ApiInterceptors {
     if (_handlingDeviceReplaced) return;
     _handlingDeviceReplaced = true;
     try {
-      debugPrint(
-          '📱 Device replaced — forcing logout to login screen');
+      debugPrint('📱 Device replaced — forcing logout to login screen');
       try {
         final authService = getx.Get.find<AuthService>();
         await authService.forceLogoutToLogin();
@@ -243,6 +248,27 @@ class ApiInterceptors {
                 break;
               }
 
+              // If tokens are completely gone, try reloading from storage
+              // (they may have been cleared by a race condition)
+              try {
+                final tokenStorage = getx.Get.find<TokenStorageService>();
+                if (tokenStorage.accessToken.isEmpty &&
+                    tokenStorage.refreshToken.isEmpty) {
+                  debugPrint(
+                      '🔄 Tokens empty in memory — attempting reload from storage...');
+                  await tokenStorage.reloadFromStorage();
+
+                  // If still empty after reload, no point retrying
+                  if (tokenStorage.accessToken.isEmpty &&
+                      tokenStorage.refreshToken.isEmpty) {
+                    debugPrint(
+                        '❌ No tokens in storage either — 401 will propagate');
+                    break;
+                  }
+                  debugPrint('✅ Tokens reloaded from storage');
+                }
+              } catch (_) {}
+
               // Try to refresh the token (shared lock prevents concurrent refreshes)
               try {
                 final tokenRefreshed = await _refreshToken();
@@ -265,8 +291,7 @@ class ApiInterceptors {
                   // Return the successful response
                   return handler.resolve(response);
                 } else {
-                  debugPrint(
-                      '❌ Token refresh failed - User needs to login again');
+                  debugPrint('❌ Token refresh failed - 401 will propagate');
                 }
               } catch (e) {
                 debugPrint('❌ Error during token refresh: $e');

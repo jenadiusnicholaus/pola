@@ -213,8 +213,9 @@ class ProfileService extends GetxService {
       switch (e.response?.statusCode) {
         case 401:
           errorMessage = 'Authentication failed. Please login again.';
-          // Clear tokens on 401
-          await _tokenStorage.clearTokens();
+          // NOTE: Do NOT clear tokens here — the Dio error interceptor
+          // handles 401s centrally (token refresh + retry). Clearing
+          // tokens here destroys the session before refresh can happen.
           break;
         case 403:
           errorMessage =
@@ -360,6 +361,49 @@ class ProfileService extends GetxService {
       throw Exception(_error.value);
     } finally {
       _isLoading.value = false;
+    }
+  }
+
+  /// Update associated law firm for professional users
+  Future<bool> updateAssociatedLawFirm(int? lawFirmId) async {
+    try {
+      debugPrint('📤 Updating associated law firm: $lawFirmId');
+
+      if (!_tokenStorage.isLoggedIn) {
+        throw Exception('User not authenticated');
+      }
+
+      final response = await _apiService.patch(
+        EnvironmentConfig.associatedLawFirmUrl,
+        data: {'law_firm_id': lawFirmId},
+      );
+
+      debugPrint(
+          '📥 Associated law firm update response: ${response.statusCode}');
+
+      return response.statusCode == 200;
+    } on dio.DioException catch (e) {
+      debugPrint('❌ DioException updating associated law firm: ${e.message}');
+      String errorMessage;
+      if (e.response?.statusCode == 400) {
+        final errors = e.response?.data;
+        if (errors is Map<String, dynamic>) {
+          final messages = errors.values
+              .whereType<List>()
+              .expand((m) => m)
+              .map((m) => m.toString())
+              .join('\n');
+          errorMessage = messages.isEmpty ? 'Validation error' : messages;
+        } else {
+          errorMessage = 'Validation error occurred';
+        }
+      } else {
+        errorMessage = e.message ?? 'Update failed';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      debugPrint('🚨 Error updating associated law firm: $e');
+      throw Exception('Failed to update associated law firm');
     }
   }
 

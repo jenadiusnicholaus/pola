@@ -14,19 +14,45 @@ class PostsScreen extends StatefulWidget {
   State<PostsScreen> createState() => _PostsScreenState();
 }
 
-class _PostsScreenState extends State<PostsScreen> {
+class _PostsScreenState extends State<PostsScreen> with WidgetsBindingObserver {
   late HubContentController controller;
   final String hubType =
       'forum'; // Community Hub where all users interact daily
+  bool _hasLoadedContent = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Initialize controller for Community Hub (forum)
+    // Always create fresh so fetchInitialContent fires on each visit
+    if (Get.isRegistered<HubContentController>(tag: 'posts_$hubType')) {
+      Get.delete<HubContentController>(tag: 'posts_$hubType');
+    }
     controller = Get.put(
       HubContentController(hubType: hubType),
       tag: 'posts_$hubType',
     );
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // If the controller has no content (e.g. initial fetch failed because
+    // tokens weren't ready), retry now that the user is actually looking
+    // at this tab.
+    if (!_hasLoadedContent &&
+        controller.content.value.isEmpty &&
+        !controller.isLoading.value) {
+      _hasLoadedContent = true;
+      controller.fetchInitialContent();
+    }
   }
 
   @override
@@ -140,11 +166,5 @@ class _PostsScreenState extends State<PostsScreen> {
         'source': hubType,
       },
     );
-  }
-
-  @override
-  void dispose() {
-    // Don't dispose the controller here as it might be used by other screens
-    super.dispose();
   }
 }

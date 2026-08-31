@@ -359,29 +359,44 @@ class ChatRoomScreen extends StatelessWidget {
     final label = isEnded ? 'Call ended' : message.displayText;
 
     return Align(
-      alignment: Alignment.center,
+      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: Get.theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(20),
+          color: isMe
+              ? Get.theme.colorScheme.primary
+              : Get.theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
         ),
+        constraints: const BoxConstraints(maxWidth: 280),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
               size: 16,
-              color: isEnded ? Colors.redAccent : Get.theme.colorScheme.primary,
+              color: isMe
+                  ? Get.theme.colorScheme.onPrimary
+                  : (isEnded
+                      ? Colors.redAccent
+                      : Get.theme.colorScheme.primary),
             ),
             const SizedBox(width: 8),
             Text(
-              '${isMe ? 'You' : contactName}: $label',
+              isMe ? 'You: $label' : '$contactName: $label',
               style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w500,
-                color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                fontSize: 15,
+                color: isMe
+                    ? Get.theme.colorScheme.onPrimary
+                    : Get.theme.colorScheme.onSurface,
               ),
             ),
             const SizedBox(width: 8),
@@ -389,7 +404,9 @@ class ChatRoomScreen extends StatelessWidget {
               _formatTime(message.timestamp),
               style: TextStyle(
                 fontSize: 10,
-                color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                color: isMe
+                    ? Get.theme.colorScheme.onPrimary.withValues(alpha: 0.7)
+                    : Get.theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
           ],
@@ -400,18 +417,19 @@ class ChatRoomScreen extends StatelessWidget {
 
   Widget _buildMessageInput(ChatRoomController controller) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Get.theme.colorScheme.surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+            blurRadius: 12,
+            offset: const Offset(0, -3),
           ),
         ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           IconButton(
             icon: const Icon(Icons.attach_file),
@@ -424,24 +442,45 @@ class ChatRoomScreen extends StatelessWidget {
               controller: controller.messageController,
               decoration: InputDecoration(
                 hintText: 'Type a message...',
+                filled: true,
+                fillColor: Get.theme.colorScheme.surfaceContainerHighest,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 12,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide(
+                    color: Get.theme.colorScheme.outline.withValues(
+                      alpha: 0.15,
+                    ),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide(
+                    color: Get.theme.colorScheme.primary.withValues(
+                      alpha: 0.5,
+                    ),
+                    width: 1.5,
+                  ),
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,
                 ),
-                filled: true,
-                fillColor: Get.theme.colorScheme.surfaceContainerHighest,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
               ),
+              keyboardType: TextInputType.multiline,
+              textInputAction: TextInputAction.newline,
+              minLines: 1,
+              maxLines: 5,
               inputFormatters: [
                 _PhoneNumberBlockFormatter(),
               ],
               onChanged: controller.onTyping,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           Obx(
             () => IconButton(
               icon: controller.isTyping.value

@@ -17,6 +17,7 @@ class _HubContentScreenState extends State<HubContentScreen> {
   late String hubType;
   late String hubTitle;
   late HubContentController controller;
+  bool _hasLoadedContent = false;
 
   @override
   void initState() {
@@ -32,10 +33,28 @@ class _HubContentScreenState extends State<HubContentScreen> {
     debugPrint('🏛️ Final hub setup: type="$hubType", title="$hubTitle"');
 
     // Initialize controller with hub type
+    // If a stale instance exists (e.g. from a previous visit that was
+    // disposed but not yet garbage-collected by GetX), replace it with a
+    // fresh one so onInit → fetchInitialContent fires again.
+    if (Get.isRegistered<HubContentController>(tag: hubType)) {
+      Get.delete<HubContentController>(tag: hubType);
+    }
     controller = Get.put(
       HubContentController(hubType: hubType),
       tag: hubType,
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Retry content fetch if initial fetch failed (e.g. tokens weren't ready)
+    if (!_hasLoadedContent &&
+        controller.content.value.isEmpty &&
+        !controller.isLoading.value) {
+      _hasLoadedContent = true;
+      controller.fetchInitialContent();
+    }
   }
 
   String _getHubTypeFromRoute() {

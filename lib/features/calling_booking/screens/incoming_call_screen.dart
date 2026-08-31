@@ -224,44 +224,26 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
     try {
       debugPrint('✅ Accepting call: ${widget.callId}');
 
-      final response = await _callService.acceptCall(callId: widget.callId);
+      // Format caller phone with country code for NX compatibility
+      final formattedCallerPhone = widget.callerPhone.isNotEmpty
+          ? _formatPhone(widget.callerPhone)
+          : widget.callerPhone;
 
-      debugPrint('📥 Accept response: $response');
+      debugPrint(
+          '📞 Caller phone formatted: $formattedCallerPhone (original: ${widget.callerPhone})');
 
-      if (response['success'] == true) {
-        debugPrint('✅ Call accepted successfully');
-        debugPrint('📡 Channel name: ${response['channel_name']}');
-
-        // Format caller phone with country code for NX compatibility
-        final formattedCallerPhone = widget.callerPhone.isNotEmpty
-            ? _formatPhone(widget.callerPhone)
-            : widget.callerPhone;
-
-        debugPrint(
-            '📞 Caller phone formatted: $formattedCallerPhone (original: ${widget.callerPhone})');
-
-        // Navigate to call screen
-        Get.off(
-          () => CallScreen(
-            consultant: null, // We're the receiver, not calling a consultant
-            callId: widget.callId,
-            channelName: response['channel_name'] ?? widget.channelName,
-            isIncoming: true,
-            callerName: widget.callerName,
-            callerPhoto: widget.callerPhoto,
-            callerPhone: formattedCallerPhone,
-          ),
-        );
-      } else {
-        debugPrint('❌ Accept failed: ${response['message']}');
-        _showSnackBar(
-          'Error',
-          response['message'] ?? 'Failed to accept call',
-          backgroundColor: Colors.red,
-          icon: Icons.error,
-        );
-        Get.back();
-      }
+      // Navigate to call screen — CallScreen.joinIncomingCall handles NX SDK acceptance
+      Get.off(
+        () => CallScreen(
+          consultant: null,
+          callId: widget.callId,
+          channelName: widget.channelName,
+          isIncoming: true,
+          callerName: widget.callerName,
+          callerPhoto: widget.callerPhoto,
+          callerPhone: formattedCallerPhone,
+        ),
+      );
     } catch (e) {
       debugPrint('❌ Error accepting call: $e');
       _showSnackBar(
@@ -361,7 +343,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
             children: [
               const SizedBox(height: 48),
 
-              // ── "Incoming call" label ─────────────────────────────────
+              // ── Status label ───────────────────────────────────────────
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -374,7 +356,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    'Incoming ${widget.callType == 'video' ? 'video' : 'voice'} call',
+                    'Connecting...',
                     style: const TextStyle(
                       fontSize: 14,
                       color: Colors.white54,
@@ -446,7 +428,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                 )
               else
                 const CallStatusDots(
-                  label: 'Ringing',
+                  label: 'Connecting',
                   color: Colors.white60,
                 ),
 

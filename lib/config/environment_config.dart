@@ -98,6 +98,8 @@ class EnvironmentConfig {
   static String get profilePictureEndpoint =>
       dotenv.env['PROFILE_PICTURE_ENDPOINT'] ??
       '/api/v1/authentication/profile-picture/';
+  static String get associatedLawFirmEndpoint =>
+      dotenv.env['ASSOCIATED_LAW_FIRM_ENDPOINT'] ?? '      bb';
   static String get resetPasswordEndpoint =>
       dotenv.env['RESET_PASSWORD_ENDPOINT'] ??
       '/api/v1/authentication/reset-password/';
@@ -115,6 +117,8 @@ class EnvironmentConfig {
   static String get logoutUrl => '$baseUrl$logoutEndpoint';
   static String get profileUrl => '$baseUrl$profileEndpoint';
   static String get profilePictureUrl => '$baseUrl$profilePictureEndpoint';
+  static String get associatedLawFirmUrl =>
+      '$baseUrl$associatedLawFirmEndpoint';
   static String get resetPasswordUrl => '$baseUrl$resetPasswordEndpoint';
   static String get verifyResetOtpUrl => '$baseUrl$verifyResetOtpEndpoint';
   static String get confirmResetPasswordUrl =>
@@ -317,6 +321,19 @@ class EnvironmentConfig {
   // Complete consultation create URL
   static String get consultationCreateUrl =>
       '$baseUrl$consultationCreateEndpoint';
+
+  // Physical consultation booking endpoint
+  static String get physicalConsultationBookEndpoint =>
+      dotenv.env['PHYSICAL_CONSULTATION_BOOK_ENDPOINT'] ??
+      '/api/v1/subscriptions/physical-consultations/book/';
+  static String get physicalConsultationBookUrl =>
+      '$baseUrl$physicalConsultationBookEndpoint';
+
+  // Device location update endpoint
+  static String get updateLocationEndpoint =>
+      dotenv.env['UPDATE_LOCATION_ENDPOINT'] ??
+      '/api/v1/security/devices/update_location/';
+  static String get updateLocationUrl => '$baseUrl$updateLocationEndpoint';
 
   // Authentication endpoints
   static String get authChangeRoleEndpoint =>

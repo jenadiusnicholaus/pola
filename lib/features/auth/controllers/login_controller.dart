@@ -7,11 +7,13 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../../services/api_service.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/device_registration_service.dart';
+import '../../../services/token_storage_service.dart';
 import '../../../config/environment_config.dart';
 import '../../../utils/navigation_helper.dart';
 import '../../../routes/app_routes.dart';
 import '../models/login_data.dart';
 import '../../profile/services/profile_service.dart';
+import '../../calling_booking/services/nexacon_call_service.dart';
 
 class LoginController extends GetxController {
   final ApiService _apiService = Get.find<ApiService>();
@@ -204,12 +206,9 @@ class LoginController extends GetxController {
       debugPrint('🔄 Refresh token received (length: ${refreshToken.length})');
 
       // Use AuthService to handle login and token storage
+      // Pass the full response so full_name, first_name, etc. are saved.
       final authService = Get.find<AuthService>();
-      final loginSuccess = await authService.handleLoginSuccess({
-        'access': accessToken,
-        'refresh': refreshToken,
-        'user': null, // The response format doesn't include user data
-      });
+      final loginSuccess = await authService.handleLoginSuccess(responseData);
 
       if (loginSuccess) {
         // Save credentials if remember me is checked
@@ -217,7 +216,19 @@ class LoginController extends GetxController {
           await _saveCredentials(email: email, password: password);
         }
 
-        // Fetch user profile immediately after successful login
+        // Register device with NX backend immediately — the login response
+        // already contains full_name, phone, etc. so no need to wait for
+        // the profile API fetch.
+        try {
+          final fcmToken = await FirebaseMessaging.instance.getToken();
+          if (fcmToken != null && fcmToken.isNotEmpty) {
+            await _registerDeviceWithNx(fcmToken);
+          }
+        } catch (e) {
+          debugPrint('⚠️ NX device registration failed (non-blocking): $e');
+        }
+
+        // Fetch user profile (non-blocking for NX — already registered)
         await _fetchUserProfile();
 
         // Register device and check if verification is needed
@@ -461,7 +472,7 @@ class LoginController extends GetxController {
         debugPrint('⚠️ Failed to get FCM token: $e');
       }
 
-      // Register device with FCM token
+      // Register device with Pola backend
       final result =
           await deviceRegistrationService.registerDevice(fcmToken: fcmToken);
       debugPrint('✅ Device registration completed with FCM token');
@@ -503,5 +514,114 @@ class LoginController extends GetxController {
       debugPrint('⚠️ Device registration failed (non-blocking): $e');
     }
     return false;
+  }
+
+  /// Register device with NX backend for push notifications.
+  /// The NX backend uses this to send call invitations with full call details
+  /// (roomId, callerNxId) directly via FCM, rather than relying on Pola's
+  /// custom FCM payload which lacks the necessary NX signaling data.
+  Future<void> _registerDeviceWithNx(String fcmToken) async {
+    try {
+      final tokenStorage = Get.find<TokenStorageService>();
+
+      // userData may be null if profile was loaded from cache
+      // (fetchProfile returns early on cache hit without calling updateUserProfile).
+      // Fall back to reading the cached profile from SharedPreferences.
+      Map<String, dynamic>? userData = tokenStorage.userData;
+      if (userData == null) {
+        debugPrint(
+            '📱 NX registration: userData null, reading cached profile...');
+        userData = await tokenStorage.getUserProfile();
+      }
+
+      debugPrint(
+          '📱 NX registration: userData keys: ${userData?.keys.toList()}');
+
+      String? myPhone = userData?['phone_number'] as String? ??
+          userData?['phone'] as String? ??
+          userData?['phoneNumber'] as String?;
+      if (myPhone == null || myPhone.isEmpty) {
+        final contact = userData?['contact'] as Map<String, dynamic>?;
+        myPhone =
+            contact?['phone_number'] as String? ?? contact?['phone'] as String?;
+      }
+      if (myPhone == null || myPhone.isEmpty) {
+        final userDetails =
+            userData?['user_details'] as Map<String, dynamic>? ??
+                userData?['userDetails'] as Map<String, dynamic>?;
+        myPhone = userDetails?['phone_number'] as String? ??
+            userDetails?['phone'] as String?;
+      }
+
+      // Extract owner display name for the NX backend to use as caller_name
+      String? ownerName;
+      if (userData != null) {
+        final contact = userData['contact'] as Map<String, dynamic>?;
+        final userDetails = userData['user_details'] as Map<String, dynamic>? ??
+            userData['userDetails'] as Map<String, dynamic>?;
+
+        ownerName = userData['full_name'] as String? ??
+            userData['fullName'] as String? ??
+            userData['name'] as String? ??
+            userDetails?['full_name'] as String? ??
+            userDetails?['fullName'] as String? ??
+            contact?['full_name'] as String? ??
+            contact?['fullName'] as String?;
+
+        if (ownerName == null || ownerName.isEmpty) {
+          final firstName = userData['first_name'] as String? ??
+              userData['firstName'] as String? ??
+              userDetails?['first_name'] as String?;
+          final lastName = userData['last_name'] as String? ??
+              userData['lastName'] as String? ??
+              userDetails?['last_name'] as String?;
+          final parts = [firstName, lastName]
+              .where((s) => s != null && s.isNotEmpty)
+              .toList();
+          if (parts.isNotEmpty) {
+            ownerName = parts.join(' ');
+          }
+        }
+      }
+
+      debugPrint('📱 NX registration: phone found: $myPhone');
+      debugPrint('📱 NX registration: owner name: $ownerName');
+
+      if (myPhone == null || myPhone.isEmpty) {
+        debugPrint(
+            '⚠️ No phone number found — skipping NX device registration');
+        debugPrint('   userData: $userData');
+        return;
+      }
+
+      // Format phone with country code for NX compatibility
+      final digits = myPhone.replaceAll(RegExp(r'[^\d]'), '');
+      final formattedPhone = digits.startsWith('255')
+          ? '+$digits'
+          : digits.startsWith('0')
+              ? '+255${digits.substring(1)}'
+              : '+255$digits';
+
+      debugPrint('📱 Registering device with NX backend as: $formattedPhone');
+
+      // Ensure NexaconCallService is registered
+      if (!Get.isRegistered<NexaconCallService>()) {
+        Get.put(NexaconCallService(), permanent: true);
+      }
+      final nexaconService = Get.find<NexaconCallService>();
+      final success = await nexaconService.registerDeviceWithNx(
+        fcmToken: fcmToken,
+        username: formattedPhone,
+        ownerName: ownerName,
+      );
+
+      if (success) {
+        debugPrint('✅ NX device registration completed');
+      } else {
+        debugPrint('⚠️ NX device registration failed (non-blocking)');
+      }
+    } catch (e) {
+      debugPrint('⚠️ NX device registration error (non-blocking): $e');
+    }
   }
 }

@@ -74,7 +74,7 @@ class Message {
     if (isCallEndMessage) {
       return 'Call ended';
     }
-    return _extractHumanText(content);
+    return Message.extractHumanText(content);
   }
 
   /// Extract the call room id from either a call invite URL
@@ -110,16 +110,33 @@ class Message {
 
   /// Extract plain text from a raw body that may be JSON-wrapped.
   /// Falls back to the original content if parsing fails.
-  static String _extractHumanText(String raw) {
+  static String extractHumanText(String raw) {
     if (raw.trim().startsWith('{')) {
       try {
         final map = jsonDecode(raw) as Map<String, dynamic>;
         final type = map['type']?.toString();
         if (type == 'chat' || type == null) {
-          final extracted = map['message']?.toString() ??
-              map['body']?.toString() ??
-              map['content']?.toString();
-          if (extracted != null && extracted.isNotEmpty) return extracted;
+          for (final field in [
+            'text',
+            'msg',
+            'message',
+            'body',
+            'content',
+            'data',
+            'payload'
+          ]) {
+            final extracted = map[field]?.toString();
+            if (extracted != null && extracted.isNotEmpty) return extracted;
+          }
+          // Fallback: return the first non-empty string value in the map
+          // that isn't the type field itself.
+          for (final entry in map.entries) {
+            if (entry.key == 'type') continue;
+            final val = entry.value?.toString();
+            if (val != null && val.isNotEmpty && !val.startsWith('{')) {
+              return val;
+            }
+          }
         }
       } catch (_) {
         // Not valid JSON, show as-is

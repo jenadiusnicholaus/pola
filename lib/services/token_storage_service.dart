@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'dart:convert';
 import 'dart:async';
@@ -23,17 +23,28 @@ class TokenStorageService extends GetxController {
     ),
   );
 
-  // GetStorage fallback for debug/emulator builds where flutter_secure_storage
-  // may fail due to broken Android Keystore. In release builds, only
-  // flutter_secure_storage is used.
-  static const String _gsNamespace = 'auth_tokens';
-  GetStorage? _gs;
+  // SharedPreferences fallback for debug/emulator builds where
+  // flutter_secure_storage / get_storage may fail to persist. In release
+  // builds, flutter_secure_storage is still the primary source.
+  SharedPreferences? _prefs;
 
-  /// Write a key-value pair using flutter_secure_storage, falling back to
-  /// GetStorage in debug mode if secure storage fails.
+  /// Primary storage is flutter_secure_storage; we also keep a
+  /// SharedPreferences copy so emulators always have a readable fallback.
   Future<void> _write(String key, String value) async {
-    _gs ??= GetStorage(_gsNamespace);
-    await _gs!.write(key, value);
+    // Always mirror to SharedPreferences for emulator reliability
+    try {
+      _prefs ??= await SharedPreferences.getInstance();
+      final ok = await _prefs!.setString(key, value);
+      if (!ok) {
+        debugPrint('⚠️ SharedPreferences write returned false for "$key"');
+      } else {
+        debugPrint('💾 SharedPreferences write OK for "$key"');
+      }
+    } catch (e) {
+      debugPrint('❌ SharedPreferences write failed for "$key": $e');
+    }
+
+    // Best-effort secure storage (may fail on emulators)
     try {
       await _secureStorage.write(key: key, value: value);
     } catch (e) {
@@ -42,18 +53,34 @@ class TokenStorageService extends GetxController {
   }
 
   /// Read a value by key from flutter_secure_storage, falling back to
-  /// GetStorage in debug mode if secure storage fails.
+  /// SharedPreferences (which is reliable on emulators).
   Future<String?> _read(String key) async {
+    // Try secure storage first
     try {
       final value = await _secureStorage.read(key: key);
-      if (value != null) return value;
+      if (value != null) {
+        debugPrint('🔐 SecureStorage read OK for "$key"');
+        return value;
+      }
     } catch (e) {
       debugPrint(
-          '⚠️ SecureStorage read failed for "$key", falling back to GetStorage: $e');
+          '⚠️ SecureStorage read failed for "$key", falling back to SharedPreferences: $e');
     }
-    // Fallback
-    _gs ??= GetStorage(_gsNamespace);
-    return _gs!.read<String>(key);
+
+    // Fallback to SharedPreferences
+    try {
+      _prefs ??= await SharedPreferences.getInstance();
+      final value = _prefs!.getString(key);
+      if (value != null) {
+        debugPrint('💾 SharedPreferences read OK for "$key"');
+      } else {
+        debugPrint('🔄 No value for "$key" in SharedPreferences');
+      }
+      return value;
+    } catch (e) {
+      debugPrint('❌ SharedPreferences read failed for "$key": $e');
+      return null;
+    }
   }
 
   /// Delete a key from both storage backends.
@@ -63,9 +90,14 @@ class TokenStorageService extends GetxController {
     } catch (e) {
       debugPrint('⚠️ SecureStorage delete failed for "$key": $e');
     }
-    _gs ??= GetStorage(_gsNamespace);
-    if (_gs!.hasData(key)) {
-      await _gs!.remove(key);
+    try {
+      _prefs ??= await SharedPreferences.getInstance();
+      if (_prefs!.containsKey(key)) {
+        await _prefs!.remove(key);
+        debugPrint('🗑️ SharedPreferences delete OK for "$key"');
+      }
+    } catch (e) {
+      debugPrint('❌ SharedPreferences delete failed for "$key": $e');
     }
   }
 
@@ -91,6 +123,35 @@ class TokenStorageService extends GetxController {
   Future<TokenStorageService> init() async {
     await _initializeFromStorage();
     return this;
+  }
+
+  /// Reload tokens from storage into memory. Useful when in-memory state was
+  /// cleared (e.g. by an errant 401 handler) but storage still has valid data.
+  Future<void> reloadFromStorage() async {
+    try {
+      final accessToken = await _read(_accessTokenKey);
+      final refreshToken = await _read(_refreshTokenKey);
+
+      if (accessToken != null &&
+          accessToken.isNotEmpty &&
+          refreshToken != null &&
+          refreshToken.isNotEmpty) {
+        _currentAccessToken.value = accessToken;
+        _currentRefreshToken.value = refreshToken;
+        _isLoggedIn.value = true;
+
+        final userDataString = await _read(_userDataKey);
+        if (userDataString != null) {
+          _userData.value = jsonDecode(userDataString);
+        }
+
+        debugPrint('🔄 Tokens reloaded from storage successfully');
+      } else {
+        debugPrint('🔄 No tokens found in storage during reload');
+      }
+    } catch (e) {
+      debugPrint('❌ Error reloading tokens from storage: $e');
+    }
   }
 
   /// Wait for the service to be fully initialized
@@ -307,6 +368,10 @@ class TokenStorageService extends GetxController {
   /// Clear all stored tokens and user data
   Future<void> clearTokens() async {
     try {
+      // Log the caller so we can trace what triggers token clearing
+      debugPrint('🧹 clearTokens() called — stack trace:');
+      debugPrint(StackTrace.current.toString().split('\n').take(6).join('\n'));
+
       await _delete(_accessTokenKey);
       await _delete(_refreshTokenKey);
       await _delete(_tokenExpirationKey);
@@ -502,6 +567,9 @@ class TokenStorageService extends GetxController {
   /// Clear stored tokens from secure storage (internal method)
   Future<void> _clearStoredTokens() async {
     try {
+      debugPrint('🧹 _clearStoredTokens() called — stack trace:');
+      debugPrint(StackTrace.current.toString().split('\n').take(6).join('\n'));
+
       await _delete(_accessTokenKey);
       await _delete(_refreshTokenKey);
       await _delete(_userDataKey);
@@ -723,11 +791,17 @@ class TokenStorageService extends GetxController {
   /// Update user profile data and store securely
   Future<void> updateUserProfile(Map<String, dynamic> profileData) async {
     try {
-      // Update in-memory data
-      _userData.value = profileData;
+      // Merge new profile data into existing userData so fields like
+      // full_name from the login response are not lost.
+      final merged =
+          Map<String, dynamic>.from(_userData.value ?? <String, dynamic>{});
+      profileData.forEach((key, value) {
+        merged[key] = value;
+      });
+      _userData.value = merged;
 
       // Store in both locations for backward compatibility
-      await _write(_userDataKey, jsonEncode(profileData));
+      await _write(_userDataKey, jsonEncode(merged));
 
       await storeUserProfile(profileData);
 

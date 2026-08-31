@@ -27,8 +27,8 @@ class ChatRoomController extends GetxController {
   // oldest -> newest: offset 0 is the OLDEST page, and the newest
   // messages live on the last page.
   int? _nextOffset;
-  final int _pageSize = 50;
-  int _actualLimit = 50; // updated from API response
+  final int _pageSize = 100;
+  int _actualLimit = 100; // updated from API response
   final Set<int> _loadedOffsets = {};
   final RxBool hasMoreMessages = true.obs;
   final RxBool isLoadingMore = false.obs;
@@ -209,7 +209,7 @@ class ChatRoomController extends GetxController {
 
       // If most messages were filtered out as signaling, auto-load next page
       // so the user sees enough actual chat messages.
-      if (hasMoreMessages.value && parsed.length < 10) {
+      if (hasMoreMessages.value && parsed.length < 20) {
         print(
           '📨 Only ${parsed.length} displayable messages, auto-loading next page...',
         );
@@ -273,7 +273,7 @@ class ChatRoomController extends GetxController {
         ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
       messages.addAll(newOnes);
       messages.value = _reconcileCallSessions(messages.value);
-      needsMore = hasMoreMessages.value && parsed.length < 10;
+      needsMore = hasMoreMessages.value && parsed.length < 20;
       if (needsMore) {
         print(
           '📨 Only ${parsed.length} displayable on this page, auto-loading next...',
@@ -306,7 +306,7 @@ class ChatRoomController extends GetxController {
           id: m.id.isNotEmpty
               ? m.id
               : DateTime.now().millisecondsSinceEpoch.toString(),
-          content: m.body,
+          content: Message.extractHumanText(m.body),
           senderId: m.from,
           senderName: m.isMe ? 'Me' : contactName,
           timestamp: m.timestamp > 0
@@ -391,13 +391,12 @@ class ChatRoomController extends GetxController {
         final map = jsonDecode(body) as Map<String, dynamic>;
         final type = map['type']?.toString() ?? '';
 
-        // Allow plain chat JSON (legacy SDK messages or no type)
+        // Allow plain chat JSON (legacy SDK messages or no type).
+        // Always keep chat messages — the display layer will extract
+        // human-readable text via extractHumanText. Filtering them out
+        // just because we don't recognise the field name hides real messages.
         if (type == 'chat' || type.isEmpty) {
-          return (map['message']?.toString() ??
-                  map['body']?.toString() ??
-                  map['content']?.toString() ??
-                  '')
-              .isNotEmpty;
+          return true;
         }
 
         // Let call_end through for session reconciliation; it never renders

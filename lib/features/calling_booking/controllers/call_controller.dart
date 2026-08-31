@@ -5,6 +5,7 @@ import '../../../services/token_storage_service.dart';
 import '../models/consultant_models.dart';
 import '../services/call_service.dart';
 import '../services/nexacon_call_service.dart';
+import '../screens/incoming_call_screen.dart';
 
 class CallController extends GetxController {
   final CallService _callService = CallService();
@@ -17,6 +18,7 @@ class CallController extends GetxController {
       false.obs; // Track if call is ringing (waiting for consultant to accept)
   var isCallConnected = false.obs;
   var isConsultantConnected = false.obs; // NEW: Track if consultant joined
+  var isRemoteAccepted = false.obs; // Remote party accepted, connecting WebRTC
   var error = ''.obs;
   var callDuration = '00:00'.obs;
   var creditsRemaining = 0.obs;
@@ -117,6 +119,7 @@ class CallController extends GetxController {
     isConsultantConnected.value = false;
     isCallConnected.value = false;
     isRinging.value = false;
+    isRemoteAccepted.value = false;
     callDuration.value = '00:00';
   }
 
@@ -136,6 +139,20 @@ class CallController extends GetxController {
       print('✅ Other user joined the call, timer started');
       isConsultantConnected.value = true;
       isRinging.value = false; // Stop ringing when consultant joins
+      isRemoteAccepted.value = false; // Connected, no longer just accepted
+    };
+
+    // SDK reports call is ringing (outgoing call was placed)
+    _nexaconService.onCallRinging = () {
+      print('📞 SDK: call is ringing on remote side');
+      isRinging.value = true;
+    };
+
+    // Remote party accepted the call (FCM fallback or NX signal)
+    _nexaconService.onRemoteAccepted = () {
+      print('📲 Remote party accepted — connecting WebRTC...');
+      isRinging.value = false;
+      isRemoteAccepted.value = true;
     };
 
     // Other user left callback - end call when other party disconnects
@@ -172,9 +189,30 @@ class CallController extends GetxController {
     };
 
     // Incoming call callback - only used on the consultant/callee side
-    // Do NOT set isConsultantConnected here — that is driven by onOtherUserJoined
+    // When SDK signals an incoming call (not via FCM), navigate to call screen
     _nexaconService.onIncomingCall = (callerName) {
       print('📞 Incoming call signal received from: $callerName');
+
+      // Avoid duplicate navigation if already on a call screen
+      final currentRoute = Get.currentRoute;
+      if (currentRoute.contains('Call') || currentRoute.contains('call')) {
+        print('⚠️ Already on a call screen, ignoring SDK incoming call');
+        return;
+      }
+
+      // Navigate to incoming call screen
+      Get.to(
+        () => IncomingCallScreen(
+          callId: '',
+          channelName: '',
+          callerName: callerName,
+          callerPhoto: '',
+          callType: 'voice',
+          callerId: '',
+          callerPhone: '',
+        ),
+        fullscreenDialog: true,
+      );
     };
 
     // Error callback

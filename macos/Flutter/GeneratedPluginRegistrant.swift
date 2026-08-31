@@ -18,6 +18,7 @@ import flutter_secure_storage_macos
 import flutter_webrtc
 import geolocator_apple
 import no_screenshot
+import shared_preferences_foundation
 import smart_auth
 import sqflite_darwin
 import url_launcher_macos
@@ -37,6 +38,7 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   FlutterWebRTCPlugin.register(with: registry.registrar(forPlugin: "FlutterWebRTCPlugin"))
   GeolocatorPlugin.register(with: registry.registrar(forPlugin: "GeolocatorPlugin"))
   MacOSNoScreenshotPlugin.register(with: registry.registrar(forPlugin: "MacOSNoScreenshotPlugin"))
+  SharedPreferencesPlugin.register(with: registry.registrar(forPlugin: "SharedPreferencesPlugin"))
   SmartAuthPlugin.register(with: registry.registrar(forPlugin: "SmartAuthPlugin"))
   SqflitePlugin.register(with: registry.registrar(forPlugin: "SqflitePlugin"))
   UrlLauncherPlugin.register(with: registry.registrar(forPlugin: "UrlLauncherPlugin"))

@@ -30,12 +30,28 @@ class NearbyLawyersService extends GetxService {
           'types': types,
           'page': page,
           'page_size': pageSize,
+          'debug': '1',
         },
       );
 
       if (response.statusCode == 200) {
         final nearbyResponse = NearbyLawyersResponse.fromJson(response.data);
         debugPrint('✅ Found ${nearbyResponse.count} nearby lawyers');
+
+        // Log debug diagnostics if present
+        if (response.data['debug'] != null) {
+          final debug = response.data['debug'];
+          debugPrint('🔍 DEBUG: matched_by_role=${debug['matched_by_role']}');
+          debugPrint(
+              '🔍 DEBUG: role_names_in_db=${debug['all_role_names_in_db']}');
+          for (final skipped in (debug['skipped'] as List? ?? [])) {
+            debugPrint(
+                '🔍 DEBUG: SKIPPED ${skipped['email']} — ${skipped['skipped_reason']}'
+                '${skipped['distance_km'] != null ? ' (${skipped['distance_km']}km vs ${skipped['radius_km']}km)' : ''}'
+                '${skipped['their_location'] != null ? ' loc=${skipped['their_location']}' : ''}');
+          }
+        }
+
         return nearbyResponse;
       } else {
         debugPrint('❌ Failed to fetch nearby lawyers: ${response.statusCode}');

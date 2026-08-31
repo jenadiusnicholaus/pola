@@ -478,6 +478,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.4.4"
+  flutter_callkit_incoming:
+    dependency: "direct main"
+    description:
+      name: flutter_callkit_incoming
+      sha256: "993fb0f0cd990961072f0d13ff815a91773f92bfa1895be17d3366b2225ec9cd"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.5.8"
   flutter_dotenv:
     dependency: "direct main"
     description:
@@ -660,10 +668,10 @@ packages:
     dependency: "direct main"
     description:
       name: geolocator
-      sha256: "149876cc5207a0f5daf4fdd3bfcf0a0f27258b3fe95108fa084f527ad0568f1b"
+      sha256: f62bcd90459e63210bbf9c35deb6a51c521f992a78de19a1fe5c11704f9530e2
       url: "https://pub.dev"
     source: hosted
-    version: "12.0.0"
+    version: "13.0.4"
   geolocator_android:
     dependency: transitive
     description:
@@ -1036,17 +1044,18 @@ packages:
     dependency: "direct main"
     description:
       name: nexacon_calls
-      sha256: "82e080539800b430b6992228164146af06d0639ab5d7c7c15efba26dd7285bba"
+      sha256: "2b1a4dac482efee9852153dc4e3ccbdb706e36a404613c66755e4836ef497066"
       url: "https://pub.dev"
     source: hosted
-    version: "1.3.15"
+    version: "1.3.17"
   nexacon_messaging:
     dependency: "direct main"
     description:
-      path: "/Users/mac/development/sdks/nexacon-messaging"
-      relative: false
-    source: path
-    version: "1.0.4"
+      name: nexacon_messaging
+      sha256: "3344274c8ffac84284aab8bb7d7de079b3ad4704344f0f3b44f083bbc0047e0a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.6"
   no_screenshot:
     dependency: "direct main"
     description:
@@ -1295,6 +1304,62 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.28.0"
+  shared_preferences:
+    dependency: "direct main"
+    description:
+      name: shared_preferences
+      sha256: c3025c5534b01739267eb7d76959bbc25a6d10f6988e1c2a3036940133dd10bf
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.5.5"
+  shared_preferences_android:
+    dependency: transitive
+    description:
+      name: shared_preferences_android
+      sha256: e8d4762b1e2e8578fc4d0fd548cebf24afd24f49719c08974df92834565e2c53
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.23"
+  shared_preferences_foundation:
+    dependency: transitive
+    description:
+      name: shared_preferences_foundation
+      sha256: "4e7eaffc2b17ba398759f1151415869a34771ba11ebbccd1b0145472a619a64f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.5.6"
+  shared_preferences_linux:
+    dependency: transitive
+    description:
+      name: shared_preferences_linux
+      sha256: "580abfd40f415611503cae30adf626e6656dfb2f0cee8f465ece7b6defb40f2f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.1"
+  shared_preferences_platform_interface:
+    dependency: transitive
+    description:
+      name: shared_preferences_platform_interface
+      sha256: "649dc798a33931919ea356c4305c2d1f81619ea6e92244070b520187b5140ef9"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.2"
+  shared_preferences_web:
+    dependency: transitive
+    description:
+      name: shared_preferences_web
+      sha256: c49bd060261c9a3f0ff445892695d6212ff603ef3115edbb448509d407600019
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.3"
+  shared_preferences_windows:
+    dependency: transitive
+    description:
+      name: shared_preferences_windows
+      sha256: "94ef0f72b2d71bc3e700e025db3710911bd51a71cefb65cc609dd0d9a982e3c1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.1"
   shelf:
     dependency: transitive
     description:

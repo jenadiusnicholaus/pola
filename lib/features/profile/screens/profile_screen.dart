@@ -221,6 +221,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       // Role-Specific Information
                       RoleSpecificInfo(profile: profile),
+                      const SizedBox(height: 16),
+
+                      if (profile.userRole.roleName == 'advocate' ||
+                          profile.userRole.roleName == 'lawyer' ||
+                          profile.userRole.roleName == 'paralegal')
+                        Card(
+                          child: ListTile(
+                            leading: const Icon(Icons.business_outlined),
+                            title: const Text('Associated Law Firm'),
+                            subtitle: Text(
+                              profile.associatedLawFirmDisplay ??
+                                  'Tap to change your affiliation',
+                            ),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => _openAssociatedLawFirm(),
+                          ),
+                        ),
                       const SizedBox(height: 24),
 
                       // Account Information
@@ -325,6 +342,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _openAssociatedLawFirm() async {
+    final updated = await Get.toNamed(AppRoutes.associatedLawFirm);
+    if (updated == true) {
+      await controller.loadProfileSilently();
+    }
   }
 
   String _getGenderDisplay(String gender) {

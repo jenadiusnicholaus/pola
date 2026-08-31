@@ -352,6 +352,171 @@ class NexaconMessagingService extends GetxService {
     }
   }
 
+  /// Cached NX contacts for caller name resolution
+  List<Map<String, dynamic>>? _cachedContacts;
+  DateTime? _contactsLastFetch;
+  static const Duration _contactsCacheTtl = Duration(minutes: 5);
+
+  /// Get the current user's NX contact list, with short in-memory caching.
+  Future<List<Map<String, dynamic>>> getContacts(
+      {bool forceRefresh = false}) async {
+    if (!forceRefresh &&
+        _cachedContacts != null &&
+        _contactsLastFetch != null &&
+        DateTime.now().difference(_contactsLastFetch!) < _contactsCacheTtl) {
+      debugPrint('📇 Using cached NX contacts (${_cachedContacts!.length})');
+      return _cachedContacts!;
+    }
+
+    await ensureInitialized();
+
+    if (_messaging == null) {
+      throw Exception('Messaging service not initialized');
+    }
+
+    final contacts = await _messaging!.getContacts();
+    _cachedContacts = contacts;
+    _contactsLastFetch = DateTime.now();
+    debugPrint('📇 Fetched ${contacts.length} NX contacts');
+    return contacts;
+  }
+
+  /// Try to resolve a display name for a phone number or NX JID.
+  ///
+  /// 1. Searches the NX contacts list (cached for 5 minutes).
+  /// 2. If no contact matches, fetches the latest message history for the
+  ///    peer to retrieve the bare NX JID, then re-searches contacts.
+  Future<String?> resolveCallerName(String phoneOrJid) async {
+    if (phoneOrJid.trim().isEmpty) return null;
+
+    // Normalize the input so we can match by phone digits or bare JID.
+    final normalizedInput = _normalizeContactKey(phoneOrJid);
+    if (normalizedInput.isEmpty) return null;
+
+    try {
+      final contacts = await getContacts();
+
+      // 1. Search contacts by normalized phone / JID.
+      for (final contact in contacts) {
+        final keys = _extractContactKeys(contact);
+        if (keys.contains(normalizedInput)) {
+          final name = _extractContactName(contact);
+          if (name != null && name.isNotEmpty) {
+            debugPrint(
+                '📇 Found caller name "$name" for $phoneOrJid in contacts');
+            return name;
+          }
+        }
+      }
+
+      // 2. No contact match. Ask the history API for the peer and use the
+      //    JID from the latest message to search contacts again.
+      final history = await getConversationHistory(
+        phoneOrJid,
+        pageSize: 1,
+      );
+
+      if (history.messages.isNotEmpty) {
+        final fromJid = history.messages.first.from;
+        final bareJid = _normalizeContactKey(fromJid);
+
+        for (final contact in contacts) {
+          final keys = _extractContactKeys(contact);
+          if (bareJid.isNotEmpty && keys.contains(bareJid)) {
+            final name = _extractContactName(contact);
+            if (name != null && name.isNotEmpty) {
+              debugPrint(
+                '📇 Found caller name "$name" for $phoneOrJid via history (JID: $bareJid)',
+              );
+              return name;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ resolveCallerName error for $phoneOrJid: $e');
+    }
+
+    return null;
+  }
+
+  /// Normalize a phone/JID to a comparable string of digits or bare JID.
+  String _normalizeContactKey(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return '';
+
+    // Strip domain if it's a JID
+    var bare = trimmed.split('@').first;
+    // Strip leading `+` and country code for phone comparison
+    bare = bare.replaceAll('+', '').replaceAll(RegExp(r'^\s*255'), '');
+    return bare.replaceAll(RegExp(r'[^\d]'), '');
+  }
+
+  /// Extract all possible identifier values from a contact map.
+  Set<String> _extractContactKeys(Map<String, dynamic> contact) {
+    final keys = <String>{};
+    final candidateFields = [
+      'nxid',
+      'username',
+      'jid',
+      'phone',
+      'phone_number',
+      'mobile',
+      'contact_number',
+      'owner_name',
+    ];
+
+    for (final field in candidateFields) {
+      final value = contact[field]?.toString() ?? '';
+      if (value.isNotEmpty) keys.add(_normalizeContactKey(value));
+    }
+
+    // Nested contact/phone object
+    final contactObj = contact['contact'] as Map<String, dynamic>?;
+    final phoneFromContact = contactObj?['phone_number']?.toString() ?? '';
+    if (phoneFromContact.isNotEmpty) {
+      keys.add(_normalizeContactKey(phoneFromContact));
+    }
+
+    return keys;
+  }
+
+  /// Extract the best display name from a contact map.
+  String? _extractContactName(Map<String, dynamic> contact) {
+    for (final field in ['name', 'display_name', 'full_name', 'owner_name']) {
+      final value = contact[field]?.toString() ?? '';
+      if (value.isNotEmpty) return value;
+    }
+
+    final firstName = contact['first_name']?.toString() ?? '';
+    final lastName = contact['last_name']?.toString() ?? '';
+    final parts = [firstName, lastName].where((s) => s.isNotEmpty).toList();
+    if (parts.isNotEmpty) return parts.join(' ');
+
+    return null;
+  }
+
+  /// Clear cached contacts, e.g. after reconnect or logout.
+  void clearContactCache() {
+    _cachedContacts = null;
+    _contactsLastFetch = null;
+    debugPrint('📇 NX contact cache cleared');
+  }
+
+  /// Disconnect messaging and reset state for logout / user switch.
+  Future<void> disconnect() async {
+    try {
+      await _connectionStateSubscription?.cancel();
+      _connectionStateSubscription = null;
+      await _messaging?.disconnect();
+      isConnected.value = false;
+      clearContactCache();
+      debugPrint('🔌 NexaconMessagingService disconnected and cleared');
+    } catch (e) {
+      debugPrint('⚠️ Error disconnecting messaging: $e');
+    }
+  }
+
   /// Get message history for a conversation (paginated via offset)
   Future<NxMessageHistoryResponse> getConversationHistory(
     String contactNxid, {

@@ -123,7 +123,7 @@ class ConsultationService extends GetxService {
               message: errorData['message'].toString(),
             );
           }
-          
+
           // Handle field-specific errors
           if (errorData.isNotEmpty) {
             final firstValue = errorData.values.first;
@@ -334,7 +334,8 @@ class ConsultationService extends GetxService {
       );
 
       if (response.statusCode == 200) {
-        debugPrint('✅ My bookings fetched: ${response.data['count']} total (filter: $status)');
+        debugPrint(
+            '✅ My bookings fetched: ${response.data['count']} total (filter: $status)');
         return MyBookingsResponse.fromJson(response.data);
       }
 
@@ -387,7 +388,8 @@ class ConsultationService extends GetxService {
       );
 
       if (response.statusCode == 200) {
-        debugPrint('✅ Call credits fetched: ${response.data['total_minutes']} minutes');
+        debugPrint(
+            '✅ Call credits fetched: ${response.data['total_minutes']} minutes');
         return CallCreditsResponse.fromJson(response.data);
       }
 
@@ -444,14 +446,16 @@ class ConsultationService extends GetxService {
     String paymentMethod = 'mobile_money',
   }) async {
     try {
-      debugPrint('📤 Creating physical consultation booking for law firm profile $consultantProfileId');
+      debugPrint(
+          '📤 Creating physical consultation booking for law firm profile $consultantProfileId');
 
       final data = <String, dynamic>{
-        'consultant_id': consultantProfileId,  // API expects consultant_id
-        'booking_type': 'physical',  // API requires booking_type
+        'consultant_id': consultantProfileId, // API expects consultant_id
+        'booking_type': 'physical', // API requires booking_type
         'topic': topic,
         'description': description,
-        'scheduled_date': scheduledDate.toIso8601String().split('T')[0], // YYYY-MM-DD
+        'scheduled_date':
+            scheduledDate.toIso8601String().split('T')[0], // YYYY-MM-DD
         'scheduled_time': scheduledTime, // HH:MM:SS
         'duration_minutes': durationMinutes,
         'location': location,
@@ -496,7 +500,8 @@ class ConsultationService extends GetxService {
       debugPrint('');
       debugPrint('========== PHYSICAL BOOKING REQUEST ==========');
       debugPrint('📤 Consultant ID being sent: $consultantId');
-      debugPrint('📤 Scheduled Date: ${scheduledDate.toUtc().toIso8601String()}');
+      debugPrint(
+          '📤 Scheduled Date: ${scheduledDate.toUtc().toIso8601String()}');
       debugPrint('📤 Duration: $durationMinutes minutes');
       debugPrint('📤 Location: $meetingLocation');
       debugPrint('📤 Notes: $clientNotes');
@@ -512,26 +517,29 @@ class ConsultationService extends GetxService {
       };
 
       debugPrint('📤 Full Request Body: $data');
-      debugPrint('📤 Endpoint: /api/v1/subscriptions/physical-consultations/book/');
+      debugPrint(
+          '📤 Endpoint: /api/v1/subscriptions/physical-consultations/book/');
       debugPrint('===============================================');
       debugPrint('');
 
       final response = await _apiService.post(
-        '/api/v1/subscriptions/physical-consultations/book/',
+        EnvironmentConfig.physicalConsultationBookUrl,
         data: data,
       );
 
       debugPrint('📥 Create booking response: ${response.statusCode}');
       debugPrint('📥 Response data: ${response.data}');
-      
+
       // Debug: Print booking details
       if (response.data is Map) {
         final bookingData = response.data['booking'];
         if (bookingData != null) {
           debugPrint('📥 Booking data:');
           debugPrint('   total_amount: ${bookingData['total_amount']}');
-          debugPrint('   platform_commission: ${bookingData['platform_commission']}');
-          debugPrint('   consultant_earnings: ${bookingData['consultant_earnings']}');
+          debugPrint(
+              '   platform_commission: ${bookingData['platform_commission']}');
+          debugPrint(
+              '   consultant_earnings: ${bookingData['consultant_earnings']}');
         }
         debugPrint('📥 payment_info: ${response.data['payment_info']}');
       }
@@ -562,9 +570,36 @@ class ConsultationService extends GetxService {
       );
     } catch (e) {
       debugPrint('❌ Error creating physical booking: $e');
+      String errorMessage;
+      if (e is Exception) {
+        final str = e.toString();
+        if (str.contains('DioException') || str.contains('bad response')) {
+          try {
+            final dio = e as dynamic;
+            final resp = dio.response;
+            if (resp != null && resp.data is Map) {
+              errorMessage = resp.data['message'] ??
+                  resp.data['error'] ??
+                  resp.data['detail'] ??
+                  'Request failed (${resp.statusCode})';
+            } else if (resp != null) {
+              errorMessage = 'Request failed (${resp.statusCode})';
+            } else {
+              errorMessage =
+                  dio.message?.toString() ?? 'Network error occurred';
+            }
+          } catch (_) {
+            errorMessage = 'Network error occurred';
+          }
+        } else {
+          errorMessage = e.toString();
+        }
+      } else {
+        errorMessage = e.toString();
+      }
       return PhysicalBookingResponse(
         success: false,
-        message: 'Error: $e',
+        message: errorMessage,
       );
     }
   }
@@ -719,7 +754,6 @@ class PhysicalBooking {
     );
   }
 }
-
 
 class ConsultantProfile {
   final int id;
@@ -972,7 +1006,7 @@ class ClientBooking {
     // Handle consultant field - can be int ID or Map object
     int? consultantId;
     Map<String, dynamic>? consultantDetails;
-    
+
     final consultantData = json['consultant'];
     if (consultantData is int) {
       consultantId = consultantData;
@@ -980,7 +1014,7 @@ class ClientBooking {
       consultantDetails = consultantData;
       consultantId = consultantData['id'];
     }
-    
+
     // Also check consultant_details field
     if (consultantDetails == null && json['consultant_details'] != null) {
       consultantDetails = json['consultant_details'];
@@ -998,8 +1032,8 @@ class ClientBooking {
       totalAmount: json['total_amount']?.toString() ?? '0',
       consultantId: consultantId,
       consultantDetails: consultantDetails,
-      scheduledDurationMinutes: json['scheduled_duration_minutes'] ?? 
-          json['duration_minutes'] ?? 60,
+      scheduledDurationMinutes:
+          json['scheduled_duration_minutes'] ?? json['duration_minutes'] ?? 60,
       clientNotes: json['client_notes'],
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
@@ -1008,8 +1042,9 @@ class ClientBooking {
   }
 
   // Convenience getters
-  String get consultantName => consultantDetails?['name'] ?? 
-      consultantDetails?['full_name'] ?? 
+  String get consultantName =>
+      consultantDetails?['name'] ??
+      consultantDetails?['full_name'] ??
       'Consultant #$consultantId';
 }
 
@@ -1261,9 +1296,8 @@ class ClientCallRecord {
       startTime: json['start_time'] != null
           ? DateTime.tryParse(json['start_time'])
           : null,
-      endTime: json['end_time'] != null
-          ? DateTime.tryParse(json['end_time'])
-          : null,
+      endTime:
+          json['end_time'] != null ? DateTime.tryParse(json['end_time']) : null,
       date: json['date'] ?? '',
       callQualityRating: json['call_quality_rating'],
     );

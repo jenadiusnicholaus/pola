@@ -7,6 +7,9 @@ import 'api_service.dart';
 import 'token_storage_service.dart';
 import '../features/profile/services/profile_service.dart';
 import '../features/calling_booking/services/online_status_service.dart';
+import '../features/messaging/services/nexacon_messaging_service.dart';
+import '../features/calling_booking/services/nexacon_call_service.dart';
+import '../features/auth/services/lookup_service.dart';
 import '../utils/navigation_helper.dart';
 import 'dart:async';
 
@@ -206,14 +209,38 @@ class AuthService extends GetxController {
     try {
       final accessToken = responseData['access'] as String?;
       final refreshToken = responseData['refresh'] as String?;
-      final userData = responseData['user'] as Map<String, dynamic>?;
+      final nestedUser = responseData['user'] as Map<String, dynamic>?;
 
       if (accessToken == null || refreshToken == null) {
         debugPrint('❌ Invalid login response: missing tokens');
         return false;
       }
 
+      // Merge top-level response fields into the nested user object so
+      // full_name, first_name, last_name, role, etc. are stored and the
+      // device registration can send a proper owner_name to NX.
+      final userData =
+          Map<String, dynamic>.from(nestedUser ?? <String, dynamic>{});
+      final topLevelFields = <String, dynamic>{
+        'user_id': responseData['user_id'],
+        'email': responseData['email'],
+        'first_name': responseData['first_name'],
+        'last_name': responseData['last_name'],
+        'full_name': responseData['full_name'],
+        'role': responseData['role'],
+        'phone_number': responseData['phone_number'],
+        'phone': responseData['phone'],
+      };
+      topLevelFields.forEach((key, value) {
+        if (value != null && !userData.containsKey(key)) {
+          userData[key] = value;
+        }
+      });
+
       // Store tokens and user data
+      debugPrint('💾 Storing userData keys: ${userData.keys.toList()}');
+      debugPrint('💾 phone_number in userData: ${userData['phone_number']}');
+      debugPrint('💾 full_name in userData: ${userData['full_name']}');
       await _tokenStorage.storeTokens(
         accessToken: accessToken,
         refreshToken: refreshToken,
@@ -301,6 +328,38 @@ class AuthService extends GetxController {
       }
     } catch (e) {
       debugPrint('⚠️ Could not stop heartbeat on logout: $e');
+    }
+
+    // Clear Nexacon messaging state so a new user doesn't see old contacts/chats
+    try {
+      if (Get.isRegistered<NexaconMessagingService>()) {
+        final msgService = Get.find<NexaconMessagingService>();
+        msgService.clearContactCache();
+        await msgService.disconnect();
+        debugPrint('🧹 Nexacon messaging cache cleared and disconnected');
+      }
+    } catch (e) {
+      debugPrint('⚠️ Could not clear messaging service: $e');
+    }
+
+    // Clear Nexacon call service state
+    try {
+      if (Get.isRegistered<NexaconCallService>()) {
+        await Get.find<NexaconCallService>().dispose();
+        debugPrint('🧹 Nexacon call service disposed');
+      }
+    } catch (e) {
+      debugPrint('⚠️ Could not dispose call service: $e');
+    }
+
+    // Clear lookup service cache (roles, regions, districts, etc.)
+    try {
+      if (Get.isRegistered<LookupService>()) {
+        Get.find<LookupService>().clearCache();
+        debugPrint('🧹 Lookup service cache cleared');
+      }
+    } catch (e) {
+      debugPrint('⚠️ Could not clear lookup cache: $e');
     }
 
     await _tokenStorage.clearTokens();

@@ -1,6 +1,8 @@
 import 'dart:async';
-import 'package:nexacon_calls/nexacon_calls.dart';
+import 'dart:io' as io show Platform;
+import 'package:nexacon_calls/nexacon_calls.dart' hide NexaconConfig;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:get/get.dart';
 import '../../../config/nexacon_config.dart';
 import 'call_service.dart';
@@ -22,6 +24,8 @@ class NexaconCallService extends GetxService {
   Function()? onOtherUserJoined;
   Function()? onOtherUserLeft;
   Function(String callerName)? onIncomingCall;
+  Function()? onCallRinging;
+  Function()? onRemoteAccepted;
 
   // State
   bool _isMuted = false;
@@ -31,6 +35,97 @@ class NexaconCallService extends GetxService {
   bool get isSpeakerOn => _isSpeakerOn;
   int get callDuration => _callDuration;
   int? get callId => _callId;
+
+  /// Register this device with the NX backend for push notifications.
+  /// Must be called after login with the FCM token so the NX backend knows
+  /// where to send call invitations for this user.
+  Future<bool> registerDeviceWithNx({
+    required String fcmToken,
+    required String username,
+    String? ownerName,
+  }) async {
+    try {
+      print('📱 Registering device with NX backend...');
+      print('   FCM token: ${fcmToken.substring(0, 20)}...');
+      print('   Username: $username');
+      print('   Owner name: $ownerName');
+
+      // Create a temporary client to access the Devices API
+      final client = NexaconClient(
+        apiKey: NexaconConfig.apiKey,
+        secretKey: NexaconConfig.secretKey,
+      );
+      print('   NX client created, baseUrl: ${client.baseUrl}');
+
+      // Fetch NX token first so the register request is authenticated
+      print('🔐 Fetching NX token for device registration...');
+      final nxResponse = await client.auth.getNxToken(username: username);
+      final nxToken = nxResponse['token'] as String;
+      client.setToken(nxToken);
+      print('✅ NX token obtained for device registration');
+
+      // Revoke all existing devices for this user before registering the new one.
+      // This ensures stale FCM tokens from old/changed devices are cleaned up
+      // so call notifications are sent only to the current device.
+      try {
+        final existingDevices = await client.devices.listDevices();
+        print('🔄 Found ${existingDevices.length} existing NX device(s)');
+        for (final device in existingDevices) {
+          final deviceId = device['id']?.toString();
+          if (deviceId != null && deviceId.isNotEmpty) {
+            print('   🗑️ Revoking old NX device: $deviceId');
+            await client.devices.revokeDevice(deviceId);
+          }
+        }
+      } catch (e) {
+        print('⚠️ Could not list/revoke old NX devices (non-blocking): $e');
+      }
+
+      final platform = io.Platform.isIOS ? Platform.ios : Platform.android;
+      print('   Platform: ${platform.name}');
+
+      // Get device name for registration
+      String? deviceName;
+      try {
+        final deviceInfo = DeviceInfoPlugin();
+        if (io.Platform.isIOS) {
+          final iosInfo = await deviceInfo.iosInfo;
+          deviceName = '${iosInfo.name} (${iosInfo.model})';
+        } else {
+          final androidInfo = await deviceInfo.androidInfo;
+          deviceName = '${androidInfo.brand} ${androidInfo.model}';
+        }
+        print('   Device name: $deviceName');
+      } catch (e) {
+        print('⚠️ Could not get device name: $e');
+      }
+
+      // Always send an owner_name; fall back to the NX ID (phone number)
+      // so the backend never receives null and caller_name is at least usable.
+      final resolvedOwnerName =
+          ownerName?.trim().isNotEmpty == true ? ownerName! : username;
+
+      print('📤 Calling POST /nx/register-device/ ...');
+      final result = await client.devices.register(
+        fcmToken: fcmToken,
+        platform: platform,
+        deviceName: deviceName,
+        ownerName: resolvedOwnerName,
+      );
+
+      print('✅ NX device registration result: $result');
+      client.close();
+      return true;
+    } catch (e, stackTrace) {
+      print('❌ NX device registration failed: $e');
+      if (e is APIException) {
+        print('❌ NX device registration status: ${e.statusCode}');
+        print('❌ NX device registration response: ${e.response}');
+      }
+      print('❌ Stack trace: $stackTrace');
+      return false;
+    }
+  }
 
   /// Create and configure a NexaconSDK instance with all callbacks
   NexaconSDK _createSdk() {
@@ -50,6 +145,7 @@ class NexaconCallService extends GetxService {
         }
       } else if (state == CallState.calling) {
         print('📞 Call is ringing...');
+        onCallRinging?.call();
       } else if (state == CallState.idle) {
         print('📞 Call is idle');
       }
@@ -123,6 +219,7 @@ class NexaconCallService extends GetxService {
   void notifyRemoteAccepted() {
     print('📲 Notifying SDK of remote call acceptance');
     _sdk?.notifyRemoteAccepted();
+    onRemoteAccepted?.call();
   }
 
   /// Pre-warm the NX connection as soon as the incoming call screen opens.

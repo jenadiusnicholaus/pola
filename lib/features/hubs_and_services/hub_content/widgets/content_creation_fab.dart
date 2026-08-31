@@ -278,7 +278,11 @@ class _ContentCreationMenuState extends State<ContentCreationMenu>
         ];
       case 'forum':
         return [
-          {'key': 'discussion', 'label': 'Discussion / Mjadala', 'icon': Icons.forum},
+          {
+            'key': 'discussion',
+            'label': 'Discussion / Mjadala',
+            'icon': Icons.forum
+          },
           {'key': 'question', 'label': 'Question / Swali', 'icon': Icons.help},
           {'key': 'general', 'label': 'General / Jumla', 'icon': Icons.chat},
           {'key': 'news', 'label': 'News / Habari', 'icon': Icons.newspaper},

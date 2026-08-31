@@ -18,6 +18,7 @@ import '../features/hubs_and_services/hub_content/services/hub_content_service.d
 import '../features/consultation/services/consultation_service.dart';
 import '../features/subscription/services/subscription_service.dart';
 import 'device_registration_service.dart';
+import 'location_service.dart';
 import '../features/nearbylawyers/services/nearby_lawyers_service.dart';
 import '../features/calling_booking/services/fcm_service.dart';
 import '../features/calling_booking/services/nexacon_call_service.dart';
@@ -88,6 +89,11 @@ class AppInitializer {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     debugPrint('✅ Firebase initialized');
+
+    // Register the top-level background message handler before the app runs.
+    // This must be a top-level or static function and set as early as possible.
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    debugPrint('✅ FCM background handler registered');
 
     // GetStorage for local persistence
     await GetStorage.init();
@@ -187,8 +193,12 @@ class AppInitializer {
       debugPrint('✅ FCMService initialized (background)');
 
       // Online status
-      Get.put(OnlineStatusService());
+      Get.put(OnlineStatusService(), permanent: true);
       debugPrint('✅ OnlineStatusService initialized (background)');
+
+      // Live location for nearby lawyers
+      Get.put(LocationService(), permanent: true);
+      debugPrint('✅ LocationService initialized (background)');
 
       // Notification service for in-app notifications
       Get.put(NotificationService());
@@ -263,11 +273,10 @@ class AppInitializer {
       Get.put(ThemeController());
       debugPrint('✅ ThemeController initialized (background)');
 
-      // Setup FCM background handler
-      FirebaseMessaging.onBackgroundMessage(
-        _firebaseMessagingBackgroundHandler,
-      );
-      debugPrint('✅ FCM background handler registered');
+      // NOTE: FCM background handler is registered early in
+      // _initializeCriticalServices(), before runApp(). Registering it again
+      // here (after runApp) is too late for Android to reliably wire up the
+      // background isolate entry point, especially across hot restarts.
     });
   }
 
@@ -279,13 +288,6 @@ class AppInitializer {
       debugPrint('⚠️ Service init error (non-fatal): $e');
     }
   }
-}
-
-/// Background message handler (must be top-level)
-@pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  debugPrint('📱 Background message received: ${message.messageId}');
 }
 
 /// Extension to check if a service is registered

@@ -8,6 +8,7 @@ import '../features/navigation/screens/main_navigation_screen.dart';
 import '../features/settings/screens/settings_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
 import '../features/profile/screens/edit_profile_screen.dart';
+import '../features/profile/screens/associated_law_firm_screen.dart';
 import '../features/hubs_and_services/legal_education/screens/legal_education_screen.dart';
 import '../features/hubs_and_services/legal_education/screens/topic_materials_screen.dart';
 import '../features/hubs_and_services/legal_education/screens/material_viewer_screen.dart';
@@ -21,6 +22,7 @@ import '../features/questions/screens/question_detail_screen.dart';
 import '../features/calling_booking/screens/consultants_screen.dart';
 import '../features/calling_booking/screens/consultant_detail_screen.dart';
 import '../features/calling_booking/screens/call_screen.dart';
+import '../features/calling_booking/screens/incoming_call_screen.dart';
 import '../features/calling_booking/screens/credit_payment_screen.dart';
 import '../features/calling_booking/screens/buy_credits_screen.dart';
 import '../features/doc_templates/screens/templates_list_screen.dart';
@@ -53,6 +55,7 @@ class AppRoutes {
   static const String home = '/home';
   static const String profile = '/profile';
   static const String editProfile = '/edit-profile';
+  static const String associatedLawFirm = '/associated-law-firm';
   static const String settings = '/settings';
   static const String legalEducation = '/legal-education';
   static const String topicMaterials = '/topic-materials';
@@ -69,6 +72,7 @@ class AppRoutes {
   static const String consultants = '/consultants';
   static const String consultantDetail = '/consultant-detail';
   static const String call = '/call';
+  static const String incomingCall = '/incoming-call';
   static const String payment = '/payment';
   static const String buyCredits = '/buy-credits';
   static const String templates = '/templates';
@@ -126,6 +130,10 @@ class AppRoutes {
     GetPage(
       name: editProfile,
       page: () => const EditProfileScreen(),
+    ),
+    GetPage(
+      name: associatedLawFirm,
+      page: () => const AssociatedLawFirmScreen(),
     ),
     GetPage(
       name: settings,
@@ -201,6 +209,19 @@ class AppRoutes {
         isIncoming: Get.arguments?['isIncoming'] ?? false,
         callerName: Get.arguments?['callerName'],
         callerPhoto: Get.arguments?['callerPhoto'],
+        callerPhone: Get.arguments?['callerPhone'],
+      ),
+    ),
+    GetPage(
+      name: incomingCall,
+      page: () => IncomingCallScreen(
+        callId: Get.arguments?['callId'] ?? '',
+        channelName: Get.arguments?['channelName'] ?? '',
+        callerName: Get.arguments?['callerName'] ?? 'Unknown',
+        callerPhoto: Get.arguments?['callerPhoto'] ?? '',
+        callType: Get.arguments?['callType'] ?? 'voice',
+        callerId: Get.arguments?['callerId'] ?? '',
+        callerPhone: Get.arguments?['callerPhone'] ?? '',
       ),
     ),
     GetPage(

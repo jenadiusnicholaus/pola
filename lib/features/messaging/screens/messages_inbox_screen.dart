@@ -1,12 +1,12 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:nexacon_messaging/nexacon_messaging.dart';
 import 'chat_room_screen.dart';
 import '../services/nexacon_messaging_service.dart';
 import '../models/message.dart';
-import '../../../utils/phone_formatter.dart';
-import '../../../services/api_service.dart';
 
 /// Professional Messages Inbox Screen
 /// Modern messaging interface with professional design
@@ -27,11 +27,31 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
   Map<String, Map<String, dynamic>> _lastMessages =
       {}; // Store last message per contact
 
+  StreamSubscription<NxMessage>? _messageSub;
+  Timer? _refreshDebounce;
+
   @override
   void initState() {
     super.initState();
     debugPrint('📨 MessagesInboxScreen: initState, calling _loadAllMessages');
     _loadAllMessages();
+    _subscribeToMessages();
+  }
+
+  @override
+  void dispose() {
+    _refreshDebounce?.cancel();
+    _messageSub?.cancel();
+    super.dispose();
+  }
+
+  void _subscribeToMessages() {
+    _messageSub = _messagingService.messageStream.listen((_) {
+      _refreshDebounce?.cancel();
+      _refreshDebounce = Timer(const Duration(milliseconds: 500), () {
+        if (mounted) _loadAllMessages();
+      });
+    });
   }
 
   bool _isDisplayableMessage(String body) {
@@ -47,7 +67,9 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
       try {
         final map = jsonDecode(body) as Map<String, dynamic>;
         final type = map['type']?.toString() ?? '';
-        if (type == 'chat' || type.isEmpty) return true;
+        if (type == 'chat' || type.isEmpty) {
+          return true;
+        }
         return false; // call_invitation, call_response, webrtc, etc.
       } catch (_) {
         // Not valid JSON
@@ -97,18 +119,9 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
 
           // Try to unwrap JSON chat messages
           if (messageText.trim().startsWith('{')) {
-            try {
-              final map = jsonDecode(messageText) as Map<String, dynamic>;
-              final type = map['type']?.toString() ?? '';
-              if (type == 'chat' || type.isEmpty) {
-                final extracted = map['message']?.toString() ??
-                    map['body']?.toString() ??
-                    map['content']?.toString() ??
-                    '';
-                if (extracted.isNotEmpty) messageText = extracted;
-              }
-            } catch (_) {
-              // Not valid JSON, leave as-is
+            final extracted = Message.extractHumanText(messageText);
+            if (extracted != messageText && extracted.isNotEmpty) {
+              messageText = extracted;
             }
           }
 
@@ -170,100 +183,118 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
     }
   }
 
-  /// Resolve phone-number contact names to real user names via the
-  /// user search API (/api/v1/authentication/users/search/?q=<phone>).
+  /// Resolve contact display names by matching phone/JID against the
+  /// NX contact list from [NexaconMessagingService.getContacts].
   Future<void> _resolveContactNames() async {
-    final apiService = Get.find<ApiService>();
-    var updated = false;
+    try {
+      final nxContacts = await _messagingService.getContacts();
+      final nameMap = <String, String>{};
+      final avatarMap = <String, String?>{};
 
-    for (final contact in _contacts) {
-      final nxid = contact['nxid']?.toString() ?? '';
-      final phoneWithPlus = nxid.split('@').first;
-      final phone = phoneWithPlus.replaceAll('+', '');
-      // Also try without the Tanzania country code (255)
-      final phoneNoCc = phone.startsWith('255') ? phone.substring(3) : phone;
-      final currentName = contact['name']?.toString() ?? '';
+      // Index contacts by phone/JID so we can match by any phone format.
+      for (final c in nxContacts) {
+        final nxid = _extractJid(c);
+        final phone = _stripPhone(nxid);
+        if (phone.isEmpty) continue;
 
-      // Skip if already resolved to a real name
-      if (currentName != 'Loading...' &&
-          currentName != phone &&
-          currentName != phoneWithPlus &&
-          currentName.isNotEmpty) continue;
+        final name = _extractName(c) ?? phone;
+        final avatar = _extractAvatar(c);
 
-      Map<String, dynamic>? user;
-      // Try searching with multiple phone formats
-      final queries = <String>[
-        phoneWithPlus,
-        phone,
-        if (phoneNoCc != phone) phoneNoCc,
-      ];
+        nameMap[phone] = name;
+        avatarMap[phone] = avatar;
 
-      for (final query in queries) {
-        try {
-          final response = await apiService.get(
-            '/api/v1/authentication/users/search/',
-            queryParameters: {'q': query},
-          );
-          if (response.statusCode == 200) {
-            final results = response.data['results'] as List?;
-            if (results != null && results.isNotEmpty) {
-              // Find the user whose phone_number matches our contact
-              for (final r in results) {
-                final rPhoneRaw =
-                    (r['phone_number']?.toString() ?? '').replaceAll('+', '');
-                if (rPhoneRaw.isEmpty) continue;
-                // Match if phones are equal, or if one is the other
-                // with/without the 255 country code
-                if (rPhoneRaw == phone ||
-                    rPhoneRaw == phoneNoCc ||
-                    rPhoneRaw == '255$phoneNoCc' ||
-                    '255$rPhoneRaw' == phone) {
-                  user = r as Map<String, dynamic>;
-                  break;
-                }
-              }
-              // If no exact phone match, take the first result
-              user ??= results.first as Map<String, dynamic>;
-              break;
-            }
+        // Also index without the 255 country code.
+        final noCc = phone.startsWith('255') ? phone.substring(3) : phone;
+        nameMap[noCc] = name;
+        avatarMap[noCc] = avatar;
+
+        // And with the 255 prefix added.
+        if (!phone.startsWith('255')) {
+          nameMap['255$phone'] = name;
+          avatarMap['255$phone'] = avatar;
+        }
+      }
+
+      var updated = false;
+      for (final contact in _contacts) {
+        final nxid = contact['nxid']?.toString() ?? '';
+        final phone = _stripPhone(nxid);
+        if (phone.isEmpty) continue;
+
+        final noCc = phone.startsWith('255') ? phone.substring(3) : phone;
+        final name = nameMap[phone] ??
+            nameMap[noCc] ??
+            nameMap['255$noCc'] ??
+            nameMap['255$phone'];
+        final avatar =
+            avatarMap[phone] ?? avatarMap[noCc] ?? avatarMap['255$noCc'];
+
+        if (name != null && name.isNotEmpty) {
+          contact['name'] = name;
+          if (avatar != null && avatar.isNotEmpty) {
+            contact['avatar'] = avatar;
           }
-        } catch (e) {
-          debugPrint('⚠️ User search for "$query" failed: $e');
+          updated = true;
         }
       }
 
-      if (user != null) {
-        final firstName = user['first_name']?.toString().trim() ?? '';
-        final lastName = user['last_name']?.toString().trim() ?? '';
-        final fullName = user['full_name']?.toString().trim() ?? '';
-        final username = user['username']?.toString().trim() ?? '';
-
-        // Prefer full_name, then first+last, then username
-        final displayName = fullName.isNotEmpty
-            ? fullName
-            : (firstName.isNotEmpty || lastName.isNotEmpty
-                ? '$firstName $lastName'.trim()
-                : username);
-
-        if (displayName.isNotEmpty) {
-          contact['name'] = displayName;
-          contact['avatar'] = user['profile_picture_url'];
-          updated = true;
-          debugPrint('👤 Resolved $phone → $displayName');
-        } else {
-          contact['name'] = 'User';
-          updated = true;
-        }
-      } else {
-        // Could not resolve — show a generic name instead of phone
-        contact['name'] = 'User';
-        updated = true;
+      if (updated) {
+        setState(() {});
       }
+    } catch (e) {
+      debugPrint('⚠️ Failed to resolve names from NX contacts: $e');
+    }
+  }
+
+  /// Extract a bare JID/phone from a NX contact map.
+  String _extractJid(Map<String, dynamic> contact) {
+    return contact['nxid']?.toString() ??
+        contact['username']?.toString() ??
+        contact['jid']?.toString() ??
+        contact['phone']?.toString() ??
+        contact['phone_number']?.toString() ??
+        contact['id']?.toString() ??
+        '';
+  }
+
+  /// Strip a JID down to a normalized digit-only phone key.
+  String _stripPhone(String nxid) {
+    return nxid
+        .split('@')
+        .first
+        .replaceAll('+', '')
+        .replaceAll(RegExp(r'[^\d]'), '');
+  }
+
+  /// Extract a display name from a NX contact map.
+  String? _extractName(Map<String, dynamic> contact) {
+    for (final field in [
+      'nick',
+      'nickname',
+      'name',
+      'display_name',
+      'full_name',
+      'owner_name'
+    ]) {
+      final value = contact[field]?.toString().trim() ?? '';
+      if (value.isNotEmpty) return value;
     }
 
-    if (updated) {
-      setState(() {});
-    }
+    final firstName = contact['first_name']?.toString().trim() ?? '';
+    final lastName = contact['last_name']?.toString().trim() ?? '';
+    final parts = [firstName, lastName].where((s) => s.isNotEmpty).toList();
+    if (parts.isNotEmpty) return parts.join(' ');
+
+    return null;
+  }
+
+  /// Extract an avatar URL from a NX contact map.
+  String? _extractAvatar(Map<String, dynamic> contact) {
+    return contact['avatar']?.toString() ??
+        contact['profile_picture']?.toString() ??
+        contact['profile_picture_url']?.toString() ??
+        contact['photo']?.toString() ??
+        contact['image']?.toString();
   }
 
   @override
@@ -333,6 +364,7 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
         final lastMsg = _lastMessages[phone];
         final lastMsgText = lastMsg?['body']?.toString() ?? '';
         final timestamp = lastMsg?['timestamp'] as int?;
+        final isFromMe = lastMsg?['isFromMe'] == true;
 
         return _buildConsultantTile(
           name: name,
@@ -340,6 +372,7 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
           avatar: contact['avatar'] as String?,
           nxId: nxid,
           lastMessage: lastMsgText,
+          isFromMe: isFromMe,
           timestamp: timestamp,
           onTap: () => _handleMessageContact(name, nxid),
         );
@@ -353,6 +386,7 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
     required String? avatar,
     required String nxId,
     String? lastMessage,
+    bool isFromMe = false,
     int? timestamp,
     required VoidCallback onTap,
   }) {
@@ -444,7 +478,7 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
                       const SizedBox(height: 4),
                       Text(
                         lastMessage?.isNotEmpty == true
-                            ? lastMessage!
+                            ? (isFromMe ? 'You: $lastMessage' : lastMessage!)
                             : 'Tap to start chatting',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurface.withValues(
