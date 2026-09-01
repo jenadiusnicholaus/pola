@@ -41,52 +41,46 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyCI0gwADejBnTwKxKUqQTp_ox2nf1NYhfk',
-    appId: '1:1091789875933:web:3ac5d3fd8bd0450075c934',
-    messagingSenderId: '1091789875933',
-    projectId: 'website-192723',
-    authDomain: 'website-192723.firebaseapp.com',
-    databaseURL: 'https://website-192723.firebaseio.com',
-    storageBucket: 'website-192723.appspot.com',
+    apiKey: 'AIzaSyBt_MiTag5W3b-bf0eVqCYJeBW6EDcTSps',
+    appId: '1:988796995940:web:2acac374a827efeb94d271',
+    messagingSenderId: '988796995940',
+    projectId: 'pola-67584',
+    authDomain: 'pola-67584.firebaseapp.com',
+    storageBucket: 'pola-67584.firebasestorage.app',
+    measurementId: 'G-WHVEL4SD48',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBVucOdK7Pr5-r-bh4mBsFNEecrvcL-F7U',
-    appId: '1:1091789875933:android:8e2bce71378345fc75c934',
-    messagingSenderId: '1091789875933',
-    projectId: 'website-192723',
-    databaseURL: 'https://website-192723.firebaseio.com',
-    storageBucket: 'website-192723.appspot.com',
+    apiKey: 'AIzaSyDbTmV3E2NzUboxSamZ6uHUq2AIllxrAPY',
+    appId: '1:988796995940:android:76807c6d06531f3b94d271',
+    messagingSenderId: '988796995940',
+    projectId: 'pola-67584',
+    storageBucket: 'pola-67584.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCI0B-WAL6BmXTT85fkdaFUAI3VocBQXMA',
-    appId: '1:1091789875933:ios:26923341c0aec1aa75c934',
-    messagingSenderId: '1091789875933',
-    projectId: 'website-192723',
-    databaseURL: 'https://website-192723.firebaseio.com',
-    storageBucket: 'website-192723.appspot.com',
-    iosBundleId: 'com.example.pola',
+    apiKey: 'AIzaSyB0z_MybmM81fqRej8cLMs8gAwFlfJwIC8',
+    appId: '1:988796995940:ios:b78a21a4fe982b0494d271',
+    messagingSenderId: '988796995940',
+    projectId: 'pola-67584',
+    storageBucket: 'pola-67584.firebasestorage.app',
+    iosBundleId: 'co.tz.pola.app',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyCI0B-WAL6BmXTT85fkdaFUAI3VocBQXMA',
-    appId: '1:1091789875933:ios:26923341c0aec1aa75c934',
-    messagingSenderId: '1091789875933',
-    projectId: 'website-192723',
-    databaseURL: 'https://website-192723.firebaseio.com',
-    storageBucket: 'website-192723.appspot.com',
-    iosBundleId: 'com.example.pola',
+    apiKey: 'AIzaSyB0z_MybmM81fqRej8cLMs8gAwFlfJwIC8',
+    appId: '1:988796995940:ios:1c96e44a24abf3a394d271',
+    messagingSenderId: '988796995940',
+    projectId: 'pola-67584',
+    storageBucket: 'pola-67584.firebasestorage.app',
+    iosBundleId: 'co.tz.pola.app',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyCI0gwADejBnTwKxKUqQTp_ox2nf1NYhfk',
-    appId: '1:1091789875933:web:c0e171a89bf047e575c934',
-    messagingSenderId: '1091789875933',
-    projectId: 'website-192723',
-    authDomain: 'website-192723.firebaseapp.com',
-    databaseURL: 'https://website-192723.firebaseio.com',
-    storageBucket: 'website-192723.appspot.com',
+    apiKey: 'AIzaSyBt_MiTag5W3b-bf0eVqCYJeBW6EDcTSps',
+    appId: '1:988796995940:web:171b15113103694794d271',
+    messagingSenderId: '988796995940',
+    projectId: 'pola-67584',
+    authDomain: 'pola-67584.firebaseapp.com',
+    storageBucket: 'pola-67584.firebasestorage.app',
+    measurementId: 'G-3C4DK7K4G8',
   );
-
 }

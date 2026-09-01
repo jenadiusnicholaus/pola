@@ -3,36 +3,36 @@
     "platforms": {
       "android": {
         "default": {
-          "projectId": "website-192723",
-          "appId": "1:1091789875933:android:8e2bce71378345fc75c934",
+          "projectId": "pola-67584",
+          "appId": "1:988796995940:android:76807c6d06531f3b94d271",
           "fileOutput": "android/app/google-services.json"
         }
       },
       "ios": {
         "default": {
-          "projectId": "website-192723",
-          "appId": "1:1091789875933:ios:26923341c0aec1aa75c934",
+          "projectId": "pola-67584",
+          "appId": "1:988796995940:ios:b78a21a4fe982b0494d271",
           "uploadDebugSymbols": false,
           "fileOutput": "ios/Runner/GoogleService-Info.plist"
         }
       },
       "macos": {
         "default": {
-          "projectId": "website-192723",
-          "appId": "1:1091789875933:ios:26923341c0aec1aa75c934",
+          "projectId": "pola-67584",
+          "appId": "1:988796995940:ios:b78a21a4fe982b0494d271",
           "uploadDebugSymbols": false,
           "fileOutput": "macos/Runner/GoogleService-Info.plist"
         }
       },
       "dart": {
         "lib/firebase_options.dart": {
-          "projectId": "website-192723",
+          "projectId": "pola-67584",
           "configurations": {
-            "android": "1:1091789875933:android:8e2bce71378345fc75c934",
-            "ios": "1:1091789875933:ios:26923341c0aec1aa75c934",
-            "macos": "1:1091789875933:ios:26923341c0aec1aa75c934",
-            "web": "1:1091789875933:web:3ac5d3fd8bd0450075c934",
-            "windows": "1:1091789875933:web:c0e171a89bf047e575c934"
+            "android": "1:988796995940:android:76807c6d06531f3b94d271",
+            "ios": "1:988796995940:ios:b78a21a4fe982b0494d271",
+            "macos": "1:988796995940:ios:1c96e44a24abf3a394d271",
+            "web": "1:988796995940:web:2acac374a827efeb94d271",
+            "windows": "1:988796995940:web:171b15113103694794d271"
           }
         }
       }

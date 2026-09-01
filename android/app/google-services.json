@@ -1,37 +1,26 @@
 {
   "project_info": {
-    "project_number": "1091789875933",
-    "firebase_url": "https://website-192723.firebaseio.com",
-    "project_id": "website-192723",
-    "storage_bucket": "website-192723.appspot.com"
+    "project_number": "988796995940",
+    "project_id": "pola-67584",
+    "storage_bucket": "pola-67584.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1091789875933:android:8e2bce71378345fc75c934",
+        "mobilesdk_app_id": "1:988796995940:android:76807c6d06531f3b94d271",
         "android_client_info": {
-          "package_name": "com.example.pola"
+          "package_name": "co.tz.pola.app"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "1091789875933-7gn3q2qof3tobiipuqmfgvpqpjp79utc.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBVucOdK7Pr5-r-bh4mBsFNEecrvcL-F7U"
+          "current_key": "AIzaSyDbTmV3E2NzUboxSamZ6uHUq2AIllxrAPY"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "1091789875933-7gn3q2qof3tobiipuqmfgvpqpjp79utc.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

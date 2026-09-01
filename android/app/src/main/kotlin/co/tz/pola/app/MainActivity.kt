@@ -1,4 +1,4 @@
-package com.example.pola
+package co.tz.pola.app
 
 import android.os.Bundle
 import android.view.WindowManager

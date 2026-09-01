@@ -125,7 +125,7 @@ class _LawyersMapScreenState extends State<LawyersMapScreen> {
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.pola',
+                userAgentPackageName: 'co.tz.pola.app',
                 maxZoom: 19,
               ),
               MarkerLayer(
@@ -421,7 +421,8 @@ class _LawyersMapScreenState extends State<LawyersMapScreen> {
                         ),
                       if (lawyer.offersMobileConsultations ||
                           (lawyer.offersPhysicalConsultations &&
-                              lawyer.consultantType.toLowerCase() == 'law_firm'))
+                              lawyer.consultantType.toLowerCase() ==
+                                  'law_firm'))
                         SizedBox(width: 10),
                       ElevatedButton(
                         onPressed: () => _openInMaps(lawyer),
