@@ -6,6 +6,8 @@ import '../widgets/material_card.dart';
 import '../widgets/common_sliver_widgets.dart';
 import '../widgets/shimmer_widgets.dart';
 import 'material_viewer_screen.dart';
+import '../../../../services/language_service.dart';
+import 'package:localization_lite/translate.dart';
 import '../../../../services/permission_service.dart';
 import '../../../../routes/app_routes.dart';
 
@@ -19,8 +21,11 @@ class SubtopicDetailScreen extends StatefulWidget {
 class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
   late LegalEducationController controller;
   late Subtopic subtopic;
-  String? selectedLanguage;
   final ScrollController _scrollController = ScrollController();
+  Worker? _languageWorker;
+
+  /// Materials language always follows the global app language.
+  String get selectedLanguage => Get.find<LanguageService>().apiCode;
 
   @override
   void initState() {
@@ -29,6 +34,12 @@ class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
     // Get subtopic from navigation arguments
     subtopic = Get.arguments as Subtopic;
     controller = Get.find<LegalEducationController>();
+
+    // Refetch materials when the app language changes.
+    _languageWorker = ever(Get.find<LanguageService>().languageObs, (_) {
+      controller.fetchSubtopicMaterials(subtopic.id,
+          language: selectedLanguage, refresh: true);
+    });
 
     // Add scroll listener for infinite scroll
     _scrollController.addListener(() {
@@ -54,19 +65,9 @@ class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
 
   @override
   void dispose() {
+    _languageWorker?.dispose();
     _scrollController.dispose();
     super.dispose();
-  }
-
-  void _changeLanguage(String? language) {
-    setState(() {
-      selectedLanguage = language;
-    });
-    controller.fetchSubtopicMaterials(
-      subtopic.id,
-      language: language,
-      refresh: true,
-    );
   }
 
   @override
@@ -85,18 +86,6 @@ class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
                 stretch: true,
                 backgroundColor: theme.colorScheme.primary,
                 foregroundColor: theme.colorScheme.onPrimary,
-                actions: [
-                  // Language toggle buttons
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildLanguageToggleButton('EN', 'en'),
-                      const SizedBox(width: 4),
-                      _buildLanguageToggleButton('SW', 'sw'),
-                      const SizedBox(width: 8),
-                    ],
-                  ),
-                ],
                 flexibleSpace: FlexibleSpaceBar(
                   title: Text(
                     _getLocalizedTitle(),
@@ -148,7 +137,7 @@ class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'About This Subtopic',
+                        tr('About This Subtopic'),
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -163,7 +152,7 @@ class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        'Learning Materials',
+                        tr('Learning Materials'),
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -181,14 +170,14 @@ class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
                           .toLowerCase()
                           .contains('subscription')
                       ? CommonEmptyWidget(
-                          title: 'Subscription Required',
+                          title: tr('Subscription Required'),
                           message: controller.subtopicMaterialsError,
                           icon: Icons.workspace_premium,
                           action: ElevatedButton.icon(
                             onPressed: () =>
                                 Get.toNamed(AppRoutes.subscriptionPlans),
                             icon: const Icon(Icons.star),
-                            label: const Text('Go to Subscription Page'),
+                            label: Text(tr('Go to Subscription Page')),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.amber.shade700,
                               foregroundColor: Colors.black,
@@ -214,10 +203,13 @@ class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
               else if (controller.subtopicMaterials.isEmpty)
                 SliverFillRemaining(
                   child: CommonEmptyWidget(
-                    title: 'No materials found',
-                    message: selectedLanguage != null
-                        ? 'No learning materials available in ${selectedLanguage == 'en' ? 'English' : 'Kiswahili'}'
-                        : 'No learning materials available for this subtopic.',
+                    title: tr('No materials found'),
+                    message: tr('No learning materials available in {language}')
+                        .replaceAll(
+                            '{language}',
+                            selectedLanguage == 'en'
+                                ? tr('English')
+                                : tr('Kiswahili')),
                     icon: Icons.library_books_outlined,
                   ),
                 )
@@ -261,30 +253,6 @@ class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
     );
   }
 
-  Widget _buildLanguageToggleButton(String label, String code) {
-    final isSelected = selectedLanguage == code;
-    return ElevatedButton(
-      onPressed: () => _changeLanguage(isSelected ? null : code),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isSelected
-            ? (code == 'en' ? Colors.blue : Colors.amber.shade700)
-            : Colors.white.withOpacity(0.2),
-        foregroundColor: isSelected ? Colors.white : Colors.white70,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        minimumSize: const Size(50, 32),
-        elevation: isSelected ? 2 : 0,
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-          color: isSelected && code == 'sw' ? Colors.black : Colors.white,
-        ),
-      ),
-    );
-  }
-
   void _openMaterial(BuildContext context, LearningMaterial material) {
     try {
       final permissionService = Get.find<PermissionService>();
@@ -303,7 +271,7 @@ class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No content available for this material')),
+        SnackBar(content: Text(tr('No content available for this material'))),
       );
     }
   }
@@ -316,21 +284,21 @@ class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text(isTrial ? 'Trial Limit Reached' : 'Limit Reached'),
+        title: Text(isTrial ? tr('Trial Limit Reached') : tr('Limit Reached')),
         content: Text(isTrial
-            ? 'You have used all free reads in your trial.'
-            : 'You have reached your reading limit.'),
+            ? tr('You have used all free reads in your trial.')
+            : tr('You have reached your reading limit.')),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Later'),
+            child: Text(tr('Later')),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
               Get.toNamed(AppRoutes.subscriptionPlans);
             },
-            child: const Text('Upgrade'),
+            child: Text(tr('Upgrade')),
           ),
         ],
       ),
@@ -338,7 +306,7 @@ class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
   }
 
   String _getLocalizedTitle() {
-    const locale = 'en';
+    final locale = selectedLanguage;
     if (locale.startsWith('sw') && subtopic.nameSw.isNotEmpty) {
       return subtopic.nameSw;
     }
@@ -346,7 +314,7 @@ class _SubtopicDetailScreenState extends State<SubtopicDetailScreen> {
   }
 
   String _getLocalizedDescription() {
-    const locale = 'en';
+    final locale = selectedLanguage;
     if (locale.startsWith('sw') && subtopic.descriptionSw.isNotEmpty) {
       return subtopic.descriptionSw;
     }

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import 'package:signature/signature.dart';
 import '../models/template_model.dart';
@@ -133,7 +134,8 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                  'No form fields available for this template. Template ID: ${template.id}'),
+                  tr('No form fields available for this template. Template ID: {id}')
+                      .replaceAll('{id}', '${template.id}')),
               backgroundColor: Colors.orange,
               duration: const Duration(seconds: 5),
             ),
@@ -157,7 +159,7 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to load form fields: $e'),
+            content: Text(tr('Failed to load form fields: {e}').replaceAll('{e}', '$e')),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 5),
           ),
@@ -292,13 +294,13 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'en',
                 child: Text('English'),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'sw',
-                child: Text('Kiswahili'),
+                child: Text(tr('Kiswahili')),
               ),
             ],
             child: Padding(
@@ -396,9 +398,9 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
               size: 64,
               color: theme.colorScheme.onSurface.withOpacity(0.3),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
-              'No form fields available',
+              tr('No form fields available'),
               style: theme.textTheme.titleLarge,
             ),
           ],
@@ -746,8 +748,8 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
                       fontWeight: FontWeight.w500),
                 ),
                 if (required) ...[
-                  const SizedBox(width: 4),
-                  const Icon(Icons.star, size: 10, color: Colors.red),
+                  SizedBox(width: 4),
+                  Icon(Icons.star, size: 10, color: Colors.red),
                 ]
               ],
             ),
@@ -760,7 +762,7 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
                 ),
               )
             else
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
             Container(
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.grey.shade400),
@@ -797,8 +799,8 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
                         ),
                         TextButton.icon(
                           onPressed: () => sigController.clear(),
-                          icon: const Icon(Icons.clear, size: 16),
-                          label: const Text('Clear'),
+                          icon: Icon(Icons.clear, size: 16),
+                          label: Text(tr('Clear')),
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.red,
                             padding: const EdgeInsets.symmetric(

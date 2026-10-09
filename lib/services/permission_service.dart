@@ -222,7 +222,9 @@ class PermissionService extends GetxService {
   /// Check if user can read legal education content
   bool get canReadLegalEducation {
     // If limit is 0, unlimited access (premium)
-    if (legalEducationLimit == 0 && isSubscriptionActive && !isTrialSubscription) {
+    if (legalEducationLimit == 0 &&
+        isSubscriptionActive &&
+        !isTrialSubscription) {
       return true;
     }
     // Otherwise check remaining reads
@@ -250,11 +252,11 @@ class PermissionService extends GetxService {
   // ============ Role-Specific Permissions ============
 
   /// Check if user can view "Talk to Lawyer" page
-  /// Uses backend permission directly
+  /// Professionals can also access this to communicate with each other
   bool get canViewTalkToLawyer {
     try {
-      // Professionals cannot view (they are the service providers)
-      if (isProfessional) return false;
+      // Professionals can also talk to each other
+      if (isProfessional) return true;
 
       // Use backend permission
       return permissions?.canViewTalkToLawyer ?? false;
@@ -265,11 +267,11 @@ class PermissionService extends GetxService {
   }
 
   /// Check if user can view "Nearby Lawyers" service in the menu
-  /// Uses backend permission directly
+  /// Visible to all users including professionals
   bool get canViewNearbyLawyers {
     try {
-      // Professionals cannot view (they are the service providers)
-      if (isProfessional) return false;
+      // Professionals can also find nearby lawyers
+      if (isProfessional) return true;
 
       // Use backend permission
       return permissions?.canViewNearbyLawyers ?? false;
@@ -279,9 +281,10 @@ class PermissionService extends GetxService {
     }
   }
 
-  /// Check if user can actually ACCESS nearby lawyers feature (requires subscription)
+  /// Check if user can actually ACCESS nearby lawyers feature
+  /// Professionals can also access this feature
   bool get canAccessNearbyLawyers {
-    if (isProfessional) return false;
+    if (isProfessional) return true;
     return permissions?.canViewNearbyLawyers ?? false;
   }
 
@@ -310,11 +313,11 @@ class PermissionService extends GetxService {
 
     // Primary check: subscription.isActive from backend
     final subscriptionActive = sub.isActive;
-    
+
     // Secondary check: status field
-    final statusActive = sub.status.toLowerCase() == 'active' || 
-                         sub.status.toLowerCase() == 'completed';
-    
+    final statusActive = sub.status.toLowerCase() == 'active' ||
+        sub.status.toLowerCase() == 'completed';
+
     // Consider active if either isActive flag is true OR status is active
     final result = subscriptionActive || statusActive;
 
@@ -535,7 +538,9 @@ class PermissionService extends GetxService {
   /// Get quota display text for legal education
   String get legalEducationQuotaText {
     // Premium users have unlimited access
-    if (legalEducationLimit == 0 && isSubscriptionActive && !isTrialSubscription) {
+    if (legalEducationLimit == 0 &&
+        isSubscriptionActive &&
+        !isTrialSubscription) {
       return 'Unlimited';
     }
     if (legalEducationLimit == 0) return 'Not available';
@@ -603,7 +608,8 @@ class PermissionService extends GetxService {
     debugPrint('   📍 View Nearby Lawyers: $canViewNearbyLawyers');
     debugPrint('   📥 Download Templates: $canDownloadTemplates');
     debugPrint('   📅 Book Consultation: $canBookConsultation');
-    debugPrint('   📖 Legal Education: $canReadLegalEducation ($legalEducationReads/$legalEducationLimit used)');
+    debugPrint(
+        '   📖 Legal Education: $canReadLegalEducation ($legalEducationReads/$legalEducationLimit used)');
     debugPrint('   📞 Purchase Consultations: $canPurchaseConsultations');
     debugPrint('   📋 Purchase Documents: $canPurchaseDocuments');
     debugPrint(

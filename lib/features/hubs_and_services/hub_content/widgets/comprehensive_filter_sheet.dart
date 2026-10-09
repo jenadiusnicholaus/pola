@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../controllers/hub_content_controller.dart';
 
@@ -82,10 +83,10 @@ class _ComprehensiveFilterSheetState extends State<ComprehensiveFilterSheet> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const Spacer(),
+                    Spacer(),
                     TextButton(
                       onPressed: _resetAllFilters,
-                      child: const Text('Reset All'),
+                      child: Text(tr('Reset All')),
                     ),
                   ],
                 ),
@@ -114,10 +115,13 @@ class _ComprehensiveFilterSheetState extends State<ComprehensiveFilterSheet> {
                       _buildContentPropertiesFilter(theme),
                       const SizedBox(height: 24),
 
-                      // Price Range
-                      _buildSectionTitle('Price Range'),
-                      _buildPriceRangeFilter(theme),
-                      const SizedBox(height: 24),
+                      // Price Range — hidden for the Students hub, where
+                      // document downloads have a fixed price.
+                      if (widget.hubType != 'students') ...[
+                        _buildSectionTitle('Price Range'),
+                        _buildPriceRangeFilter(theme),
+                        const SizedBox(height: 24),
+                      ],
 
                       // Sort Options
                       _buildSectionTitle('Sort By'),
@@ -221,7 +225,7 @@ class _ComprehensiveFilterSheetState extends State<ComprehensiveFilterSheet> {
         ),
         if (_shouldShowLectureMaterialFilter())
           SwitchListTile(
-            title: const Text('Lecture Materials'),
+            title: Text(tr('Lecture Materials')),
             subtitle: const Text('Show academic lecture content'),
             value: showLectureMaterialOnly,
             onChanged: (value) {
@@ -313,10 +317,10 @@ class _ComprehensiveFilterSheetState extends State<ComprehensiveFilterSheet> {
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
-            child: const Text('Reset'),
+            child: Text(tr('Reset')),
           ),
         ),
-        const SizedBox(width: 16),
+        SizedBox(width: 16),
         Expanded(
           flex: 2,
           child: ElevatedButton(
@@ -324,7 +328,7 @@ class _ComprehensiveFilterSheetState extends State<ComprehensiveFilterSheet> {
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
-            child: const Text('Apply Filters'),
+            child: Text(tr('Apply Filters')),
           ),
         ),
       ],

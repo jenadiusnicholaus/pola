@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../controllers/registration_controller.dart';
 import '../services/lookup_service.dart';
@@ -70,7 +71,7 @@ class RegistrationScreen extends StatelessWidget {
                   }
                 }),
                 // Review page (always last for professional roles)
-                const ReviewSubmitPage(),
+                ReviewSubmitPage(),
               ],
             ),
           ),
@@ -82,16 +83,16 @@ class RegistrationScreen extends StatelessWidget {
               children: [
                 // Previous button
                 Obx(() => controller.isFirstPage
-                    ? const SizedBox(width: 100)
+                    ? SizedBox(width: 100)
                     : SizedBox(
                         width: 100,
                         child: OutlinedButton(
                           onPressed: controller.previousPage,
-                          child: const Text('Previous'),
+                          child: Text(tr('Previous')),
                         ),
                       )),
 
-                const Spacer(),
+                Spacer(),
 
                 // Next/Submit button
                 Obx(() => SizedBox(
@@ -102,18 +103,18 @@ class RegistrationScreen extends StatelessWidget {
                                   ? null
                                   : controller.submitRegistration,
                               child: controller.isSubmitting
-                                  ? const SizedBox(
+                                  ? SizedBox(
                                       width: 16,
                                       height: 16,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
                                       ),
                                     )
-                                  : const Text('Submit'),
+                                  : Text(tr('Submit')),
                             )
                           : ElevatedButton(
                               onPressed: controller.nextPage,
-                              child: const Text('Next'),
+                              child: Text(tr('Next')),
                             ),
                     )),
               ],

@@ -7,6 +7,7 @@ import '../widgets/topic_card.dart';
 import 'topic_detail_screen.dart';
 import 'legal_education_search_screen.dart';
 import '../../../../services/token_storage_service.dart';
+import 'package:localization_lite/translate.dart';
 
 class LegalEducationScreen extends StatefulWidget {
   const LegalEducationScreen({super.key});
@@ -58,8 +59,8 @@ class _LegalEducationScreenState extends State<LegalEducationScreen> {
                 color: Colors.grey[400],
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Please Log In',
+              Text(
+                tr('Please Log In'),
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -67,7 +68,7 @@ class _LegalEducationScreenState extends State<LegalEducationScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'You need to be logged in to access legal education content',
+                tr('You need to be logged in to access legal education content'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
@@ -77,7 +78,7 @@ class _LegalEducationScreenState extends State<LegalEducationScreen> {
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () => Get.toNamed('/login'),
-                child: const Text('Go to Login'),
+                child: Text(tr('Go to Login')),
               ),
             ],
           ),
@@ -94,7 +95,7 @@ class _LegalEducationScreenState extends State<LegalEducationScreen> {
             slivers: [
               // Simple compact SliverAppBar with search icon
               SliverAppBar(
-                title: const Text('Legal Education'),
+                title: Text(tr('Legal Education')),
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 floating: true,
@@ -109,7 +110,7 @@ class _LegalEducationScreenState extends State<LegalEducationScreen> {
                         transition: Transition.cupertino,
                       );
                     },
-                    tooltip: 'Search legal topics',
+                    tooltip: tr('Search legal topics'),
                   ),
                 ],
               ),
@@ -139,14 +140,22 @@ class _LegalEducationScreenState extends State<LegalEducationScreen> {
                         Icon(
                           Icons.analytics_outlined,
                           size: 20,
-                          color: Theme.of(context).colorScheme.primary,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             controller.searchQuery.isNotEmpty
-                                ? 'Found ${controller.topics.length} topics matching "${controller.searchQuery}"'
-                                : 'Showing ${controller.topics.length} legal topics',
+                                ? tr('Found {count} topics matching "{query}"')
+                                    .replaceAll('{count}',
+                                        '${controller.topics.length}')
+                                    .replaceAll(
+                                        '{query}', controller.searchQuery)
+                                : tr('Showing {count} legal topics').replaceAll(
+                                    '{count}', '${controller.topics.length}'),
                             style:
                                 Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: Theme.of(context)
@@ -162,11 +171,17 @@ class _LegalEducationScreenState extends State<LegalEducationScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: controller.languageFilter ==
-                                      LanguageFilter.english
-                                  ? Colors.blue.withOpacity(0.1)
-                                  : Colors.amber.withOpacity(0.1),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .outlineVariant
+                                    .withOpacity(0.5),
+                                width: 1,
+                              ),
                             ),
                             child: Text(
                               controller.languageFilter ==
@@ -176,10 +191,10 @@ class _LegalEducationScreenState extends State<LegalEducationScreen> {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: controller.languageFilter ==
-                                        LanguageFilter.english
-                                    ? Colors.blue
-                                    : Colors.amber.shade700,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.6),
                               ),
                             ),
                           ),
@@ -204,12 +219,12 @@ class _LegalEducationScreenState extends State<LegalEducationScreen> {
               else if (controller.topics.isEmpty)
                 SliverFillRemaining(
                   child: CommonEmptyWidget(
-                    title: 'No legal topics found',
-                    message: 'Try adjusting your search or language filter',
+                    title: tr('No legal topics found'),
+                    message: tr('Try adjusting your search or language filter'),
                     action: ElevatedButton.icon(
                       onPressed: () => controller.fetchTopics(refresh: true),
                       icon: const Icon(Icons.refresh, size: 18),
-                      label: const Text('Refresh'),
+                      label: Text(tr('Refresh')),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.amber,
                         foregroundColor: Colors.black,

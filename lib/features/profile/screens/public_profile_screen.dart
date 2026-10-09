@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import '../../hubs_and_services/legal_education/models/legal_education_models.dart';
 import '../../../utils/navigation_helper.dart';
 
@@ -69,7 +70,7 @@ class PublicProfileScreen extends StatelessWidget {
                   )
                 : null,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Text(
             user.fullName,
             style: TextStyle(
@@ -81,7 +82,7 @@ class PublicProfileScreen extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           if (user.email.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               user.email,
               style: TextStyle(
@@ -92,7 +93,7 @@ class PublicProfileScreen extends StatelessWidget {
             ),
           ],
           if (user.isVerified) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
@@ -108,9 +109,8 @@ class PublicProfileScreen extends StatelessWidget {
                     size: 16,
                     color: Colors.green,
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Verified',
+                  SizedBox(width: 4),
+                  Text(tr('Verified'),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: Colors.green,
                       fontWeight: FontWeight.w600,
@@ -131,8 +131,8 @@ class PublicProfileScreen extends StatelessWidget {
         Expanded(
           child: FilledButton.icon(
             onPressed: () => _showSendMessageDialog(context),
-            icon: const Icon(Icons.message),
-            label: const Text('Message'),
+            icon: Icon(Icons.message),
+            label: Text(tr('Message')),
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
@@ -148,8 +148,8 @@ class PublicProfileScreen extends StatelessWidget {
                 message: 'Follow functionality will be available soon',
               );
             },
-            icon: const Icon(Icons.person_add),
-            label: const Text('Follow'),
+            icon: Icon(Icons.person_add),
+            label: Text(tr('Follow')),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
@@ -186,23 +186,22 @@ class PublicProfileScreen extends StatelessWidget {
               letterSpacing: 0.1,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           _buildInfoRow(
             theme,
             'User Role',
             user.userRole,
             Icons.work,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _buildInfoRow(
             theme,
             'Status',
             user.isVerified ? 'Verified Professional' : 'User',
             Icons.info,
           ),
-          const SizedBox(height: 16),
-          Text(
-            'About',
+          SizedBox(height: 16),
+          Text(tr('About'),
             style: TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 14,
@@ -273,15 +272,15 @@ class PublicProfileScreen extends StatelessWidget {
                       user.fullName.isNotEmpty
                           ? user.fullName[0].toUpperCase()
                           : '?',
-                      style: const TextStyle(fontSize: 12),
+                      style: TextStyle(fontSize: 12),
                     )
                   : null,
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Expanded(
               child: Text(
                 'Send message to ${user.fullName}',
-                style: const TextStyle(fontSize: 16),
+                style: TextStyle(fontSize: 16),
               ),
             ),
           ],
@@ -291,8 +290,8 @@ class PublicProfileScreen extends StatelessWidget {
           children: [
             TextField(
               controller: messageController,
-              decoration: const InputDecoration(
-                hintText: 'Type your message...',
+              decoration: InputDecoration(
+                hintText: tr('Type your message...'),
                 border: OutlineInputBorder(),
               ),
               maxLines: 4,

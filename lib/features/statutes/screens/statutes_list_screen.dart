@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../controllers/statutes_controller.dart';
 
@@ -34,6 +35,8 @@ class StatutesListScreen extends StatelessWidget {
         title: Text(controller.selectedCategoryName.isEmpty
             ? (controller.isSwahili ? 'Sheria' : 'Laws')
             : controller.selectedCategoryName),
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
       ),
       body: Obx(() {
         if (controller.isLoadingLaws.value && controller.laws.length == 0) {
@@ -45,13 +48,13 @@ class StatutesListScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, size: 56, color: Colors.red),
-                const SizedBox(height: 12),
+                Icon(Icons.error_outline, size: 56, color: Colors.red),
+                SizedBox(height: 12),
                 Text(controller.lawsError.value, textAlign: TextAlign.center),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => controller.loadLaws(refresh: true),
-                  child: const Text('Retry'),
+                  child: Text(tr('Retry')),
                 ),
               ],
             ),
@@ -71,10 +74,14 @@ class StatutesListScreen extends StatelessWidget {
           onRefresh: () => controller.loadLaws(refresh: true),
           child: ListView.separated(
             controller: scrollController,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(vertical: 4),
             itemCount:
                 controller.laws.length + (controller.hasMoreLaws.value ? 1 : 0),
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
+            separatorBuilder: (_, __) => Divider(
+              height: 1,
+              indent: 76,
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+            ),
             itemBuilder: (context, index) {
               if (index >= controller.laws.length) {
                 return const Padding(
@@ -83,46 +90,36 @@ class StatutesListScreen extends StatelessWidget {
                 );
               }
               final law = controller.laws[index];
-              return Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                    color: theme.colorScheme.outline.withValues(alpha: 0.2),
+              final desc =
+                  law.localizedDescription(swahili: controller.isSwahili);
+              return ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                leading: CircleAvatar(
+                  radius: 24,
+                  backgroundColor: Colors.red.withValues(alpha: 0.1),
+                  child: const Icon(Icons.picture_as_pdf,
+                      color: Colors.red, size: 20),
+                ),
+                title: Text(
+                  law.localizedTitle(swahili: controller.isSwahili),
+                  style: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  desc.isEmpty
+                      ? 'PDF • ${law.fileSizeMb} MB'
+                      : '$desc • ${law.fileSizeMb} MB',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
                   ),
                 ),
-                child: ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.red.withValues(alpha: 0.1),
-                    child: const Icon(Icons.picture_as_pdf, color: Colors.red),
-                  ),
-                  title: Text(
-                    law.localizedTitle(swahili: controller.isSwahili),
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text(
-                    law
-                            .localizedDescription(swahili: controller.isSwahili)
-                            .isEmpty
-                        ? '${law.fileSizeMb} MB'
-                        : law.localizedDescription(
-                            swahili: controller.isSwahili),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: Text(
-                    'READ MORE',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                      fontSize: 11,
-                    ),
-                  ),
-                  onTap: () => controller.openPdf(law),
-                ),
+                trailing: Icon(Icons.chevron_right,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+                onTap: () => controller.openPdf(law),
               );
             },
           ),

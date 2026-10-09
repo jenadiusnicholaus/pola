@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../controllers/set_new_password_controller.dart';
 import '../../../constants/app_colors.dart';
@@ -16,7 +17,7 @@ class SetNewPasswordScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Set New Password'),
+        title: Text(tr('Set New Password')),
         backgroundColor: AppColors.primaryAmber,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -28,7 +29,7 @@ class SetNewPasswordScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 'Create a new password for your account.',
                 style: theme.textTheme.bodyMedium?.copyWith(
@@ -36,7 +37,7 @@ class SetNewPasswordScreen extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 28),
+              SizedBox(height: 28),
               Obx(
                 () => TextFormField(
                   controller: controller.passwordController,
@@ -44,8 +45,8 @@ class SetNewPasswordScreen extends StatelessWidget {
                   textInputAction: TextInputAction.next,
                   validator: controller.validatePassword,
                   decoration: InputDecoration(
-                    labelText: 'New Password',
-                    prefixIcon: const Icon(Icons.lock_outline),
+                    labelText: tr('New Password'),
+                    prefixIcon: Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
                         controller.obscurePassword.value
@@ -60,7 +61,7 @@ class SetNewPasswordScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Obx(
                 () => TextFormField(
                   controller: controller.confirmPasswordController,
@@ -70,7 +71,7 @@ class SetNewPasswordScreen extends StatelessWidget {
                   onFieldSubmitted: (_) => controller.submit(),
                   decoration: InputDecoration(
                     labelText: 'Confirm Password',
-                    prefixIcon: const Icon(Icons.lock_outline),
+                    prefixIcon: Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
                         controller.obscureConfirm.value
@@ -85,7 +86,7 @@ class SetNewPasswordScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Obx(
                 () => ElevatedButton(
                   onPressed: controller.isLoading.value ? null : controller.submit,
@@ -98,7 +99,7 @@ class SetNewPasswordScreen extends StatelessWidget {
                     ),
                   ),
                   child: controller.isLoading.value
-                      ? const SizedBox(
+                      ? SizedBox(
                           height: 22,
                           width: 22,
                           child: CircularProgressIndicator(
@@ -106,8 +107,7 @@ class SetNewPasswordScreen extends StatelessWidget {
                             color: Colors.white,
                           ),
                         )
-                      : const Text(
-                          'Reset Password',
+                      : Text(tr('Reset Password'),
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 16,

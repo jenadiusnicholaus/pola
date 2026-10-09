@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../../constants/app_colors.dart';
 import '../../auth/models/lookup_models.dart';
 import '../controllers/edit_profile_controller.dart';
+import '../../../shared/widgets/intl_phone_input.dart';
 
 class EditProfileScreen extends StatelessWidget {
   const EditProfileScreen({super.key});
@@ -17,7 +19,7 @@ class EditProfileScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Profile'),
+        title: Text(tr('Edit Profile')),
         backgroundColor: AppColors.primaryAmber,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -101,16 +103,16 @@ class EditProfileScreen extends StatelessWidget {
                       ),
                     );
                   }),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Obx(
                     () => DropdownButtonFormField<String>(
                       value: controller.gender.value.isEmpty
                           ? null
                           : controller.gender.value.toUpperCase(),
                       decoration: _decoration('Gender', Icons.wc_outlined),
-                      items: const [
-                        DropdownMenuItem(value: 'M', child: Text('Male')),
-                        DropdownMenuItem(value: 'F', child: Text('Female')),
+                      items: [
+                        DropdownMenuItem(value: 'M', child: Text(tr('Male'))),
+                        DropdownMenuItem(value: 'F', child: Text(tr('Female'))),
                       ],
                       onChanged: (value) {
                         if (value != null) controller.gender.value = value;
@@ -136,25 +138,26 @@ class EditProfileScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
-                  controller: controller.phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: _decoration('Phone Number', Icons.phone_outlined)
-                      .copyWith(prefixText: '+255 '),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
+                IntlPhoneInput(
+                  initialValue: _nationalPart(controller.phoneController.text),
+                  labelText: tr('Phone Number'),
+                  prefixIcon: const Icon(Icons.phone_outlined),
+                  borderRadius: 12,
+                  invalidNumberMessage:
+                      'Enter a valid phone number for the selected country',
+                  validator: (phone) {
+                    if (phone == null || phone.number.trim().isEmpty) {
                       return 'Phone number is required';
-                    }
-                    if (value.trim().length < 9) {
-                      return 'Enter a valid phone number';
                     }
                     return null;
                   },
+                  onChanged: (complete) =>
+                      controller.phoneController.text = complete,
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
 
                 Text(
-                  'Address',
+                  tr('Address'),
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -272,6 +275,17 @@ class EditProfileScreen extends StatelessWidget {
         );
       }),
     );
+  }
+
+  /// Strips a stored phone number down to its national digits
+  /// so it can seed the international field's text input.
+  String _nationalPart(String stored) {
+    var digits = stored.replaceAll(RegExp(r'\D'), '');
+    if (digits.startsWith('255') && digits.length > 9) {
+      digits = digits.substring(3);
+    }
+    if (digits.startsWith('0')) digits = digits.substring(1);
+    return digits;
   }
 
   InputDecoration _decoration(String label, IconData icon) {

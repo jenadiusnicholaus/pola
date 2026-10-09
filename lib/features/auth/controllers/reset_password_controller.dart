@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../../services/auth_service.dart';
 import '../../../routes/app_routes.dart';
@@ -35,7 +36,7 @@ class ResetPasswordController extends GetxController {
     if (!(formKey.currentState?.validate() ?? false)) return;
     if (email.isEmpty) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Missing email. Go back and try again.',
         backgroundColor: Colors.red,
         colorText: Colors.white,
@@ -58,7 +59,7 @@ class ResetPasswordController extends GetxController {
         );
       } else {
         NavigationHelper.showSafeSnackbar(
-          title: 'Error',
+          title: tr('Error'),
           message: result['error']?.toString() ?? 'Invalid or expired code',
           backgroundColor: Colors.red,
           colorText: Colors.white,
@@ -84,7 +85,7 @@ class ResetPasswordController extends GetxController {
         );
       } else {
         NavigationHelper.showSafeSnackbar(
-          title: 'Error',
+          title: tr('Error'),
           message: result['error']?.toString() ?? 'Could not resend code',
           backgroundColor: Colors.red,
           colorText: Colors.white,

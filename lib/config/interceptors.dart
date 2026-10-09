@@ -89,6 +89,11 @@ class ApiInterceptors {
   static Interceptor createAuthInterceptor() {
     return InterceptorsWrapper(
       onRequest: (options, handler) async {
+        // These endpoints are public and must never carry an Authorization
+        // header or trigger a token refresh, even if an old token happens
+        // to be in storage (e.g. a user registering a new account).
+        final isPublicAuthEndpoint = _isPublicAuthEndpoint(options);
+
         // Attach stable device id for single-device enforcement
         try {
           final deviceId = await DeviceInfoService().getDeviceId();
@@ -97,6 +102,15 @@ class ApiInterceptors {
           }
         } catch (e) {
           debugPrint('⚠️ Could not attach X-Device-Id: $e');
+        }
+
+        // Public endpoints never need an access token.
+        if (isPublicAuthEndpoint) {
+          options.headers.remove('Authorization');
+          debugPrint(
+              '🔓 Public auth endpoint — skipping token attach: ${options.uri}');
+          handler.next(options);
+          return;
         }
 
         // Get TokenStorageService instance
@@ -163,6 +177,33 @@ class ApiInterceptors {
         handler.next(options);
       },
     );
+  }
+
+  /// Whether the request targets a public authentication endpoint that
+  /// should never carry an Authorization header.
+  static bool _isPublicAuthEndpoint(RequestOptions options) {
+    final path = options.uri.path.toLowerCase();
+    final fullUri = options.uri.toString().toLowerCase();
+    return path.contains('/authentication/register') ||
+        path.contains('/auth/register') ||
+        path.contains('/authentication/login') ||
+        path.contains('/auth/login') ||
+        path.contains('/authentication/refresh') ||
+        path.contains('/auth/refresh') ||
+        path.contains('/authentication/password') ||
+        path.contains('/auth/password') ||
+        path.contains('/authentication/reset') ||
+        path.contains('/auth/reset') ||
+        path.contains('/authentication/verify') ||
+        path.contains('/auth/verify') ||
+        path.contains('/authentication/devices/register') ||
+        path.contains('/auth/devices/register') ||
+        fullUri.contains('/authentication/register') ||
+        fullUri.contains('/auth/register') ||
+        fullUri.contains('/authentication/login') ||
+        fullUri.contains('/auth/login') ||
+        fullUri.contains('/authentication/refresh') ||
+        fullUri.contains('/auth/refresh');
   }
 
   static bool _isDeviceReplacedError(dynamic errorData) {

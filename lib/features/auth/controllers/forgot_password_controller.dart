@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../../services/auth_service.dart';
 import '../../../routes/app_routes.dart';
@@ -31,7 +32,7 @@ class ForgotPasswordController extends GetxController {
 
       if (result['success'] == true) {
         NavigationHelper.showSafeSnackbar(
-          title: 'Check your email',
+          title: tr('Check your email'),
           message: result['message']?.toString() ??
               'If an account exists, a reset code was sent.',
           backgroundColor: Colors.green,
@@ -46,7 +47,7 @@ class ForgotPasswordController extends GetxController {
         );
       } else {
         NavigationHelper.showSafeSnackbar(
-          title: 'Error',
+          title: tr('Error'),
           message: result['error']?.toString() ?? 'Request failed',
           backgroundColor: Colors.red,
           colorText: Colors.white,

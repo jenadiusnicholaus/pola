@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class HelpSupportScreen extends StatelessWidget {
@@ -10,7 +11,7 @@ class HelpSupportScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Help & Support'),
+        title: Text(tr('Help & Support')),
         automaticallyImplyLeading: true,
         backgroundColor: theme.colorScheme.surface,
         foregroundColor: theme.colorScheme.onSurface,
@@ -36,7 +37,7 @@ class HelpSupportScreen extends StatelessWidget {
                     size: 48,
                     color: theme.colorScheme.primary,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Text(
                     'We\'re Here to Help',
                     style: theme.textTheme.headlineSmall?.copyWith(
@@ -44,7 +45,7 @@ class HelpSupportScreen extends StatelessWidget {
                       color: theme.colorScheme.onPrimaryContainer,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     'Get assistance with your legal education and platform navigation',
                     style: theme.textTheme.bodyMedium?.copyWith(
@@ -57,7 +58,7 @@ class HelpSupportScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
 
             // Quick Actions
             Text(
@@ -66,7 +67,7 @@ class HelpSupportScreen extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
 
             Row(
               children: [
@@ -79,7 +80,7 @@ class HelpSupportScreen extends StatelessWidget {
                     () => _showComingSoon(context, 'Live Chat'),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: _buildQuickActionCard(
                     context,
@@ -92,11 +93,10 @@ class HelpSupportScreen extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
 
             // Support Categories
-            Text(
-              'Browse Help Topics',
+            Text(tr('Browse Help Topics'),
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -295,12 +295,12 @@ class HelpSupportScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(feature),
-        content: const Text(
+        content: Text(
             'This feature is coming soon! We\'re working hard to bring you comprehensive help and support.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: Text(tr('OK')),
           ),
         ],
       ),

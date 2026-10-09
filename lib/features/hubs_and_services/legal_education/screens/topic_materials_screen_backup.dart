@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../controllers/legal_education_controller.dart';
 import '../models/legal_education_models.dart';
@@ -135,10 +136,10 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
                                 : Colors.white.withOpacity(0.9),
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 6),
-                            minimumSize: const Size(50, 32),
+                            minimumSize: Size(50, 32),
                             elevation: 2,
                           ),
-                          child: Text('EN',
+                          child: Text(tr('EN'),
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
@@ -147,7 +148,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
                                     : Colors.white.withOpacity(0.9),
                               )),
                         ),
-                        const SizedBox(width: 4),
+                        SizedBox(width: 4),
                         // Swahili Button
                         ElevatedButton(
                           onPressed: () => _changeLanguage('sw'),
@@ -160,10 +161,10 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
                                 : Colors.white.withOpacity(0.9),
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 6),
-                            minimumSize: const Size(50, 32),
+                            minimumSize: Size(50, 32),
                             elevation: 2,
                           ),
-                          child: Text('SW',
+                          child: Text(tr('SW'),
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
@@ -188,7 +189,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
                       color: Theme.of(context).colorScheme.onPrimary,
                       shadows: [
                         Shadow(
-                          offset: const Offset(0, 1),
+                          offset: Offset(0, 1),
                           blurRadius: 3,
                           color: Theme.of(context)
                               .colorScheme
@@ -220,7 +221,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (_getTopicDescription().isNotEmpty) ...[
-                              const SizedBox(height: 60),
+                              SizedBox(height: 60),
                               Text(
                                 _getTopicDescription(),
                                 style: Theme.of(context)
@@ -235,7 +236,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ],
-                            const SizedBox(height: 12),
+                            SizedBox(height: 12),
                             Row(
                               children: [
                                 Icon(
@@ -243,7 +244,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
                                   color: Colors.white.withOpacity(0.9),
                                   size: 16,
                                 ),
-                                const SizedBox(width: 4),
+                                SizedBox(width: 4),
                                 Text(
                                   '${controller.materials.length} materials',
                                   style: Theme.of(context)
@@ -256,7 +257,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
                                       ),
                                 ),
                                 if (selectedLanguage != null) ...[
-                                  const SizedBox(width: 16),
+                                  SizedBox(width: 16),
                                   Container(
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 8, vertical: 2),
@@ -283,7 +284,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
                                 ],
                               ],
                             ),
-                            const SizedBox(
+                            SizedBox(
                                 height: 48), // Space for pinned title
                           ],
                         ),
@@ -301,19 +302,19 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline,
+                        Icon(Icons.error_outline,
                             size: 64, color: Colors.red),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         Text(controller.materialsError,
                             textAlign: TextAlign.center),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: () => controller.fetchMaterials(
                             currentTopic.slug,
                             language: selectedLanguage,
                             refresh: true,
                           ),
-                          child: const Text('Retry'),
+                          child: Text(tr('Retry')),
                         ),
                       ],
                     ),
@@ -398,7 +399,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
           language: selectedLanguage,
           refresh: true,
         ),
-        tooltip: 'Refresh Materials',
+        tooltip: tr('Refresh Materials'),
         child: const Icon(Icons.refresh),
       ),
     );

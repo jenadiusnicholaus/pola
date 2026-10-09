@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../controllers/reset_password_controller.dart';
@@ -17,7 +18,7 @@ class ResetPasswordScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Enter Reset Code'),
+        title: Text('Enter Reset Code'),
         backgroundColor: AppColors.primaryAmber,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -29,7 +30,7 @@ class ResetPasswordScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 'Code sent to',
                 style: theme.textTheme.bodyMedium?.copyWith(
@@ -44,7 +45,7 @@ class ResetPasswordScreen extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Text(
                 'Enter the 6-digit code from your email to continue.',
                 style: theme.textTheme.bodyMedium?.copyWith(
@@ -52,7 +53,7 @@ class ResetPasswordScreen extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 28),
+              SizedBox(height: 28),
               TextFormField(
                 controller: controller.otpController,
                 keyboardType: TextInputType.number,
@@ -65,15 +66,15 @@ class ResetPasswordScreen extends StatelessWidget {
                 validator: controller.validateOtp,
                 onFieldSubmitted: (_) => controller.submit(),
                 decoration: InputDecoration(
-                  labelText: '6-digit OTP',
+                  labelText: tr('6-digit OTP'),
                   hintText: 'Enter code',
-                  prefixIcon: const Icon(Icons.pin_outlined),
+                  prefixIcon: Icon(Icons.pin_outlined),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Obx(
                 () => ElevatedButton(
                   onPressed: controller.isLoading.value ? null : controller.submit,
@@ -86,7 +87,7 @@ class ResetPasswordScreen extends StatelessWidget {
                     ),
                   ),
                   child: controller.isLoading.value
-                      ? const SizedBox(
+                      ? SizedBox(
                           height: 22,
                           width: 22,
                           child: CircularProgressIndicator(
@@ -94,8 +95,7 @@ class ResetPasswordScreen extends StatelessWidget {
                             color: Colors.white,
                           ),
                         )
-                      : const Text(
-                          'Verify Code',
+                      : Text(tr('Verify Code'),
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 16,

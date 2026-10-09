@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../controllers/statutes_controller.dart';
 
@@ -22,6 +23,8 @@ class StatuteCategoriesScreen extends StatelessWidget {
         title: Text(controller.isSwahili
             ? 'Sheria za Nchi ya Tanzania'
             : 'Tanzania Statutes & Laws'),
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
       ),
       body: Obx(() {
         if (controller.isLoadingCategories.value &&
@@ -34,14 +37,14 @@ class StatuteCategoriesScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, size: 56, color: Colors.red),
-                const SizedBox(height: 12),
+                Icon(Icons.error_outline, size: 56, color: Colors.red),
+                SizedBox(height: 12),
                 Text(controller.categoriesError.value,
                     textAlign: TextAlign.center),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: controller.loadCategories,
-                  child: const Text('Retry'),
+                  child: Text(tr('Retry')),
                 ),
               ],
             ),
@@ -61,54 +64,48 @@ class StatuteCategoriesScreen extends StatelessWidget {
         return RefreshIndicator(
           onRefresh: () => controller.loadCategories(refresh: true),
           child: ListView.separated(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(vertical: 4),
             itemCount: controller.categories.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
+            separatorBuilder: (_, __) => Divider(
+              height: 1,
+              indent: 76,
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+            ),
             itemBuilder: (context, index) {
               final cat = controller.categories[index];
-              return Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                    color: theme.colorScheme.outline.withValues(alpha: 0.2),
+              return ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                leading: CircleAvatar(
+                  radius: 24,
+                  backgroundColor:
+                      theme.colorScheme.primary.withValues(alpha: 0.12),
+                  child: Icon(Icons.gavel,
+                      color: theme.colorScheme.primary, size: 20),
+                ),
+                title: Text(
+                  cat.localizedName(swahili: controller.isSwahili),
+                  style: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  cat
+                          .localizedDescription(swahili: controller.isSwahili)
+                          .isEmpty
+                      ? (controller.isSwahili
+                          ? '${cat.statutesCount} sheria'
+                          : '${cat.statutesCount} laws')
+                      : cat.localizedDescription(swahili: controller.isSwahili),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
                   ),
                 ),
-                child: ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  leading: CircleAvatar(
-                    backgroundColor:
-                        theme.colorScheme.primary.withValues(alpha: 0.12),
-                    child: Icon(Icons.gavel, color: theme.colorScheme.primary),
-                  ),
-                  title: Text(
-                    cat.localizedName(swahili: controller.isSwahili),
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text(
-                    cat
-                            .localizedDescription(swahili: controller.isSwahili)
-                            .isEmpty
-                        ? (controller.isSwahili
-                            ? '${cat.statutesCount} sheria'
-                            : '${cat.statutesCount} laws')
-                        : cat.localizedDescription(
-                            swahili: controller.isSwahili),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: Text(
-                    'READ MORE',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                      fontSize: 11,
-                    ),
-                  ),
-                  onTap: () => controller.openCategory(cat),
-                ),
+                trailing: Icon(Icons.chevron_right,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+                onTap: () => controller.openCategory(cat),
               );
             },
           ),

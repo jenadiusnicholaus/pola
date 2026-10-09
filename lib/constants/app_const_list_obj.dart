@@ -2,44 +2,44 @@ class AppConstListObj {
   static const List<Map<String, dynamic>> appConstListBjs = [
     {
       "icon": "⚖️",
-      "title": "Learn the Law | Jifunze Sheria",
+      "title": "Learn the Law",
     },
     {
       "icon": "📝",
-      "title": "Ask a Legal Question | Uliza Swali la Kisheria",
+      "title": "Ask a Legal Question",
     },
     {
       "icon": "📚",
-      "title": "Legal Templates | Nyaraka za Kisheria",
+      "title": "Legal Templates",
     },
     {
       "icon": "💼",
-      "title": "Talk to a Lawyer | Zungumza na Mwanasheria",
+      "title": "Talk to a Lawyer",
     },
     // legal opinions
     {
       "icon": "📄",
-      "title": "Legal Opinions | Maoni ya Kisheria",
+      "title": "Legal Opinions",
     },
     // Discuss law topics
     {
       "icon": "💬",
-      "title": "Discuss Law Topics | Jadili Mada za Sheria",
+      "title": "Discuss Law Topics",
     },
     // legal updates
     {
       "icon": "📰",
-      "title": "Legal Updates | Habari za Kisheria",
+      "title": "Legal Updates",
     },
     // Community forum
     {
       "icon": "👥",
-      "title": "Community Forum | Jukwaa la Jamii",
+      "title": "Community Forum",
     },
     // law student/lecture hubs
     {
       "icon": "🎓",
-      "title": "Law Student Hubs | Vituo vya Wanafunzi wa Sheria",
+      "title": "Law Student Hubs",
     },
     // advocacy hubs
   ];

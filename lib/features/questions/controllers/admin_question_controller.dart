@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:localization_lite/translate.dart';
 import '../models/question_models.dart';
 import '../services/question_service.dart';
 import '../../../utils/navigation_helper.dart';
@@ -40,7 +41,7 @@ class AdminQuestionController extends GetxController {
     } catch (e) {
       error.value = e.toString();
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: e.toString(),
       );
     } finally {
@@ -79,7 +80,7 @@ class AdminQuestionController extends GetxController {
 
       Get.back(); // Close answer screen
       NavigationHelper.showSafeSnackbar(
-        title: 'Success',
+        title: tr('Success'),
         message: 'Question answered successfully!',
         backgroundColor: Get.theme.colorScheme.primaryContainer,
         colorText: Get.theme.colorScheme.onPrimaryContainer,
@@ -89,7 +90,7 @@ class AdminQuestionController extends GetxController {
     } catch (e) {
       error.value = e.toString();
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: e.toString(),
         backgroundColor: Get.theme.colorScheme.errorContainer,
         colorText: Get.theme.colorScheme.onErrorContainer,
@@ -116,12 +117,12 @@ class AdminQuestionController extends GetxController {
       await fetchStats();
 
       NavigationHelper.showSafeSnackbar(
-        title: 'Success',
+        title: tr('Success'),
         message: 'Question closed successfully',
       );
     } catch (e) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: e.toString(),
       );
     }
@@ -143,12 +144,12 @@ class AdminQuestionController extends GetxController {
       await fetchStats();
 
       NavigationHelper.showSafeSnackbar(
-        title: 'Success',
+        title: tr('Success'),
         message: 'Question reopened successfully',
       );
     } catch (e) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: e.toString(),
       );
     }

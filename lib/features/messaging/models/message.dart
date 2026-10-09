@@ -43,19 +43,21 @@ class Message {
     );
   }
 
-  /// Whether this message represents a call invitation (p2p/group call link)
+  /// Whether this message represents a call invitation (p2p/group call link).
+  ///
+  /// A call_end payload can also carry the 'nx-group-call' room reference
+  /// (echoing which call it is ending), so it must be excluded explicitly.
+  /// Otherwise the end event is misclassified as a second, distinct call
+  /// invite instead of the signal that merges into the original invite,
+  /// producing duplicate "Voice call" / "Call ended" bubble pairs.
   bool get isCallMessage =>
-      content.contains('Incoming p2p call') ||
-      content.contains('Incoming group call') ||
-      content.contains('nx-group-call');
+      !Message.isCallEndBody(content) &&
+      (content.contains('Incoming p2p call') ||
+          content.contains('Incoming group call') ||
+          content.contains('nx-group-call'));
 
-  /// Whether this represents a missed/ended call notification.
-  /// True either when this message itself is a raw call_end event, or when
-  /// a call invite has since been marked ended (merged into the same bubble).
-  bool get isCallEndMessage =>
-      callEnded ||
-      content.contains('"type":"call_end"') ||
-      content.contains('call_end');
+  /// Whether this represents an ended call notification or call session.
+  bool get isCallEndMessage => callEnded || Message.isCallEndBody(content);
 
   /// Whether this is a call type (call invite or call end) message
   bool get isCallType => isCallMessage || isCallEndMessage;
@@ -63,22 +65,21 @@ class Message {
   /// Whether the call is a video call (fallback: p2p calls treated as voice unless specified)
   bool get isVideoCall => content.toLowerCase().contains('type=video');
 
-  /// Clean, user-friendly display text for call messages
+  /// Clean, user-friendly display text for messages.
+  /// All call events are displayed as "Call ended". The raw call
+  /// type ("Voice call" / "Video call") is never shown as a log entry.
   String get displayText {
-    if (callEnded) {
-      return 'Call ended';
-    }
-    if (isCallMessage) {
-      return isVideoCall ? 'Video call' : 'Voice call';
-    }
-    if (isCallEndMessage) {
-      return 'Call ended';
-    }
+    if (isCallType) return 'Call ended';
     return Message.extractHumanText(content);
   }
 
   /// Extract the call room id from either a call invite URL
-  /// (.../nx-group-call/<roomId>?...) or a signaling JSON body's 'roomId' field.
+  /// (.../nx-group-call/<roomId>?...) or a signaling JSON body.
+  ///
+  /// The room identifier is not consistently named across the call invite
+  /// and the call_end event, so every known variant is checked. Missing a
+  /// variant means the invite and the end cannot be paired, and the call
+  /// renders as two separate bubbles instead of one merged bubble.
   static String? extractRoomId(String body) {
     final urlMatch = RegExp(r'nx-group-call/([^?\s]+)').firstMatch(body);
     if (urlMatch != null) return urlMatch.group(1);
@@ -86,8 +87,16 @@ class Message {
     if (body.trim().startsWith('{')) {
       try {
         final map = jsonDecode(body) as Map<String, dynamic>;
-        final roomId = map['roomId']?.toString();
-        if (roomId != null && roomId.isNotEmpty) return roomId;
+        for (final key in [
+          'roomId',
+          'room_id',
+          'channelName',
+          'channel_name',
+          'room',
+        ]) {
+          final value = map[key]?.toString();
+          if (value != null && value.isNotEmpty) return value;
+        }
       } catch (_) {
         // Not valid JSON
       }
@@ -96,16 +105,24 @@ class Message {
   }
 
   /// Whether a raw body represents a call_end signaling event.
+  ///
+  /// The event is not emitted in a single consistent shape, so known 'type'
+  /// spellings are checked first and a plain substring match is used as a
+  /// fallback for bodies that are not valid JSON.
   static bool isCallEndBody(String body) {
     if (body.trim().startsWith('{')) {
       try {
         final map = jsonDecode(body) as Map<String, dynamic>;
-        return map['type']?.toString() == 'call_end';
+        final type = map['type']?.toString();
+        return type == 'call_end' ||
+            type == 'callEnd' ||
+            type == 'call_ended' ||
+            type == 'callEnded';
       } catch (_) {
-        return false;
+        // Not valid JSON - fall through to the substring check.
       }
     }
-    return false;
+    return body.contains('call_end') || body.contains('callEnded');
   }
 
   /// Extract plain text from a raw body that may be JSON-wrapped.

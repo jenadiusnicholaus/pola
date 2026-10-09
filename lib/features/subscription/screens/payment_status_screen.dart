@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../models/subscription_models.dart';
 import '../services/subscription_service.dart';
@@ -350,8 +351,8 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen>
             height: 50,
             child: ElevatedButton.icon(
               onPressed: () => Get.back(),
-              icon: const Icon(Icons.refresh),
-              label: const Text('Try Again'),
+              icon: Icon(Icons.refresh),
+              label: Text('Try Again'),
               style: ElevatedButton.styleFrom(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -359,15 +360,15 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen>
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
         ],
         SizedBox(
           width: double.infinity,
           height: 50,
           child: OutlinedButton.icon(
             onPressed: () => Get.until((route) => route.isFirst),
-            icon: const Icon(Icons.home),
-            label: const Text('Go to Home'),
+            icon: Icon(Icons.home),
+            label: Text(tr('Go to Home')),
             style: OutlinedButton.styleFrom(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -440,7 +441,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen>
       PopScope(
         canPop: false,
         child: SuccessView.dialog(
-          title: 'Welcome to Premium!',
+          title: tr('Welcome to Premium!'),
           message:
               'Your subscription is now active! Start using your premium features right away.',
           primaryButtonLabel: 'Get Started',
@@ -506,7 +507,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen>
       padding: const EdgeInsets.only(left: 8, bottom: 4),
       child: Row(
         children: [
-          const Text('•', style: TextStyle(fontSize: 16)),
+          Text(tr('•'), style: TextStyle(fontSize: 16)),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

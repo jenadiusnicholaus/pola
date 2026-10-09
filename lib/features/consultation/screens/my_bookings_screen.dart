@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../services/consultation_service.dart';
@@ -16,12 +17,12 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
   final ConsultationService _service = Get.find<ConsultationService>();
 
   late TabController _mainTabController;
-  
+
   // Bookings state
   bool _isLoadingBookings = true;
   MyBookingsResponse? _bookings;
   String _selectedBookingStatus = 'all';
-  
+
   // Calls state
   bool _isLoadingCalls = true;
   CallHistoryResponse? _callHistory;
@@ -53,7 +54,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
     setState(() => _isLoadingBookings = true);
 
     try {
-      final status = _selectedBookingStatus == 'all' ? null : _selectedBookingStatus;
+      final status =
+          _selectedBookingStatus == 'all' ? null : _selectedBookingStatus;
       final response = await _service.getMyBookings(status: status);
 
       if (mounted) {
@@ -169,7 +171,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
           ),
         ),
         const Divider(height: 1),
-        
+
         // Bookings list
         Expanded(
           child: _isLoadingBookings
@@ -182,7 +184,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
                         padding: const EdgeInsets.all(16),
                         itemCount: _bookings!.results.length,
                         itemBuilder: (context, index) {
-                          return _buildBookingCard(theme, _bookings!.results[index]);
+                          return _buildBookingCard(
+                              theme, _bookings!.results[index]);
                         },
                       ),
                     ),
@@ -203,7 +206,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
       selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
       checkmarkColor: Theme.of(context).primaryColor,
       labelStyle: TextStyle(
-        color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade700,
+        color:
+            isSelected ? Theme.of(context).primaryColor : Colors.grey.shade700,
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
       ),
     );
@@ -214,7 +218,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.event_note_outlined, size: 80, color: Colors.grey.shade300),
+          Icon(Icons.event_note_outlined,
+              size: 80, color: Colors.grey.shade300),
           const SizedBox(height: 16),
           Text(
             'No bookings found',
@@ -270,11 +275,12 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.location_on, size: 18, color: theme.primaryColor),
-                      const SizedBox(width: 6),
+                      Icon(Icons.location_on,
+                          size: 18, color: theme.primaryColor),
+                      SizedBox(width: 6),
                       Text(
                         booking.consultantName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -282,7 +288,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
                     ],
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: statusColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -298,36 +305,40 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
 
               // Date & Time
               Row(
                 children: [
-                  Icon(Icons.calendar_today, size: 16, color: Colors.grey.shade600),
-                  const SizedBox(width: 8),
+                  Icon(Icons.calendar_today,
+                      size: 16, color: Colors.grey.shade600),
+                  SizedBox(width: 8),
                   Text(
                     booking.scheduledDate != null
-                        ? DateFormat('EEE, d MMM yyyy • h:mm a').format(booking.scheduledDate!)
+                        ? DateFormat('EEE, d MMM yyyy • h:mm a')
+                            .format(booking.scheduledDate!)
                         : 'Date not set',
                     style: TextStyle(color: Colors.grey.shade700),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
 
               // Duration & Location
               Row(
                 children: [
-                  Icon(Icons.timer_outlined, size: 16, color: Colors.grey.shade600),
-                  const SizedBox(width: 8),
+                  Icon(Icons.timer_outlined,
+                      size: 16, color: Colors.grey.shade600),
+                  SizedBox(width: 8),
                   Text(
                     '${booking.scheduledDurationMinutes} minutes',
                     style: TextStyle(color: Colors.grey.shade700),
                   ),
                   if (booking.meetingLocation != null) ...[
-                    const SizedBox(width: 16),
-                    Icon(Icons.location_on_outlined, size: 16, color: Colors.grey.shade600),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 16),
+                    Icon(Icons.location_on_outlined,
+                        size: 16, color: Colors.grey.shade600),
+                    SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         booking.meetingLocation!,
@@ -338,11 +349,11 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
                   ],
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
 
               // Divider
               Divider(height: 1, color: Colors.grey.shade200),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
 
               // Amount
               Row(
@@ -384,7 +395,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
           children: [
             // Credits card
             if (_callCredits != null) _buildCreditsCard(theme),
-            
+
             // Call history
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -405,7 +416,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
                 ],
               ),
             ),
-            
+
             if (_callHistory == null || _callHistory!.calls.isEmpty)
               _buildEmptyCallsState()
             else
@@ -418,7 +429,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
                   return _buildCallCard(theme, _callHistory!.calls[index]);
                 },
               ),
-            
+
             const SizedBox(height: 20),
           ],
         ),
@@ -441,7 +452,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
           BoxShadow(
             color: theme.primaryColor.withOpacity(0.3),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -451,17 +462,17 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Call Credits',
+              Text(
+                tr('Call Credits'),
                 style: TextStyle(
                   color: Colors.black54,
                   fontSize: 14,
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.add_circle_outline, color: Colors.black87),
+                icon: Icon(Icons.add_circle_outline, color: Colors.black87),
                 onPressed: () => Get.toNamed('/buy-credits'),
-                tooltip: 'Buy More Credits',
+                tooltip: tr('Buy More Credits'),
               ),
             ],
           ),
@@ -501,11 +512,13 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
                   children: [
                     Text(
                       credit.bundleName,
-                      style: const TextStyle(color: Colors.black54, fontSize: 12),
+                      style:
+                          const TextStyle(color: Colors.black54, fontSize: 12),
                     ),
                     Text(
                       '${credit.remainingMinutes} min${credit.expiresAt != null ? ' • Exp: ${DateFormat('d MMM').format(credit.expiresAt!)}' : ''}',
-                      style: const TextStyle(color: Colors.black87, fontSize: 12),
+                      style:
+                          const TextStyle(color: Colors.black87, fontSize: 12),
                     ),
                   ],
                 ),
@@ -524,28 +537,29 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
         child: Column(
           children: [
             Icon(Icons.phone_missed, size: 60, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
-              'No call history',
+              tr('No call history'),
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey.shade600,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
-              'Your call history will appear here',
+              tr('Your call history will appear here'),
               style: TextStyle(color: Colors.grey.shade500),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: () => Get.toNamed('/consultants'),
-              icon: const Icon(Icons.phone),
-              label: const Text('Call a Lawyer'),
+              icon: Icon(Icons.phone),
+              label: Text(tr('Call a Lawyer')),
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
             ),
           ],
@@ -577,7 +591,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
               child: const Icon(Icons.call, color: Colors.green, size: 22),
             ),
             const SizedBox(width: 12),
-            
+
             // Call info
             Expanded(
               child: Column(
@@ -593,7 +607,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
                   const SizedBox(height: 4),
                   Text(
                     call.startTime != null
-                        ? DateFormat('d MMM yyyy • h:mm a').format(call.startTime!)
+                        ? DateFormat('d MMM yyyy • h:mm a')
+                            .format(call.startTime!)
                         : call.date,
                     style: TextStyle(
                       color: Colors.grey.shade600,
@@ -603,7 +618,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
                 ],
               ),
             ),
-            
+
             // Duration
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -621,7 +636,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: List.generate(5, (index) {
                       return Icon(
-                        index < call.callQualityRating! ? Icons.star : Icons.star_border,
+                        index < call.callQualityRating!
+                            ? Icons.star
+                            : Icons.star_border,
                         size: 12,
                         color: Colors.amber,
                       );
@@ -664,7 +681,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
@@ -690,12 +707,13 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Booking Details',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: statusColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
@@ -710,21 +728,23 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
 
             // Consultant info
             _buildDetailRow(Icons.person, 'Consultant', booking.consultantName),
             if (booking.reference != null)
-              _buildDetailRow(Icons.receipt_outlined, 'Reference', booking.reference!),
-            
-            const Divider(height: 24),
+              _buildDetailRow(
+                  Icons.receipt_outlined, 'Reference', booking.reference!),
+
+            Divider(height: 24),
 
             // Booking details
             _buildDetailRow(
               Icons.calendar_today,
               'Date',
               booking.scheduledDate != null
-                  ? DateFormat('EEEE, d MMMM yyyy').format(booking.scheduledDate!)
+                  ? DateFormat('EEEE, d MMMM yyyy')
+                      .format(booking.scheduledDate!)
                   : 'Not set',
             ),
             _buildDetailRow(
@@ -746,13 +766,13 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
                 booking.meetingLocation!,
               ),
 
-            const Divider(height: 24),
+            Divider(height: 24),
 
             // Amount
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Total Amount',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
@@ -768,10 +788,11 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
             ),
 
             // Notes
-            if (booking.clientNotes != null && booking.clientNotes!.isNotEmpty) ...[
-              const SizedBox(height: 16),
+            if (booking.clientNotes != null &&
+                booking.clientNotes!.isNotEmpty) ...[
+              SizedBox(height: 16),
               Text(
-                'Notes',
+                tr('Notes'),
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   color: Colors.grey.shade700,
@@ -816,9 +837,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
       child: Row(
         children: [
           Icon(icon, size: 20, color: Colors.grey.shade500),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Text(
-            '$label: ',
+            tr('{label}: ').replaceAll('{label}', '$label'),
             style: TextStyle(color: Colors.grey.shade600),
           ),
           Expanded(

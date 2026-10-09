@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import '../controllers/legal_education_controller.dart';
 
 class ProfessionalSearchBar extends StatefulWidget {
@@ -109,131 +110,10 @@ class _ProfessionalSearchBarState extends State<ProfessionalSearchBar> {
                         widget.controller.clearSearch();
                         setState(() {});
                       },
-                      tooltip: 'Clear search',
+                      tooltip: tr('Clear search'),
                     ),
                   ),
                 ],
-
-                // Language Filter Button
-                Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  child: PopupMenuButton<LanguageFilter>(
-                    icon: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.language_rounded,
-                        color: theme.colorScheme.primary,
-                        size: 18,
-                      ),
-                    ),
-                    onSelected: (LanguageFilter value) {
-                      widget.controller.setLanguageFilter(value);
-                    },
-                    tooltip: 'Filter by language',
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 8,
-                    itemBuilder: (BuildContext context) => [
-                      PopupMenuItem(
-                        value: LanguageFilter.both,
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.public_rounded,
-                              size: 18,
-                              color:
-                                  theme.colorScheme.onSurface.withOpacity(0.7),
-                            ),
-                            const SizedBox(width: 12),
-                            const Text('All Languages'),
-                            if (widget.controller.languageFilter ==
-                                LanguageFilter.both) ...[
-                              const Spacer(),
-                              Icon(
-                                Icons.check_rounded,
-                                size: 18,
-                                color: theme.colorScheme.primary,
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: LanguageFilter.english,
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text(
-                                'EN',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            const Text('English'),
-                            if (widget.controller.languageFilter ==
-                                LanguageFilter.english) ...[
-                              const Spacer(),
-                              Icon(
-                                Icons.check_rounded,
-                                size: 18,
-                                color: theme.colorScheme.primary,
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: LanguageFilter.swahili,
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.amber.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                'SW',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.amber.shade700,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            const Text('Kiswahili'),
-                            if (widget.controller.languageFilter ==
-                                LanguageFilter.swahili) ...[
-                              const Spacer(),
-                              Icon(
-                                Icons.check_rounded,
-                                size: 18,
-                                color: theme.colorScheme.primary,
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
           ],

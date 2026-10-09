@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:localization_lite/translate.dart';
 
 class VerificationStatus {
   final int id;
@@ -544,7 +545,7 @@ class VerificationStep {
         issues: [],
         requiredFields: [],
         verifiedFields: [],
-        title: 'Step',
+        title: tr('Step'),
       );
     }
   }

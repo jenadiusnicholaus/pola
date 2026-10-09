@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:flutter/foundation.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/token_storage_service.dart';
@@ -157,7 +158,7 @@ class HomeController extends GetxController {
         debugPrint('✅ Manual token refresh successful');
       } else {
         NavigationHelper.showSafeSnackbar(
-          title: 'Refresh Failed',
+          title: tr('Refresh Failed'),
           message: 'Failed to refresh session. You may need to log in again.',
           duration: const Duration(seconds: 3),
         );
@@ -166,7 +167,7 @@ class HomeController extends GetxController {
     } catch (e) {
       debugPrint('❌ Error during manual token refresh: $e');
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'An error occurred while refreshing your session.',
         duration: const Duration(seconds: 3),
       );

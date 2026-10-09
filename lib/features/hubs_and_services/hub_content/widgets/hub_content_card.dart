@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../../../utils/navigation_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -33,481 +34,390 @@ class HubContentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final contentColor = _getContentTypeColor(theme);
 
-    // Debug: Check if this content should show media
-    debugPrint('🔍 Content Card: "${content.title}"');
-    debugPrint('   ID: ${content.id}');
-    debugPrint('   MediaType: "${content.mediaType}"');
-    debugPrint('   FileURL: "${content.fileUrl}"');
-    debugPrint('   VideoURL: "${content.videoUrl}"');
-    debugPrint('   IsImage: ${content.isImage}');
-    debugPrint('   FileExtension: "${content.fileExtension}"');
-    debugPrint('   HasVideo: ${content.hasVideo}');
-    debugPrint(
-        '   Will show Instagram image: ${content.isImage && content.fileUrl.isNotEmpty}');
-    debugPrint(
-        '   Will show attachment: ${content.hasVideo || (content.fileUrl.isNotEmpty && !content.isImage)}');
-
-    // Debug for image files
-    if (content.fileUrl.isNotEmpty) {
-      debugPrint('🎯 FILE FOUND! ID: ${content.id}');
-      debugPrint('   URL: "${content.fileUrl}"');
-      debugPrint('   Extension: "${content.fileExtension}"');
-      debugPrint('   Is it an image? ${content.isImage}');
-      if (content.isImage) {
-        debugPrint('   ✅ Should show INSTAGRAM STYLE at top');
-      } else {
-        debugPrint('   📎 Should show ATTACHMENT STYLE');
-      }
-    }
-
-    // Special debug for ID 226 (the jpg test case)
-    if (content.id == 226) {
-      debugPrint('🔥 SPECIAL DEBUG FOR ID 226:');
-      debugPrint('   Full URL: "${content.fileUrl}"');
-      debugPrint('   URL ends with .jpg? ${content.fileUrl.endsWith('.jpg')}');
-      debugPrint('   fileExtension getter: "${content.fileExtension}"');
-      debugPrint('   isImage getter: ${content.isImage}');
-      debugPrint(
-          '   Should see Instagram image: ${content.isImage && content.fileUrl.isNotEmpty}');
-    }
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.1),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.shadow.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Material(
-        color: Colors.transparent,
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        elevation: 1.5,
+        shadowColor: theme.colorScheme.shadow.withOpacity(0.1),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: theme.colorScheme.outline.withOpacity(0.08),
+              ),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Header with author info
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor:
-                          theme.colorScheme.primary.withOpacity(0.1),
-                      backgroundImage: content.uploader.avatarUrl != null
-                          ? NetworkImage(content.uploader.avatarUrl!)
-                          : null,
-                      child: content.uploader.avatarUrl == null
-                          ? Text(
-                              content.uploader.fullName.isNotEmpty
-                                  ? content.uploader.fullName[0].toUpperCase()
-                                  : 'U',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: theme.colorScheme.primary,
-                              ),
-                            )
-                          : null,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  content.uploader.fullName,
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
+                // Author header
+                Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor:
+                            theme.colorScheme.primary.withOpacity(0.12),
+                        backgroundImage: content.uploader.avatarUrl != null
+                            ? NetworkImage(content.uploader.avatarUrl!)
+                            : null,
+                        child: content.uploader.avatarUrl == null
+                            ? Text(
+                                content.uploader.fullName.isNotEmpty
+                                    ? content.uploader.fullName[0].toUpperCase()
+                                    : 'U',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
                                 ),
-                              ),
-                              if (content.uploader.isVerified) ...[
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Icons.verified,
-                                  size: 16,
-                                  color: Colors.green,
-                                ),
-                              ],
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Text(
-                                content.uploader.userRole,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.6),
-                                ),
-                              ),
-                              Text(
-                                ' • ${_formatTime(content.createdAt)}',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.6),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                              )
+                            : null,
                       ),
-                    ),
-                    // Content type badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _getContentTypeColor(theme).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        _getContentTypeLabel(),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: _getContentTypeColor(theme),
-                          fontWeight: FontWeight.w500,
-                          fontSize: 10,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Instagram-style Image Display (at top, before title)
-                if (content.isImage && content.fileUrl.isNotEmpty) ...[
-                  // Debug indicator to confirm this section is working
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    color: Colors.green,
-                    child: Text(
-                      '📸 INSTAGRAM MODE: ${content.id}',
-                      style: const TextStyle(color: Colors.white, fontSize: 10),
-                    ),
-                  ),
-                  _buildInstagramStyleImage(theme),
-                  const SizedBox(height: 16),
-                ] else if (content.fileUrl.isNotEmpty) ...[
-                  // Debug indicator for non-images
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    color: Colors.orange,
-                    child: Text(
-                      '📎 ATTACHMENT MODE: ${content.id} (${content.fileExtension})',
-                      style: const TextStyle(color: Colors.white, fontSize: 10),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-
-                // Content title
-                Text(
-                  content.title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-
-                // Content description
-                if (content.description.isNotEmpty) ...[
-                  Text(
-                    content.description,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.8),
-                      height: 1.4,
-                    ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 12),
-                ],
-
-                // Thumbnail placeholder (could be added later when backend supports it)
-                // For now, we'll show content type icon for visual variety
-
-                // Media Display (Videos, PDFs, Files - NOT Images, they're at top)
-                if (content.hasVideo ||
-                    (content.fileUrl.isNotEmpty && !content.isImage)) ...[
-                  _buildMediaPreview(context, theme),
-                  const SizedBox(height: 12),
-                ],
-
-                // Actions and stats
-                Row(
-                  children: [
-                    // Like button
-                    Obx(() {
-                      // Get current content state from controller if available
-                      HubContentItem currentContent = content;
-                      if (controller != null) {
-                        // Check all possible lists for the most up-to-date version
-                        final allLists = [
-                          controller!.searchResults.value,
-                          controller!.content.value,
-                          controller!.trendingContent.value,
-                          controller!.recentContent.value,
-                          controller!.filteredContent.value,
-                          controller!.bookmarkedContent.value,
-                        ];
-
-                        for (final list in allLists) {
-                          try {
-                            final found = list
-                                .firstWhere((item) => item.id == content.id);
-                            currentContent = found;
-                            break; // Use the first match found
-                          } catch (e) {
-                            // Item not in this list, continue searching
-                          }
-                        }
-                      }
-
-                      return InkWell(
-                        onTap: onLike,
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                currentContent.isLiked
-                                    ? Icons.favorite
-                                    : Icons.favorite_outline,
-                                size: 16,
-                                color: currentContent.isLiked
-                                    ? Colors.red
-                                    : theme.colorScheme.onSurface
-                                        .withOpacity(0.6),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${currentContent.likesCount}',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.6),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }),
-
-                    // Comments count
-                    Obx(() {
-                      // Get current content state from controller if available
-                      HubContentItem currentContent = content;
-                      if (controller != null) {
-                        // Check all possible lists for the most up-to-date version
-                        final allLists = [
-                          controller!.searchResults.value,
-                          controller!.content.value,
-                          controller!.trendingContent.value,
-                          controller!.recentContent.value,
-                          controller!.filteredContent.value,
-                          controller!.bookmarkedContent.value,
-                        ];
-
-                        for (final list in allLists) {
-                          try {
-                            final found = list
-                                .firstWhere((item) => item.id == content.id);
-                            currentContent = found;
-                            break; // Use the first match found
-                          } catch (e) {
-                            // Item not in this list, continue searching
-                          }
-                        }
-                      }
-
-                      if (currentContent.commentsCount > 0) {
-                        return Row(
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(width: 16),
                             Row(
-                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
-                                  Icons.comment_outlined,
-                                  size: 16,
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.6),
+                                Flexible(
+                                  child: Text(
+                                    content.uploader.fullName,
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14,
+                                      height: 1.2,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                                const SizedBox(width: 4),
+                                if (content.uploader.isVerified) ...[
+                                  const SizedBox(width: 4),
+                                  Icon(
+                                    Icons.verified,
+                                    size: 14,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    content.uploader.userRole,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurface
+                                          .withOpacity(0.55),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Container(
+                                  margin:
+                                      const EdgeInsets.symmetric(horizontal: 6),
+                                  width: 3,
+                                  height: 3,
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.onSurface
+                                        .withOpacity(0.4),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
                                 Text(
-                                  '${currentContent.commentsCount}',
+                                  _formatTime(content.createdAt),
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: theme.colorScheme.onSurface
-                                        .withOpacity(0.6),
+                                        .withOpacity(0.5),
+                                    fontSize: 12,
                                   ),
                                 ),
                               ],
                             ),
                           ],
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    }),
-
-                    // Bookmark button
-                    if (onBookmark != null) ...[
-                      const SizedBox(width: 16),
-                      Obx(() {
-                        // Get current content state from controller if available
-                        HubContentItem currentContent = content;
-                        if (controller != null) {
-                          // Check all possible lists for the most up-to-date version
-                          final allLists = [
-                            controller!.searchResults.value,
-                            controller!.content.value,
-                            controller!.trendingContent.value,
-                            controller!.recentContent.value,
-                            controller!.filteredContent.value,
-                            controller!.bookmarkedContent.value,
-                          ];
-
-                          for (final list in allLists) {
-                            try {
-                              final found = list
-                                  .firstWhere((item) => item.id == content.id);
-                              currentContent = found;
-                              print(
-                                  '🔍 HubContentCard: Found content ${content.id} in list - bookmarked: ${found.isBookmarked}, count: ${found.bookmarksCount}');
-                              break; // Use the first match found
-                            } catch (e) {
-                              // Item not in this list, continue searching
-                            }
-                          }
-                        }
-
-                        return InkWell(
-                          onTap: onBookmark,
+                        ),
+                      ),
+                      // Content type chip
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: contentColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  currentContent.isBookmarked
-                                      ? Icons.bookmark
-                                      : Icons.bookmark_outline,
-                                  size: 16,
-                                  color: currentContent.isBookmarked
-                                      ? theme.colorScheme.primary
-                                      : theme.colorScheme.onSurface
-                                          .withOpacity(0.6),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${currentContent.bookmarksCount}',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurface
-                                        .withOpacity(0.6),
-                                  ),
-                                ),
-                              ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _getContentTypeIcon(),
+                              size: 12,
+                              color: contentColor,
                             ),
-                          ),
-                        );
-                      }),
-                    ],
-
-                    // Rating display
-                    if (content.rating > 0) ...[
-                      const SizedBox(width: 16),
-                      InkWell(
-                        onTap: onRate != null
-                            ? () => _showRatingDialog(context, theme)
-                            : null,
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.star,
-                                size: 16,
-                                color: Colors.amber,
+                            const SizedBox(width: 5),
+                            Text(
+                              _getContentTypeLabel(),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: contentColor,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 10,
+                                letterSpacing: 0.3,
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${content.rating.toStringAsFixed(1)}',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.6),
-                                ),
-                              ),
-                              if (content.totalRatings > 0) ...[
-                                Text(
-                                  ' (${content.totalRatings})',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurface
-                                        .withOpacity(0.4),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
+                  ),
+                ),
 
-                    // Downloads count
-                    if (content.downloadsCount > 0) ...[
-                      const SizedBox(width: 16),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.download_outlined,
-                            size: 16,
-                            color: theme.colorScheme.onSurface.withOpacity(0.6),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${content.downloadsCount}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color:
-                                  theme.colorScheme.onSurface.withOpacity(0.6),
-                            ),
-                          ),
-                        ],
+                // Full-width image preview
+                if (content.isImage && content.fileUrl.isNotEmpty)
+                  _buildInstagramStyleImage(theme),
+
+                // Video / PDF / File preview
+                if (content.hasVideo ||
+                    (content.fileUrl.isNotEmpty && !content.isImage))
+                  _buildMediaPreview(context, theme),
+
+                // Text content
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        content.title,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          height: 1.35,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                      if (content.description.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          content.description,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color:
+                                theme.colorScheme.onSurface.withOpacity(0.65),
+                            height: 1.45,
+                            fontSize: 14,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ],
+                  ),
+                ),
 
-                    const Spacer(),
+                // Action bar
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 16, 12, 14),
+                  child: _buildActionBar(context, theme),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
-                    // Verified badge
-                    if (content.isVerified) ...[
-                      Icon(
-                        Icons.verified,
-                        size: 16,
-                        color: Colors.green,
-                      ),
-                    ],
-                  ],
+  HubContentItem _getCurrentContent() {
+    if (controller == null) return content;
+    // ignore: invalid_use_of_protected_member
+    final allLists = [
+      // ignore: invalid_use_of_protected_member
+      controller!.searchResults.value,
+      // ignore: invalid_use_of_protected_member
+      controller!.content.value,
+      // ignore: invalid_use_of_protected_member
+      controller!.trendingContent.value,
+      // ignore: invalid_use_of_protected_member
+      controller!.recentContent.value,
+      // ignore: invalid_use_of_protected_member
+      controller!.filteredContent.value,
+      // ignore: invalid_use_of_protected_member
+      controller!.bookmarkedContent.value,
+    ];
+    for (final list in allLists) {
+      try {
+        return list.firstWhere((item) => item.id == content.id);
+      } catch (_) {}
+    }
+    return content;
+  }
+
+  Widget _buildActionBar(BuildContext context, ThemeData theme) {
+    final mutedColor = theme.colorScheme.onSurface.withOpacity(0.5);
+
+    return Obx(() {
+      final currentContent = _getCurrentContent();
+
+      return Row(
+        children: [
+          _buildActionButton(
+            theme: theme,
+            icon: currentContent.isLiked
+                ? Icons.favorite_rounded
+                : Icons.favorite_outline_rounded,
+            count: currentContent.likesCount,
+            color: currentContent.isLiked ? Colors.red : mutedColor,
+            onTap: onLike,
+          ),
+          if (currentContent.commentsCount > 0)
+            _buildActionButton(
+              theme: theme,
+              icon: Icons.chat_bubble_outline_rounded,
+              count: currentContent.commentsCount,
+              color: mutedColor,
+            ),
+          if (onBookmark != null)
+            _buildActionButton(
+              theme: theme,
+              icon: currentContent.isBookmarked
+                  ? Icons.bookmark_rounded
+                  : Icons.bookmark_outline_rounded,
+              count: currentContent.bookmarksCount,
+              color: currentContent.isBookmarked
+                  ? theme.colorScheme.primary
+                  : mutedColor,
+              onTap: onBookmark,
+            ),
+          if (content.rating > 0)
+            _buildActionButton(
+              theme: theme,
+              icon: Icons.star_rounded,
+              count: content.totalRatings > 0
+                  ? '${content.rating.toStringAsFixed(1)} (${content.totalRatings})'
+                  : content.rating.toStringAsFixed(1),
+              color: Colors.amber,
+              onTap: onRate != null
+                  ? () => _showRatingDialog(context, theme)
+                  : null,
+            ),
+          if (content.downloadsCount > 0)
+            _buildActionButton(
+              theme: theme,
+              icon: Icons.download_outlined,
+              count: content.downloadsCount,
+              color: mutedColor,
+            ),
+          Spacer(),
+          // Fixed download price badge — students hub documents cost a
+          // flat TZS 1,500; reading stays free.
+          if (hubType == 'students' &&
+              content.isDownloadable &&
+              content.fileUrl.isNotEmpty)
+            Container(
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 4,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.green.withOpacity(0.4),
+                ),
+              ),
+              child: Text(
+                'TZS 1,500',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: Colors.green.shade700,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 10,
+                ),
+              ),
+            ),
+          if (content.isVerified)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 9,
+                vertical: 4,
+              ),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.verified,
+                    size: 13,
+                    color: theme.colorScheme.primary,
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    tr('Verified'),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      );
+    });
+  }
+
+  Widget _buildActionButton({
+    required ThemeData theme,
+    required IconData icon,
+    required dynamic count,
+    required Color color,
+    VoidCallback? onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 10),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(24),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color:
+                  onTap != null ? color.withOpacity(0.08) : Colors.transparent,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 18, color: color),
+                const SizedBox(width: 5),
+                Text(
+                  '$count',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
                 ),
               ],
             ),
@@ -518,36 +428,23 @@ class HubContentCard extends StatelessWidget {
   }
 
   Widget _buildMediaPreview(BuildContext context, ThemeData theme) {
-    debugPrint('🎬 Building media preview for "${content.title}"');
-    debugPrint('   HasVideo: ${content.hasVideo}');
-    debugPrint('   IsImage: ${content.isImage}');
-    debugPrint('   IsPdf: ${content.isPdf}');
-    debugPrint('   FileURL: "${content.fileUrl}"');
-    debugPrint('   VideoURL: "${content.videoUrl}"');
-
     List<Widget> mediaWidgets = [];
 
     // Add video if present
     if (content.hasVideo) {
-      debugPrint('   → Adding video preview');
       mediaWidgets.add(_buildVideoPreview(theme));
     }
 
     // Add file (NOT images - they're shown at top Instagram-style)
     if (content.fileUrl.isNotEmpty && !content.isImage) {
       if (content.isPdf) {
-        debugPrint('   → Adding PDF preview');
         mediaWidgets.add(_buildPdfPreview(theme));
       } else {
-        debugPrint('   → Adding file preview');
         mediaWidgets.add(_buildFilePreview(theme));
       }
-    } else if (content.isImage) {
-      debugPrint('   → Skipping image (shown at top)');
     }
 
     if (mediaWidgets.isEmpty) {
-      debugPrint('   → No media to show');
       return const SizedBox.shrink();
     }
 
@@ -569,7 +466,6 @@ class HubContentCard extends StatelessWidget {
 
   /// Instagram-style image at the top of the post
   Widget _buildInstagramStyleImage(ThemeData theme) {
-    debugPrint('📸 Building Instagram-style image for: "${content.fileUrl}"');
     return GestureDetector(
       onTap: () => _openImageViewer(Get.context!),
       child: ClipRRect(
@@ -616,8 +512,6 @@ class HubContentCard extends StatelessWidget {
   }
 
   Widget _buildImagePreview(ThemeData theme) {
-    debugPrint(
-        '🖼️ Building social media style image preview for URL: "${content.fileUrl}"');
     return Builder(
       builder: (context) => Container(
         margin: const EdgeInsets.symmetric(vertical: 12),
@@ -647,13 +541,7 @@ class HubContentCard extends StatelessWidget {
                       width: double.infinity,
                       fit: BoxFit.cover,
                       loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) {
-                          debugPrint(
-                              '✅ Image loaded successfully: "${content.fileUrl}"');
-                          return child;
-                        }
-                        debugPrint(
-                            '⏳ Loading image: "${content.fileUrl}" - ${loadingProgress.cumulativeBytesLoaded}/${loadingProgress.expectedTotalBytes}');
+                        if (loadingProgress == null) return child;
                         return Container(
                           color: theme.colorScheme.surfaceContainerHighest,
                           child: const Center(
@@ -662,9 +550,6 @@ class HubContentCard extends StatelessWidget {
                         );
                       },
                       errorBuilder: (context, error, stackTrace) {
-                        debugPrint(
-                            '❌ Image failed to load: "${content.fileUrl}"');
-                        debugPrint('   Error: $error');
                         return Container(
                           color: theme.colorScheme.surfaceContainerHighest,
                           child: Column(
@@ -676,9 +561,9 @@ class HubContentCard extends StatelessWidget {
                                 color: theme.colorScheme.onSurface
                                     .withOpacity(0.5),
                               ),
-                              const SizedBox(height: 12),
+                              SizedBox(height: 12),
                               Text(
-                                'Image failed to load',
+                                tr('Image failed to load'),
                                 style: theme.textTheme.titleSmall?.copyWith(
                                   color: theme.colorScheme.onSurface
                                       .withOpacity(0.5),
@@ -743,14 +628,14 @@ class HubContentCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.image_outlined,
                             size: 12,
                             color: Colors.white,
                           ),
-                          const SizedBox(width: 4),
+                          SizedBox(width: 4),
                           Text(
-                            'IMAGE',
+                            tr('IMAGE'),
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: Colors.white,
                               fontSize: 9,
@@ -839,11 +724,11 @@ class HubContentCard extends StatelessWidget {
                   Center(
                     child: Container(
                       padding: const EdgeInsets.all(12),
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: Colors.black54,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.play_arrow,
                         size: 40,
                         color: Colors.white,
@@ -863,14 +748,14 @@ class HubContentCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.play_arrow,
                             size: 12,
                             color: Colors.white,
                           ),
-                          const SizedBox(width: 2),
+                          SizedBox(width: 2),
                           Text(
-                            'VIDEO',
+                            tr('VIDEO'),
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: Colors.white,
                               fontSize: 10,
@@ -1053,7 +938,7 @@ class HubContentCard extends StatelessWidget {
       await launchUrl(videoUri, mode: LaunchMode.externalApplication);
     } else {
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Cannot open video URL',
         backgroundColor: Colors.red,
         colorText: Colors.white,
@@ -1103,7 +988,7 @@ class HubContentCard extends StatelessWidget {
               color: theme.colorScheme.error,
               size: 28,
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Text(
                 isTrial ? 'Trial Limit Reached' : 'Reading Limit Reached',
@@ -1124,7 +1009,7 @@ class HubContentCard extends StatelessWidget {
                   : 'You have reached your legal education reading limit for this period.',
               style: theme.textTheme.bodyLarge,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -1138,7 +1023,7 @@ class HubContentCard extends StatelessWidget {
                     color: theme.colorScheme.primary,
                     size: 20,
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Upgrade to Premium for unlimited access to all legal education materials!',
@@ -1156,7 +1041,7 @@ class HubContentCard extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
-              'Later',
+              tr('Later'),
               style: TextStyle(
                   color: theme.colorScheme.onSurface.withOpacity(0.6)),
             ),
@@ -1170,7 +1055,7 @@ class HubContentCard extends StatelessWidget {
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,
             ),
-            child: const Text('Upgrade Now'),
+            child: Text(tr('Upgrade Now')),
           ),
         ],
       ),
@@ -1185,6 +1070,14 @@ class HubContentCard extends StatelessWidget {
   String _getContentTypeLabel() {
     final config = ContentTypeConfig.getByKey(content.contentType);
     return config?.displayName ?? content.contentType.toUpperCase();
+  }
+
+  IconData _getContentTypeIcon() {
+    if (content.isImage) return Icons.image_outlined;
+    if (content.hasVideo) return Icons.play_circle_outline;
+    if (content.isPdf) return Icons.picture_as_pdf_outlined;
+    if (content.fileUrl.isNotEmpty) return Icons.attach_file_outlined;
+    return Icons.article_outlined;
   }
 
   IconData _getFileIcon() {
@@ -1283,7 +1176,7 @@ class HubContentCard extends StatelessWidget {
                         reviewText.isNotEmpty ? reviewText : null);
                   }
                 : null,
-            child: const Text('Rate'),
+            child: Text(tr('Rate')),
           ),
         ],
       ),

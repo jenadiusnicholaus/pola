@@ -7,6 +7,7 @@ import 'package:nexacon_messaging/nexacon_messaging.dart';
 import 'chat_room_screen.dart';
 import '../services/nexacon_messaging_service.dart';
 import '../models/message.dart';
+import '../../../utils/phone_formatter.dart';
 
 /// Professional Messages Inbox Screen
 /// Modern messaging interface with professional design
@@ -70,6 +71,7 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
         if (type == 'chat' || type.isEmpty) {
           return true;
         }
+        if (Message.isCallEndBody(body)) return true;
         return false; // call_invitation, call_response, webrtc, etc.
       } catch (_) {
         // Not valid JSON
@@ -110,7 +112,10 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
         // Determine peer (the other person in the conversation)
         // Use is_me from API: if I sent it, peer = to; if I received it, peer = from
         final peer = msg.isMe ? msg.to : msg.from;
-        final peerPhone = peer.split('@').first.replaceAll('+', '');
+        // Normalize phone to digits-only for consistent grouping.
+        // This handles +255712..., 255712..., 0712... formats that
+        // would otherwise create separate contact entries.
+        final peerPhone = PhoneFormatter.normalize(peer);
 
         // Store last message for this peer
         if (!lastMessagesMap.containsKey(peerPhone)) {
@@ -125,11 +130,10 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
             }
           }
 
-          if (messageText.contains('Incoming p2p call') ||
+          if (Message.isCallEndBody(msg.body) ||
+              messageText.contains('Incoming p2p call') ||
               messageText.contains('Incoming group call')) {
-            messageText = messageText.toLowerCase().contains('type=video')
-                ? '📹 Video call'
-                : '📞 Voice call';
+            messageText = '📞 Call ended';
           } else {
             // Truncate long messages
             if (messageText.length > 50) {
@@ -150,11 +154,13 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
           };
         }
 
-        // Add peer to contacts if not already there
+        // Add peer to contacts if not already there.
+        // Fall back to the phone number — 'Loading...' would stay forever
+        // if the contact name lookup fails or has no match.
         if (!contactsMap.containsKey(peerPhone)) {
           contactsMap[peerPhone] = {
             'nxid': peer,
-            'name': 'Loading...', // Will be resolved via user search API
+            'name': peerPhone.isNotEmpty ? peerPhone : peer,
           };
         }
       }
@@ -191,7 +197,7 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
       final nameMap = <String, String>{};
       final avatarMap = <String, String?>{};
 
-      // Index contacts by phone/JID so we can match by any phone format.
+      // Index contacts by normalized phone so we can match by any phone format.
       for (final c in nxContacts) {
         final nxid = _extractJid(c);
         final phone = _stripPhone(nxid);
@@ -202,17 +208,6 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
 
         nameMap[phone] = name;
         avatarMap[phone] = avatar;
-
-        // Also index without the 255 country code.
-        final noCc = phone.startsWith('255') ? phone.substring(3) : phone;
-        nameMap[noCc] = name;
-        avatarMap[noCc] = avatar;
-
-        // And with the 255 prefix added.
-        if (!phone.startsWith('255')) {
-          nameMap['255$phone'] = name;
-          avatarMap['255$phone'] = avatar;
-        }
       }
 
       var updated = false;
@@ -221,13 +216,8 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
         final phone = _stripPhone(nxid);
         if (phone.isEmpty) continue;
 
-        final noCc = phone.startsWith('255') ? phone.substring(3) : phone;
-        final name = nameMap[phone] ??
-            nameMap[noCc] ??
-            nameMap['255$noCc'] ??
-            nameMap['255$phone'];
-        final avatar =
-            avatarMap[phone] ?? avatarMap[noCc] ?? avatarMap['255$noCc'];
+        final name = nameMap[phone];
+        final avatar = avatarMap[phone];
 
         if (name != null && name.isNotEmpty) {
           contact['name'] = name;
@@ -259,11 +249,7 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
 
   /// Strip a JID down to a normalized digit-only phone key.
   String _stripPhone(String nxid) {
-    return nxid
-        .split('@')
-        .first
-        .replaceAll('+', '')
-        .replaceAll(RegExp(r'[^\d]'), '');
+    return PhoneFormatter.normalize(nxid);
   }
 
   /// Extract a display name from a NX contact map.
@@ -302,39 +288,23 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surfaceContainerLowest,
-      body: CustomScrollView(
-        slivers: [
-          // Professional App Bar
-          SliverAppBar(
-            floating: true,
-            snap: true,
-            pinned: false,
-            automaticallyImplyLeading: true,
-            backgroundColor: theme.colorScheme.surface,
-            foregroundColor: theme.colorScheme.onSurface,
-            elevation: 0.5,
-            surfaceTintColor: Colors.transparent,
-            title: Text(
-              'Inbox',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-                letterSpacing: -0.5,
-              ),
-            ),
-            centerTitle: false,
-          ),
-
-          // Messages Content
-          SliverToBoxAdapter(
-            child: _buildMessagesList('all'),
-          ),
-        ],
+      backgroundColor: theme.colorScheme.surface,
+      appBar: AppBar(
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
+        elevation: 0.5,
+        surfaceTintColor: Colors.transparent,
+        title: const Text('Inbox'),
+        centerTitle: false,
+      ),
+      body: RefreshIndicator(
+        onRefresh: _loadAllMessages,
+        child: _buildMessagesList(theme),
       ),
     );
   }
 
-  Widget _buildMessagesList(String filter) {
+  Widget _buildMessagesList(ThemeData theme) {
     // Show actual contacts from messaging API
     if (_isLoadingContacts) {
       return const Center(child: CircularProgressIndicator());
@@ -345,20 +315,31 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
     debugPrint('📨 _buildMessagesList: ${filtered.length} contacts');
 
     if (filtered.isEmpty) {
-      return _buildEmptyState();
+      // Scrollable so pull-to-refresh still works when empty.
+      return ListView(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 120),
+            child: _buildEmptyState(),
+          ),
+        ],
+      );
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      physics: const NeverScrollableScrollPhysics(),
-      shrinkWrap: true,
+      padding: EdgeInsets.zero,
       itemCount: filtered.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 1),
+      separatorBuilder: (context, index) => Divider(
+        height: 1,
+        indent: 76,
+        color: theme.colorScheme.outlineVariant.withOpacity(0.4),
+      ),
       itemBuilder: (context, index) {
         final contact = filtered[index];
         final name = contact['name']?.toString() ?? 'Unknown';
         final nxid = contact['nxid']?.toString() ?? '';
-        final phone = nxid.split('@').first;
+        // Use same normalization as _loadAllMessages for consistent lookup
+        final phone = PhoneFormatter.normalize(nxid);
 
         // Get last message for this contact
         final lastMsg = _lastMessages[phone];
@@ -366,11 +347,9 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
         final timestamp = lastMsg?['timestamp'] as int?;
         final isFromMe = lastMsg?['isFromMe'] == true;
 
-        return _buildConsultantTile(
+        return _buildContactTile(
           name: name,
-          phone: phone,
           avatar: contact['avatar'] as String?,
-          nxId: nxid,
           lastMessage: lastMsgText,
           isFromMe: isFromMe,
           timestamp: timestamp,
@@ -380,11 +359,10 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
     );
   }
 
-  Widget _buildConsultantTile({
+  /// Plain contacts-style row — no card, minimal padding.
+  Widget _buildContactTile({
     required String name,
-    required String phone,
     required String? avatar,
-    required String nxId,
     String? lastMessage,
     bool isFromMe = false,
     int? timestamp,
@@ -405,96 +383,63 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
       }
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.shadow.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+      minVerticalPadding: 8,
+      onTap: onTap,
+      leading: CircleAvatar(
+        radius: 24,
+        backgroundColor: theme.colorScheme.primaryContainer,
+        child: avatar != null
+            ? ClipOval(
+                child: Image.network(
+                  avatar,
+                  width: 48,
+                  height: 48,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) =>
+                      const Icon(Icons.person, size: 24),
+                ),
+              )
+            : Icon(
+                Icons.person,
+                color: theme.colorScheme.onPrimaryContainer,
+                size: 24,
+              ),
       ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: theme.colorScheme.primaryContainer,
-                  child: avatar != null
-                      ? ClipOval(
-                          child: Image.network(
-                            avatar,
-                            width: 56,
-                            height: 56,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
-                                const Icon(Icons.person, size: 28),
-                          ),
-                        )
-                      : Icon(
-                          Icons.person,
-                          color: theme.colorScheme.onPrimaryContainer,
-                          size: 28,
-                        ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              name,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (timeStr.isNotEmpty)
-                            Text(
-                              timeStr,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurface.withValues(
-                                  alpha: 0.5,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        lastMessage?.isNotEmpty == true
-                            ? (isFromMe ? 'You: $lastMessage' : lastMessage!)
-                            : 'Tap to start chatting',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.6,
-                          ),
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              name,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
+          if (timeStr.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Text(
+                timeStr,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+                ),
+              ),
+            ),
+        ],
+      ),
+      subtitle: Text(
+        lastMessage?.isNotEmpty == true
+            ? (isFromMe ? 'You: $lastMessage' : lastMessage!)
+            : 'Tap to start chatting',
+        style: TextStyle(
+          fontSize: 13,
+          color: theme.colorScheme.onSurface.withOpacity(0.6),
         ),
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
       ),
     );
   }
@@ -559,33 +504,5 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
       debugPrint('❌ Error opening chat: $e');
       Get.snackbar('Error', 'Could not open chat. Please try again.');
     }
-  }
-}
-
-class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
-  final TabBar _tabBar;
-
-  _SliverTabBarDelegate(this._tabBar);
-
-  @override
-  double get minExtent => _tabBar.preferredSize.height;
-  @override
-  double get maxExtent => _tabBar.preferredSize.height;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return Container(
-      color: Theme.of(context).colorScheme.surface,
-      child: _tabBar,
-    );
-  }
-
-  @override
-  bool shouldRebuild(_SliverTabBarDelegate oldDelegate) {
-    return false;
   }
 }

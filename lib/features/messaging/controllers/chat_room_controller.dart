@@ -144,7 +144,6 @@ class ChatRoomController extends GetxController {
         offset: 0,
         pageSize: _pageSize,
       );
-      _loadedOffsets.add(0);
 
       final total = firstPage.total;
       // Use the ACTUAL limit from the API response, not our requested
@@ -158,7 +157,16 @@ class ChatRoomController extends GetxController {
         '📨 History: total=$total, limit=${firstPage.limit}, actualLimit=$_actualLimit, lastOffset=$lastOffset',
       );
 
-      var parsed = _parseHistoryMessages(firstPage.messages);
+      // Only seed the list with page 0 when it *is* the last page. Otherwise
+      // it is the oldest page and belongs at the far end of the conversation;
+      // merging it in now would leave a gap that later appends fill in the
+      // wrong order. It gets loaded again by loadMoreMessages when the user
+      // scrolls back that far.
+      var parsed = <Message>[];
+      if (lastOffset == 0) {
+        _loadedOffsets.add(0);
+        parsed = _parseHistoryMessages(firstPage.messages);
+      }
 
       if (lastOffset > 0) {
         var lastPage = await _messagingService.getConversationHistory(
@@ -305,7 +313,7 @@ class ChatRoomController extends GetxController {
         Message(
           id: m.id.isNotEmpty
               ? m.id
-              : DateTime.now().millisecondsSinceEpoch.toString(),
+              : 'gen:${m.from}:${m.timestamp}:${m.body.hashCode}',
           content: Message.extractHumanText(m.body),
           senderId: m.from,
           senderName: m.isMe ? 'Me' : contactName,
@@ -325,38 +333,82 @@ class ChatRoomController extends GetxController {
   /// Reconcile a call session (invite + end) into a single bubble:
   /// - Both sides of a call post their own mirrored "Incoming p2p call"
   ///   invite (same roomId, different sender). Only one is kept, preferring
-  ///   the one where isSent == true so a call *I* made always shows as
-  ///   "You: Voice call" rather than flipping based on arbitrary timestamp
+  ///   the one where isSent == true so a call *I* made always shows on
+  ///   the right side rather than flipping based on arbitrary timestamp
   ///   ordering between the two mirrored copies.
-  /// - A standalone call_end signaling entry is folded into that same
-  ///   invite bubble (marking it ended) instead of appearing on its own.
+  /// - A standalone call_end signaling entry renders as its own
+  ///   "Call ended" bubble instead of being folded into the invite.
+  ///
+  /// This function must be idempotent: it runs again on its own output every
+  /// time a page is loaded or a live message arrives.
   List<Message> _reconcileCallSessions(List<Message> input) {
+    // Only real call_end events (not missed-call invites that were
+    // marked callEnded=true by a previous pass) should contribute their
+    // roomId. Otherwise the missed call's own roomId would match itself
+    // on the next pass and the bubble would vanish.
     final endedRoomIds = <String>{
       for (final m in input)
-        if (m.callEnded && m.roomId != null) m.roomId!,
+        if (m.callEnded && !m.isCallMessage && m.roomId != null) m.roomId!,
     };
 
-    // Pick the canonical invite per roomId, preferring isSent == true.
-    final canonicalInviteByRoomId = <String, Message>{};
+    // Group key for an invite. Mirrored copies of the same call share a
+    // roomId; when no roomId can be extracted, fall back to the direction-
+    // independent content plus a coarse time bucket, since the two copies
+    // are posted within moments of each other.
+    String inviteKey(Message m) {
+      if (m.roomId != null) return 'room:${m.roomId}';
+      final bucket = m.timestamp.millisecondsSinceEpoch ~/ 60000;
+      return 't:$bucket:${m.isVideoCall}';
+    }
+
+    // Pick the canonical invite per group, preferring isSent == true.
+    // Already-merged invites (callEnded == true) must be considered here as
+    // well — excluding them meant a second pass found no canonical entry and
+    // silently dropped the merged bubble.
+    final canonicalInviteByKey = <String, Message>{};
     for (final m in input) {
-      if (!m.isCallMessage || m.roomId == null || m.callEnded) continue;
-      final existing = canonicalInviteByRoomId[m.roomId];
+      if (!m.isCallMessage) continue;
+      final key = inviteKey(m);
+      final existing = canonicalInviteByKey[key];
       if (existing == null || (m.isSent && !existing.isSent)) {
-        canonicalInviteByRoomId[m.roomId!] = m;
+        canonicalInviteByKey[key] = m;
+      }
+    }
+
+    // Fallback pairing for call_end events that carry no extractable room id.
+    // Without this they would be dropped silently and the call would stay
+    // rendered as an un-ended "Voice call" bubble forever. Each such end is
+    // attributed to the nearest call invite that precedes it in time.
+    // `input` is sorted newest-first, so the nearest preceding invite is the
+    // first invite encountered when scanning forward from the end event.
+    final endedInviteIds = <String>{};
+    for (var i = 0; i < input.length; i++) {
+      final end = input[i];
+      if (!end.callEnded || end.isCallMessage || end.roomId != null) continue;
+      for (var j = i + 1; j < input.length; j++) {
+        final candidate = input[j];
+        if (candidate.isCallMessage) {
+          endedInviteIds.add(candidate.id);
+          break;
+        }
       }
     }
 
     final result = <Message>[];
     for (final m in input) {
       // Drop standalone call_end signaling entries (not real call invites).
+      // They are folded into the matching invite bubble below, not shown on
+      // their own, so the same call session produces exactly one bubble.
       if (m.callEnded && !m.isCallMessage) continue;
 
-      if (m.isCallMessage && m.roomId != null) {
-        // Skip the non-canonical mirrored copy.
-        if (canonicalInviteByRoomId[m.roomId]?.id != m.id) continue;
+      if (m.isCallMessage) {
+        // Keep only the canonical copy of each mirrored invite.
+        if (canonicalInviteByKey[inviteKey(m)]?.id != m.id) continue;
 
-        final ended = endedRoomIds.contains(m.roomId) && !m.callEnded;
-        result.add(ended ? m.copyWith(callEnded: true) : m);
+        final ended = m.callEnded ||
+            (m.roomId != null && endedRoomIds.contains(m.roomId)) ||
+            endedInviteIds.contains(m.id);
+        result.add(ended && !m.callEnded ? m.copyWith(callEnded: true) : m);
       } else {
         result.add(m);
       }
@@ -399,9 +451,9 @@ class ChatRoomController extends GetxController {
           return true;
         }
 
-        // Let call_end through for session reconciliation; it never renders
-        // as its own bubble (merged into the invite or dropped).
-        if (type == 'call_end') return true;
+        // Let call_end through for session reconciliation; it renders
+        // as a standalone "Call ended" bubble.
+        if (Message.isCallEndBody(body)) return true;
 
         // Everything else is signaling (webrtc, call_invitation, etc.)
         return false;
@@ -425,7 +477,7 @@ class ChatRoomController extends GetxController {
 
           final message = Message(
             id: nxMsg.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
-            content: body,
+            content: Message.extractHumanText(body),
             senderId: nxMsg.from ?? '',
             senderName: contactName,
             timestamp: Message.parseTimestamp(nxMsg.timestamp),

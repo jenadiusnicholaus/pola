@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../controllers/login_controller.dart';
 import '../../../constants/app_colors.dart';
@@ -71,11 +72,10 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 32),
+                  SizedBox(height: 32),
 
                   // Welcome message
-                  Text(
-                    'Welcome Back',
+                  Text(tr('Welcome Back'),
                     style: TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.w700,
@@ -153,8 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               // Justice scale icon
-              Text(
-                '⚖️',
+              Text(tr('⚖️'),
                 style: TextStyle(
                   fontSize: 48,
                   shadows: isDark
@@ -162,13 +161,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       : [
                           Shadow(
                             color: Colors.black.withOpacity(0.1),
-                            offset: const Offset(0, 2),
+                            offset: Offset(0, 2),
                             blurRadius: 4,
                           ),
                         ],
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
 
               // POLA app name
               Text(
@@ -180,11 +179,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   letterSpacing: 1.5,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
 
               // Tagline
-              Text(
-                'The lawyer you carry',
+              Text(tr('The lawyer you carry'),
                 style: TextStyle(
                   color: isDark
                       ? theme.colorScheme.onSurface.withOpacity(0.6)
@@ -215,7 +213,7 @@ class _LoginScreenState extends State<LoginScreen> {
             textInputAction: TextInputAction.next,
             validator: controller.validateEmail,
             decoration: InputDecoration(
-              labelText: 'Email Address',
+              labelText: tr('Email Address'),
               hintText: 'Enter your email',
               prefixIcon: Icon(
                 Icons.email_outlined,
@@ -250,7 +248,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
 
           // Password Field
           Obx(() => TextFormField(
@@ -260,7 +258,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 validator: controller.validatePassword,
                 onFieldSubmitted: (_) => _submitLogin(),
                 decoration: InputDecoration(
-                  labelText: 'Password',
+                  labelText: tr('Password'),
                   hintText: 'Enter your password',
                   prefixIcon: Icon(
                     Icons.lock_outlined,
@@ -359,8 +357,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Obx(() => CheckboxListTile(
                     value: controller.rememberMe,
                     onChanged: (value) => controller.toggleRememberMe(value),
-                    title: Text(
-                      'Remember me',
+                    title: Text(tr('Remember me'),
                       style: TextStyle(
                         fontSize: 14,
                         color: Theme.of(context).colorScheme.onSurface,
@@ -381,8 +378,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
-              child: Text(
-                'Forgot Password?',
+              child: Text(tr('Forgot Password?'),
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.w600,

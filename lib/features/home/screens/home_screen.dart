@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
 import '../widgets/hubs_and_services_list.dart';
-import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
 import '../../../shared/widgets/app_drawer.dart';
-import '../../../shared/widgets/permission_gate.dart';
 import '../../profile/services/profile_service.dart';
 import '../../notifications/widgets/notification_badge.dart';
 
@@ -41,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _scrollListener() {
-    const expandedHeight = 200.0;
+    const expandedHeight = 110.0;
     const toolbarHeight = 56.0;
 
     if (_scrollController.hasClients) {
@@ -92,6 +91,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return SliverAppBar(
       backgroundColor: theme.colorScheme.primary,
       foregroundColor: theme.colorScheme.onPrimary,
+      systemOverlayStyle: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
       iconTheme: IconThemeData(
         color: theme.colorScheme.onPrimary,
         size: 24,
@@ -100,32 +104,38 @@ class _HomeScreenState extends State<HomeScreen> {
         color: theme.colorScheme.onPrimary,
         size: 24,
       ),
-      elevation: 2,
+      elevation: 0,
+      scrolledUnderElevation: 1,
       pinned: true,
       floating: false,
       snap: false,
-      expandedHeight: 180.0,
+      expandedHeight: 110.0,
       leadingWidth: 56, // Proper width for icon button
       toolbarHeight: 56, // Standard toolbar height
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(24),
+        ),
+      ),
 
       // Dynamic title that appears when collapsed
       centerTitle: true,
       title: AnimatedOpacity(
         opacity: _isCollapsed ? 1.0 : 0.0,
-        duration: const Duration(milliseconds: 200),
+        duration: Duration(milliseconds: 200),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              '⚖️',
-              style: TextStyle(fontSize: 20),
+            Text(
+              tr('⚖️'),
+              style: TextStyle(fontSize: 18),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(
               AppStrings.appName,
               style: TextStyle(
                 fontWeight: FontWeight.w700,
-                fontSize: 18,
+                fontSize: 17,
                 letterSpacing: 0.5,
                 color: theme.colorScheme.onPrimary,
               ),
@@ -143,32 +153,39 @@ class _HomeScreenState extends State<HomeScreen> {
         titlePadding: const EdgeInsets.only(bottom: 12),
         title: AnimatedOpacity(
           opacity: _isCollapsed ? 0.0 : 1.0,
-          duration: const Duration(milliseconds: 200),
+          duration: Duration(milliseconds: 200),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.end,
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                '⚖️',
-                style: TextStyle(fontSize: 22),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    '⚖️',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    AppStrings.appName,
+                    style: TextStyle(
+                      color: theme.colorScheme.onPrimary,
+                      fontSize: 15,
+                      height: 1.1,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 3),
+              const SizedBox(height: 2),
               Text(
-                AppStrings.appName,
+                tr(AppStrings.lawyerTagline),
                 style: TextStyle(
-                  color: theme.colorScheme.onPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 1),
-              Text(
-                AppStrings.lawyerTagline,
-                style: TextStyle(
-                  color: theme.colorScheme.onPrimary.withOpacity(0.8),
+                  color: theme.colorScheme.onPrimary.withOpacity(0.75),
                   fontSize: 9,
+                  fontStyle: FontStyle.italic,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 0.3,
                 ),
@@ -177,18 +194,83 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
 
-        // Background gradient
+        // Vibrant background gradient with layered decorative shapes
         background: Container(
           decoration: BoxDecoration(
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(24),
+            ),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
+              stops: const [0.0, 0.4, 0.75, 1.0],
               colors: [
+                Color.lerp(theme.colorScheme.primary, Colors.black, 0.18)!,
                 theme.colorScheme.primary,
-                theme.colorScheme.primary.withOpacity(0.9),
-                theme.colorScheme.primary.withOpacity(0.85),
+                Color.lerp(theme.colorScheme.primary,
+                    theme.colorScheme.secondary, 0.55)!,
+                Color.lerp(theme.colorScheme.tertiary,
+                    theme.colorScheme.primary, 0.25)!,
               ],
             ),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -40,
+                top: -50,
+                child: Container(
+                  width: 150,
+                  height: 150,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.08),
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 30,
+                top: 60,
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: theme.colorScheme.secondary.withOpacity(0.18),
+                  ),
+                ),
+              ),
+              Positioned(
+                right: -20,
+                bottom: -30,
+                child: Icon(
+                  Icons.balance,
+                  size: 120,
+                  color: Colors.white.withOpacity(0.08),
+                ),
+              ),
+              Positioned(
+                left: -18,
+                bottom: -20,
+                child: Icon(
+                  Icons.gavel,
+                  size: 80,
+                  color: Colors.white.withOpacity(0.06),
+                ),
+              ),
+              Positioned(
+                left: 50,
+                top: -30,
+                child: Container(
+                  width: 90,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: theme.colorScheme.tertiary.withOpacity(0.15),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -198,8 +280,8 @@ class _HomeScreenState extends State<HomeScreen> {
       onStretchTrigger: () async {
         HapticFeedback.lightImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Pull to refresh activated!'),
+          SnackBar(
+            content: Text(tr('Pull to refresh activated!')),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -212,22 +294,23 @@ class _HomeScreenState extends State<HomeScreen> {
     return [
       // Token refresh indicator
       Obx(() => controller.isRefreshing
-          ? const Padding(
-              padding: EdgeInsets.all(12.0),
+          ? Padding(
+              padding: const EdgeInsets.all(12.0),
               child: SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black87),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.onPrimary),
                 ),
               ),
             )
           : const SizedBox.shrink()),
 
       // Notifications button with dynamic badge
-      const NotificationBadge(
-        iconColor: Colors.black87,
+      NotificationBadge(
+        iconColor: Theme.of(context).colorScheme.onPrimary,
         iconSize: 24,
       ),
 
@@ -248,9 +331,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ? NetworkImage(profilePicture)
                       : null,
               child: profilePicture == null || profilePicture.isEmpty
-                  ? const Icon(
+                  ? Icon(
                       Icons.account_circle_outlined,
-                      color: Colors.black87,
+                      color: Theme.of(context).colorScheme.onPrimary,
                       size: 24,
                     )
                   : null,
@@ -272,16 +355,16 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Exit App'),
-        content: const Text('Are you sure you want to exit the app?'),
+        title: Text(tr('Exit App')),
+        content: Text(tr('Are you sure you want to exit the app?')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(tr('Cancel')),
           ),
           TextButton(
             onPressed: () => SystemNavigator.pop(),
-            child: const Text('Exit'),
+            child: Text(tr('Exit')),
           ),
         ],
       ),
@@ -298,19 +381,19 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        title: Text(tr('Logout')),
+        content: Text(tr('Are you sure you want to logout?')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(tr('Cancel')),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               controller.logout();
             },
-            child: const Text('Logout'),
+            child: Text(tr('Logout')),
           ),
         ],
       ),

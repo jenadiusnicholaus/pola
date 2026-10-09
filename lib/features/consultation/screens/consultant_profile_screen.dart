@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../../utils/navigation_helper.dart';
 import '../services/consultation_service.dart';
@@ -97,13 +98,13 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
                     color: Colors.green,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.verified_user,
                     color: Colors.white,
                     size: 32,
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -115,7 +116,7 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
                           color: Colors.green.shade900,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text(
                         'You can now receive consultation requests',
                         style: theme.textTheme.bodyMedium?.copyWith(
@@ -129,12 +130,12 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
 
         // Availability Toggle
         Card(
           child: SwitchListTile(
-            title: const Text('Available for Consultations'),
+            title: Text('Available for Consultations'),
             subtitle: Text(
               _profile!.isAvailable
                   ? 'You are currently accepting requests'
@@ -148,7 +149,7 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
 
         // Statistics
         Text(
@@ -157,7 +158,7 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         Row(
           children: [
             Expanded(
@@ -169,7 +170,7 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
                 Colors.blue,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: _buildStatCard(
                 theme,
@@ -181,7 +182,7 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Row(
           children: [
             Expanded(
@@ -193,7 +194,7 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
                 Colors.amber,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: _buildStatCard(
                 theme,
@@ -205,7 +206,7 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Row(
           children: [
             Expanded(
@@ -217,7 +218,7 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
                 Colors.purple,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: _buildStatCard(
                 theme,
@@ -229,16 +230,16 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
 
         // Profile Details
         Text(
-          'Profile Details',
+          tr('Profile Details'),
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -250,7 +251,7 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
                   Icons.badge,
                 ),
                 if (_profile!.specialization != null) ...[
-                  const Divider(),
+                  Divider(),
                   _buildDetailRow(
                     'Specialization',
                     _profile!.specialization!,
@@ -258,27 +259,27 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
                   ),
                 ],
                 if (_profile!.yearsOfExperience != null) ...[
-                  const Divider(),
+                  Divider(),
                   _buildDetailRow(
                     'Experience',
                     '${_profile!.yearsOfExperience} years',
                     Icons.work,
                   ),
                 ],
-                const Divider(),
+                Divider(),
                 _buildDetailRow(
                   'Mobile Consultations',
                   _profile!.offersMobileConsultations ? 'Yes' : 'No',
                   Icons.phone_android,
                 ),
-                const Divider(),
+                Divider(),
                 _buildDetailRow(
                   'Physical Consultations',
                   _profile!.offersPhysicalConsultations ? 'Yes' : 'No',
                   Icons.location_on,
                 ),
                 if (_profile!.city != null && _profile!.city!.isNotEmpty) ...[
-                  const Divider(),
+                  Divider(),
                   _buildDetailRow(
                     'City',
                     _profile!.city!,
@@ -289,15 +290,16 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
 
         // Action Button
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: _viewReviews,
-            icon: const Icon(Icons.star_outline),
-            label: Text('View Reviews (${_profile!.totalReviews})'),
+            icon: Icon(Icons.star_outline),
+            label: Text(tr('View Reviews ({count})')
+                .replaceAll('{count}', '${_profile!.totalReviews}')),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.all(16),
             ),
@@ -496,7 +498,7 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
           size: 80,
           color: theme.colorScheme.primary,
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
         Text(
           'Become a Consultant',
           style: theme.textTheme.headlineSmall?.copyWith(
@@ -504,7 +506,7 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -515,26 +517,26 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
                   'Share your legal expertise and earn by helping others with their legal queries.',
                   style: theme.textTheme.bodyLarge,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Text(
                   'Benefits:',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 _buildInfoRow('Earn money by providing consultations'),
                 _buildInfoRow('Flexible schedule - work when you want'),
                 _buildInfoRow('Help people with legal guidance'),
                 _buildInfoRow('Build your professional reputation'),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Text(
                   'Requirements:',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 _buildInfoRow('Valid professional credentials'),
                 _buildInfoRow('ID/Passport documentation'),
                 _buildInfoRow('Admin approval required'),
@@ -542,13 +544,13 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: _showApplicationDialog,
-            icon: const Icon(Icons.send),
-            label: const Text('Apply Now'),
+            icon: Icon(Icons.send),
+            label: Text(tr('Apply Now')),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.all(16),
             ),
@@ -566,9 +568,9 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
           size: 80,
           color: Colors.grey.shade400,
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
         Text(
-          'Not Eligible',
+          tr('Not Eligible'),
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -600,18 +602,18 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
           size: 80,
           color: Colors.red.shade400,
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
         Text(
           'Error Loading Data',
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         ElevatedButton.icon(
           onPressed: _loadData,
-          icon: const Icon(Icons.refresh),
-          label: const Text('Retry'),
+          icon: Icon(Icons.refresh),
+          label: Text(tr('Retry')),
         ),
       ],
     );
@@ -690,8 +692,8 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '• ',
+          Text(
+            tr('• '),
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           Expanded(child: Text(text)),
@@ -720,7 +722,7 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
       await _loadData();
 
       NavigationHelper.showSafeSnackbar(
-        title: 'Success',
+        title: tr('Success'),
         message: value
             ? 'You are now available for consultations'
             : 'You are no longer accepting new consultations',
@@ -733,8 +735,8 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
       );
     } else {
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
-        message: 'Failed to update availability',
+        title: tr('Error'),
+        message: tr('Failed to update availability'),
         backgroundColor: Colors.red,
         colorText: Colors.white,
         icon: const Icon(Icons.error, color: Colors.white),
@@ -753,7 +755,7 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
 
     if (reviewsData == null || reviewsData.reviews.isEmpty) {
       NavigationHelper.showSafeSnackbar(
-        title: 'No Reviews',
+        title: tr('No Reviews'),
         message: 'You don\'t have any reviews yet',
         backgroundColor: Colors.blue,
         colorText: Colors.white,
@@ -909,11 +911,11 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Respond to Review'),
+        title: Text('Respond to Review'),
         content: TextField(
           controller: controller,
           maxLines: 4,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             hintText: 'Write your response...',
             border: OutlineInputBorder(),
           ),
@@ -921,13 +923,13 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Cancel'),
+            child: Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () async {
               if (controller.text.trim().isEmpty) {
                 NavigationHelper.showSafeSnackbar(
-                  title: 'Error',
+                  title: tr('Error'),
                   message: 'Please write a response',
                   backgroundColor: Colors.red,
                   colorText: Colors.white,
@@ -950,7 +952,7 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
 
               if (success) {
                 NavigationHelper.showSafeSnackbar(
-                  title: 'Success',
+                  title: tr('Success'),
                   message: 'Response submitted successfully',
                   backgroundColor: Colors.green,
                   colorText: Colors.white,
@@ -960,7 +962,7 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
                 _viewReviews(); // Reload reviews
               } else {
                 NavigationHelper.showSafeSnackbar(
-                  title: 'Error',
+                  title: tr('Error'),
                   message: 'Failed to submit response',
                   backgroundColor: Colors.red,
                   colorText: Colors.white,
@@ -968,7 +970,7 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
                 );
               }
             },
-            child: const Text('Submit'),
+            child: Text(tr('Submit')),
           ),
         ],
       ),
@@ -1051,7 +1053,7 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
                     },
                     contentPadding: EdgeInsets.zero,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -1065,9 +1067,9 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
                           children: [
                             Icon(Icons.info_outline,
                                 size: 16, color: Colors.blue.shade700),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'Note:',
+                            SizedBox(width: 8),
+                            Text(
+                              tr('Note:'),
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -1119,9 +1121,9 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
                         if (result.success) {
                           Get.dialog(
                             AlertDialog(
-                              icon: const Icon(Icons.check_circle,
+                              icon: Icon(Icons.check_circle,
                                   color: Colors.green, size: 48),
-                              title: const Text('Application Submitted!'),
+                              title: Text('Application Submitted!'),
                               content: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1129,25 +1131,25 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
                                   Text(result.message),
                                   if (result.nextSteps != null &&
                                       result.nextSteps!.isNotEmpty) ...[
-                                    const SizedBox(height: 16),
-                                    const Text(
-                                      'Next Steps:',
+                                    SizedBox(height: 16),
+                                    Text(
+                                      tr('Next Steps:'),
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold),
                                     ),
-                                    const SizedBox(height: 8),
+                                    SizedBox(height: 8),
                                     ...result.nextSteps!.map((step) => Padding(
-                                              padding: const EdgeInsets.only(
-                                                  bottom: 4),
-                                              child: Row(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  const Text('• '),
-                                                  Expanded(child: Text(step)),
-                                                ],
-                                              ),
-                                            )),
+                                          padding:
+                                              const EdgeInsets.only(bottom: 4),
+                                          child: Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(tr('• ')),
+                                              Expanded(child: Text(step)),
+                                            ],
+                                          ),
+                                        )),
                                   ],
                                 ],
                               ),
@@ -1157,7 +1159,7 @@ class _ConsultantProfileScreenState extends State<ConsultantProfileScreen> {
                                     Get.back(); // Close success dialog
                                     _loadData(); // Reload data
                                   },
-                                  child: const Text('OK'),
+                                  child: Text(tr('OK')),
                                 ),
                               ],
                             ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import '../controllers/nearby_lawyers_controller.dart';
@@ -20,7 +21,7 @@ class NearbyLawyersScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Nearby Lawyers'),
+        title: Text(tr('Nearby Lawyers')),
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
@@ -118,7 +119,7 @@ class NearbyLawyersScreen extends StatelessWidget {
                     SizedBox(width: 12),
                     ElevatedButton(
                       onPressed: () => _showFilterDialog(context, controller),
-                      child: Text('Adjust Filters'),
+                      child: Text(tr('Adjust Filters')),
                     ),
                   ],
                 ),
@@ -362,22 +363,22 @@ class NearbyLawyersScreen extends StatelessWidget {
                   spacing: 8,
                   children: [
                     FilterChip(
-                      label: Text('Advocates'),
+                      label: Text(tr('Advocates')),
                       selected: controller.selectedTypes.contains('advocate'),
                       onSelected: (_) => controller.toggleUserType('advocate'),
                     ),
                     FilterChip(
-                      label: Text('Lawyers'),
+                      label: Text(tr('Lawyers')),
                       selected: controller.selectedTypes.contains('lawyer'),
                       onSelected: (_) => controller.toggleUserType('lawyer'),
                     ),
                     FilterChip(
-                      label: Text('Paralegals'),
+                      label: Text(tr('Paralegals')),
                       selected: controller.selectedTypes.contains('paralegal'),
                       onSelected: (_) => controller.toggleUserType('paralegal'),
                     ),
                     FilterChip(
-                      label: Text('Law Firms'),
+                      label: Text(tr('Law Firms')),
                       selected: controller.selectedTypes.contains('law_firm'),
                       onSelected: (_) => controller.toggleUserType('law_firm'),
                     ),
@@ -388,7 +389,7 @@ class NearbyLawyersScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Close'),
+            child: Text(tr('Close')),
           ),
         ],
       ),
@@ -584,7 +585,7 @@ class _LawyerCard extends StatelessWidget {
                     if (lawyer.location.officeAddress != null) ...[
                       if (lawyer.yearsOfExperience != null) ...[
                         SizedBox(width: 12),
-                        Text('•',
+                        Text(tr('•'),
                             style: TextStyle(
                                 color: theme.colorScheme.onSurface
                                     .withOpacity(0.3))),
@@ -618,7 +619,7 @@ class _LawyerCard extends StatelessWidget {
                       OutlinedButton.icon(
                         onPressed: () => _callLawyer(context, lawyer),
                         icon: Icon(Icons.phone, size: 15),
-                        label: Text('Call',
+                        label: Text(tr('Call'),
                             style: TextStyle(
                                 fontSize: 13, fontWeight: FontWeight.w600)),
                         style: OutlinedButton.styleFrom(
@@ -641,7 +642,7 @@ class _LawyerCard extends StatelessWidget {
                         onPressed: () => _bookConsultation(context, lawyer),
                         icon: Icon(Icons.calendar_today,
                             size: 15, color: theme.colorScheme.primary),
-                        label: Text('Book',
+                        label: Text(tr('Book'),
                             style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -668,12 +669,8 @@ class _LawyerCard extends StatelessWidget {
   }
 
   void _callLawyer(BuildContext context, NearbyLawyer lawyer) async {
-    // Check permission to talk to lawyer
-    if (!NavigationHelper.checkPermissionOrShowUpgrade(
-        context, PermissionFeature.talkToLawyer)) {
-      return;
-    }
-
+    // Calls rely on credits/bundles only; let the CallController credit check
+    // handle insufficient balance, not a subscription gate.
     final consultant = NearbyLawyersScreen._convertToConsultant(lawyer);
     Get.toNamed('/call', arguments: {'consultant': consultant});
   }

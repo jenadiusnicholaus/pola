@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/legal_education_models.dart';
 import '../services/legal_education_service.dart';
+import '../../../../services/language_service.dart';
 import '../../../../services/token_storage_service.dart';
 import '../../../../utils/navigation_helper.dart';
 
@@ -59,6 +60,7 @@ class LegalEducationController extends GetxController {
   void onInit() {
     super.onInit();
     _debugAuthStatus();
+    _applyStoredLanguagePreference();
     fetchTopics();
   }
 
@@ -76,8 +78,27 @@ class LegalEducationController extends GetxController {
     }
   }
 
+  /// Defaults the topics language filter to the user's stored preference and
+  /// keeps it in sync when the preference changes in Settings.
+  Worker? _languageWorker;
+
+  void _applyStoredLanguagePreference() {
+    try {
+      final langService = Get.find<LanguageService>();
+      _languageFilter.value = langService.isSwahili
+          ? LanguageFilter.swahili
+          : LanguageFilter.english;
+
+      _languageWorker ??= ever(langService.languageObs, (_) {
+        _applyStoredLanguagePreference();
+        fetchTopics(refresh: true);
+      });
+    } catch (_) {}
+  }
+
   @override
   void onClose() {
+    _languageWorker?.dispose();
     super.onClose();
   }
 

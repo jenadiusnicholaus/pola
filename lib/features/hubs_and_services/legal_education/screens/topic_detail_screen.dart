@@ -6,6 +6,8 @@ import '../widgets/subtopic_card.dart';
 import '../widgets/shimmer_widgets.dart';
 import '../widgets/common_sliver_widgets.dart';
 import 'topic_materials_screen.dart';
+import '../../../../services/language_service.dart';
+import 'package:localization_lite/translate.dart';
 
 class TopicDetailScreen extends StatefulWidget {
   const TopicDetailScreen({super.key});
@@ -17,8 +19,11 @@ class TopicDetailScreen extends StatefulWidget {
 class _TopicDetailScreenState extends State<TopicDetailScreen> {
   late LegalEducationController controller;
   late Topic topic;
-  String? initialLanguage;
   final ScrollController _scrollController = ScrollController();
+  Worker? _languageWorker;
+
+  /// Content language always follows the global app language.
+  String get initialLanguage => Get.find<LanguageService>().apiCode;
 
   String get _topicTitle {
     if (initialLanguage == 'sw' && topic.nameSw.isNotEmpty) {
@@ -42,10 +47,14 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
     final args = Get.arguments;
     if (args is Map) {
       topic = args['topic'] as Topic;
-      initialLanguage = args['language'] as String?;
     } else {
       topic = args as Topic;
     }
+
+    // Refetch subtopics when the app language changes.
+    _languageWorker = ever(Get.find<LanguageService>().languageObs, (_) {
+      controller.fetchSubtopics(topic.slug, language: initialLanguage);
+    });
 
     // Fetch subtopics for this topic
     print(
@@ -54,6 +63,13 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
       print('🌍 Fetching subtopics with language=$initialLanguage');
       controller.fetchSubtopics(topic.slug, language: initialLanguage);
     });
+  }
+
+  @override
+  void dispose() {
+    _languageWorker?.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -88,7 +104,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'About ${_topicTitle}',
+                        '${tr('About')} ${_topicTitle}',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: theme.colorScheme.primary,
@@ -111,7 +127,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
                 sliver: SliverToBoxAdapter(
                   child: Text(
-                    'Browse Subtopics',
+                    tr('Browse Subtopics'),
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -125,10 +141,10 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
                   child: SubtopicShimmerList(),
                 )
               else if (controller.subtopics.isEmpty)
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   child: CommonEmptyWidget(
-                    title: 'No subtopics found',
-                    message: 'Check back later for content in this topic.',
+                    title: tr('No subtopics found'),
+                    message: tr('Check back later for content in this topic.'),
                     icon: Icons.category_outlined,
                   ),
                 )

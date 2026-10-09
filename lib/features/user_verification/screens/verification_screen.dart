@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../controllers/verification_controller.dart';
 import '../widgets/verification_status_header.dart';
@@ -32,12 +33,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Account Verification'),
+        title: Text('Account Verification'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh),
             onPressed: controller.refreshVerificationStatus,
-            tooltip: 'Refresh Status',
+            tooltip: tr('Refresh Status'),
           ),
         ],
       ),
@@ -411,9 +412,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 size: 32,
               ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Ready to Submit',
+            SizedBox(height: 16),
+            Text(tr('Ready to Submit'),
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).primaryColor,
@@ -469,7 +469,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Submit for Review'),
+        title: Text(tr('Submit for Review')),
         content: const Text(
           'Are you sure you want to submit your verification for admin review? '
           'Make sure all your information and documents are correct as you won\'t be able to make changes during the review process.',
@@ -488,7 +488,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
               backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Theme.of(context).colorScheme.onPrimary,
             ),
-            child: const Text('Submit'),
+            child: Text(tr('Submit')),
           ),
         ],
       ),

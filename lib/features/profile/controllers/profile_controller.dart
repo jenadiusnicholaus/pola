@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:flutter/foundation.dart';
 import '../services/profile_service.dart';
 import '../models/profile_models.dart';
@@ -54,12 +55,12 @@ class ProfileController extends GetxController {
       }
 
       NavigationHelper.showSafeSnackbar(
-        title: 'Success',
-        message: 'Profile refreshed successfully',
+        title: tr('Success'),
+        message: tr('Profile refreshed successfully'),
       );
     } catch (e) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Failed to refresh profile: ${e.toString()}',
       );
     }
@@ -79,12 +80,12 @@ class ProfileController extends GetxController {
     try {
       await _profileService.updateProfile(updates);
       NavigationHelper.showSafeSnackbar(
-        title: 'Success',
-        message: 'Profile updated successfully',
+        title: tr('Success'),
+        message: tr('Profile updated successfully'),
       );
     } catch (e) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Failed to update profile: ${e.toString()}',
       );
     }

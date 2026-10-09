@@ -117,11 +117,15 @@ class UserRoleManager {
     // Get user role
     final userRole = _tokenStorage.getUserRole()?.toLowerCase() ?? '';
 
+    // NOTE: no blanket grant for professional roles — role-based hubs
+    // (advocates, students) enforce their own role so lawyers, paralegals
+    // and law firms can't enter the advocates hub. Forum and legal_ed are
+    // open to all logged-in users anyway.
+
     // Role checks based on ROLE_CHOICES
     final isAdvocate = userRole.contains('advocate');
     final isLawStudent = userRole.contains('law_student');
     final isLecturer = userRole.contains('lecturer');
-    final isLawFirm = userRole.contains('law_firm');
 
     // Check hub-specific access permissions
     switch (hubType) {
@@ -227,8 +231,9 @@ class UserRoleManager {
   static bool canSetPrice(String hubType) {
     switch (hubType) {
       case 'students':
-        // Students hub - all users can create payable content
-        return canCreateContentInHub(hubType);
+        // Students hub — document downloads are a fixed TZS 1,500,
+        // so uploaders never set a price themselves.
+        return false;
       case 'legal_ed':
         // Legal Education hub - only admins can create payable content
         return isAdmin();

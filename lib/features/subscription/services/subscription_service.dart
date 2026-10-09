@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../../services/api_service.dart';
@@ -123,7 +124,7 @@ class SubscriptionService extends GetxService {
         if (data == null) {
           return PaymentStatus(
             status: 'error',
-            message: 'No data received from server',
+            message: tr('No data received from server'),
           );
         }
 

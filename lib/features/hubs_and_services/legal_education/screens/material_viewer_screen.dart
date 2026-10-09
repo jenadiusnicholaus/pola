@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../../../utils/navigation_helper.dart';
 import 'package:flutter_cached_pdfview/flutter_cached_pdfview.dart';
@@ -173,7 +174,7 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
           });
 
           NavigationHelper.showSafeSnackbar(
-            title: 'Success',
+            title: tr('Success'),
             message:
                 'Document purchased successfully! You can now download it.',
             backgroundColor: theme.colorScheme.primaryContainer,
@@ -187,7 +188,7 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
       } catch (e) {
         debugPrint('❌ Error showing dialog: $e');
         NavigationHelper.showSafeSnackbar(
-          title: 'Error',
+          title: tr('Error'),
           message: 'Failed to show payment dialog: $e',
         );
       }
@@ -209,7 +210,7 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
     try {
       if (material.fileUrl.isEmpty) {
         NavigationHelper.showSafeSnackbar(
-          title: 'Error',
+          title: tr('Error'),
           message: 'No file available for download',
           backgroundColor: theme.colorScheme.errorContainer,
           colorText: theme.colorScheme.onErrorContainer,
@@ -557,7 +558,7 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             Text(
               'Loading content...',
               style: theme.textTheme.titleMedium?.copyWith(
@@ -565,9 +566,8 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
                 color: theme.colorScheme.onSurface.withOpacity(0.8),
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Please wait while we prepare your material',
+            SizedBox(height: 8),
+            Text(tr('Please wait while we prepare your material'),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.6),
               ),
@@ -786,7 +786,7 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
                       color: Theme.of(context).colorScheme.onErrorContainer,
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   Text(
                     'PDF Loading Failed',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -794,7 +794,7 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
                           fontWeight: FontWeight.w600,
                         ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Text(
                     'Unable to load the PDF file. This might be due to network issues or the file format.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -805,14 +805,14 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
                         ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       ElevatedButton.icon(
                         onPressed: () => _retryLoading(),
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Retry'),
+                        icon: Icon(Icons.refresh),
+                        label: Text(tr('Retry')),
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               Theme.of(context).colorScheme.primary,
@@ -990,9 +990,8 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
                                     size: 64,
                                     color: Theme.of(context).colorScheme.error,
                                   ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'Failed to load image',
+                                  SizedBox(height: 16),
+                                  Text(tr('Failed to load image'),
                                     style: Theme.of(context)
                                         .textTheme
                                         .titleMedium
@@ -1002,7 +1001,7 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
                                               .error,
                                         ),
                                   ),
-                                  const SizedBox(height: 8),
+                                  SizedBox(height: 8),
                                   Text(
                                     'Tap to retry or try opening in browser',
                                     style: Theme.of(context)
@@ -1016,15 +1015,15 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
                                         ),
                                     textAlign: TextAlign.center,
                                   ),
-                                  const SizedBox(height: 16),
+                                  SizedBox(height: 16),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       ElevatedButton.icon(
                                         onPressed: () => setState(
                                             () {}), // Retry by rebuilding
-                                        icon: const Icon(Icons.refresh),
-                                        label: const Text('Retry'),
+                                        icon: Icon(Icons.refresh),
+                                        label: Text(tr('Retry')),
                                       ),
                                       const SizedBox(width: 12),
                                       OutlinedButton.icon(
@@ -1460,7 +1459,7 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Could not open link',
       );
     }
@@ -1482,7 +1481,7 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
           BoxShadow(
             color: theme.colorScheme.shadow.withOpacity(0.15),
             blurRadius: 20,
-            offset: const Offset(0, -4),
+            offset: Offset(0, -4),
           ),
         ],
       ),
@@ -1503,7 +1502,7 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
                   color: theme.colorScheme.onPrimaryContainer,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1526,7 +1525,7 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Row(
             children: [
               Expanded(
@@ -1549,7 +1548,7 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               ElevatedButton(
                 onPressed: () => _handleDownload(),
                 style: ElevatedButton.styleFrom(
@@ -1558,7 +1557,7 @@ class _MaterialViewerScreenState extends State<MaterialViewerScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
-                child: const Text('Purchase'),
+                child: Text(tr('Purchase')),
               ),
             ],
           ),

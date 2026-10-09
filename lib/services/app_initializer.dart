@@ -8,6 +8,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import '../firebase_options.dart';
 import '../config/dio_config.dart';
 import 'api_service.dart';
+import 'language_service.dart';
 import 'token_storage_service.dart';
 import 'auth_service.dart';
 import 'permission_service.dart';
@@ -17,6 +18,7 @@ import '../features/hubs_and_services/legal_education/services/legal_education_s
 import '../features/hubs_and_services/hub_content/services/hub_content_service.dart';
 import '../features/consultation/services/consultation_service.dart';
 import '../features/subscription/services/subscription_service.dart';
+import '../features/settings/services/account_safety_service.dart';
 import 'device_registration_service.dart';
 import 'location_service.dart';
 import '../features/nearbylawyers/services/nearby_lawyers_service.dart';
@@ -117,6 +119,10 @@ class AppInitializer {
     // Core API service
     Get.put(ApiService());
     debugPrint('✅ ApiService initialized');
+
+    // User content-language preference (reads GetStorage — initialized above)
+    Get.put(LanguageService());
+    debugPrint('✅ LanguageService initialized');
   }
 
   /// Phase 2: Services that can be initialized in parallel
@@ -167,6 +173,10 @@ class AppInitializer {
       }),
       _initServiceAsync(() {
         Get.put(SubscriptionService());
+        return Future.value();
+      }),
+      _initServiceAsync(() {
+        Get.put(AccountSafetyService());
         return Future.value();
       }),
     ]);

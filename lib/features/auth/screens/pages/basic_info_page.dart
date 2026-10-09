@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../controllers/registration_controller.dart';
 
@@ -140,12 +141,12 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                 'Basic Information',
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 'Please provide your personal details to continue',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
               // Show selected role (read-only)
               Container(
@@ -179,13 +180,12 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                         size: 20,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Selected Role',
+                          Text(tr('Selected Role'),
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,

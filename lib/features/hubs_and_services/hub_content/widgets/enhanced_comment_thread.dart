@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../models/hub_content_models.dart';
 import '../controllers/hub_content_controller.dart';
@@ -144,13 +145,13 @@ class _EnhancedCommentThreadState extends State<EnhancedCommentThread> {
                     widget.comment.author.fullName.isNotEmpty
                         ? widget.comment.author.fullName[0].toUpperCase()
                         : '?',
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 12, fontWeight: FontWeight.bold),
                   )
                 : null,
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -181,8 +182,7 @@ class _EnhancedCommentThreadState extends State<EnhancedCommentThread> {
               color: theme.colorScheme.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(4),
             ),
-            child: Text(
-              'Reply',
+            child: Text(tr('Reply'),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.primary,
                 fontSize: 10,
@@ -333,7 +333,7 @@ class _EnhancedCommentThreadState extends State<EnhancedCommentThread> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text(
                   'Loading replies...',
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -354,8 +354,7 @@ class _EnhancedCommentThreadState extends State<EnhancedCommentThread> {
             widget.comment.repliesCount == 0)
           Container(
             margin: EdgeInsets.only(left: (widget.depth + 1) * 16.0, top: 8.0),
-            child: Text(
-              'No replies yet',
+            child: Text(tr('No replies yet'),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.5),
                 fontStyle: FontStyle.italic,
@@ -443,7 +442,7 @@ class _EnhancedCommentThreadState extends State<EnhancedCommentThread> {
                         color: Theme.of(context).colorScheme.primary,
                         size: 24,
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           'Reply to Comment',
@@ -489,7 +488,7 @@ class _EnhancedCommentThreadState extends State<EnhancedCommentThread> {
                                 color: Theme.of(context).colorScheme.primary,
                               ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
@@ -528,7 +527,7 @@ class _EnhancedCommentThreadState extends State<EnhancedCommentThread> {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
+                                  SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
                                       widget.comment.author.fullName,
@@ -542,7 +541,7 @@ class _EnhancedCommentThreadState extends State<EnhancedCommentThread> {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 8),
+                              SizedBox(height: 8),
                               Text(
                                 widget.comment.comment,
                                 style: Theme.of(context).textTheme.bodyMedium,
@@ -553,11 +552,10 @@ class _EnhancedCommentThreadState extends State<EnhancedCommentThread> {
                           ),
                         ),
 
-                        const SizedBox(height: 20),
+                        SizedBox(height: 20),
 
                         // Reply Input
-                        Text(
-                          'Your Reply:',
+                        Text(tr('Your Reply:'),
                           style:
                               Theme.of(context).textTheme.labelMedium?.copyWith(
                                     fontWeight: FontWeight.w600,

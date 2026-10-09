@@ -132,7 +132,11 @@ class _HubContentScreenState extends State<HubContentScreen> {
           ),
         ],
       ),
-      floatingActionButton: _buildFloatingActionButton(theme),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(right: 12, bottom: 20),
+        child: _buildFloatingActionButton(theme),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 

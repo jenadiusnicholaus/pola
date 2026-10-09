@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../hub_content/services/hub_content_service.dart';
 import '../../../utils/navigation_helper.dart';
@@ -32,7 +33,7 @@ class HubContentController extends GetxController {
       // Show appropriate feedback
       if (newLikeStatus) {
         NavigationHelper.showSafeSnackbar(
-          title: '❤️ Liked',
+          title: tr('❤️ Liked'),
           message: 'Content added to your favorites',
           backgroundColor: Colors.green.withOpacity(0.8),
           colorText: Colors.white,
@@ -40,7 +41,7 @@ class HubContentController extends GetxController {
       } else {
         NavigationHelper.showSafeSnackbar(
           title: '💔 Unliked',
-          message: 'Removed from your favorites',
+          message: tr('Removed from your favorites'),
           backgroundColor: Colors.grey.withOpacity(0.8),
           colorText: Colors.white,
         );
@@ -50,7 +51,7 @@ class HubContentController extends GetxController {
     } catch (e) {
       _error.value = e.toString();
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Failed to update like status: ${e.toString()}',
         backgroundColor: Colors.red.withOpacity(0.8),
         colorText: Colors.white,

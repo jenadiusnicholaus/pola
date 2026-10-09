@@ -16,7 +16,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+4
+version: 1.0.0+10
 
 environment:
   sdk: ^3.5.4
@@ -63,6 +63,12 @@ dependencies:
   # Date Formatting & Internationalization
   intl: ^0.19.0
 
+  # International phone input with country picker (defaults to TZ)
+  intl_phone_field: ^3.2.0
+
+  # Lightweight JSON-based localization
+  localization_lite: ^1.0.11
+
   # Secure Storage for JWT tokens
   flutter_secure_storage: ^9.0.0
 
@@ -78,8 +84,11 @@ dependencies:
   path_provider: ^2.1.2
   open_filex: ^4.5.0
 
-  # Nexacon SDK for voice/video/messaging calls (deployed version from pub.dev)
-  nexacon_calls: ^1.3.17
+  # Nexacon SDK for voice/video/messaging calls (local dev version — patched,
+  # published as 1.3.18 on pub.dev, switch back once indexed)
+  nexacon_calls: ^1.3.18
+  # nexacon_calls:
+  #   path: /Users/mac/development/sdks/nexacon-flutter-sdk
 
   # Nexacon Messaging SDK for real-time chat (local dev version)
   nexacon_messaging: ^1.0.6
@@ -120,7 +129,6 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_isolate: ^2.1.0
   signature: ^6.3.0
-  no_screenshot: ^1.2.0
   pinput: ^6.0.2
   smart_auth: ^2.0.0
 
@@ -154,6 +162,7 @@ flutter:
   assets:
     - .env
     - assets/icons/
+    - assets/localization/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

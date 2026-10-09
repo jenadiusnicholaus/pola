@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../auth/models/lookup_models.dart';
 import '../controllers/associated_law_firm_controller.dart';
@@ -14,7 +15,7 @@ class AssociatedLawFirmScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Associated Law Firm'),
+        title: Text(tr('Associated Law Firm')),
         backgroundColor: AppColors.primaryAmber,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -29,8 +30,7 @@ class AssociatedLawFirmScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Select your associated law firm',
+              Text(tr('Select your associated law firm'),
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -50,7 +50,7 @@ class AssociatedLawFirmScreen extends StatelessWidget {
                 return DropdownButtonFormField<int?>(
                   value: controller.selectedLawFirm.value,
                   decoration: InputDecoration(
-                    labelText: 'Law Firm',
+                    labelText: tr('Law Firm'),
                     prefixIcon: const Icon(Icons.business_outlined),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -101,7 +101,7 @@ class AssociatedLawFirmScreen extends StatelessWidget {
                     ),
                   ),
                   child: controller.isSaving.value
-                      ? const SizedBox(
+                      ? SizedBox(
                           height: 22,
                           width: 22,
                           child: CircularProgressIndicator(
@@ -109,8 +109,7 @@ class AssociatedLawFirmScreen extends StatelessWidget {
                             color: Colors.white,
                           ),
                         )
-                      : const Text(
-                          'Save',
+                      : Text(tr('Save'),
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,

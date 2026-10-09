@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart' as dio;
 import '../../../services/api_service.dart';
@@ -168,7 +169,7 @@ class RegistrationController extends GetxController {
         debugPrint('📄 Response data: ${response.data}');
 
         NavigationHelper.showSafeSnackbar(
-          title: 'Success',
+          title: tr('Success'),
           message: 'Registration completed successfully!',
           backgroundColor: Colors.green,
         );
@@ -395,21 +396,21 @@ class RegistrationController extends GetxController {
       AlertDialog(
         title: Row(
           children: [
-            const Icon(Icons.error_outline, color: Colors.red),
-            const SizedBox(width: 8),
+            Icon(Icons.error_outline, color: Colors.red),
+            SizedBox(width: 8),
             Expanded(child: Text(title)),
           ],
         ),
         content: SingleChildScrollView(
           child: Text(
             message,
-            style: const TextStyle(fontSize: 14),
+            style: TextStyle(fontSize: 14),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('OK'),
+            child: Text(tr('OK')),
           ),
         ],
       ),
@@ -489,7 +490,7 @@ class RegistrationController extends GetxController {
               _currentPage.value = 0;
               _clearAllData();
             },
-            child: const Text('Start Over'),
+            child: Text(tr('Start Over')),
           ),
           ElevatedButton(
             onPressed: () {

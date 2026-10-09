@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../models/subscription_models.dart';
 import '../services/subscription_service.dart';
@@ -70,12 +71,12 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Choose Your Plan'),
+        title: Text('Choose Your Plan'),
         elevation: 0,
         centerTitle: true,
       ),
       body: isLoading
-          ? const Center(
+          ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -92,16 +93,16 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
                     children: [
                       Icon(Icons.error_outline,
                           size: 64, color: Colors.red.shade300),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       Text(
                         errorMessage!,
-                        style: const TextStyle(fontSize: 16),
+                        style: TextStyle(fontSize: 16),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
                       ElevatedButton.icon(
                         onPressed: _loadPlans,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Retry'),
+                        icon: Icon(Icons.refresh),
+                        label: Text(tr('Retry')),
                       ),
                     ],
                   ),
@@ -148,7 +149,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
         side: isCurrentPlan
             ? BorderSide(color: isExpiredCurrentPlan ? Colors.red : Colors.green, width: 2)
             : (isPopular
-                ? const BorderSide(color: Colors.amber, width: 2)
+                ? BorderSide(color: Colors.amber, width: 2)
                 : BorderSide.none),
       ),
       child: Stack(
@@ -175,10 +176,10 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
                       color: Colors.white,
                       size: 16,
                     ),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
                     Text(
                       isExpiredCurrentPlan ? 'EXPIRED' : 'CURRENT PLAN',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
@@ -195,15 +196,14 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: Colors.amber,
                   borderRadius: BorderRadius.only(
                     topRight: Radius.circular(14),
                     bottomLeft: Radius.circular(14),
                   ),
                 ),
-                child: const Text(
-                  'MOST POPULAR',
+                child: Text(tr('MOST POPULAR'),
                   style: TextStyle(
                     color: Colors.black,
                     fontWeight: FontWeight.bold,
@@ -246,7 +246,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -282,7 +282,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
                   ],
                 ),
                 if (plan.discount != null) ...[
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -300,9 +300,8 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 24),
-                Text(
-                  'Features:',
+                SizedBox(height: 24),
+                Text(tr('Features:'),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

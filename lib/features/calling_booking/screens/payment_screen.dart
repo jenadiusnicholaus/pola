@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../../utils/navigation_helper.dart';
 import '../models/consultant_models.dart';
@@ -13,7 +14,7 @@ class PaymentScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Payment'),
+        title: Text('Payment'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -33,20 +34,18 @@ class PaymentScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Order Summary',
+                  Text(tr('Order Summary'),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Package',
+                      Text(tr('Package'),
                         style: TextStyle(
                           fontSize: 14,
                           color: theme.colorScheme.onSurfaceVariant,
@@ -62,7 +61,7 @@ class PaymentScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -83,12 +82,11 @@ class PaymentScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Validity',
+                      Text(tr('Validity'),
                         style: TextStyle(
                           fontSize: 14,
                           color: theme.colorScheme.onSurfaceVariant,
@@ -104,12 +102,11 @@ class PaymentScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const Divider(height: 32),
+                  Divider(height: 32),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Total',
+                      Text(tr('Total'),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -129,7 +126,7 @@ class PaymentScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: 32),
 
             // Payment Methods Section
             Text(
@@ -140,30 +137,30 @@ class PaymentScreen extends StatelessWidget {
                 color: theme.colorScheme.onSurface,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
 
             // Payment method options
             _buildPaymentOption(
               context,
               icon: Icons.phone_android,
-              title: 'M-Pesa',
+              title: tr('M-Pesa'),
               subtitle: 'Pay with M-Pesa mobile money',
               isComingSoon: true,
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _buildPaymentOption(
               context,
               icon: Icons.account_balance,
-              title: 'Tigo Pesa',
-              subtitle: 'Pay with Tigo Pesa',
+              title: tr('Tigo Pesa'),
+              subtitle: tr('Pay with Tigo Pesa'),
               isComingSoon: true,
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _buildPaymentOption(
               context,
               icon: Icons.credit_card,
-              title: 'Credit/Debit Card',
-              subtitle: 'Pay with Visa, Mastercard',
+              title: tr('Credit/Debit Card'),
+              subtitle: tr('Pay with Visa, Mastercard'),
               isComingSoon: true,
             ),
             const SizedBox(height: 12),

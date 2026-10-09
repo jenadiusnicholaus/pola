@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../controllers/registration_controller.dart';
 import '../../models/lookup_models.dart';
@@ -46,8 +47,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Chagua Wadhifa Wako | Select Your Role',
+          Text(tr('Chagua Wadhifa Wako | Select Your Role'),
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -99,14 +99,13 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.error_outline,
                         size: 64,
                         color: Color(0xFFEF4444),
                       ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'No roles available',
+                      SizedBox(height: 16),
+                      Text(tr('No roles available'),
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -129,7 +128,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                           controller.lookupService.fetchUserRoles();
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3B82F6),
+                          backgroundColor: Color(0xFF3B82F6),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
                               horizontal: 24, vertical: 12),
@@ -137,7 +136,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: const Text('Retry'),
+                        child: Text(tr('Retry')),
                       ),
                     ],
                   ),
@@ -283,7 +282,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
             );
           }),
 
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
 
           // Information about next steps
           if (_selectedRole != null)
@@ -306,9 +305,8 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                         Icons.info,
                         color: Theme.of(context).colorScheme.primary,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Next Steps',
+                      SizedBox(width: 8),
+                      Text(tr('Next Steps'),
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Theme.of(context).colorScheme.primary,

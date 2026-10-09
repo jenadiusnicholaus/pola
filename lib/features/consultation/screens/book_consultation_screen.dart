@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../calling_booking/models/consultant_models.dart' as calling;
 import '../services/consultation_service.dart';
 import '../../../constants/payment_constants.dart';
+import '../../../shared/widgets/intl_phone_input.dart';
 
 /// Physical Consultation Booking Screen
 /// Flow: Create Booking → Initiate Payment → Wait for Confirmation
@@ -20,6 +22,8 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
   final _notesController = TextEditingController();
   final _locationController = TextEditingController();
   final _phoneController = TextEditingController();
+
+  String _completePhone = '';
   final _formKey = GlobalKey<FormState>();
 
   late final calling.Consultant consultant;
@@ -174,7 +178,9 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
   Future<void> _initiatePayment() async {
     if (_bookingResponse == null) return;
 
-    final phone = _phoneController.text.trim();
+    final phone = _completePhone.isNotEmpty
+        ? _completePhone
+        : _phoneController.text.trim();
     if (phone.isEmpty) {
       setState(() => _errorMessage = 'Please enter phone number');
       return;
@@ -406,7 +412,7 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
               Row(
                 children: [
                   Icon(Icons.event_note, size: 20, color: Colors.grey.shade600),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Text(
                     'Booking Details',
                     style: TextStyle(
@@ -417,7 +423,7 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               _buildDetailRow('Law Firm', consultant.userDetails.fullName),
               _buildDetailRow(
                 'Date',
@@ -431,7 +437,7 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
               ),
               _buildDetailRow('Duration', '$_durationMinutes minutes'),
               _buildDetailRow('Location', _locationController.text),
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(vertical: 12),
                 child: Divider(height: 1),
               ),
@@ -439,7 +445,7 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Total',
+                    tr('Total'),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -459,40 +465,46 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
 
         // Payment Method - Provider Selection
         _buildSectionLabel('Select Payment Provider'),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         _buildProviderSelector(theme),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
 
         // Phone Number
         _buildSectionLabel('Phone Number'),
-        const SizedBox(height: 8),
-        _buildTextField(
-          controller: _phoneController,
-          hint: '0712 345 678',
-          icon: Icons.phone_outlined,
-          keyboardType: TextInputType.phone,
+        SizedBox(height: 8),
+        IntlPhoneInput(
+          hintText: '0712 345 678',
+          prefixIcon:
+              Icon(Icons.phone_outlined, size: 20, color: Colors.grey.shade500),
+          borderRadius: 10,
+          filled: true,
+          fillColor: Colors.white,
+          invalidNumberMessage:
+              'Enter a valid phone number for the selected country',
+          onChanged: (complete) => _completePhone = complete,
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Text(
           'You will receive a payment prompt on this number',
           style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
 
         // Error message
         if (_errorMessage != null) _buildErrorMessage(theme),
 
         // Pay Button
         _buildPrimaryButton(
-          label: 'Pay TZS ${NumberFormat('#,###').format(amount)}',
+          label: tr('Pay TZS {amount}')
+              .replaceAll('{amount}', NumberFormat('#,###').format(amount)),
           onPressed: _isLoading ? null : _initiatePayment,
           isLoading: _isLoading,
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
 
         // Back button
         Center(
@@ -500,7 +512,7 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
             onPressed: () =>
                 setState(() => _currentStep = _BookingStep.details),
             child: Text(
-              'Back to details',
+              tr('Back to details'),
               style: TextStyle(color: Colors.grey.shade600),
             ),
           ),
@@ -675,7 +687,7 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
   Widget _buildNotAvailableScreen(ThemeData theme) {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(title: const Text('Book Consultation')),
+      appBar: AppBar(title: Text('Book Consultation')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(40),
@@ -683,12 +695,12 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.info_outline, size: 56, color: Colors.grey.shade400),
-              const SizedBox(height: 24),
-              const Text(
-                'Not Available',
+              SizedBox(height: 24),
+              Text(
+                tr('Not Available'),
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Text(
                 'This consultant does not offer physical consultations.\n\nUse Call Credits to speak with them directly.',
                 style: TextStyle(
@@ -698,9 +710,9 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               _buildPrimaryButton(
-                label: 'Go Back',
+                label: tr('Go Back'),
                 onPressed: () => Get.back(),
               ),
             ],
@@ -730,19 +742,19 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
             ),
             child: Icon(Icons.business, color: theme.primaryColor, size: 24),
           ),
-          const SizedBox(width: 14),
+          SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   consultant.userDetails.fullName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -751,7 +763,7 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    'Law Firm',
+                    tr('Law Firm'),
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
@@ -963,6 +975,9 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
     int maxLines = 1,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
+    void Function(String)? onChanged,
+    Widget? suffixIcon,
+    Color? accentColor,
   }) {
     final theme = Theme.of(context);
     return TextFormField(
@@ -970,6 +985,7 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
       maxLines: maxLines,
       keyboardType: keyboardType,
       validator: validator,
+      onChanged: onChanged,
       style: const TextStyle(fontSize: 15),
       decoration: InputDecoration(
         hintText: hint,
@@ -977,21 +993,28 @@ class _BookConsultationScreenState extends State<BookConsultationScreen> {
         prefixIcon: icon != null
             ? Icon(icon, size: 20, color: Colors.grey.shade500)
             : null,
+        suffixIcon: suffixIcon,
         filled: true,
         fillColor: Colors.white,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderSide: BorderSide(color: accentColor ?? Colors.grey.shade300),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderSide: BorderSide(
+            color: accentColor ?? Colors.grey.shade300,
+            width: accentColor != null ? 1.5 : 1,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: theme.primaryColor),
+          borderSide: BorderSide(
+            color: accentColor ?? theme.primaryColor,
+            width: accentColor != null ? 1.5 : 1,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),

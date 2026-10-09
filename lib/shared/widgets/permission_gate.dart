@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../services/permission_service.dart';
@@ -71,9 +72,8 @@ class PermissionGate extends StatelessWidget {
                         size: 48,
                         color: AppColors.primaryAmber,
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Feature Locked',
+                      SizedBox(height: 16),
+                      Text(tr('Feature Locked'),
                         style: Theme.of(context).textTheme.titleLarge,
                         textAlign: TextAlign.center,
                       ),
@@ -89,8 +89,8 @@ class PermissionGate extends StatelessWidget {
                             () {
                               Get.toNamed(AppRoutes.subscriptionPlans);
                             },
-                        icon: const Icon(Icons.arrow_upward),
-                        label: const Text('Upgrade Now'),
+                        icon: Icon(Icons.arrow_upward),
+                        label: Text(tr('Upgrade Now')),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
@@ -169,7 +169,7 @@ class PermissionMenuItem extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Upgrade Required'),
+        title: Text(tr('Upgrade Required')),
         content: Text(permissionService.getPermissionDeniedMessage(feature)),
         actions: [
           TextButton(
@@ -181,7 +181,7 @@ class PermissionMenuItem extends StatelessWidget {
               Navigator.pop(context);
               Get.toNamed(AppRoutes.subscriptionPlans);
             },
-            child: const Text('Upgrade'),
+            child: Text(tr('Upgrade')),
           ),
         ],
       ),
@@ -225,8 +225,8 @@ class QuotaIndicator extends StatelessWidget {
 
     if (!hasAccess) {
       return Chip(
-        avatar: showIcon ? const Icon(Icons.lock, size: 16) : null,
-        label: const Text('Not available'),
+        avatar: showIcon ? Icon(Icons.lock, size: 16) : null,
+        label: Text(tr('Not available')),
         backgroundColor: Colors.grey.shade200,
       );
     }
@@ -346,7 +346,7 @@ class SubscriptionStatusBanner extends StatelessWidget {
                 backgroundColor: Colors.red.shade700,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Subscribe'),
+              child: Text(tr('Subscribe')),
             ),
         ],
       ),
@@ -434,7 +434,7 @@ class SubscriptionStatusBanner extends StatelessWidget {
                 backgroundColor: Colors.blue.shade700,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Upgrade'),
+              child: Text(tr('Upgrade')),
             ),
         ],
       ),

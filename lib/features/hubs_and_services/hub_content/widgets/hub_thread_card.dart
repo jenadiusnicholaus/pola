@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../models/hub_content_models.dart';
 import '../controllers/hub_content_controller.dart';
@@ -7,6 +8,9 @@ import 'enhanced_comment_thread.dart';
 import 'mention_text_field.dart';
 import '../../../../utils/navigation_helper.dart';
 import '../../../profile/services/profile_service.dart';
+import '../../../settings/widgets/report_user_dialog.dart';
+// ignore: unused_import
+import '../../../settings/services/account_safety_service.dart';
 
 class HubThreadCard extends StatefulWidget {
   final HubContentItem content;
@@ -171,12 +175,13 @@ class _HubThreadCardState extends State<HubThreadCard> {
 
   Widget _buildThreadHeader(ThemeData theme) {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 14, 8, 10),
       child: Row(
         children: [
           // Avatar
           CircleAvatar(
-            radius: 20,
+            radius: 18,
+            backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
             backgroundImage:
                 widget.content.uploader.avatarUrl?.isNotEmpty == true
                     ? NetworkImage(widget.content.uploader.avatarUrl!)
@@ -186,14 +191,15 @@ class _HubThreadCardState extends State<HubThreadCard> {
                     widget.content.uploader.fullName.isNotEmpty
                         ? widget.content.uploader.fullName[0].toUpperCase()
                         : 'U',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: theme.colorScheme.onPrimary,
-                      fontWeight: FontWeight.bold,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
                     ),
                   )
                 : null,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
 
           // Author Info
           Expanded(
@@ -203,31 +209,24 @@ class _HubThreadCardState extends State<HubThreadCard> {
                 Row(
                   children: [
                     Flexible(
-                      flex: 2,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              widget.content.uploader.fullName,
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                          if (widget.content.uploader.isVerified) ...[
-                            const SizedBox(width: 4),
-                            Icon(
-                              Icons.verified,
-                              size: 14,
-                              color: Colors.green,
-                            ),
-                          ],
-                        ],
+                      child: Text(
+                        widget.content.uploader.fullName,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
                     ),
+                    if (widget.content.uploader.isVerified) ...[
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.verified,
+                        size: 15,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ],
                     const SizedBox(width: 8),
                     _buildContentTypeChip(theme),
                   ],
@@ -236,7 +235,8 @@ class _HubThreadCardState extends State<HubThreadCard> {
                 Text(
                   _formatTimeAgo(widget.content.createdAt),
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                    fontSize: 12,
                   ),
                 ),
               ],
@@ -245,7 +245,8 @@ class _HubThreadCardState extends State<HubThreadCard> {
 
           // More options
           IconButton(
-            icon: const Icon(Icons.more_vert),
+            icon: Icon(Icons.more_vert,
+                size: 20, color: theme.colorScheme.onSurface.withOpacity(0.5)),
             onPressed: () => _showContentOptions(),
           ),
         ],
@@ -257,24 +258,24 @@ class _HubThreadCardState extends State<HubThreadCard> {
     final config = ContentTypeConfig.getByKey(widget.content.contentType);
     final displayText =
         config?.displayName ?? widget.content.contentType.toUpperCase();
+    final color = config?.backgroundColor ?? theme.colorScheme.primary;
 
-    return Flexible(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: config?.backgroundColor ?? theme.colorScheme.primaryContainer,
-          borderRadius: BorderRadius.circular(6),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        displayText,
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+          fontSize: 10,
+          letterSpacing: 0.3,
         ),
-        child: Text(
-          displayText,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: config?.textColor ?? theme.colorScheme.onPrimaryContainer,
-            fontWeight: FontWeight.w500,
-            fontSize: 10,
-          ),
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
-        ),
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
       ),
     );
   }
@@ -308,89 +309,115 @@ class _HubThreadCardState extends State<HubThreadCard> {
 
   Widget _buildThreadActions(BuildContext context, ThemeData theme) {
     return Padding(
-      padding: const EdgeInsets.all(16),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Obx(() {
-          // Always read the latest item from reactive lists so like/bookmark update live
-          HubContentItem current = widget.content;
-          final lists = [
-            widget.controller.content.value,
-            widget.controller.trendingContent.value,
-            widget.controller.recentContent.value,
-            widget.controller.filteredContent.value,
-            widget.controller.searchResults.value,
-            widget.controller.bookmarkedContent.value,
-          ];
-          for (final list in lists) {
-            final index =
-                list.indexWhere((item) => item.id == widget.content.id);
-            if (index != -1) {
-              current = list[index];
-              break;
-            }
-          }
-
-          return Row(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+      child: Column(
+        children: [
+          Divider(
+            height: 1,
+            color: theme.colorScheme.outline.withOpacity(0.08),
+          ),
+          const SizedBox(height: 10),
+          Row(
             children: [
               // Like button
-              _buildActionButton(
-                icon: current.isLiked ? Icons.favorite : Icons.favorite_border,
-                label: '${current.likesCount}',
-                isActive: current.isLiked,
-                onTap: () => widget.controller.toggleLike(current),
-                theme: theme,
-              ),
+              Obx(() {
+                final current = _getCurrentContent();
+                return _buildActionButton(
+                  icon:
+                      current.isLiked ? Icons.favorite : Icons.favorite_border,
+                  label: '${current.likesCount}',
+                  isActive: current.isLiked,
+                  onTap: () => widget.controller.toggleLike(current),
+                  theme: theme,
+                );
+              }),
 
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
 
               // Comments button
-              _buildActionButton(
-                icon: Icons.comment_outlined,
-                label: '${current.commentsCount}',
-                isActive: false,
-                onTap: () => _showTikTokCommentsModal(context),
-                theme: theme,
-              ),
+              Obx(() {
+                final current = _getCurrentContent();
+                return _buildActionButton(
+                  icon: Icons.comment_outlined,
+                  label: '${current.commentsCount}',
+                  isActive: false,
+                  onTap: () => _showTikTokCommentsModal(context),
+                  theme: theme,
+                );
+              }),
 
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
 
               // Bookmark button
-              _buildActionButton(
-                icon: current.isBookmarked
-                    ? Icons.bookmark
-                    : Icons.bookmark_outline,
-                label: '${current.bookmarksCount}',
-                isActive: current.isBookmarked,
-                onTap: () => widget.controller.toggleBookmark(current),
-                theme: theme,
-              ),
+              Obx(() {
+                final current = _getCurrentContent();
+                return _buildActionButton(
+                  icon: current.isBookmarked
+                      ? Icons.bookmark
+                      : Icons.bookmark_outline,
+                  label: '${current.bookmarksCount}',
+                  isActive: current.isBookmarked,
+                  onTap: () => widget.controller.toggleBookmark(current),
+                  theme: theme,
+                );
+              }),
 
-              const SizedBox(width: 16),
+              const Spacer(),
 
               // Views count
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.visibility_outlined,
-                    size: 16,
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${current.viewsCount}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+              Obx(() {
+                final current = _getCurrentContent();
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.visibility_outlined,
+                      size: 16,
+                      color: theme.colorScheme.onSurface.withOpacity(0.4),
                     ),
-                  ),
-                ],
-              ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${current.viewsCount}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: theme.colorScheme.onSurface.withOpacity(0.4),
+                      ),
+                    ),
+                  ],
+                );
+              }),
             ],
-          );
-        }),
+          ),
+        ],
       ),
     );
+  }
+
+  HubContentItem _getCurrentContent() {
+    HubContentItem current = widget.content;
+    // ignore: invalid_use_of_protected_member
+    final lists = [
+      // ignore: invalid_use_of_protected_member
+      widget.controller.content.value,
+      // ignore: invalid_use_of_protected_member
+      widget.controller.trendingContent.value,
+      // ignore: invalid_use_of_protected_member
+      widget.controller.recentContent.value,
+      // ignore: invalid_use_of_protected_member
+      widget.controller.filteredContent.value,
+      // ignore: invalid_use_of_protected_member
+      widget.controller.searchResults.value,
+      // ignore: invalid_use_of_protected_member
+      widget.controller.bookmarkedContent.value,
+    ];
+    for (final list in lists) {
+      final index = list.indexWhere((item) => item.id == widget.content.id);
+      if (index != -1) {
+        return list[index];
+      }
+    }
+    return current;
   }
 
   Widget _buildActionButton({
@@ -401,7 +428,6 @@ class _HubThreadCardState extends State<HubThreadCard> {
     bool isActive = false,
     Color? activeColor,
   }) {
-    // Use specific colors for different icon types when active
     final Color effectiveActiveColor =
         activeColor ?? _getActiveColorForIcon(icon, theme);
 
@@ -409,25 +435,26 @@ class _HubThreadCardState extends State<HubThreadCard> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
-              size: 20,
+              size: 18,
               color: isActive
                   ? effectiveActiveColor
-                  : theme.colorScheme.onSurface.withOpacity(0.7),
+                  : theme.colorScheme.onSurface.withOpacity(0.5),
             ),
             const SizedBox(width: 4),
             Text(
               label,
               style: theme.textTheme.bodySmall?.copyWith(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
                 color: isActive
                     ? effectiveActiveColor
-                    : theme.colorScheme.onSurface.withOpacity(0.7),
-                fontWeight: isActive ? FontWeight.w600 : null,
+                    : theme.colorScheme.onSurface.withOpacity(0.5),
               ),
             ),
           ],
@@ -907,10 +934,8 @@ class _HubThreadCardState extends State<HubThreadCard> {
                               mentionedUserIds = userIds;
                             },
                             onSearchMentions: (query) async {
-                              debugPrint('🔍 Searching for: "$query"');
                               final results = await widget.controller
                                   .searchUsersForMentions(query);
-                              debugPrint('🔍 Found ${results.length} users');
                               return results
                                   .map((user) =>
                                       MentionSuggestion.fromJson(user))
@@ -1027,7 +1052,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
             ],
           ),
 
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
 
           // Comment content
           Expanded(
@@ -1048,14 +1073,14 @@ class _HubThreadCardState extends State<HubThreadCard> {
                       ),
                     ),
                     if (comment.author.isVerified) ...[
-                      const SizedBox(width: 4),
-                      const Icon(
+                      SizedBox(width: 4),
+                      Icon(
                         Icons.verified,
                         size: 14,
-                        color: Colors.green,
+                        color: theme.colorScheme.primary,
                       ),
                     ],
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Text(
                       _formatTimeAgo(comment.createdAt),
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -1063,7 +1088,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
                         fontSize: 12,
                       ),
                     ),
-                    const Spacer(),
+                    Spacer(),
                     PopupMenuButton<String>(
                       icon: Icon(
                         Icons.more_horiz,
@@ -1071,10 +1096,10 @@ class _HubThreadCardState extends State<HubThreadCard> {
                         color: theme.colorScheme.onSurface.withOpacity(0.5),
                       ),
                       itemBuilder: (context) => [
-                        const PopupMenuItem(
-                            value: 'reply', child: Text('Reply')),
-                        const PopupMenuItem(
-                            value: 'report', child: Text('Report')),
+                        PopupMenuItem(
+                            value: 'reply', child: Text(tr('Reply'))),
+                        PopupMenuItem(
+                            value: 'report', child: Text(tr('Report'))),
                       ],
                       onSelected: (value) =>
                           _handleCommentAction(value, comment),
@@ -1082,7 +1107,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
                   ],
                 ),
 
-                const SizedBox(height: 6),
+                SizedBox(height: 6),
 
                 // Comment text bubble
                 Container(
@@ -1117,7 +1142,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
                         ),
                 ),
 
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
 
                 // Action buttons
                 Row(
@@ -1134,12 +1159,12 @@ class _HubThreadCardState extends State<HubThreadCard> {
                           .toggleCommentLike(comment.id, widget.content.id),
                       theme: theme,
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: 16),
                     // Allow replies up to depth 1 (comment → reply → reply-to-reply, then stop)
                     if (comment.depth < 2)
                       _buildCommentActionButton(
                         icon: Icons.reply_outlined,
-                        label: 'Reply',
+                        label: tr('Reply'),
                         onTap: () => _showReplyDialog(comment),
                         theme: theme,
                       ),
@@ -1628,8 +1653,19 @@ class _HubThreadCardState extends State<HubThreadCard> {
             ),
             ListTile(
               leading: const Icon(Icons.report_outlined),
-              title: const Text('Report'),
-              onTap: () => Get.back(),
+              title: const Text('Report Content'),
+              onTap: () {
+                Get.back();
+                _showReportContentDialog();
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.block),
+              title: Text(tr('Block User')),
+              onTap: () {
+                Get.back();
+                _showBlockUploaderDialog();
+              },
             ),
           ],
         ),
@@ -1641,16 +1677,60 @@ class _HubThreadCardState extends State<HubThreadCard> {
     );
   }
 
+  void _showReportContentDialog() async {
+    final content = widget.content;
+    final reported = await showReportContentDialog(
+      Get.context!,
+      contentType: content.contentType,
+      contentId: content.id.toString(),
+      contentTitle: content.title.isNotEmpty ? content.title : 'this post',
+    );
+    if (reported) {
+      NavigationHelper.showSafeSnackbar(
+        title: tr('Report Submitted'),
+        message: 'Thank you. We will review this content.',
+      );
+    }
+  }
+
+  void _showBlockUploaderDialog() async {
+    final uploader = widget.content.uploader;
+    final blocked = await showBlockUserDialog(
+      Get.context!,
+      userId: uploader.id,
+      userName: uploader.fullName.isNotEmpty ? uploader.fullName : 'user',
+    );
+    if (blocked) {
+      NavigationHelper.showSafeSnackbar(
+        title: tr('User Blocked'),
+        message: '${uploader.fullName} has been blocked.',
+      );
+    }
+  }
+
+  void _showReportCommentDialog(HubComment comment) async {
+    final reported = await showReportContentDialog(
+      Get.context!,
+      contentType: 'comment',
+      contentId: comment.id.toString(),
+      contentTitle: 'comment by ${comment.author.fullName}',
+    );
+    if (reported) {
+      NavigationHelper.showSafeSnackbar(
+        title: tr('Report Submitted'),
+        message: 'Thank you. We will review this comment.',
+      );
+    }
+  }
+
   void _handleCommentAction(String action, HubComment comment) {
     switch (action) {
       case 'reply':
         _showReplyDialog(comment);
         break;
       case 'report':
-        NavigationHelper.showSafeSnackbar(
-          title: 'Report',
-          message: 'Comment reported',
-        );
+        Get.back();
+        _showReportCommentDialog(comment);
         break;
     }
   }
@@ -1664,7 +1744,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
     Get.bottomSheet(
       Container(
         height: Get.height * 0.85,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Colors.transparent,
         ),
         child: DraggableScrollableSheet(
@@ -1712,7 +1792,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
                         color: Theme.of(Get.context!).colorScheme.primary,
                         size: 24,
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           'Reply to Comment',
@@ -1760,7 +1840,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
                                     Theme.of(Get.context!).colorScheme.primary,
                               ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
@@ -1800,7 +1880,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
+                                  SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
                                       parentComment.author.fullName,
@@ -1814,7 +1894,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 8),
+                              SizedBox(height: 8),
                               RichText(
                                 text: MentionParser.buildMentionTextSpan(
                                   text: parentComment.comment,
@@ -1837,11 +1917,10 @@ class _HubThreadCardState extends State<HubThreadCard> {
                           ),
                         ),
 
-                        const SizedBox(height: 20),
+                        SizedBox(height: 20),
 
                         // Reply Input
-                        Text(
-                          'Your Reply:',
+                        Text(tr('Your Reply:'),
                           style: Theme.of(Get.context!)
                               .textTheme
                               .labelMedium
@@ -1976,7 +2055,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
                                             );
                                             Get.back();
                                             NavigationHelper.showSafeSnackbar(
-                                              title: 'Success',
+                                              title: tr('Success'),
                                               message:
                                                   'Your reply has been posted!',
                                               backgroundColor:
@@ -1995,7 +2074,7 @@ class _HubThreadCardState extends State<HubThreadCard> {
                                             );
                                           } catch (e) {
                                             NavigationHelper.showSafeSnackbar(
-                                              title: 'Error',
+                                              title: tr('Error'),
                                               message:
                                                   'Failed to post reply. Please try again.',
                                               backgroundColor:
@@ -2233,66 +2312,120 @@ class _HubThreadCardState extends State<HubThreadCard> {
   /// Instagram-style content with title, description and read more
   Widget _buildInstagramContent(ThemeData theme) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title with modern Instagram typography
-          Text(
-            widget.content.title,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-              fontSize: 19,
-              height: 1.3,
-              letterSpacing: -0.3,
+          // Title
+          if (widget.content.title.isNotEmpty)
+            Text(
+              widget.content.title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                height: 1.3,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 10),
 
           // Description with read more functionality
-          _buildExpandableDescription(theme),
+          if (widget.content.content.isNotEmpty ||
+              widget.content.description.isNotEmpty) ...[
+            SizedBox(height: 6),
+            _buildExpandableDescription(theme),
+          ],
 
           // Non-image attachments (PDFs, etc.)
           if (widget.content.fileUrl.isNotEmpty && !widget.content.isImage) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color:
                     theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: theme.colorScheme.outline.withOpacity(0.3),
+                  color: theme.colorScheme.outline.withOpacity(0.15),
                 ),
               ),
               child: Row(
                 children: [
-                  Icon(
-                    widget.content.isPdf
-                        ? Icons.picture_as_pdf
-                        : Icons.attach_file,
-                    size: 20,
-                    color: theme.colorScheme.primary,
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: (widget.content.isPdf
+                              ? Colors.red
+                              : theme.colorScheme.primary)
+                          .withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      widget.content.isPdf
+                          ? Icons.picture_as_pdf_outlined
+                          : Icons.attach_file,
+                      size: 18,
+                      color: widget.content.isPdf
+                          ? Colors.red.shade700
+                          : theme.colorScheme.primary,
+                    ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       widget.content.isPdf ? 'PDF Document' : 'Attachment',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.primary,
+                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
                       ),
                     ),
                   ),
                   TextButton(
                     onPressed: () => widget.onContentTap(widget.content),
-                    child: const Text('View'),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      minimumSize: Size(0, 32),
+                    ),
+                    child: Text(tr('View'),
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
           ],
+
+          // Subtle view details button
+          SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: GestureDetector(
+              onTap: () => widget.onContentTap(widget.content),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(tr('View details'),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 14,
+                    color: theme.colorScheme.primary,
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -2303,9 +2436,10 @@ class _HubThreadCardState extends State<HubThreadCard> {
     const maxLines = 3;
     const maxChars = 140;
 
-    final description = widget.content.content.isNotEmpty
+    final rawDescription = widget.content.content.isNotEmpty
         ? widget.content.content
         : widget.content.description;
+    final description = rawDescription.trim();
     final isLong = description.length > maxChars;
 
     return Column(
@@ -2314,9 +2448,9 @@ class _HubThreadCardState extends State<HubThreadCard> {
         Text(
           description,
           style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.85),
+            color: theme.colorScheme.onSurface.withOpacity(0.7),
             height: 1.45,
-            fontSize: 15,
+            fontSize: 14,
           ),
           maxLines: _isDescriptionExpanded ? null : maxLines,
           overflow: _isDescriptionExpanded
@@ -2324,16 +2458,16 @@ class _HubThreadCardState extends State<HubThreadCard> {
               : TextOverflow.ellipsis,
         ),
         if (isLong) ...[
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           GestureDetector(
             onTap: () => setState(
                 () => _isDescriptionExpanded = !_isDescriptionExpanded),
             child: Text(
-              _isDescriptionExpanded ? 'Show less' : 'more',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-                fontWeight: FontWeight.w500,
-                fontSize: 15,
+              _isDescriptionExpanded ? 'Show less' : 'View more',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
               ),
             ),
           ),

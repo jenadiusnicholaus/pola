@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../utils/navigation_helper.dart';
 import '../services/document_payment_service.dart';
 import '../../../constants/payment_constants.dart';
+import '../../../shared/widgets/intl_phone_input.dart';
 import 'dart:async';
 
 class DocumentPurchaseDialog extends StatefulWidget {
@@ -29,6 +31,8 @@ class DocumentPurchaseDialog extends StatefulWidget {
 class _DocumentPurchaseDialogState extends State<DocumentPurchaseDialog> {
   final DocumentPaymentService _paymentService = DocumentPaymentService();
   final _phoneController = TextEditingController();
+
+  String _completePhone = '';
 
   String _selectedProvider = PaymentProvider.defaultProvider;
   String _paymentStatus = 'idle'; // idle, pending, completed, failed
@@ -57,11 +61,13 @@ class _DocumentPurchaseDialogState extends State<DocumentPurchaseDialog> {
   }
 
   Future<void> _initiatePayment() async {
-    final phone = _phoneController.text.trim();
+    final phone = _completePhone.isNotEmpty
+        ? _completePhone
+        : _phoneController.text.trim();
 
     if (phone.isEmpty) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Please enter your phone number',
       );
       return;
@@ -70,7 +76,7 @@ class _DocumentPurchaseDialogState extends State<DocumentPurchaseDialog> {
     final formattedPhone = _formatPhoneNumber(phone);
     if (!_validatePhoneNumber(formattedPhone)) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Invalid phone number format',
       );
       return;
@@ -165,7 +171,7 @@ class _DocumentPurchaseDialogState extends State<DocumentPurchaseDialog> {
           _paymentStatus = 'failed';
         });
         NavigationHelper.showSafeSnackbar(
-          title: 'Error',
+          title: tr('Error'),
           message: result['message'] ?? 'Payment failed',
         );
       }
@@ -176,7 +182,7 @@ class _DocumentPurchaseDialogState extends State<DocumentPurchaseDialog> {
         _paymentStatus = 'failed';
       });
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Failed to initiate payment: $e',
       );
     }
@@ -191,7 +197,7 @@ class _DocumentPurchaseDialogState extends State<DocumentPurchaseDialog> {
           _paymentStatus = 'failed';
         });
         NavigationHelper.showSafeSnackbar(
-          title: 'Timeout',
+          title: tr('Timeout'),
           message: 'Payment verification timed out',
         );
         return;
@@ -291,11 +297,11 @@ class _DocumentPurchaseDialogState extends State<DocumentPurchaseDialog> {
               ),
               IconButton(
                 onPressed: () => Get.back(),
-                icon: const Icon(Icons.close),
+                icon: Icon(Icons.close),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
 
           // Document Info
           Container(
@@ -315,12 +321,12 @@ class _DocumentPurchaseDialogState extends State<DocumentPurchaseDialog> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Price:',
+                      tr('Price:'),
                       style: theme.textTheme.bodyLarge,
                     ),
                     Text(
@@ -431,7 +437,7 @@ class _DocumentPurchaseDialogState extends State<DocumentPurchaseDialog> {
             );
           }),
 
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
 
           // Phone Number
           Text(
@@ -440,22 +446,14 @@ class _DocumentPurchaseDialogState extends State<DocumentPurchaseDialog> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _phoneController,
-            keyboardType: TextInputType.phone,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(12),
-            ],
-            decoration: InputDecoration(
-              hintText: '0712345678',
-              prefixText: '+255 ',
-              prefixIcon: const Icon(Icons.phone),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
+          SizedBox(height: 8),
+          IntlPhoneInput(
+            hintText: tr('712 345 678'),
+            prefixIcon: const Icon(Icons.phone),
+            borderRadius: 8,
+            invalidNumberMessage:
+                'Enter a valid phone number for the selected country',
+            onChanged: (complete) => _completePhone = complete,
           ),
 
           const SizedBox(height: 24),
@@ -539,15 +537,15 @@ class _DocumentPurchaseDialogState extends State<DocumentPurchaseDialog> {
               color: Colors.green.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.check_circle,
               size: 48,
               color: Colors.green,
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           Text(
-            'Purchase Complete!',
+            tr('Purchase Complete!'),
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: Colors.green,

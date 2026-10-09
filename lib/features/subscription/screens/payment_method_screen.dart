@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../models/subscription_models.dart';
 import '../services/subscription_service.dart';
 import 'payment_status_screen.dart';
 import '../../../utils/navigation_helper.dart';
+import '../../../shared/widgets/intl_phone_input.dart';
 
 class PaymentMethodScreen extends StatefulWidget {
   final SubscriptionPlan plan;
@@ -20,6 +22,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
   String? selectedProvider;
   bool isProcessing = false;
 
+  String _completePhone = '';
+
   @override
   void dispose() {
     _phoneController.dispose();
@@ -32,7 +36,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Payment Method'),
+        title: Text('Payment Method'),
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -55,12 +59,12 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.workspace_premium,
                             color: Colors.amber,
                             size: 28,
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12),
                           Text(
                             'Selected Plan',
                             style: TextStyle(
@@ -71,7 +75,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       Text(
                         widget.plan.name,
                         style: TextStyle(
@@ -80,7 +84,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                           color: theme.colorScheme.primary,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text(
                         widget.plan.nameSwahili,
                         style: TextStyle(
@@ -88,7 +92,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                           color: theme.colorScheme.onSurface.withOpacity(0.7),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
@@ -98,7 +102,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
+                            Text(
                               'Total Amount:',
                               style: TextStyle(
                                 fontSize: 16,
@@ -121,7 +125,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // Payment method selection
               Text(
@@ -132,7 +136,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   color: theme.colorScheme.onSurface,
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Text(
                 'Choose your preferred mobile money service',
                 style: TextStyle(
@@ -140,7 +144,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   color: theme.colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               ...PaymentMethod.availableMethods.map(
                 (method) => Container(
@@ -183,7 +187,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // Phone number input
               Text(
@@ -194,53 +198,28 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   color: theme.colorScheme.onSurface,
                 ),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _phoneController,
-                decoration: InputDecoration(
-                  labelText: 'Mobile Money Number',
-                  hintText: '+255 XXX XXX XXX or 07XX XXX XXX',
-                  prefixIcon: const Icon(Icons.phone),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  filled: true,
-                  fillColor: theme.brightness == Brightness.dark
-                      ? Colors.grey.shade800
-                      : Colors.grey.shade50,
-                ),
-                keyboardType: TextInputType.phone,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
+              SizedBox(height: 12),
+              IntlPhoneInput(
+                labelText: 'Mobile Money Number',
+                hintText: tr('712 345 678'),
+                prefixIcon: const Icon(Icons.phone),
+                borderRadius: 12,
+                filled: true,
+                fillColor: theme.brightness == Brightness.dark
+                    ? Colors.grey.shade800
+                    : Colors.grey.shade50,
+                invalidNumberMessage:
+                    'Enter a valid phone number for the selected country',
+                validator: (phone) {
+                  if (phone == null || phone.number.trim().isEmpty) {
                     return 'Phone number is required';
-                  }
-                  // Remove spaces and check format
-                  final cleaned = value.replaceAll(' ', '');
-                  if (!cleaned.startsWith('+255') && !cleaned.startsWith('0')) {
-                    return 'Enter a valid Tanzanian phone number';
-                  }
-                  if (cleaned.startsWith('0') && cleaned.length != 10) {
-                    return 'Phone number must be 10 digits (07XX XXX XXX)';
-                  }
-                  if (cleaned.startsWith('+255') && cleaned.length != 13) {
-                    return 'Phone number must be 13 digits (+255 XXX XXX XXX)';
                   }
                   return null;
                 },
+                onChanged: (complete) => _completePhone = complete,
               ),
 
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
 
               // Info box
               Container(
@@ -253,7 +232,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                 child: Row(
                   children: [
                     Icon(Icons.info_outline, color: Colors.blue.shade700),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         'You will receive a USSD prompt on your phone to complete the payment',
@@ -267,7 +246,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                 ),
               ),
 
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
               // Subscribe button
               SizedBox(
@@ -282,7 +261,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                     elevation: 2,
                   ),
                   child: isProcessing
-                      ? const SizedBox(
+                      ? SizedBox(
                           height: 24,
                           width: 24,
                           child: CircularProgressIndicator(
@@ -290,8 +269,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                             strokeWidth: 2,
                           ),
                         )
-                      : const Text(
-                          'Pay Now',
+                      : Text(
+                          tr('Pay Now'),
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -350,7 +329,9 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       final subscriptionService = Get.find<SubscriptionService>();
       final result = await subscriptionService.subscribe(
         planId: widget.plan.id,
-        phoneNumber: _phoneController.text.trim(),
+        phoneNumber: _completePhone.isNotEmpty
+            ? _completePhone
+            : _phoneController.text.trim(),
         paymentMethod: selectedProvider!,
       );
 
@@ -371,20 +352,26 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       setState(() => isProcessing = false);
 
       debugPrint('Payment error: $e');
-      
+
       // Extract meaningful error message
-      String errorMessage = 'An error occurred while processing your payment. Please try again.';
-      if (e.toString().contains('timeout') || e.toString().contains('receiveTimeout')) {
-        errorMessage = 'The server took too long to respond. Please check your internet connection and try again.';
-      } else if (e.toString().contains('connectionTimeout') || e.toString().contains('No route to host')) {
-        errorMessage = 'Unable to connect to the server. Please check your internet connection.';
+      String errorMessage =
+          'An error occurred while processing your payment. Please try again.';
+      if (e.toString().contains('timeout') ||
+          e.toString().contains('receiveTimeout')) {
+        errorMessage =
+            'The server took too long to respond. Please check your internet connection and try again.';
+      } else if (e.toString().contains('connectionTimeout') ||
+          e.toString().contains('No route to host')) {
+        errorMessage =
+            'Unable to connect to the server. Please check your internet connection.';
       }
-      
+
       _showErrorDialog('Payment Error', errorMessage);
     }
   }
 
-  void _showErrorDialog(String title, String message, {bool isWarning = false}) {
+  void _showErrorDialog(String title, String message,
+      {bool isWarning = false}) {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -394,11 +381,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
               isWarning ? Icons.warning_amber : Icons.error_outline,
               color: isWarning ? Colors.orange : Colors.red,
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -407,7 +394,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         actions: [
           TextButton(
             onPressed: () => NavigationHelper.closeDialog(),
-            child: const Text('OK'),
+            child: Text(tr('OK')),
           ),
         ],
       ),

@@ -55,13 +55,26 @@ class HubContentService extends GetxService {
       if (response.statusCode == 200) {
         return HubContentResponse.fromJson(response.data!);
       } else if (response.statusCode == 401) {
-        throw Exception('Authentication required');
+        throw Exception('Please sign in to view this hub');
+      } else if (response.statusCode == 403) {
+        throw Exception('You do not have access to this hub');
       } else {
         throw Exception('Failed to fetch content: ${response.statusCode}');
       }
+    } on dio.DioException catch (e) {
+      final status = e.response?.statusCode;
+      print('Error fetching hub content (status $status): $e');
+      if (status == 401) {
+        throw Exception('Please sign in to view this hub');
+      }
+      if (status == 403) {
+        throw Exception('You do not have access to this hub');
+      }
+      throw Exception(
+          'Network error${status != null ? ' ($status)' : ''}: ${e.message}');
     } catch (e) {
       print('Error fetching hub content: $e');
-      throw Exception('Network error: $e');
+      rethrow;
     }
   }
 
@@ -828,4 +841,3 @@ class UpdateContentRequest {
     };
   }
 }
-

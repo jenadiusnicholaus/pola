@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../controllers/question_controller.dart';
@@ -28,7 +29,7 @@ class QuestionDetailScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Question Details'),
+        title: Text('Question Details'),
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
       ),
@@ -53,7 +54,7 @@ class QuestionDetailScreen extends StatelessWidget {
                     color: theme.colorScheme.primary,
                     size: 32,
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,7 +68,7 @@ class QuestionDetailScreen extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         if (question.material!.description != null) ...[
-                          const SizedBox(height: 4),
+                          SizedBox(height: 4),
                           Text(
                             question.material!.description!,
                             style: theme.textTheme.bodySmall?.copyWith(
@@ -84,7 +85,7 @@ class QuestionDetailScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
           ],
 
           // Question section
@@ -93,7 +94,7 @@ class QuestionDetailScreen extends StatelessWidget {
             '🙋 Your Question:',
             question.status,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           Container(
             padding: const EdgeInsets.all(16),
@@ -111,7 +112,7 @@ class QuestionDetailScreen extends StatelessWidget {
                   question.questionText,
                   style: theme.textTheme.bodyLarge,
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Row(
                   children: [
                     CircleAvatar(
@@ -125,20 +126,19 @@ class QuestionDetailScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'You',
+                    SizedBox(width: 8),
+                    Text(tr('You'),
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Icon(
                       Icons.access_time,
                       size: 14,
                       color: theme.colorScheme.onSurface.withOpacity(0.6),
                     ),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4),
                     Text(
                       DateFormat('MMM d, y \'at\' h:mm a')
                           .format(question.createdAt),
@@ -152,7 +152,7 @@ class QuestionDetailScreen extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
 
           // Answer section
           if (question.hasAnswer) ...[
@@ -161,7 +161,7 @@ class QuestionDetailScreen extends StatelessWidget {
               '✅ Answer from Admin:',
               null,
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -178,7 +178,7 @@ class QuestionDetailScreen extends StatelessWidget {
                     question.answerText,
                     style: theme.textTheme.bodyLarge,
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Row(
                     children: [
                       CircleAvatar(
@@ -190,20 +190,20 @@ class QuestionDetailScreen extends StatelessWidget {
                           color: theme.colorScheme.onPrimary,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Text(
                         question.answeredBy?.fullName ?? 'Admin',
                         style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Icon(
                         Icons.access_time,
                         size: 14,
                         color: theme.colorScheme.onSurface.withOpacity(0.6),
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4),
                       Text(
                         DateFormat('MMM d, y \'at\' h:mm a')
                             .format(question.answeredAt!),
@@ -213,13 +213,12 @@ class QuestionDetailScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
 
                   // Helpful button
                   Row(
                     children: [
-                      Text(
-                        'Was this helpful?',
+                      Text(tr('Was this helpful?'),
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),

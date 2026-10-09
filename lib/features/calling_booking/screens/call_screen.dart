@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../controllers/call_controller.dart';
 import '../models/consultant_models.dart';
@@ -366,7 +367,7 @@ class _CallScreenState extends State<CallScreen> {
                     icon: controller!.isSpeakerOn.value
                         ? Icons.volume_up_rounded
                         : Icons.volume_down_rounded,
-                    label: 'Speaker',
+                    label: tr('Speaker'),
                     enabled: connected,
                     active: controller!.isSpeakerOn.value,
                     activeColor: _kAccent.withValues(alpha: 0.25),
@@ -436,8 +437,7 @@ class _CallScreenState extends State<CallScreen> {
                       Get.back();
                       Get.to(() => const BuyCreditsScreen());
                     },
-                    child: const Text(
-                      'Buy Credits',
+                    child: Text(tr('Buy Credits'),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -445,12 +445,11 @@ class _CallScreenState extends State<CallScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
               ],
               TextButton(
                 onPressed: () => Get.back(),
-                child: const Text(
-                  'Go Back',
+                child: Text(tr('Go Back'),
                   style: TextStyle(color: _kAccent, fontSize: 16),
                 ),
               ),
@@ -659,7 +658,7 @@ class _ErrorScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1B2B34),
+      backgroundColor: Color(0xFF1B2B34),
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -667,19 +666,18 @@ class _ErrorScaffold extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline,
+                Icon(Icons.error_outline,
                     size: 64, color: Colors.redAccent),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Text(
                   message.isNotEmpty ? message : 'Failed to load call',
-                  style: const TextStyle(fontSize: 16, color: Colors.white70),
+                  style: TextStyle(fontSize: 16, color: Colors.white70),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 TextButton(
                   onPressed: () => Get.back(),
-                  child: const Text(
-                    'Go Back',
+                  child: Text(tr('Go Back'),
                     style: TextStyle(color: Color(0xFF2ECC71), fontSize: 16),
                   ),
                 ),

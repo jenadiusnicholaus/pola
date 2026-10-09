@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../controllers/template_controller.dart';
 import '../models/template_model.dart';
@@ -14,7 +15,7 @@ class TemplatesListScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Legal Templates'),
+        title: Text(tr('Legal Templates')),
         elevation: 0,
         actions: [
           IconButton(
@@ -36,17 +37,17 @@ class TemplatesListScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
+                Icon(
                   Icons.error_outline,
                   size: 64,
                   color: Colors.red,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Text(
-                  'Failed to load templates',
+                  tr('Failed to load templates'),
                   style: theme.textTheme.titleLarge,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 32),
                   child: Text(
@@ -57,11 +58,11 @@ class TemplatesListScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 ElevatedButton.icon(
                   onPressed: controller.fetchTemplates,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Retry'),
+                  icon: Icon(Icons.refresh),
+                  label: Text(tr('Retry')),
                 ),
               ],
             ),
@@ -78,9 +79,9 @@ class TemplatesListScreen extends StatelessWidget {
                   size: 64,
                   color: theme.colorScheme.onSurface.withOpacity(0.3),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Text(
-                  'No templates available',
+                  tr('No templates available'),
                   style: theme.textTheme.titleLarge,
                 ),
               ],
@@ -156,9 +157,9 @@ class _TemplateCard extends StatelessWidget {
                     // Icon
                     Text(
                       template.getCategoryIcon(),
-                      style: const TextStyle(fontSize: 28),
+                      style: TextStyle(fontSize: 28),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     // Content
                     Expanded(
                       child: Column(
@@ -174,7 +175,7 @@ class _TemplateCard extends StatelessWidget {
                               letterSpacing: 0.1,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: 4),
                           // Swahili name
                           Text(
                             template.nameSw,
@@ -185,7 +186,7 @@ class _TemplateCard extends StatelessWidget {
                                   theme.colorScheme.onSurface.withOpacity(0.6),
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8),
                           // Description
                           Text(
                             template.description,
@@ -201,7 +202,7 @@ class _TemplateCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     // Arrow
                     Icon(
                       Icons.arrow_forward_ios_rounded,
@@ -210,7 +211,7 @@ class _TemplateCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 // Footer with category and stats
                 Row(
                   children: [
@@ -224,14 +225,14 @@ class _TemplateCard extends StatelessWidget {
                         letterSpacing: 0.2,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     // Usage count
                     Icon(
                       Icons.people_outline,
                       size: 13,
                       color: theme.colorScheme.onSurface.withOpacity(0.4),
                     ),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4),
                     Text(
                       '${template.usageCount}',
                       style: TextStyle(
@@ -239,11 +240,11 @@ class _TemplateCard extends StatelessWidget {
                         color: theme.colorScheme.onSurface.withOpacity(0.5),
                       ),
                     ),
-                    const Spacer(),
+                    Spacer(),
                     // Price badge - subtle
                     if (template.isFree)
                       Text(
-                        'FREE',
+                        tr('FREE'),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -253,7 +254,8 @@ class _TemplateCard extends StatelessWidget {
                       )
                     else
                       Text(
-                        'TZS ${template.price}',
+                        tr('TZS {price}')
+                            .replaceAll('{price}', '${template.price}'),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,

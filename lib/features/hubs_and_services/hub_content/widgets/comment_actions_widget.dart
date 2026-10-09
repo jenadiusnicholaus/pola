@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../../../utils/navigation_helper.dart';
 import '../models/hub_content_models.dart';
@@ -37,18 +38,18 @@ class CommentActionsWidget extends StatelessWidget {
           onTap: () => controller.toggleCommentLike(comment.id, contentId),
           theme: theme,
         ),
-        const SizedBox(width: 16),
+        SizedBox(width: 16),
 
         // Reply button
         if (onReply != null)
           _buildActionButton(
             icon: Icons.reply_outlined,
-            label: 'Reply',
+            label: tr('Reply'),
             onTap: onReply,
             theme: theme,
           ),
 
-        const SizedBox(width: 16),
+        SizedBox(width: 16),
 
         // More actions (Edit/Delete) for comment owner
         if (isCurrentUser) ...[
@@ -65,8 +66,8 @@ class CommentActionsWidget extends StatelessWidget {
                   children: [
                     Icon(Icons.edit,
                         size: 16, color: theme.colorScheme.onSurface),
-                    const SizedBox(width: 8),
-                    Text('Edit', style: theme.textTheme.bodyMedium),
+                    SizedBox(width: 8),
+                    Text(tr('Edit'), style: theme.textTheme.bodyMedium),
                   ],
                 ),
               ),
@@ -76,8 +77,8 @@ class CommentActionsWidget extends StatelessWidget {
                   children: [
                     Icon(Icons.delete,
                         size: 16, color: theme.colorScheme.error),
-                    const SizedBox(width: 8),
-                    Text('Delete',
+                    SizedBox(width: 8),
+                    Text(tr('Delete'),
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.error,
                         )),
@@ -173,7 +174,7 @@ class CommentActionsWidget extends StatelessWidget {
                 );
               }
             },
-            child: const Text('Save'),
+            child: Text(tr('Save')),
           ),
         ],
       ),
@@ -201,7 +202,7 @@ class CommentActionsWidget extends StatelessWidget {
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
-            child: const Text('Delete'),
+            child: Text(tr('Delete')),
           ),
         ],
       ),

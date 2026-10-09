@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../auth/models/lookup_models.dart';
 import '../../auth/services/lookup_service.dart';
@@ -90,7 +91,7 @@ class EditProfileController extends GetxController {
     } catch (e) {
       filteredDistricts.value.clear();
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Failed to load districts. Please try again.',
       );
     }
@@ -167,13 +168,13 @@ class EditProfileController extends GetxController {
 
       await _profileService.updateProfile(updates);
       NavigationHelper.showSafeSnackbar(
-        title: 'Success',
-        message: 'Profile updated successfully',
+        title: tr('Success'),
+        message: tr('Profile updated successfully'),
       );
       return true;
     } catch (e) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: e.toString().replaceFirst('Exception: ', ''),
       );
       return false;

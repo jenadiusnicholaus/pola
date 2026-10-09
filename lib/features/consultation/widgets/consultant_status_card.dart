@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../controllers/consultation_controller.dart';
 import '../models/consultation_models.dart';
@@ -126,7 +127,7 @@ class ConsultantStatusCard extends StatelessWidget {
             Row(
               children: [
                 Icon(Icons.work_outline, color: theme.colorScheme.primary),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Text(
                   'Become a Consultant',
                   style: theme.textTheme.titleMedium?.copyWith(
@@ -136,12 +137,12 @@ class ConsultantStatusCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               'Share your legal expertise and earn by providing consultations to Pola users.',
               style: theme.textTheme.bodyMedium,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -150,7 +151,7 @@ class ConsultantStatusCard extends StatelessWidget {
                   backgroundColor: theme.colorScheme.primary,
                   foregroundColor: theme.colorScheme.onPrimary,
                 ),
-                child: const Text('Apply Now'),
+                child: Text(tr('Apply Now')),
               ),
             ),
           ],

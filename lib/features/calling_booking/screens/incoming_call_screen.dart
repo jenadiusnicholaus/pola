@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -337,11 +338,11 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor: const Color(0xFF1B2B34),
+        backgroundColor: Color(0xFF1B2B34),
         body: SafeArea(
           child: Column(
             children: [
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
 
               // ── Status label ───────────────────────────────────────────
               Row(
@@ -354,10 +355,10 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                     color: Colors.white54,
                     size: 16,
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6),
                   Text(
                     'Connecting...',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       color: Colors.white54,
                       fontWeight: FontWeight.w500,
@@ -367,7 +368,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                 ],
               ),
 
-              const SizedBox(height: 40),
+              SizedBox(height: 40),
 
               // ── Avatar ────────────────────────────────────────────────
               Container(
@@ -375,7 +376,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                 height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF2C3E50),
+                  color: Color(0xFF2C3E50),
                   border: Border.all(color: Colors.white24, width: 2.5),
                   image: widget.callerPhoto.isNotEmpty
                       ? DecorationImage(
@@ -388,7 +389,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                 child: widget.callerPhoto.isEmpty
                     ? Text(
                         _avatarLetter,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 48,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
@@ -397,7 +398,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                     : null,
               ),
 
-              const SizedBox(height: 28),
+              SizedBox(height: 28),
 
               // ── Caller name ───────────────────────────────────────────
               Padding(
@@ -407,7 +408,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
@@ -416,7 +417,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                 ),
               ),
 
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
 
               // ── Status ────────────────────────────────────────────────
               if (_isProcessing)
@@ -424,15 +425,15 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                   _processingAction == 'accept'
                       ? 'Connecting...'
                       : 'Declining...',
-                  style: const TextStyle(fontSize: 15, color: Colors.white60),
+                  style: TextStyle(fontSize: 15, color: Colors.white60),
                 )
               else
-                const CallStatusDots(
+                CallStatusDots(
                   label: 'Connecting',
                   color: Colors.white60,
                 ),
 
-              const Spacer(),
+              Spacer(),
 
               // ── Action buttons ────────────────────────────────────────
               Padding(
@@ -449,7 +450,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                     ),
                     _ActionButton(
                       icon: Icons.phone_rounded,
-                      label: 'Accept',
+                      label: tr('Accept'),
                       color: const Color(0xFF2ECC71),
                       enabled: !_isProcessing,
                       onTap: _acceptCall,

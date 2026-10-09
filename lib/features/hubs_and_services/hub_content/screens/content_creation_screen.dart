@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../../utils/navigation_helper.dart';
@@ -87,8 +88,8 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          tooltip: 'Back',
+          icon: Icon(Icons.arrow_back),
+          tooltip: tr('Back'),
           onPressed: () => NavigationHelper.safeBack(),
         ),
         title: Column(
@@ -96,7 +97,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
           children: [
             Text(
               'Create ${_getHubDisplayName()} Content',
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
             if (UserRoleManager.isAdmin())
               Text(
@@ -104,10 +105,8 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onPrimary
-                      .withOpacity(0.85),
+                  color:
+                      Theme.of(context).colorScheme.onPrimary.withOpacity(0.85),
                 ),
               ),
           ],
@@ -136,12 +135,11 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                   padding: const EdgeInsets.only(right: 8),
                   child: TextButton.icon(
                     onPressed: _submitContent,
-                    icon: const Icon(Icons.publish_rounded, size: 20),
-                    label: const Text('Publish',
+                    icon: Icon(Icons.publish_rounded, size: 20),
+                    label: Text(tr('Publish'),
                         style: TextStyle(fontWeight: FontWeight.bold)),
                     style: TextButton.styleFrom(
-                      foregroundColor:
-                          Theme.of(context).colorScheme.onPrimary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     ),
                   ),
                 )),
@@ -335,14 +333,14 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Select Topic',
+              tr('Select Topic'),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             if (controller.isLoadingTopics.value)
-              const Card(
+              Card(
                 child: Padding(
                   padding: EdgeInsets.all(16.0),
                   child: Row(
@@ -364,7 +362,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     children: [
-                      const Row(
+                      Row(
                         children: [
                           Icon(Icons.info, color: Colors.orange),
                           SizedBox(width: 12),
@@ -373,7 +371,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                                   'No topics available. Create a new one:')),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       _buildNewTopicForm(),
                     ],
                   ),
@@ -393,7 +391,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                     ),
                     child: DropdownButton<Topic>(
                       value: controller.selectedTopic.value,
-                      hint: const Text('Select a topic'),
+                      hint: Text(tr('Select a topic')),
                       isExpanded: true,
                       underline: const SizedBox.shrink(),
                       items: controller.availableTopics.map((Topic topic) {
@@ -428,15 +426,15 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
 
                   // Quick create new topic option
                   Container(
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       onPressed: () => _showCreateTopicDialog(),
-                      icon: const Icon(Icons.add),
-                      label: const Text('Create New Topic'),
+                      icon: Icon(Icons.add),
+                      label: Text(tr('Create New Topic')),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
@@ -452,8 +450,8 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
     return Column(
       children: [
         TextFormField(
-          decoration: const InputDecoration(
-            labelText: 'Topic Name *',
+          decoration: InputDecoration(
+            labelText: tr('Topic Name *'),
             border: OutlineInputBorder(),
             isDense: true,
           ),
@@ -500,13 +498,13 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Create New Topic'),
+        title: Text(tr('Create New Topic')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'Topic Name *',
+              decoration: InputDecoration(
+                labelText: tr('Topic Name *'),
                 border: OutlineInputBorder(),
               ),
               onChanged: (value) => controller.setNewTopicName(value),
@@ -542,11 +540,11 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                         }
                       },
                 child: controller.isLoading.value
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 16,
                         height: 16,
                       )
-                    : const Text('Create'),
+                    : Text(tr('Create')),
               )),
         ],
       ),
@@ -561,7 +559,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
           children: [
             Icon(Icons.edit_note_rounded,
                 size: 20, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(
               'Content Details',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -570,7 +568,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
@@ -582,7 +580,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
               BoxShadow(
                 color: Colors.black.withOpacity(0.03),
                 blurRadius: 10,
-                offset: const Offset(0, 4),
+                offset: Offset(0, 4),
               ),
             ],
           ),
@@ -602,21 +600,21 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                     _buildToolbarButton(
                       onPressed: _showAttachmentOptions,
                       icon: Icons.attach_file_rounded,
-                      tooltip: 'Attach file',
+                      tooltip: tr('Attach file'),
                       color: Theme.of(context).colorScheme.primary,
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     _buildToolbarButton(
                       onPressed: _pickImage,
                       icon: Icons.image_rounded,
-                      tooltip: 'Add image',
+                      tooltip: tr('Add image'),
                       color: Theme.of(context).colorScheme.secondary,
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     _buildToolbarButton(
                       onPressed: _showEmojiPicker,
                       icon: Icons.emoji_emotions_outlined,
-                      tooltip: 'Add emoji',
+                      tooltip: tr('Add emoji'),
                       color: Theme.of(context).colorScheme.tertiary,
                     ),
                     const Spacer(),
@@ -765,7 +763,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
             children: [
               Icon(Icons.monetization_on_rounded,
                   size: 20, color: Theme.of(context).colorScheme.primary),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text(
                 'Monetize Content',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -775,7 +773,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
             'Set a price for users to access this premium content.',
             style: TextStyle(
@@ -783,12 +781,12 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           TextFormField(
             controller: _priceController,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.bold),
             decoration: InputDecoration(
-              labelText: 'Access Price (TZS)',
+              labelText: tr('Access Price (TZS)'),
               hintText: '0 for free content',
               prefixIcon: const Icon(Icons.payments_outlined),
               suffixText: 'TZS',
@@ -836,7 +834,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
         controller: _videoUrlController,
         decoration: InputDecoration(
           labelText: 'External Video URL (Optional)',
-          hintText: 'YouTube, Vimeo, etc.',
+          hintText: tr('YouTube, Vimeo, etc.'),
           prefixIcon: const Icon(Icons.video_library_rounded),
           filled: true,
           fillColor: Theme.of(context).colorScheme.surface,
@@ -899,17 +897,17 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                     fontWeight: FontWeight.w600,
                   ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             CheckboxListTile(
-              title: const Text('Downloadable'),
-              subtitle: const Text('Allow users to download attached files'),
+              title: Text('Downloadable'),
+              subtitle: Text('Allow users to download attached files'),
               value: controller.isDownloadable.value,
               onChanged: (value) => controller.setDownloadable(value ?? false),
               controlAffinity: ListTileControlAffinity.leading,
             ),
             CheckboxListTile(
-              title: const Text('Lecture Material'),
-              subtitle: const Text('Mark as official lecture material'),
+              title: Text(tr('Lecture Material')),
+              subtitle: Text(tr('Mark as official lecture material')),
               value: controller.isLectureMaterial.value,
               onChanged: (value) =>
                   controller.setLectureMaterial(value ?? false),
@@ -933,7 +931,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: const Offset(0, -4),
+            offset: Offset(0, -4),
           ),
         ],
       ),
@@ -948,7 +946,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text('Save Draft'),
+              child: Text(tr('Save Draft')),
             ),
           ),
           const SizedBox(width: 12),
@@ -1017,7 +1015,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
       );
     } catch (e) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'An unexpected error occurred while selecting the document',
         backgroundColor: Colors.red,
         colorText: Colors.white,
@@ -1043,7 +1041,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
         }
       } catch (fallbackError) {
         NavigationHelper.showSafeSnackbar(
-          title: 'Error',
+          title: tr('Error'),
           message:
               'Unable to select image. Please try again or contact support.',
           backgroundColor: Colors.red,
@@ -1078,18 +1076,18 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
       final source = await showDialog<ImageSource>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Select Image Source'),
+          title: Text(tr('Select Image Source')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('Gallery'),
+                leading: Icon(Icons.photo_library),
+                title: Text(tr('Gallery')),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),
               ),
               ListTile(
-                leading: const Icon(Icons.camera_alt),
-                title: const Text('Camera'),
+                leading: Icon(Icons.camera_alt),
+                title: Text(tr('Camera')),
                 onTap: () => Navigator.pop(context, ImageSource.camera),
               ),
             ],
@@ -1125,7 +1123,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
   void _saveDraft() {
     // TODO: Implement save draft functionality
     NavigationHelper.showSafeSnackbar(
-      title: 'Draft Saved',
+      title: tr('Draft Saved'),
       message: 'Your content has been saved as draft',
     );
   }
@@ -1138,7 +1136,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
     // Validate topic selection for Legal Education hub
     if (hubType == 'legal_ed' && controller.selectedTopic.value == null) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Topic Required',
+        title: tr('Topic Required'),
         message: 'Please select a topic for this Legal Education content',
         backgroundColor: Colors.red,
         colorText: Colors.white,
@@ -1155,9 +1153,13 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
       language: controller.selectedLanguage.value,
       price: hubType == 'forum'
           ? '0.00'
-          : (_priceController.text.isNotEmpty
-              ? _priceController.text
-              : '0.00'),
+          : hubType == 'students'
+              // Fixed TZS 1,500 for downloadable documents —
+              // uploaders don't set a price in this hub.
+              ? (controller.isDownloadable.value ? '1500' : '0.00')
+              : (_priceController.text.isNotEmpty
+                  ? _priceController.text
+                  : '0.00'),
       videoUrl: _videoUrlController.text.trim().isNotEmpty
           ? _videoUrlController.text.trim()
           : null,
@@ -1268,7 +1270,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
   void _showAttachmentOptions() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => Container(
@@ -1291,14 +1293,14 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                     fontWeight: FontWeight.bold,
                   ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             Row(
               children: [
                 Expanded(
                   child: _buildAttachmentOption(
                     icon: Icons.attach_file,
                     label: 'Document',
-                    subtitle: 'PDF, DOC, PPT, XLS',
+                    subtitle: tr('PDF, DOC, PPT, XLS'),
                     color: Colors.blue,
                     onTap: () {
                       Navigator.pop(context);
@@ -1306,12 +1308,12 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                     },
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 Expanded(
                   child: _buildAttachmentOption(
                     icon: Icons.image,
-                    label: 'Image',
-                    subtitle: 'JPG, PNG',
+                    label: tr('Image'),
+                    subtitle: tr('JPG, PNG'),
                     color: Colors.green,
                     onTap: () {
                       Navigator.pop(context);
@@ -1321,14 +1323,14 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
                   child: _buildAttachmentOption(
                     icon: Icons.camera_alt,
-                    label: 'Camera',
-                    subtitle: 'Take a photo',
+                    label: tr('Camera'),
+                    subtitle: tr('Take a photo'),
                     color: Colors.orange,
                     onTap: () {
                       Navigator.pop(context);
@@ -1336,12 +1338,12 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
                     },
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 Expanded(
                   child: _buildAttachmentOption(
                     icon: Icons.video_library,
-                    label: 'Video URL',
-                    subtitle: 'YouTube, Vimeo',
+                    label: tr('Video URL'),
+                    subtitle: tr('YouTube, Vimeo'),
                     color: Colors.purple,
                     onTap: () {
                       Navigator.pop(context);
@@ -1534,7 +1536,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
 
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => Container(
@@ -1552,7 +1554,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
               ),
             ),
             Text(
-              'Add Emoji',
+              tr('Add Emoji'),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -1628,8 +1630,8 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
       }
     } catch (e) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
-        message: 'Failed to take picture: $e',
+        title: tr('Error'),
+        message: tr('Failed to take picture: {e}').replaceAll('{e}', '$e'),
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
@@ -1643,15 +1645,15 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Add Video URL'),
+        title: Text(tr('Add Video URL')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: videoUrlController,
-              decoration: const InputDecoration(
-                labelText: 'Video URL',
-                hintText: 'https://youtube.com/watch?v=...',
+              decoration: InputDecoration(
+                labelText: tr('Video URL'),
+                hintText: tr('https://youtube.com/watch?v=...'),
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.video_library),
               ),
@@ -1679,7 +1681,7 @@ class _ContentCreationScreenState extends State<ContentCreationScreen> {
               _videoUrlController.text = videoUrlController.text;
               Navigator.pop(context);
             },
-            child: const Text('Add'),
+            child: Text(tr('Add')),
           ),
         ],
       ),

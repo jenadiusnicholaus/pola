@@ -25,6 +25,7 @@ class HubContentResponse {
       next: json['next'],
       previous: json['previous'],
       results: (json['results'] as List<dynamic>? ?? [])
+          .whereType<Map<String, dynamic>>()
           .map((item) => HubContentItem.fromJson(item))
           .toList(),
       activeUsers: json['active_users'],
@@ -130,14 +131,23 @@ class HubContentItem {
       likesCount: json['likes_count'] ?? 0,
       bookmarksCount: json['bookmarks_count'] ?? 0,
       commentsCount: json['comments_count'] ?? 0,
-      tags: (json['tags'] as List<dynamic>? ?? [])
-          .map((tag) => tag.toString())
-          .toList(),
-      uploader: UploaderInfo.fromJson(
-          json['uploader_info'] ?? json['uploader'] ?? {}),
+      tags: _parseTags(json['tags']),
+      uploader: UploaderInfo.fromJson((json['uploader_info'] ??
+              json['uploader']) is Map<String, dynamic>
+          ? (json['uploader_info'] ?? json['uploader']) as Map<String, dynamic>
+          : {}),
       createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
       updatedAt: DateTime.tryParse(json['updated_at'] ?? '') ?? DateTime.now(),
     );
+  }
+
+  /// Tolerates `tags` arriving as a List, a single String, or null.
+  static List<String> _parseTags(dynamic raw) {
+    if (raw is List) {
+      return raw.map((tag) => tag.toString()).toList();
+    }
+    if (raw is String && raw.isNotEmpty) return [raw];
+    return const [];
   }
 
   // Create a copy with updated values

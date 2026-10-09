@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../../utils/navigation_helper.dart';
 import '../models/consultant_models.dart';
@@ -137,7 +138,7 @@ class ConsultantController extends GetxController {
       return await _service.getConsultantDetails(consultantId);
     } catch (e) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: e.toString(),
       );
       return null;

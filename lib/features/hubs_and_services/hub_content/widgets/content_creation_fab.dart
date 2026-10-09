@@ -137,6 +137,7 @@ class _ContentCreationMenuState extends State<ContentCreationMenu>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final contentTypes = _getContentTypes();
 
     // Check if user can create content in this hub
@@ -154,13 +155,14 @@ class _ContentCreationMenuState extends State<ContentCreationMenu>
 
     return ConstrainedBox(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height *
-            0.7, // Limit to 70% of screen height
+        maxHeight: MediaQuery.of(context).size.height * 0.7,
       ),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            // Menu option chips
             ...contentTypes
                 .asMap()
                 .entries
@@ -170,27 +172,25 @@ class _ContentCreationMenuState extends State<ContentCreationMenu>
                   return AnimatedBuilder(
                     animation: _buttonAnimations,
                     builder: (context, child) {
-                      return Transform.scale(
-                        scale: _buttonAnimations.value,
-                        child: Container(
-                          margin: EdgeInsets.only(
-                            bottom: 8,
-                            top: index == 0 ? 8 : 0,
-                          ),
-                          child: Opacity(
-                            opacity: _buttonAnimations.value,
-                            child: SizedBox(
-                              height: 36, // Smaller than normal FAB
-                              child: FloatingActionButton.extended(
-                                heroTag:
-                                    '${widget.heroTag ?? 'menu'}_${type['key']}',
+                      final isVisible = _buttonAnimations.value > 0.05;
+                      return Visibility(
+                        visible: isVisible,
+                        child: Opacity(
+                          opacity: _buttonAnimations.value,
+                          child: Transform.scale(
+                            scale: _buttonAnimations.value,
+                            alignment: Alignment.bottomRight,
+                            child: Container(
+                              margin: EdgeInsets.only(
+                                bottom: 8,
+                                top: index == 0 ? 8 : 0,
+                              ),
+                              child: _buildOptionButton(
+                                context,
+                                theme,
+                                icon: type['icon'],
+                                label: type['label'],
                                 onPressed: () => _createContent(type['key']),
-                                icon: Icon(type['icon']),
-                                label: Text(type['label']),
-                                backgroundColor:
-                                    Theme.of(context).colorScheme.secondary,
-                                foregroundColor:
-                                    Theme.of(context).colorScheme.onSecondary,
                               ),
                             ),
                           ),
@@ -201,18 +201,56 @@ class _ContentCreationMenuState extends State<ContentCreationMenu>
                 })
                 .toList()
                 .reversed,
-            FloatingActionButton(
-              heroTag: widget.heroTag ?? 'main_fab_${widget.hubType}',
-              onPressed: _toggle,
-              child: AnimatedRotation(
-                turns: _isOpen ? 0.125 : 0,
-                duration: const Duration(milliseconds: 250),
-                child: Icon(_isOpen ? Icons.close : Icons.add),
+
+            // Main toggle FAB
+            Material(
+              elevation: 4,
+              shape: const CircleBorder(),
+              shadowColor: theme.colorScheme.shadow.withOpacity(0.3),
+              child: FloatingActionButton(
+                heroTag: widget.heroTag ?? 'main_fab_${widget.hubType}',
+                onPressed: _toggle,
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
+                elevation: 0,
+                child: AnimatedRotation(
+                  turns: _isOpen ? 0.125 : 0,
+                  duration: const Duration(milliseconds: 250),
+                  child: Icon(
+                    _isOpen ? Icons.close : Icons.add,
+                    size: 28,
+                  ),
+                ),
               ),
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Professional pill-shaped option button for the expanded menu.
+  Widget _buildOptionButton(
+    BuildContext context,
+    ThemeData theme, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+  }) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 18),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: theme.colorScheme.secondaryContainer,
+        foregroundColor: theme.colorScheme.onSecondaryContainer,
+        elevation: 3,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        textStyle: theme.textTheme.labelLarge?.copyWith(
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

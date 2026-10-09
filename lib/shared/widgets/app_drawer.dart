@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../constants/app_strings.dart';
 import '../../utils/navigation_helper.dart';
@@ -116,9 +117,9 @@ class AppDrawer extends StatelessWidget {
                   height: 48,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: theme.colorScheme.primaryContainer,
+                    color: theme.colorScheme.surfaceContainerHighest,
                     border: Border.all(
-                      color: theme.colorScheme.outline.withOpacity(0.2),
+                      color: theme.colorScheme.outline.withOpacity(0.3),
                       width: 2,
                     ),
                   ),
@@ -131,7 +132,8 @@ class AppDrawer extends StatelessWidget {
                               return Icon(
                                 Icons.person,
                                 size: 24,
-                                color: theme.colorScheme.onPrimaryContainer,
+                                color: theme.colorScheme.onSurface
+                                    .withOpacity(0.6),
                               );
                             },
                           ),
@@ -139,7 +141,7 @@ class AppDrawer extends StatelessWidget {
                       : Icon(
                           Icons.person,
                           size: 24,
-                          color: theme.colorScheme.onPrimaryContainer,
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
                         ),
                 ),
 
@@ -214,29 +216,29 @@ class AppDrawer extends StatelessWidget {
   Widget _buildNavigationSection(BuildContext context, ThemeData theme) {
     return Column(
       children: [
-        _buildSectionHeader('Navigation', theme),
+        _buildSectionHeader(tr('Navigation'), theme),
         _buildDrawerItem(
           context: context,
           icon: Icons.home_outlined,
           activeIcon: Icons.home,
-          title: 'Home',
-          subtitle: 'Dashboard & Overview',
+          title: tr('Home'),
+          subtitle: tr('Dashboard & Overview'),
           onTap: () => _navigateToTab(context, 0),
         ),
         _buildDrawerItem(
           context: context,
           icon: Icons.forum_outlined,
           activeIcon: Icons.forum,
-          title: 'Community Posts',
-          subtitle: 'Join discussions',
+          title: tr('Community Posts'),
+          subtitle: tr('Join discussions'),
           onTap: () => _navigateToTab(context, 1),
         ),
         _buildDrawerItem(
           context: context,
           icon: Icons.bookmark_outline,
           activeIcon: Icons.bookmark,
-          title: 'Bookmarks',
-          subtitle: 'Saved content',
+          title: tr('Bookmarks'),
+          subtitle: tr('Saved content'),
           onTap: () => _navigateToTab(context, 4),
         ),
       ],
@@ -264,7 +266,7 @@ class AppDrawer extends StatelessWidget {
 
     return Column(
       children: [
-        _buildSectionHeader('Professional', theme),
+        _buildSectionHeader(tr('Professional'), theme),
 
         // Advocate Hub - Only advocates can access
         if (isAdvocate || isAdmin)
@@ -272,8 +274,8 @@ class AppDrawer extends StatelessWidget {
             context: context,
             icon: Icons.gavel_outlined,
             activeIcon: Icons.gavel,
-            title: 'Advocate Hub',
-            subtitle: 'Professional resources',
+            title: tr('Advocate Hub'),
+            subtitle: tr('Professional resources'),
             onTap: () => _navigateAndClose(context, AppRoutes.advocatesHub),
           ),
 
@@ -283,8 +285,8 @@ class AppDrawer extends StatelessWidget {
             context: context,
             icon: Icons.school_outlined,
             activeIcon: Icons.school,
-            title: 'Students Hub',
-            subtitle: 'Academic resources',
+            title: tr('Students Hub'),
+            subtitle: tr('Academic resources'),
             onTap: () => _navigateAndClose(context, AppRoutes.studentsHub),
           ),
 
@@ -294,8 +296,8 @@ class AppDrawer extends StatelessWidget {
             context: context,
             icon: Icons.psychology_outlined,
             activeIcon: Icons.psychology,
-            title: 'Consultation',
-            subtitle: 'Manage or apply',
+            title: tr('Consultation'),
+            subtitle: tr('Manage or apply'),
             badge: 'NEW',
             badgeColor: Colors.green,
             onTap: () => _handleConsultationTap(context),
@@ -307,8 +309,8 @@ class AppDrawer extends StatelessWidget {
             context: context,
             icon: Icons.event_note_outlined,
             activeIcon: Icons.event_note,
-            title: 'My Consultations',
-            subtitle: 'View client bookings',
+            title: tr('My Consultations'),
+            subtitle: tr('View client bookings'),
             onTap: () => _navigateAndClose(context, AppRoutes.myConsultations),
           ),
       ],
@@ -321,42 +323,42 @@ class AppDrawer extends StatelessWidget {
     // PermissionMenuItem(
     //   feature: PermissionFeature.legalLibrary,
     //   icon: Icons.library_books_outlined,
-    //   title: 'Case Library',
-    //   subtitle: 'Browse legal cases',
+    //   title: tr('Case Library'),
+    //   subtitle: tr('Browse legal cases'),
     //   onTap: () => Get.toNamed(AppRoutes.caseLibrary),
     // ),
 
     return Column(
       children: [
-        _buildSectionHeader('Legal Tools', theme),
+        _buildSectionHeader(tr('Legal Tools'), theme),
         _buildDrawerItem(
           context: context,
           icon: Icons.document_scanner_outlined,
-          title: 'Document Scanner',
-          subtitle: 'Scan & digitize documents',
+          title: tr('Document Scanner'),
+          subtitle: tr('Scan & digitize documents'),
           badge: 'NEW',
           onTap: () => _navigateToComingSoon(context, 'Document Scanner'),
         ),
         _buildDrawerItem(
           context: context,
           icon: Icons.search_outlined,
-          title: 'Legal Research',
-          subtitle: 'Search laws & cases',
+          title: tr('Legal Research'),
+          subtitle: tr('Search laws & cases'),
           onTap: () => _navigateToComingSoon(context, 'Legal Research'),
         ),
         _buildDrawerItem(
           context: context,
           icon: Icons.chat_bubble_outline,
-          title: 'AI Legal Assistant',
-          subtitle: 'Get instant legal advice',
+          title: tr('AI Legal Assistant'),
+          subtitle: tr('Get instant legal advice'),
           badge: 'AI',
           onTap: () => _navigateToComingSoon(context, 'AI Legal Assistant'),
         ),
         _buildDrawerItem(
           context: context,
           icon: Icons.library_books_outlined,
-          title: 'Case Library',
-          subtitle: 'Browse legal cases',
+          title: tr('Case Library'),
+          subtitle: tr('Browse legal cases'),
           onTap: () => _navigateToComingSoon(context, 'Case Library'),
         ),
       ],
@@ -374,21 +376,21 @@ class AppDrawer extends StatelessWidget {
       final showUpgrade = subscription == null || !subscription.isActive;
 
       return Column(children: [
-        _buildSectionHeader('Account', theme),
+        _buildSectionHeader(tr('Account'), theme),
         _buildDrawerItem(
           context: context,
           icon: Icons.person_outline,
           activeIcon: Icons.person,
-          title: 'Profile',
-          subtitle: 'Manage your account',
+          title: tr('Profile'),
+          subtitle: tr('Manage your account'),
           onTap: () => _navigateAndClose(context, AppRoutes.profile),
         ),
         _buildDrawerItem(
           context: context,
           icon: Icons.settings_outlined,
           activeIcon: Icons.settings,
-          title: 'Settings',
-          subtitle: 'App preferences',
+          title: tr('Settings'),
+          subtitle: tr('App preferences'),
           onTap: () => _navigateAndClose(context, AppRoutes.settings),
         ),
         if (showUpgrade)
@@ -396,8 +398,8 @@ class AppDrawer extends StatelessWidget {
             context: context,
             icon: Icons.workspace_premium,
             activeIcon: Icons.workspace_premium,
-            title: 'Upgrade to Premium',
-            subtitle: 'Unlock all features',
+            title: tr('Upgrade to Premium'),
+            subtitle: tr('Unlock all features'),
             badge: 'PRO',
             badgeColor: Colors.amber,
             onTap: () {
@@ -412,26 +414,26 @@ class AppDrawer extends StatelessWidget {
   Widget _buildSupportSection(BuildContext context, ThemeData theme) {
     return Column(
       children: [
-        _buildSectionHeader('Support', theme),
+        _buildSectionHeader(tr('Support'), theme),
         _buildDrawerItem(
           context: context,
           icon: Icons.help_outline,
-          title: 'Help & Support',
-          subtitle: 'Get assistance',
+          title: tr('Help & Support'),
+          subtitle: tr('Get assistance'),
           onTap: () => _navigateAndClose(context, AppRoutes.helpSupport),
         ),
         _buildDrawerItem(
           context: context,
           icon: Icons.feedback_outlined,
-          title: 'Send Feedback',
-          subtitle: 'Share your thoughts',
+          title: tr('Send Feedback'),
+          subtitle: tr('Share your thoughts'),
           onTap: () => _navigateToComingSoon(context, 'Send Feedback'),
         ),
         _buildDrawerItem(
           context: context,
           icon: Icons.info_outline,
-          title: 'About',
-          subtitle: 'App information',
+          title: tr('About'),
+          subtitle: tr('App information'),
           onTap: () {
             Navigator.pop(context);
             _showAboutDialog(context);
@@ -596,7 +598,7 @@ class AppDrawer extends StatelessWidget {
                       size: 18,
                       color: theme.colorScheme.error,
                     ),
-                    const SizedBox(width: 10),
+                    SizedBox(width: 10),
                     Text(
                       'Sign Out',
                       style: theme.textTheme.labelLarge?.copyWith(
@@ -609,7 +611,7 @@ class AppDrawer extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           // Version info
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -622,13 +624,13 @@ class AppDrawer extends StatelessWidget {
                 ),
               ),
               Text(
-                ' • ',
+                tr(' • '),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurface.withOpacity(0.4),
                 ),
               ),
               Text(
-                '© 2025 Pola',
+                tr('© 2025 Pola'),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurface.withOpacity(0.4),
                   fontSize: 11,
@@ -682,12 +684,12 @@ class AppDrawer extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Sign Out'),
-          content: const Text('Are you sure you want to sign out?'),
+          title: Text(tr('Sign Out')),
+          content: Text(tr('Are you sure you want to sign out?')),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: Text(tr('Cancel')),
             ),
             TextButton(
               onPressed: () async {
@@ -700,8 +702,8 @@ class AppDrawer extends StatelessWidget {
                   await authService.logout();
 
                   NavigationHelper.showSafeSnackbar(
-                    title: 'Signed Out',
-                    message: 'You have been signed out successfully',
+                    title: tr('Signed Out'),
+                    message: tr('You have been signed out successfully'),
                     icon: const Icon(Icons.logout, color: Colors.white),
                     backgroundColor: Colors.green,
                     colorText: Colors.white,
@@ -713,7 +715,7 @@ class AppDrawer extends StatelessWidget {
                 }
               },
               child: Text(
-                'Sign Out',
+                tr('Sign Out'),
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
@@ -734,15 +736,15 @@ class AppDrawer extends StatelessWidget {
           color: Theme.of(context).colorScheme.primaryContainer,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Text('⚖️', style: TextStyle(fontSize: 32)),
+        child: Text(tr('⚖️'), style: TextStyle(fontSize: 32)),
       ),
       children: [
-        const Text(
-          'Your comprehensive legal education platform. Access courses, connect with professionals, and advance your legal career.',
-        ),
-        const SizedBox(height: 16),
         Text(
-          'the lawyer you carry',
+          tr('Your comprehensive legal education platform. Access courses, connect with professionals, and advance your legal career.'),
+        ),
+        SizedBox(height: 16),
+        Text(
+          tr('the lawyer you carry'),
           style: TextStyle(
             fontStyle: FontStyle.italic,
             fontWeight: FontWeight.w600,
@@ -750,9 +752,9 @@ class AppDrawer extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        const Text(
-          'Built with ❤️ for the legal community',
-          style: TextStyle(fontSize: 12),
+        Text(
+          tr('Built with ❤️ for the legal community'),
+          style: const TextStyle(fontSize: 12),
         ),
       ],
     );

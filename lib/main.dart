@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:no_screenshot/no_screenshot.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'config/environment_config.dart';
 import 'constants/app_theme.dart';
 import 'constants/app_colors.dart';
 import 'constants/app_strings.dart';
@@ -11,15 +12,27 @@ import 'services/token_storage_service.dart';
 import 'services/auth_service.dart';
 import 'services/app_initializer.dart';
 import 'utils/navigation_helper.dart';
+import 'package:localization_lite/translate.dart';
+import 'services/language_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Block screenshots and screen recording app-wide
+  // Load environment variables early so feature flags are available
   try {
-    await NoScreenshot.instance.screenshotOff();
+    await dotenv.load(fileName: '.env');
+    debugPrint('✅ Environment file loaded early');
   } catch (e) {
-    debugPrint('⚠️ Failed to disable screenshots: $e');
+    debugPrint('⚠️ Could not load .env file early: $e');
+  }
+
+  // Initialize localization_lite (fallback English). LanguageService applies
+  // the user's stored preference once GetX services are up.
+  try {
+    await Translate.init(defaultLangCode: 'en');
+    debugPrint('✅ Localization initialized');
+  } catch (e) {
+    debugPrint('⚠️ Could not init localization: $e');
   }
 
   // Use the optimized AppInitializer for parallel service loading
@@ -41,18 +54,24 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     // Get the ThemeController to use persisted theme
     final themeController = Get.find<ThemeController>();
+    // Touch the language observable so Obx rebuilds the app on change
+    final languageService = Get.find<LanguageService>();
+    languageService.languageObs.value;
 
-    return Obx(() => GetMaterialApp(
-          debugShowCheckedModeBanner: false,
-          scaffoldMessengerKey: NavigationHelper.scaffoldMessengerKey,
-          title: AppStrings.appName,
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: themeController.themeMode, // Use persisted theme mode
-          initialRoute: AppRoutes.splash, // Start with auth check
-          getPages: AppRoutes.routes,
-          unknownRoute: AppRoutes.unknownRoute,
-        ));
+    return Obx(() {
+      languageService.languageObs.value;
+      return GetMaterialApp(
+        debugShowCheckedModeBanner: false,
+        scaffoldMessengerKey: NavigationHelper.scaffoldMessengerKey,
+        title: AppStrings.appName,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: themeController.themeMode, // Use persisted theme mode
+        initialRoute: AppRoutes.splash, // Start with auth check
+        getPages: AppRoutes.routes,
+        unknownRoute: AppRoutes.unknownRoute,
+      );
+    });
   }
 }
 

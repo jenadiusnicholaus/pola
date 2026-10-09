@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../controllers/legal_education_controller.dart';
 import '../models/legal_education_models.dart';
@@ -8,6 +9,7 @@ import '../widgets/shimmer_widgets.dart';
 import 'material_viewer_screen.dart';
 import '../../hub_content/widgets/content_creation_fab.dart';
 import '../../hub_content/utils/user_role_manager.dart';
+import '../../../../services/language_service.dart';
 import '../../../../services/permission_service.dart';
 import '../../../../routes/app_routes.dart';
 
@@ -30,8 +32,11 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
   Topic? currentTopic;
   Subtopic? currentSubtopic;
   bool get isSubtopicMode => currentSubtopic != null;
-  String? selectedLanguage;
   final ScrollController _scrollController = ScrollController();
+  Worker? _languageWorker;
+
+  /// Materials language always follows the global app language.
+  String get selectedLanguage => Get.find<LanguageService>().apiCode;
 
   // Helper getters to access correct controller properties
   List<LearningMaterial> get materials =>
@@ -57,15 +62,13 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
       controller = Get.put(LegalEducationController());
     }
 
-    // Get topic/subtopic and language from arguments or use the provided widget params
+    // Get topic/subtopic from arguments or use the provided widget params
     if (widget.topic != null) {
       // Topic passed directly (fallback)
       currentTopic = widget.topic!;
-      selectedLanguage = null;
     } else if (widget.subtopic != null) {
       // Subtopic passed directly
       currentSubtopic = widget.subtopic!;
-      selectedLanguage = null;
     } else {
       // Get from arguments
       final args = Get.arguments;
@@ -73,18 +76,20 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
         if (args.containsKey('subtopic')) {
           // Subtopic mode
           currentSubtopic = args['subtopic'] as Subtopic;
-          selectedLanguage = args['language'] as String?;
         } else {
           // Topic mode
           currentTopic = args['topic'] as Topic;
-          selectedLanguage = args['language'] as String?;
         }
       } else {
         // Old format with just topic
         currentTopic = args as Topic;
-        selectedLanguage = null;
       }
     }
+
+    // Refetch materials when the app language changes.
+    _languageWorker = ever(Get.find<LanguageService>().languageObs, (_) {
+      _refetchMaterials();
+    });
 
     // Load materials when screen is first built
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -111,24 +116,22 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
 
   @override
   void dispose() {
+    _languageWorker?.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  void _changeLanguage(String? language) {
-    setState(() {
-      selectedLanguage = language;
-    });
+  void _refetchMaterials() {
     if (isSubtopicMode) {
       controller.fetchSubtopicMaterials(
         currentSubtopic!.id,
-        language: language,
+        language: selectedLanguage,
         refresh: true,
       );
     } else {
       controller.fetchMaterials(
         currentTopic!.slug,
-        language: language,
+        language: selectedLanguage,
         refresh: true,
       );
     }
@@ -188,7 +191,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
     return Scaffold(
       body: Obx(() => CustomScrollView(
             controller: _scrollController,
-            physics: const AlwaysScrollableScrollPhysics(
+            physics: AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics(),
             ),
             slivers: [
@@ -204,85 +207,6 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
                 floating: true,
                 pinned: true,
                 elevation: 0,
-                actions: [
-                  // Language toggle buttons
-                  Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // English Button
-                        ElevatedButton(
-                          onPressed: () => _changeLanguage('en'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: selectedLanguage == 'en'
-                                ? Colors.blue
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .onPrimary
-                                    .withOpacity(0.2),
-                            foregroundColor: selectedLanguage == 'en'
-                                ? Colors.white
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .onPrimary
-                                    .withOpacity(0.9),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
-                            minimumSize: const Size(50, 32),
-                            elevation: 2,
-                          ),
-                          child: Text('EN',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: selectedLanguage == 'en'
-                                    ? Colors.white
-                                    : Theme.of(context)
-                                        .colorScheme
-                                        .onPrimary
-                                        .withOpacity(0.9),
-                              )),
-                        ),
-                        const SizedBox(width: 4),
-                        // Swahili Button
-                        ElevatedButton(
-                          onPressed: () => _changeLanguage('sw'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: selectedLanguage == 'sw'
-                                ? Colors.amber.shade700
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .onPrimary
-                                    .withOpacity(0.2),
-                            foregroundColor: selectedLanguage == 'sw'
-                                ? Colors.black
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .onPrimary
-                                    .withOpacity(0.9),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
-                            minimumSize: const Size(50, 32),
-                            elevation: 2,
-                          ),
-                          child: Text('SW',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: selectedLanguage == 'sw'
-                                    ? Colors
-                                        .black // Black text on amber background
-                                    : Theme.of(context)
-                                        .colorScheme
-                                        .onPrimary
-                                        .withOpacity(0.9),
-                              )),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
               ),
 
               // Content based on state
@@ -314,10 +238,13 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
               else if (materials.isEmpty)
                 SliverFillRemaining(
                   child: CommonEmptyWidget(
-                    title: 'No materials found',
-                    message: selectedLanguage != null
-                        ? 'No learning materials available in ${selectedLanguage == 'en' ? 'English' : 'Kiswahili'}'
-                        : 'No learning materials available',
+                    title: tr('No materials found'),
+                    message: tr('No learning materials available in {language}')
+                        .replaceAll(
+                            '{language}',
+                            selectedLanguage == 'en'
+                                ? tr('English')
+                                : tr('Kiswahili')),
                     icon: Icons.library_books_outlined,
                   ),
                 )
@@ -356,7 +283,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
                 ),
 
                 // Add bottom padding for better scrolling
-                const SliverToBoxAdapter(
+                SliverToBoxAdapter(
                   child: SizedBox(height: 80),
                 ),
               ],
@@ -372,8 +299,8 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
                 language: selectedLanguage,
                 refresh: true,
               ),
-              child: const Icon(Icons.refresh),
-              tooltip: 'Refresh Materials',
+              child: Icon(Icons.refresh),
+              tooltip: tr('Refresh Materials'),
             )
           // Topic mode - show content creation or refresh
           : UserRoleManager.canCreateContentInHub('legal_ed')
@@ -408,8 +335,8 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
                     language: selectedLanguage,
                     refresh: true,
                   ),
-                  child: const Icon(Icons.refresh),
-                  tooltip: 'Refresh Materials',
+                  child: Icon(Icons.refresh),
+                  tooltip: tr('Refresh Materials'),
                 ),
     );
   }
@@ -438,8 +365,8 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No content available for this material'),
+        SnackBar(
+          content: Text(tr('No content available for this material')),
           backgroundColor: Colors.orange,
         ),
       );
@@ -465,10 +392,12 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
               color: theme.colorScheme.error,
               size: 28,
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Text(
-                isTrial ? 'Trial Limit Reached' : 'Reading Limit Reached',
+                isTrial
+                    ? tr('Trial Limit Reached')
+                    : tr('Reading Limit Reached'),
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -482,11 +411,14 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
           children: [
             Text(
               isTrial
-                  ? 'You have used all ${permissionService.legalEducationLimit} free reads available in your trial period.'
-                  : 'You have reached your legal education reading limit for this period.',
+                  ? tr('You have used all {limit} free reads available in your trial period.')
+                      .replaceAll(
+                          '{limit}', '${permissionService.legalEducationLimit}')
+                  : tr(
+                      'You have reached your legal education reading limit for this period.'),
               style: theme.textTheme.bodyLarge,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -500,10 +432,10 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
                     color: theme.colorScheme.primary,
                     size: 20,
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Upgrade to Premium for unlimited access to all legal education materials!',
+                      tr('Upgrade to Premium for unlimited access to all legal education materials!'),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w500,
                       ),
@@ -518,7 +450,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
-              'Later',
+              tr('Later'),
               style: TextStyle(
                   color: theme.colorScheme.onSurface.withOpacity(0.6)),
             ),
@@ -533,7 +465,7 @@ class _TopicMaterialsScreenState extends State<TopicMaterialsScreen> {
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,
             ),
-            child: const Text('Upgrade Now'),
+            child: Text(tr('Upgrade Now')),
           ),
         ],
       ),

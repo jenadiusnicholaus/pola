@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import '../services/hub_content_service.dart';
 import '../models/hub_content_models.dart';
 import '../utils/user_role_manager.dart';
@@ -176,7 +177,7 @@ class HubContentController extends GetxController {
     } catch (e) {
       currentPage.value--;
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Failed to load more content: $e',
       );
     } finally {
@@ -229,7 +230,7 @@ class HubContentController extends GetxController {
       _searchResults.addAll(response.results);
     } catch (e) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Search Error',
+        title: tr('Search Error'),
         message: 'Failed to search content: $e',
       );
     } finally {
@@ -452,7 +453,7 @@ class HubContentController extends GetxController {
       // Revert to original state on failure
       _updateContentInLists(contentItem);
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Failed to update like. Please try again.',
       );
     }
@@ -535,8 +536,8 @@ class HubContentController extends GetxController {
     } catch (e) {
       print('❌ Error toggling bookmark: $e');
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
-        message: 'Failed to update bookmark: $e',
+        title: tr('Error'),
+        message: tr('Failed to update bookmark: {e}').replaceAll('{e}', '$e'),
       );
     }
   }
@@ -566,14 +567,14 @@ class HubContentController extends GetxController {
       _updateContentInLists(updatedItem);
 
       NavigationHelper.showSafeSnackbar(
-        title: 'Success',
+        title: tr('Success'),
         message: 'Content rated successfully!',
         backgroundColor: Colors.green,
       );
     } catch (e) {
       print('❌ Error rating content: $e');
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Failed to rate content: $e',
         backgroundColor: Colors.red,
       );
@@ -663,7 +664,7 @@ class HubContentController extends GetxController {
     } catch (e) {
       print('❌ Error searching with filters: $e');
       NavigationHelper.showSafeSnackbar(
-        title: 'Search Error',
+        title: tr('Search Error'),
         message: 'Failed to search content: $e',
       );
     } finally {
@@ -737,7 +738,7 @@ class HubContentController extends GetxController {
           !e.toString().contains('403') &&
           !e.toString().contains('Forbidden')) {
         NavigationHelper.showSafeSnackbar(
-          title: 'Error',
+          title: tr('Error'),
           message: 'Failed to fetch bookmarked content: $e',
         );
       }
@@ -768,7 +769,7 @@ class HubContentController extends GetxController {
     } catch (e) {
       print('❌ Error fetching liked content: $e');
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Failed to fetch liked content: $e',
       );
     } finally {
@@ -939,16 +940,23 @@ class HubContentController extends GetxController {
 
   /// Get comprehensive sort options based on API documentation
   List<Map<String, String>> getSortOptions() {
-    return [
+    final options = [
       {'value': 'recent', 'label': 'Most Recent'},
       {'value': 'popular', 'label': 'Most Viewed'},
       {'value': 'trending', 'label': 'Most Downloaded'},
       {'value': 'likes', 'label': 'Most Liked'},
-      {'value': 'price_high', 'label': 'Price: High to Low'},
-      {'value': 'price_low', 'label': 'Price: Low to High'},
       {'value': 'alphabetical', 'label': 'Alphabetical'},
       {'value': 'pinned_first', 'label': 'Pinned First'},
     ];
+    // Price sorting is meaningless in the students hub — downloads
+    // have a fixed price.
+    if (hubType != 'students') {
+      options.addAll([
+        {'value': 'price_high', 'label': 'Price: High to Low'},
+        {'value': 'price_low', 'label': 'Price: Low to High'},
+      ]);
+    }
+    return options;
   }
 
   // Comment Management Methods
@@ -1048,15 +1056,14 @@ class HubContentController extends GetxController {
         print('... and ${allComments.length - 5} more comments');
       }
 
-      contentComments[contentId]!.clear();
-      contentComments[contentId]!.addAll(allComments);
+      contentComments[contentId] = allComments;
 
       // Update the comment count in the content item to reflect actual loaded comments
       _updateContentCommentCountToActual(contentId, actualCount);
     } catch (e) {
       print('Error loading comments: $e');
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Failed to load comments: $e',
       );
     } finally {
@@ -1086,7 +1093,7 @@ class HubContentController extends GetxController {
 
       if (commentText.isEmpty) {
         NavigationHelper.showSafeSnackbar(
-            title: 'Error', message: 'Comment cannot be empty');
+            title: tr('Error'), message: 'Comment cannot be empty');
         return;
       }
 
@@ -1126,8 +1133,11 @@ class HubContentController extends GetxController {
 
       // Add comment to the list
       if (parentCommentId == null) {
-        // Top-level comment
-        contentComments[contentId]!.insert(0, newComment);
+        // Top-level comment — reassign to trigger reactive update
+        contentComments[contentId] = [
+          newComment,
+          ...contentComments[contentId] ?? [],
+        ];
       } else {
         // Reply to a comment - find parent and add to replies
         _addReplyToComment(contentId, parentCommentId, newComment);
@@ -1142,12 +1152,12 @@ class HubContentController extends GetxController {
       }
 
       NavigationHelper.showSafeSnackbar(
-        title: 'Success',
+        title: tr('Success'),
         message: 'Comment added successfully',
       );
     } catch (e) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Failed to add comment: $e',
       );
     } finally {
@@ -1184,7 +1194,7 @@ class HubContentController extends GetxController {
 
     // Replace the entire list to trigger reactive update
     if (found || updatedComments.isNotEmpty) {
-      contentComments[contentId]!.assignAll(updatedComments);
+      contentComments[contentId] = updatedComments;
     }
   }
 
@@ -1287,7 +1297,7 @@ class HubContentController extends GetxController {
       }
     } catch (e) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Failed to toggle comment like: $e',
       );
     }
@@ -1320,8 +1330,7 @@ class HubContentController extends GetxController {
 
       // Replace the entire list to trigger reactive update
       if (found || updatedComments.isNotEmpty) {
-        contentComments[contentId]!.clear();
-        contentComments[contentId]!.addAll(updatedComments);
+        contentComments[contentId] = updatedComments;
       }
     }
   }
@@ -1392,12 +1401,12 @@ class HubContentController extends GetxController {
       await _service.deleteComment(commentId);
       _removeCommentFromList(contentId, commentId);
       NavigationHelper.showSafeSnackbar(
-        title: 'Success',
+        title: tr('Success'),
         message: 'Comment deleted successfully',
       );
     } catch (e) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Failed to delete comment: $e',
       );
     }
@@ -1412,8 +1421,8 @@ class HubContentController extends GetxController {
       _updateCommentReplies(contentId, commentId, replies, page);
     } catch (e) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
-        message: 'Failed to load replies: $e',
+        title: tr('Error'),
+        message: tr('Failed to load replies: {e}').replaceAll('{e}', '$e'),
       );
     }
   }
@@ -1422,11 +1431,12 @@ class HubContentController extends GetxController {
   void _removeCommentFromList(int contentId, int commentId) {
     final comments = contentComments[contentId];
     if (comments != null) {
-      comments.removeWhere((comment) => comment.id == commentId);
-      // Also remove from replies
-      for (final comment in comments) {
+      final updated =
+          comments.where((comment) => comment.id != commentId).map((comment) {
         _removeCommentFromRepliesRecursively(comment, commentId);
-      }
+        return comment;
+      }).toList();
+      contentComments[contentId] = updated;
     }
   }
 
@@ -1511,10 +1521,8 @@ class HubContentController extends GetxController {
       final comments = await _service.getComments(contentId);
 
       if (comments.isNotEmpty) {
-        if (contentComments[contentId] == null) {
-          contentComments[contentId] = <HubComment>[];
-        }
-        contentComments[contentId]!.addAll(comments);
+        final existing = contentComments[contentId] ?? [];
+        contentComments[contentId] = [...existing, ...comments];
         commentPages[contentId] = nextPage;
       }
     } catch (e) {

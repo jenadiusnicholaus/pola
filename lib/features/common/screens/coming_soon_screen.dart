@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../../constants/app_colors.dart';
 import '../../../utils/navigation_helper.dart';
@@ -59,7 +60,7 @@ class ComingSoonScreen extends StatelessWidget {
                         BoxShadow(
                           color: AppColors.primaryAmber.withOpacity(0.3),
                           blurRadius: 20,
-                          offset: const Offset(0, 10),
+                          offset: Offset(0, 10),
                         ),
                       ],
                     ),
@@ -71,7 +72,7 @@ class ComingSoonScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 40),
+                SizedBox(height: 40),
 
                 // Coming Soon Text
                 Text(
@@ -83,7 +84,7 @@ class ComingSoonScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
 
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
 
                 // Feature Name
                 Container(
@@ -108,7 +109,7 @@ class ComingSoonScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // Description
                 Text(
@@ -119,7 +120,7 @@ class ComingSoonScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
 
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
 
                 Text(
                   'Stay tuned for updates in future releases.',
@@ -129,7 +130,7 @@ class ComingSoonScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
 
-                const SizedBox(height: 40),
+                SizedBox(height: 40),
 
                 // Feature List
                 Container(
@@ -153,28 +154,27 @@ class ComingSoonScreen extends StatelessWidget {
                             size: 20,
                             color: theme.colorScheme.primary,
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'What to expect:',
+                          SizedBox(width: 8),
+                          Text(tr('What to expect:'),
                             style: theme.textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       _buildFeatureItem(
                         context,
                         Icons.check_circle_outline,
                         'Intuitive user interface',
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       _buildFeatureItem(
                         context,
                         Icons.check_circle_outline,
                         'Seamless integration',
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       _buildFeatureItem(
                         context,
                         Icons.check_circle_outline,
@@ -184,7 +184,7 @@ class ComingSoonScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 40),
+                SizedBox(height: 40),
 
                 // Action Buttons
                 Row(
@@ -192,8 +192,8 @@ class ComingSoonScreen extends StatelessWidget {
                   children: [
                     OutlinedButton.icon(
                       onPressed: () => Get.back(),
-                      icon: const Icon(Icons.arrow_back),
-                      label: const Text('Go Back'),
+                      icon: Icon(Icons.arrow_back),
+                      label: Text(tr('Go Back')),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
@@ -204,11 +204,11 @@ class ComingSoonScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: 16),
                     ElevatedButton.icon(
                       onPressed: () => Get.offAllNamed('/home'),
-                      icon: const Icon(Icons.home),
-                      label: const Text('Go Home'),
+                      icon: Icon(Icons.home),
+                      label: Text(tr('Go Home')),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryAmber,
                         foregroundColor: Colors.black87,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../controllers/legal_education_controller.dart';
 import '../widgets/professional_search_bar.dart';
@@ -15,7 +16,7 @@ class LegalEducationSearchScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Search Legal Topics'),
+        title: Text(tr('Search Legal Topics')),
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
         elevation: 0,
@@ -23,7 +24,7 @@ class LegalEducationSearchScreen extends StatelessWidget {
           preferredSize: const Size.fromHeight(80),
           child: ProfessionalSearchBar(
             controller: controller,
-            hintText: 'Search legal topics...',
+            hintText: tr('Search legal topics...'),
           ),
         ),
       ),
@@ -88,8 +89,7 @@ class LegalEducationSearchScreen extends StatelessWidget {
                               .withOpacity(0.5),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color:
-                                theme.colorScheme.outline.withOpacity(0.2),
+                            color: theme.colorScheme.outline.withOpacity(0.2),
                           ),
                         ),
                         child: Row(
@@ -102,7 +102,11 @@ class LegalEducationSearchScreen extends StatelessWidget {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Found ${controller.topics.length} topics matching "${controller.searchQuery}"',
+                                tr('Found {count} topics matching "{query}"')
+                                    .replaceAll('{count}',
+                                        '${controller.topics.length}')
+                                    .replaceAll(
+                                        '{query}', controller.searchQuery),
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.onSurface
                                       .withOpacity(0.7),
@@ -123,7 +127,7 @@ class LegalEducationSearchScreen extends StatelessWidget {
                             () => const TopicDetailScreen(),
                             arguments: {
                               'topic': topic,
-                              'language': language == 'english' ? 'en' : 'sw',
+                              'language': language,
                             },
                           ),
                         ),
@@ -139,8 +143,8 @@ class LegalEducationSearchScreen extends StatelessWidget {
                         child: Center(
                           child: OutlinedButton.icon(
                             onPressed: () => controller.fetchTopics(),
-                            icon: const Icon(Icons.arrow_downward),
-                            label: const Text('Load More Topics'),
+                            icon: Icon(Icons.arrow_downward),
+                            label: Text(tr('Load More Topics')),
                           ),
                         ),
                       ),

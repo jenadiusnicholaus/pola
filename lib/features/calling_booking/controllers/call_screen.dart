@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../controllers/call_controller.dart';
 import '../models/consultant_models.dart';
@@ -56,7 +57,7 @@ class _CallScreenState extends State<CallScreen> {
     if (_hasError || consultant == null || controller == null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Call'),
+          title: Text(tr('Call')),
         ),
         body: Center(
           child: Padding(
@@ -69,18 +70,18 @@ class _CallScreenState extends State<CallScreen> {
                   size: 64,
                   color: theme.colorScheme.error,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Text(
                   _errorMessage.isNotEmpty
                       ? _errorMessage
                       : 'Failed to load call',
-                  style: const TextStyle(fontSize: 16),
+                  style: TextStyle(fontSize: 16),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () => Get.back(),
-                  child: const Text('Go Back'),
+                  child: Text(tr('Go Back')),
                 ),
               ],
             ),
@@ -141,7 +142,7 @@ class _CallScreenState extends State<CallScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 40),
+                      SizedBox(height: 40),
                       Icon(
                         controller!.isInsufficientCreditsError
                             ? Icons.account_balance_wallet_outlined
@@ -151,7 +152,7 @@ class _CallScreenState extends State<CallScreen> {
                             ? theme.colorScheme.primary.withOpacity(0.5)
                             : theme.colorScheme.error.withOpacity(0.5),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
                       Text(
                         controller!.isInsufficientCreditsError
                             ? 'Insufficient Credits'
@@ -162,7 +163,7 @@ class _CallScreenState extends State<CallScreen> {
                           color: theme.colorScheme.onSurface,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       Text(
                         controller!.error.value,
                         style: TextStyle(
@@ -175,9 +176,8 @@ class _CallScreenState extends State<CallScreen> {
                       // Show available bundles only if it's a credit error
                       if (controller!.isInsufficientCreditsError &&
                           controller!.availableBundles.length > 0) ...[
-                        const SizedBox(height: 32),
-                        Text(
-                          'Available Packages',
+                        SizedBox(height: 32),
+                        Text(tr('Available Packages'),
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -356,8 +356,7 @@ class _CallScreenState extends State<CallScreen> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          'Selected Package',
+                                        Text(tr('Selected Package'),
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: theme

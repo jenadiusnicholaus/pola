@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../../../utils/navigation_helper.dart';
 import '../controllers/hub_content_controller.dart';
@@ -181,9 +182,8 @@ class HubContentSearchDelegate extends SearchDelegate {
                   showResults(context);
                 },
               )),
-          const SizedBox(height: 24),
-          const Text(
-            'Popular Searches',
+          SizedBox(height: 24),
+          Text(tr('Popular Searches'),
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -227,7 +227,7 @@ class HubContentSearchDelegate extends SearchDelegate {
       }).catchError((error) {
         isSearching.value = false;
         NavigationHelper.showSafeSnackbar(
-          title: 'Search Error',
+          title: tr('Search Error'),
           message: 'Failed to search content. Please try again.',
         );
       });

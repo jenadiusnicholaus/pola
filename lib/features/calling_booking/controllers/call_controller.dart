@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../../utils/navigation_helper.dart';
 import '../../../services/token_storage_service.dart';
@@ -220,9 +221,9 @@ class CallController extends GetxController {
       error.value = errorMessage;
       if (Get.isRegistered<CallController>()) {
         Get.back();
-        Future.delayed(const Duration(milliseconds: 300), () {
+        Future.delayed(Duration(milliseconds: 300), () {
           NavigationHelper.showSafeSnackbar(
-            title: 'Error',
+            title: tr('Error'),
             message: errorMessage.isNotEmpty
                 ? errorMessage
                 : 'An error occurred during the call',
@@ -267,7 +268,7 @@ class CallController extends GetxController {
         error.value = 'Phone number required for calls';
         isCheckingCredits.value = false;
         NavigationHelper.showSafeSnackbar(
-          title: 'Error',
+          title: tr('Error'),
           message: 'Phone number is required to make calls',
           backgroundColor: Colors.red,
         );
@@ -303,7 +304,7 @@ class CallController extends GetxController {
       debugPrint('❌ Error joining incoming call: $e');
       isCheckingCredits.value = false;
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Could not join call. Please try again.',
         backgroundColor: Colors.red,
       );
@@ -339,7 +340,7 @@ class CallController extends GetxController {
         debugPrint('❌ No phone number found for user');
         isCheckingCredits.value = false;
         NavigationHelper.showSafeSnackbar(
-          title: 'Error',
+          title: tr('Error'),
           message: 'Phone number is required to make calls',
           backgroundColor: Colors.red,
         );
@@ -400,7 +401,7 @@ class CallController extends GetxController {
         isCheckingCredits.value = false;
         error.value = initiateResult['error'] ?? 'Failed to initiate call';
         NavigationHelper.showSafeSnackbar(
-          title: 'Error',
+          title: tr('Error'),
           message: initiateResult['error'] ?? 'Failed to initiate call',
           backgroundColor: Colors.red,
         );
@@ -442,7 +443,7 @@ class CallController extends GetxController {
         );
         isCheckingCredits.value = false;
         NavigationHelper.showSafeSnackbar(
-          title: 'Error',
+          title: tr('Error'),
           message: 'Unable to connect call. Consultant contact not available.',
           backgroundColor: Colors.red,
         );
@@ -479,7 +480,7 @@ class CallController extends GetxController {
       isCheckingCredits.value = false;
       // Show toast for unexpected errors
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'An unexpected error occurred. Please try again.',
         backgroundColor: Colors.red,
       );
@@ -647,9 +648,9 @@ class CallController extends GetxController {
 
       // Show summary after navigation
       final minutes = (durationSeconds / 60).ceil();
-      Future.delayed(const Duration(milliseconds: 300), () {
+      Future.delayed(Duration(milliseconds: 300), () {
         NavigationHelper.showSafeSnackbar(
-          title: 'Call Completed',
+          title: tr('Call Completed'),
           message:
               'Call duration: ${callDuration.value}\nCredits used: $minutes minute(s)',
           duration: const Duration(seconds: 4),
@@ -675,7 +676,7 @@ class CallController extends GetxController {
 
     Get.dialog(
       AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.call_end, color: Colors.orange),
             SizedBox(width: 8),
@@ -686,24 +687,23 @@ class CallController extends GetxController {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Call Summary',
+            Text(tr('Call Summary'),
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             _buildSummaryRow(
               icon: Icons.timer,
               label: 'Duration',
               value: formattedDuration,
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             _buildSummaryRow(
               icon: Icons.remove_circle_outline,
               label: 'Minutes Used',
               value: '${creditsDeducted.toStringAsFixed(1)} min',
               valueColor: Colors.red,
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             _buildSummaryRow(
               icon: Icons.account_balance_wallet,
               label: 'Remaining Credits',
@@ -713,7 +713,7 @@ class CallController extends GetxController {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('OK')),
+          TextButton(onPressed: () => Get.back(), child: Text(tr('OK'))),
         ],
       ),
       barrierDismissible: false,

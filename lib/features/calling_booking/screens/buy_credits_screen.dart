@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../services/credit_service.dart';
 import '../models/consultant_models.dart';
@@ -72,10 +73,10 @@ class _BuyCreditsScreenState extends State<BuyCreditsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Buy Call Minutes'),
+        title: Text('Buy Call Minutes'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.history),
+            icon: Icon(Icons.history),
             onPressed: () {
               // TODO: Navigate to credit history screen
             },
@@ -83,7 +84,7 @@ class _BuyCreditsScreenState extends State<BuyCreditsScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(
                   child: Column(
@@ -91,14 +92,14 @@ class _BuyCreditsScreenState extends State<BuyCreditsScreen> {
                     children: [
                       Icon(Icons.error_outline,
                           size: 64, color: theme.colorScheme.error),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       Text(_error!,
                           textAlign: TextAlign.center,
                           style: theme.textTheme.bodyLarge),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _loadData,
-                        child: const Text('Try Again'),
+                        child: Text('Try Again'),
                       ),
                     ],
                   ),
@@ -106,26 +107,25 @@ class _BuyCreditsScreenState extends State<BuyCreditsScreen> {
               : RefreshIndicator(
                   onRefresh: _loadData,
                   child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
+                    physics: AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildBalanceCard(theme),
                         if (_expiringMinutes > 0) ...[
-                          const SizedBox(height: 12),
+                          SizedBox(height: 12),
                           _buildExpiringWarning(theme),
                         ],
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
                         Row(
                           children: [
-                            Text(
-                              'Choose a Package',
+                            Text(tr('Choose a Package'),
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            const Spacer(),
+                            Spacer(),
                             Text(
                               '${_bundles.length} options',
                               style: theme.textTheme.bodySmall?.copyWith(
@@ -134,7 +134,7 @@ class _BuyCreditsScreenState extends State<BuyCreditsScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: 12),
                         if (_bundles.isEmpty)
                           Center(
                             child: Padding(
@@ -146,9 +146,8 @@ class _BuyCreditsScreenState extends State<BuyCreditsScreen> {
                                     size: 48,
                                     color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
                                   ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    'No packages available',
+                                  SizedBox(height: 12),
+                                  Text(tr('No packages available'),
                                     style: theme.textTheme.bodyLarge?.copyWith(
                                       color: theme.colorScheme.onSurfaceVariant,
                                     ),
@@ -284,7 +283,7 @@ class _BuyCreditsScreenState extends State<BuyCreditsScreen> {
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
             blurRadius: 8,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -316,7 +315,7 @@ class _BuyCreditsScreenState extends State<BuyCreditsScreen> {
                             ),
                           ),
                           if (isBestValue) ...[
-                            const SizedBox(width: 8),
+                            SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
@@ -326,8 +325,7 @@ class _BuyCreditsScreenState extends State<BuyCreditsScreen> {
                                 color: theme.colorScheme.primary,
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: Text(
-                                'POPULAR',
+                              child: Text(tr('POPULAR'),
                                 style: TextStyle(
                                   color: theme.colorScheme.onPrimary,
                                   fontSize: 10,

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../controllers/registration_controller.dart';
 import '../../models/lookup_models.dart';
+import '../../../../shared/widgets/intl_phone_input.dart';
 
 class ContactInfoPage extends StatefulWidget {
   const ContactInfoPage({super.key});
@@ -62,7 +64,7 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
             content: Text('Failed to load districts. Please try again.'),
             backgroundColor: Colors.red,
             action: SnackBarAction(
-              label: 'Retry',
+              label: tr('Retry'),
               textColor: Colors.white,
               onPressed: () => _loadDistrictsForRegion(regionId),
             ),
@@ -86,10 +88,20 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
     controller.updateRegistrationData(data);
   }
 
+  String _initialNational() {
+    var digits =
+        controller.registrationData.phoneNumber.replaceAll(RegExp(r'\D'), '');
+    if (digits.startsWith('255') && digits.length > 9) {
+      digits = digits.substring(3);
+    }
+    if (digits.startsWith('0')) digits = digits.substring(1);
+    return digits;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isCitizen = controller.registrationData.userRole == 'citizen';
-    
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Form(
@@ -98,32 +110,36 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              isCitizen ? 'Mawasiliano | Contact Information' : 'Contact Information',
+              isCitizen
+                  ? 'Mawasiliano | Contact Information'
+                  : 'Contact Information',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 24),
 
-            // Phone Number
-            TextFormField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: isCitizen ? 'Nambari ya Simu | Phone Number' : 'Phone Number',
-                border: const OutlineInputBorder(),
-                prefixText: '+255',
-                helperText: isCitizen ? 'Nambari yako | Your number' : 'Enter your mobile number',
-                hintStyle: const TextStyle(color: Colors.grey),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return isCitizen ? 'Nambari ya simu inahitajika' : 'Phone number is required';
-                }
-                if (value.length < 9) {
-                  return isCitizen ? 'Nambari si sahihi' : 'Please enter a valid phone number';
+            // Phone Number (international, defaults to Tanzania)
+            IntlPhoneInput(
+              initialValue: _initialNational(),
+              labelText:
+                  isCitizen ? 'Nambari ya Simu | Phone Number' : 'Phone Number',
+              helperText: isCitizen
+                  ? 'Nambari yako | Your number'
+                  : 'Enter your mobile number',
+              invalidNumberMessage: isCitizen
+                  ? 'Nambari si sahihi'
+                  : 'Please enter a valid phone number',
+              validator: (phone) {
+                if (phone == null || phone.number.trim().isEmpty) {
+                  return isCitizen
+                      ? 'Nambari ya simu inahitajika'
+                      : 'Phone number is required';
                 }
                 return null;
               },
-              onChanged: (value) => _saveData(),
+              onChanged: (complete) {
+                _phoneController.text = complete;
+                _saveData();
+              },
             ),
             const SizedBox(height: 16),
 
@@ -146,8 +162,12 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
                   helperText: isLoadingRegions
                       ? (isCitizen ? 'Inapakia...' : 'Loading regions...')
                       : regions.isEmpty
-                          ? (isCitizen ? 'Hakuna mikoa' : 'No regions available')
-                          : (isCitizen ? 'Chagua mkoa | Select region' : 'Select your region'),
+                          ? (isCitizen
+                              ? 'Hakuna mikoa'
+                              : 'No regions available')
+                          : (isCitizen
+                              ? 'Chagua mkoa | Select region'
+                              : 'Select your region'),
                   suffixIcon: isLoadingRegions
                       ? const SizedBox(
                           width: 20,
@@ -196,12 +216,18 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
                   labelText: isCitizen ? 'Wilaya | District' : 'District',
                   border: const OutlineInputBorder(),
                   helperText: _selectedRegion == null
-                      ? (isCitizen ? 'Chagua mkoa kwanza' : 'Please select a region first')
+                      ? (isCitizen
+                          ? 'Chagua mkoa kwanza'
+                          : 'Please select a region first')
                       : isLoadingDistricts
                           ? (isCitizen ? 'Inapakia...' : 'Loading districts...')
                           : _filteredDistricts.isEmpty
-                              ? (isCitizen ? 'Hakuna wilaya' : 'No districts available')
-                              : (isCitizen ? 'Chagua wilaya | Select district' : 'Select your district'),
+                              ? (isCitizen
+                                  ? 'Hakuna wilaya'
+                                  : 'No districts available')
+                              : (isCitizen
+                                  ? 'Chagua wilaya | Select district'
+                                  : 'Select your district'),
                   suffixIcon: isLoadingDistricts
                       ? const SizedBox(
                           width: 20,
@@ -232,20 +258,24 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
                       },
               );
             }),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
 
             // Ward
             TextFormField(
               controller: _wardController,
               decoration: InputDecoration(
-                labelText: isCitizen ? 'Kata (Hiari) | Ward (Optional)' : 'Ward (Optional)',
-                border: const OutlineInputBorder(),
-                helperText: isCitizen ? 'Jina la kata/mtaa | Ward/street name' : 'Enter your ward/street name',
-                hintStyle: const TextStyle(color: Colors.grey),
+                labelText: isCitizen
+                    ? 'Kata (Hiari) | Ward (Optional)'
+                    : 'Ward (Optional)',
+                border: OutlineInputBorder(),
+                helperText: isCitizen
+                    ? 'Jina la kata/mtaa | Ward/street name'
+                    : 'Enter your ward/street name',
+                hintStyle: TextStyle(color: Colors.grey),
               ),
               onChanged: (value) => _saveData(),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
 
             // Office Address (for professionals only - not for citizens or students)
             if (controller.registrationData.userRole != 'citizen' &&
@@ -253,8 +283,8 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
               TextFormField(
                 controller: _addressController,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Office Address',
+                decoration: InputDecoration(
+                  labelText: tr('Office Address'),
                   border: OutlineInputBorder(),
                   helperText: 'Enter your office or workplace address',
                 ),
@@ -262,14 +292,14 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
               ),
 
             // Occupation field (for citizens only)
-            if (controller.registrationData.userRole == 'citizen') ...[              
-              const SizedBox(height: 16),
+            if (controller.registrationData.userRole == 'citizen') ...[
+              SizedBox(height: 16),
               TextFormField(
                 controller: _occupationController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Kazi | Occupation',
                   border: OutlineInputBorder(),
-                  helperText: 'Kazi yako | Your job',
+                  helperText: tr('Kazi yako | Your job'),
                   hintStyle: TextStyle(color: Colors.grey),
                   prefixIcon: Icon(Icons.work_outline),
                 ),

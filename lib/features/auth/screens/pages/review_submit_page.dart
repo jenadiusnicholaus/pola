@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../controllers/registration_controller.dart';
 
@@ -234,7 +235,7 @@ class ReviewSubmitPage extends StatelessWidget {
                             ? colorScheme.primary
                             : colorScheme.error,
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Text(
                         errors.isEmpty
                             ? (isCitizen ? 'Tayari | Ready' : 'Ready to Submit')
@@ -250,13 +251,13 @@ class ReviewSubmitPage extends StatelessWidget {
                     ],
                   ),
                   if (errors.isNotEmpty) ...[
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     ...errors.map((error) => Padding(
                           padding: const EdgeInsets.only(top: 4),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('• ',
+                              Text(tr('• '),
                                   style: TextStyle(color: colorScheme.error)),
                               Expanded(
                                 child: Text(
@@ -361,13 +362,12 @@ class ReviewSubmitPage extends StatelessWidget {
                     size: 24,
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Step $stepNumber',
+                      Text(tr('Step {stepNumber}').replaceAll('{stepNumber}', '$stepNumber'),
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                               color: themeAccentColor,
                               fontWeight: FontWeight.w600,
@@ -406,8 +406,7 @@ class ReviewSubmitPage extends StatelessWidget {
           children: [
             SizedBox(
               width: 130,
-              child: Text(
-                '$label:',
+              child: Text(tr('{label}:').replaceAll('{label}', '$label'),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w500,
                       color: isDark 

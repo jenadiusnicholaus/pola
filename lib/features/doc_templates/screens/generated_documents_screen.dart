@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
@@ -39,13 +40,13 @@ class GeneratedDocumentsScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, size: 60, color: Colors.red),
-                const SizedBox(height: 16),
+                Icon(Icons.error_outline, size: 60, color: Colors.red),
+                SizedBox(height: 16),
                 Text(
                   'Error loading documents',
                   style: theme.textTheme.titleMedium,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 32),
                   child: Text(
@@ -54,11 +55,11 @@ class GeneratedDocumentsScreen extends StatelessWidget {
                     style: theme.textTheme.bodyMedium,
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 ElevatedButton.icon(
                   onPressed: controller.refresh,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Retry'),
+                  icon: Icon(Icons.refresh),
+                  label: Text(tr('Retry')),
                 ),
               ],
             ),
@@ -396,7 +397,7 @@ class _DownloadButtonState extends State<_DownloadButton> {
           content: Text('Downloaded: $fileName'),
           backgroundColor: Colors.green,
           action: SnackBarAction(
-            label: 'OPEN',
+            label: tr('OPEN'),
             textColor: Colors.white,
             onPressed: () async {
               final result = await OpenFilex.open(filePath);

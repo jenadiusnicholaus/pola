@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../../utils/navigation_helper.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -1215,7 +1216,7 @@ class FCMService extends GetxService {
     }
 
     NavigationHelper.showSafeSnackbar(
-      title: 'Call Accepted',
+      title: tr('Call Accepted'),
       message: 'Consultant is joining the call...',
       backgroundColor: Colors.green,
       colorText: Colors.white,
@@ -1358,8 +1359,8 @@ class FCMService extends GetxService {
     final callerName = data['caller_name']?.toString() ?? 'Someone';
 
     NavigationHelper.showSafeSnackbar(
-      title: 'Missed Call',
-      message: 'You missed a call from $callerName',
+      title: tr('Missed Call'),
+      message: tr('You missed a call from {callerName}').replaceAll('{callerName}', '$callerName'),
       backgroundColor: Colors.orange,
       colorText: Colors.white,
       icon: const Icon(Icons.phone_missed, color: Colors.white),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../controllers/profile_controller.dart';
 import '../widgets/profile_header.dart';
@@ -37,12 +38,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Text(tr('Profile')),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh),
             onPressed: controller.refreshProfile,
-            tooltip: 'Refresh Profile',
+            tooltip: tr('Refresh Profile'),
           ),
           IconButton(
             icon: const Icon(Icons.edit),
@@ -52,7 +53,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 await controller.loadProfileSilently();
               }
             },
-            tooltip: 'Edit Profile',
+            tooltip: tr('Edit Profile'),
           ),
         ],
       ),
@@ -84,22 +85,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     size: 64,
                     color: Theme.of(context).colorScheme.error,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Text(
                     'Error Loading Profile',
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     controller.error,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   ElevatedButton.icon(
                     onPressed: controller.refreshProfile,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Retry'),
+                    icon: Icon(Icons.refresh),
+                    label: Text(tr('Retry')),
                   ),
                 ],
               ),
@@ -110,15 +111,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // Profile loaded
         final profile = controller.profile;
         if (profile == null) {
-          return const Center(
-            child: Text('No profile data available'),
+          return Center(
+            child: Text(tr('No profile data available')),
           );
         }
 
         return RefreshIndicator(
           onRefresh: controller.refreshProfile,
           child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
+            physics: AlwaysScrollableScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -135,16 +136,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Verification Status
-                      const ProfileVerificationCard(),
-                      const SizedBox(height: 16),
+                      ProfileVerificationCard(),
+                      SizedBox(height: 16),
 
                       // Consultant Status/Apply
-                      const ConsultantStatusCard(),
-                      const SizedBox(height: 16),
+                      ConsultantStatusCard(),
+                      SizedBox(height: 16),
 
                       // Subscription Info
                       SubscriptionCard(subscription: profile.subscription),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
 
                       // Basic Information
                       ProfileInfoCard(
@@ -168,7 +169,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             _buildInfoRow('ID Number', profile.idNumber!),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
 
                       // Contact Information
                       ProfileInfoCard(
@@ -189,7 +190,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             _buildInfoRow('Website', profile.contact.website!),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
 
                       // Address Information
                       if (profile.address.regionName != null ||
@@ -199,7 +200,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           (profile.address.officeAddress != null &&
                               profile.address.officeAddress!.isNotEmpty))
                         ProfileInfoCard(
-                          title: 'Address',
+                          title: tr('Address'),
                           icon: Icons.location_on,
                           children: [
                             if (profile.address.regionName != null)
@@ -217,19 +218,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   profile.address.officeAddress!),
                           ],
                         ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
 
                       // Role-Specific Information
                       RoleSpecificInfo(profile: profile),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
 
                       if (profile.userRole.roleName == 'advocate' ||
                           profile.userRole.roleName == 'lawyer' ||
                           profile.userRole.roleName == 'paralegal')
                         Card(
                           child: ListTile(
-                            leading: const Icon(Icons.business_outlined),
-                            title: const Text('Associated Law Firm'),
+                            leading: Icon(Icons.business_outlined),
+                            title: Text(tr('Associated Law Firm')),
                             subtitle: Text(
                               profile.associatedLawFirmDisplay ??
                                   'Tap to change your affiliation',

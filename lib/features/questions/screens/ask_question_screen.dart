@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../controllers/question_controller.dart';
 
@@ -33,7 +34,7 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ask a Question'),
+        title: Text('Ask a Question'),
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
       ),
@@ -59,13 +60,12 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
                       Icons.book,
                       color: theme.colorScheme.primary,
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'About:',
+                          Text(tr('About:'),
                             style: theme.textTheme.labelSmall,
                           ),
                           Text(
@@ -198,7 +198,7 @@ class _AskQuestionScreenState extends State<AskQuestionScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('• ', style: TextStyle(fontSize: 16)),
+          Text(tr('• '), style: TextStyle(fontSize: 16)),
           Expanded(
             child: Text(
               text,

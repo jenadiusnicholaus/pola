@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../controllers/verification_controller.dart';
 
@@ -69,7 +70,7 @@ class VerificationStepsCard extends StatelessWidget {
               if (status.currentStep == 'final' &&
                   !status.isVerified &&
                   !status.isSubmittedForReview) ...[
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
@@ -87,9 +88,8 @@ class VerificationStepsCard extends StatelessWidget {
                         color: Theme.of(context).primaryColor,
                         size: 32,
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Ready to Submit',
+                      SizedBox(height: 12),
+                      Text(tr('Ready to Submit'),
                         style:
                             Theme.of(context).textTheme.titleMedium?.copyWith(
                                   color: Theme.of(context).primaryColor,

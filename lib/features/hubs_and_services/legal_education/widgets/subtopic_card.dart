@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:localization_lite/translate.dart';
 import '../models/legal_education_models.dart';
+import '../../../../services/language_service.dart';
 
 class SubtopicCard extends StatelessWidget {
   final Subtopic subtopic;
@@ -23,8 +26,8 @@ class SubtopicCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        splashColor: theme.colorScheme.primary.withOpacity(0.1),
-        highlightColor: theme.colorScheme.primary.withOpacity(0.05),
+        splashColor: theme.colorScheme.primary.withOpacity(0.08),
+        highlightColor: theme.colorScheme.primary.withOpacity(0.04),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -44,13 +47,13 @@ class SubtopicCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: _getSubtopicColor().withOpacity(0.1),
+                  color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   _getSubtopicIconData(),
                   size: 24,
-                  color: _getSubtopicColor(),
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
 
@@ -92,8 +95,9 @@ class SubtopicCard extends StatelessWidget {
                       children: [
                         _buildStatChip(
                           icon: Icons.article,
-                          label: '${subtopic.materialsCount} Materials',
-                          color: Colors.blue,
+                          label:
+                              '${subtopic.materialsCount} ${tr('Materials')}',
+                          color: theme.colorScheme.onSurface.withOpacity(0.65),
                           theme: theme,
                         ),
                         const SizedBox(width: 8),
@@ -106,14 +110,18 @@ class SubtopicCard extends StatelessWidget {
 
               const SizedBox(width: 8),
 
-              // Trailing action label
-              Text(
-                'READ MORE',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
-                  fontSize: 11,
+              // Chevron button
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 12,
+                  color: theme.colorScheme.onSurface.withOpacity(0.45),
                 ),
               ),
             ],
@@ -197,11 +205,18 @@ class SubtopicCard extends StatelessWidget {
     );
   }
 
+  /// Explicit language param, falling back to the user's stored preference.
+  String? get _effectiveLanguage {
+    try {
+      return language ?? Get.find<LanguageService>().apiCode;
+    } catch (_) {
+      return language;
+    }
+  }
+
   String _getLocalizedTitle() {
     // Use language from API parameter only
-    final isSwahili = language == 'sw';
-    print(
-        '🎴 SubtopicCard: language=$language, isSwahili=$isSwahili, name=${subtopic.name}, nameSw=${subtopic.nameSw}');
+    final isSwahili = _effectiveLanguage == 'sw';
 
     if (isSwahili && subtopic.nameSw.isNotEmpty) {
       return subtopic.nameSw;
@@ -216,7 +231,7 @@ class SubtopicCard extends StatelessWidget {
 
   String _getLocalizedDescription() {
     // Use language from API parameter only
-    final isSwahili = language == 'sw';
+    final isSwahili = _effectiveLanguage == 'sw';
 
     if (isSwahili && subtopic.descriptionSw.isNotEmpty) {
       return subtopic.descriptionSw;
@@ -226,7 +241,7 @@ class SubtopicCard extends StatelessWidget {
       return subtopic.descriptionSw;
     }
 
-    return 'No description available';
+    return tr('No description available');
   }
 
   IconData _getSubtopicIconData() {
@@ -247,25 +262,5 @@ class SubtopicCard extends StatelessWidget {
     if (slug.contains('court')) return Icons.account_balance;
 
     return Icons.article; // Default icon
-  }
-
-  Color _getSubtopicColor() {
-    // Map subtopic types to colors
-    final slug = subtopic.slug.toLowerCase();
-
-    if (slug.contains('right')) return Colors.purple;
-    if (slug.contains('procedure')) return Colors.blue;
-    if (slug.contains('case')) return Colors.orange;
-    if (slug.contains('law')) return Colors.red;
-    if (slug.contains('rule')) return Colors.green;
-    if (slug.contains('regulation')) return Colors.indigo;
-    if (slug.contains('contract')) return Colors.teal;
-    if (slug.contains('property')) return Colors.brown;
-    if (slug.contains('evidence')) return Colors.cyan;
-    if (slug.contains('appeal')) return Colors.deepOrange;
-    if (slug.contains('judgment')) return Colors.pink;
-    if (slug.contains('court')) return Colors.deepPurple;
-
-    return Colors.grey; // Default color
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../controllers/registration_controller.dart';
 
@@ -45,19 +46,19 @@ class _IdentityInfoPageState extends State<IdentityInfoPage> {
               'Identity Information',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
 
             // ID Number
             TextFormField(
               controller: _idNumberController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'National ID Number (Optional)',
                 border: OutlineInputBorder(),
                 helperText: 'Enter your national identification number',
               ),
               onChanged: (value) => _saveData(),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
 
             // Information card
             Card(
@@ -70,21 +71,21 @@ class _IdentityInfoPageState extends State<IdentityInfoPage> {
                       size: 48,
                       color: Theme.of(context).primaryColor,
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     Text(
                       'Identity Verification',
                       style: Theme.of(context).textTheme.titleLarge,
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
+                    SizedBox(height: 8),
+                    Text(
                       'Your identity information helps us verify your account and provide better services. All information is kept secure and confidential.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey),
                     ),
-                    const SizedBox(height: 16),
-                    const Divider(),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
+                    Divider(),
+                    SizedBox(height: 16),
                     Row(
                       children: [
                         Icon(
@@ -92,7 +93,7 @@ class _IdentityInfoPageState extends State<IdentityInfoPage> {
                           color: Colors.green,
                           size: 20,
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Secure & Encrypted',
@@ -104,7 +105,7 @@ class _IdentityInfoPageState extends State<IdentityInfoPage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Row(
                       children: [
                         Icon(
@@ -112,10 +113,9 @@ class _IdentityInfoPageState extends State<IdentityInfoPage> {
                           color: Colors.blue,
                           size: 20,
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Expanded(
-                          child: Text(
-                            'Privacy Protected',
+                          child: Text(tr('Privacy Protected'),
                             style: TextStyle(
                               color: Colors.blue,
                               fontWeight: FontWeight.w500,

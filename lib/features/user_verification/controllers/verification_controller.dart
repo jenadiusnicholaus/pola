@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
@@ -142,7 +143,7 @@ class VerificationController extends GetxController {
         await refreshVerificationStatus();
 
         NavigationHelper.showSafeSnackbar(
-          title: 'Success',
+          title: tr('Success'),
           message: 'Document uploaded successfully',
           backgroundColor: Colors.green,
         );
@@ -152,7 +153,7 @@ class VerificationController extends GetxController {
         _error.value = 'Failed to upload document';
 
         NavigationHelper.showSafeSnackbar(
-          title: 'Upload Failed',
+          title: tr('Upload Failed'),
           message: 'Failed to upload document. Please try again.',
           backgroundColor: Colors.red,
         );
@@ -163,7 +164,7 @@ class VerificationController extends GetxController {
       _error.value = 'Error uploading document';
 
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'An error occurred while uploading the document',
         backgroundColor: Colors.red,
       );
@@ -211,7 +212,7 @@ class VerificationController extends GetxController {
         await refreshVerificationStatus();
 
         NavigationHelper.showSafeSnackbar(
-          title: 'Success',
+          title: tr('Success'),
           message: 'Information updated successfully',
           backgroundColor: Colors.green,
         );
@@ -221,7 +222,7 @@ class VerificationController extends GetxController {
         _error.value = 'Failed to update information';
 
         NavigationHelper.showSafeSnackbar(
-          title: 'Update Failed',
+          title: tr('Update Failed'),
           message: 'Failed to update information. Please try again.',
           backgroundColor: Colors.red,
         );
@@ -232,7 +233,7 @@ class VerificationController extends GetxController {
       _error.value = 'Error updating information';
 
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'An error occurred while updating information',
         backgroundColor: Colors.red,
       );
@@ -258,7 +259,7 @@ class VerificationController extends GetxController {
         await refreshVerificationStatus();
 
         NavigationHelper.showSafeSnackbar(
-          title: 'Success',
+          title: tr('Success'),
           message: 'Verification submitted for review',
           backgroundColor: Colors.green,
         );
@@ -279,7 +280,7 @@ class VerificationController extends GetxController {
       _error.value = 'Error submitting for review';
 
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'An error occurred while submitting for review',
         backgroundColor: Colors.red,
       );
@@ -305,7 +306,7 @@ class VerificationController extends GetxController {
         await refreshVerificationStatus();
 
         NavigationHelper.showSafeSnackbar(
-          title: 'Success',
+          title: tr('Success'),
           message: 'Document deleted successfully',
           backgroundColor: Colors.green,
         );
@@ -326,7 +327,7 @@ class VerificationController extends GetxController {
       _error.value = 'Error deleting document';
 
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'An error occurred while deleting the document',
         backgroundColor: Colors.red,
       );
@@ -392,8 +393,8 @@ class VerificationController extends GetxController {
     } catch (e) {
       debugPrint('❌ Error picking file: $e');
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
-        message: 'Failed to pick file',
+        title: tr('Error'),
+        message: tr('Failed to pick file'),
         backgroundColor: Colors.red,
       );
     }
@@ -437,7 +438,7 @@ class VerificationController extends GetxController {
         final fileSize = await file.length();
         if (fileSize > 15 * 1024 * 1024) {
           NavigationHelper.showSafeSnackbar(
-            title: '⚠️ Image Too Large',
+            title: tr('⚠️ Image Too Large'),
             message:
                 'Captured image is too large. Please try again with lower quality.',
             backgroundColor: Colors.orange,
@@ -449,7 +450,7 @@ class VerificationController extends GetxController {
       } else {
         NavigationHelper.showSafeSnackbar(
           title: 'ℹ️ No Photo Taken',
-          message: 'Please take a photo to upload',
+          message: tr('Please take a photo to upload'),
           backgroundColor: Colors.blue.withOpacity(0.8),
         );
       }
@@ -469,7 +470,7 @@ class VerificationController extends GetxController {
       }
 
       NavigationHelper.showSafeSnackbar(
-        title: '📷 Camera Error',
+        title: tr('📷 Camera Error'),
         message: errorMessage,
         backgroundColor: Colors.red,
         duration: const Duration(seconds: 4),
@@ -557,7 +558,7 @@ class VerificationController extends GetxController {
         final fileSize = await file.length();
         if (fileSize > 10 * 1024 * 1024) {
           NavigationHelper.showSafeSnackbar(
-            title: '⚠️ File Too Large',
+            title: tr('⚠️ File Too Large'),
             message:
                 'Image size must be less than 10MB. Please select a smaller image or reduce quality.',
             backgroundColor: Colors.orange,
@@ -568,7 +569,7 @@ class VerificationController extends GetxController {
         await _uploadFile(file, documentType, 'Gallery Selection');
       } else {
         NavigationHelper.showSafeSnackbar(
-          title: 'ℹ️ No Image Selected',
+          title: tr('ℹ️ No Image Selected'),
           message: 'Please select an image to upload',
           backgroundColor: Colors.blue.withOpacity(0.8),
         );
@@ -591,7 +592,7 @@ class VerificationController extends GetxController {
       }
 
       NavigationHelper.showSafeSnackbar(
-        title: '📱 Gallery Error',
+        title: tr('📱 Gallery Error'),
         message: errorMessage,
         backgroundColor: Colors.red,
         duration: const Duration(seconds: 4),
@@ -638,8 +639,8 @@ class VerificationController extends GetxController {
           return; // Success with file picker
         } else {
           NavigationHelper.showSafeSnackbar(
-            title: 'ℹ️ No File Selected',
-            message: 'Please select a file to upload',
+            title: tr('ℹ️ No File Selected'),
+            message: tr('Please select a file to upload'),
             backgroundColor: Colors.blue.withOpacity(0.8),
           );
           return;
@@ -686,7 +687,7 @@ class VerificationController extends GetxController {
                     'Cannot load representation of type public.jpeg') ||
                 finalError.toString().contains('invalid_image')) {
               NavigationHelper.showSafeSnackbar(
-                title: '📱 Image Format Issue',
+                title: tr('📱 Image Format Issue'),
                 message:
                     'Unable to load this image format. Please try taking a new photo with the camera instead.',
                 backgroundColor: Colors.orange,
@@ -709,7 +710,7 @@ class VerificationController extends GetxController {
           final fileSize = await file.length();
           if (fileSize > 10 * 1024 * 1024) {
             NavigationHelper.showSafeSnackbar(
-              title: '⚠️ File Too Large',
+              title: tr('⚠️ File Too Large'),
               message:
                   'Image size must be less than 10MB. Please select a smaller image.',
               backgroundColor: Colors.orange,
@@ -720,7 +721,7 @@ class VerificationController extends GetxController {
           await _uploadFile(file, documentType, image.name);
         } else {
           NavigationHelper.showSafeSnackbar(
-            title: 'ℹ️ No Image Selected',
+            title: tr('ℹ️ No Image Selected'),
             message: 'Please select an image from gallery',
             backgroundColor: Colors.blue.withOpacity(0.8),
           );
@@ -729,8 +730,8 @@ class VerificationController extends GetxController {
     } catch (e) {
       debugPrint('❌ File upload error: $e');
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
-        message: 'Failed to select file: $e',
+        title: tr('Error'),
+        message: tr('Failed to select file: {e}').replaceAll('{e}', '$e'),
         backgroundColor: Colors.red,
       );
     } finally {
@@ -748,7 +749,7 @@ class VerificationController extends GetxController {
 
       if (fileSize > maxSize) {
         NavigationHelper.showSafeSnackbar(
-          title: '⚠️ File Too Large',
+          title: tr('⚠️ File Too Large'),
           message:
               'File size must be less than 10MB. Selected file is ${(fileSize / (1024 * 1024)).toStringAsFixed(1)}MB',
           backgroundColor: Colors.orange,
@@ -817,7 +818,7 @@ class VerificationController extends GetxController {
 
       // Show success message
       NavigationHelper.showSafeSnackbar(
-        title: '✅ Upload Successful',
+        title: tr('✅ Upload Successful'),
         message:
             '${_getDocumentDisplayName(documentType)} uploaded successfully!',
         backgroundColor: Colors.green,
@@ -835,7 +836,7 @@ class VerificationController extends GetxController {
       }
 
       NavigationHelper.showSafeSnackbar(
-        title: 'Upload Failed',
+        title: tr('Upload Failed'),
         message: 'Failed to upload document: $e',
         backgroundColor: Colors.red,
       );
@@ -864,7 +865,7 @@ class VerificationController extends GetxController {
         await pickAndUploadDocument(doc.documentType);
       } else {
         NavigationHelper.showSafeSnackbar(
-          title: 'Error',
+          title: tr('Error'),
           message: 'Document not found',
           backgroundColor: Colors.red,
         );
@@ -872,7 +873,7 @@ class VerificationController extends GetxController {
     } catch (e) {
       debugPrint('❌ Error re-uploading document: $e');
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Failed to re-upload document',
         backgroundColor: Colors.red,
       );
@@ -884,7 +885,7 @@ class VerificationController extends GetxController {
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
@@ -892,24 +893,24 @@ class VerificationController extends GetxController {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               '📱 Alternative Upload Options',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 16),
-            const Text(
+            SizedBox(height: 16),
+            Text(
               'Gallery selection failed. Try these alternatives:',
               style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
 
             // Camera option
             ListTile(
-              leading: const Icon(Icons.camera_alt, color: Colors.blue),
-              title: const Text('Take Photo'),
+              leading: Icon(Icons.camera_alt, color: Colors.blue),
+              title: Text(tr('Take Photo')),
               subtitle: const Text('Use camera to capture document'),
               onTap: () {
                 Get.back();
@@ -919,8 +920,8 @@ class VerificationController extends GetxController {
 
             // File browser option
             ListTile(
-              leading: const Icon(Icons.file_present, color: Colors.green),
-              title: const Text('Browse Files'),
+              leading: Icon(Icons.file_present, color: Colors.green),
+              title: Text(tr('Browse Files')),
               subtitle: const Text('Select from file manager'),
               onTap: () {
                 Get.back();
@@ -929,10 +930,10 @@ class VerificationController extends GetxController {
             ),
 
             // Tips section
-            const Divider(),
-            const ListTile(
+            Divider(),
+            ListTile(
               leading: Icon(Icons.lightbulb_outline, color: Colors.orange),
-              title: Text('💡 Tips for iOS Users'),
+              title: Text(tr('💡 Tips for iOS Users')),
               subtitle: Text(
                 '• Convert images to JPEG format before selecting\n'
                 '• Use camera for better compatibility\n'

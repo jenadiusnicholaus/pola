@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import '../controllers/hub_content_controller.dart';
 import 'comprehensive_filter_sheet.dart';
 
@@ -91,10 +92,10 @@ class _HubContentFilterState extends State<HubContentFilter> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const Spacer(),
+                    Spacer(),
                     TextButton(
                       onPressed: _resetFilters,
-                      child: const Text('Reset'),
+                      child: Text(tr('Reset')),
                     ),
                   ],
                 ),
@@ -141,11 +142,11 @@ class _HubContentFilterState extends State<HubContentFilter> {
                             .toList(),
                       ),
 
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
 
                       // Sort Section
                       Text(
-                        'Sort By',
+                        tr('Sort By'),
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -153,27 +154,33 @@ class _HubContentFilterState extends State<HubContentFilter> {
                       const SizedBox(height: 12),
                       Column(
                         children: [
-                          'recent',
-                          'popular',
-                          'trending',
-                          'likes',
-                          'alphabetical',
-                          'pinned_first',
-                          'price_high',
-                          'price_low'
-                        ]
-                            .map((sort) => RadioListTile<String>(
-                                  title: Text(_getSortLabel(sort)),
-                                  value: sort,
-                                  groupValue: selectedSort,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      selectedSort = value!;
-                                    });
-                                  },
-                                  contentPadding: EdgeInsets.zero,
-                                ))
-                            .toList(),
+                          ...[
+                            'recent',
+                            'popular',
+                            'trending',
+                            'likes',
+                            'alphabetical',
+                            'pinned_first',
+                            // Price sorts hidden for students hub —
+                            // downloads have a fixed price.
+                            if (controller.hubType != 'students') ...[
+                              'price_high',
+                              'price_low',
+                            ],
+                          ]
+                              .map((sort) => RadioListTile<String>(
+                                    title: Text(_getSortLabel(sort)),
+                                    value: sort,
+                                    groupValue: selectedSort,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        selectedSort = value!;
+                                      });
+                                    },
+                                    contentPadding: EdgeInsets.zero,
+                                  ))
+                              .toList(),
+                        ],
                       ),
 
                       const SizedBox(height: 24),
@@ -237,7 +244,7 @@ class _HubContentFilterState extends State<HubContentFilter> {
                           );
                           Navigator.pop(context);
                         },
-                        child: const Text('Apply'),
+                        child: Text(tr('Apply')),
                       ),
                     ),
                   ],

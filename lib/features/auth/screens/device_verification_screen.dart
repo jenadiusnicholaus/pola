@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:pinput/pinput.dart';
@@ -18,7 +19,7 @@ class DeviceVerificationScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          title: const Text('Device Verification'),
+          title: Text('Device Verification'),
         ),
         body: SafeArea(
           child: SingleChildScrollView(
@@ -27,7 +28,7 @@ class DeviceVerificationScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -40,7 +41,7 @@ class DeviceVerificationScreen extends StatelessWidget {
                       color: theme.colorScheme.onPrimaryContainer,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   Get.find<DeviceVerificationController>().isTakeover
                       ? Text(
                           'Device Transfer Verification',
@@ -50,15 +51,14 @@ class DeviceVerificationScreen extends StatelessWidget {
                             color: theme.colorScheme.onSurface,
                           ),
                         )
-                      : Text(
-                          'Verify Your New Device',
+                      : Text(tr('Verify Your New Device'),
                           textAlign: TextAlign.center,
                           style: theme.textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: theme.colorScheme.onSurface,
                           ),
                         ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Get.find<DeviceVerificationController>().isTakeover
                       ? Text(
                           'This device is registered to another account. An OTP has been sent to the current owner\'s email. Enter the 6-digit code below to complete the transfer.',
@@ -78,21 +78,20 @@ class DeviceVerificationScreen extends StatelessWidget {
                             height: 1.5,
                           ),
                         ),
-                  const SizedBox(height: 32),
+                  SizedBox(height: 32),
                   const _OtpInputSection(),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   const _ResendButton(),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   const _ErrorSuccessMessages(),
-                  const SizedBox(height: 32),
+                  SizedBox(height: 32),
                   TextButton(
                     onPressed: () =>
                         Get.find<DeviceVerificationController>().logout(),
                     style: TextButton.styleFrom(
                       foregroundColor: theme.colorScheme.error,
                     ),
-                    child: const Text(
-                      'Logout',
+                    child: Text(tr('Logout'),
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -233,7 +232,7 @@ class _OtpInputSectionState extends State<_OtpInputSection> {
                               }
                             : null,
                         child: controller.isVerifying.value
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
@@ -241,7 +240,7 @@ class _OtpInputSectionState extends State<_OtpInputSection> {
                                   color: Colors.white,
                                 ),
                               )
-                            : const Text('Verify'),
+                            : Text(tr('Verify')),
                       ),
                     );
                   },

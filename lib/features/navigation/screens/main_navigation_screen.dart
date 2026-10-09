@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:localization_lite/translate.dart';
 import '../controllers/main_navigation_controller.dart';
 import '../../home/screens/home_screen.dart';
 import '../../posts/screens/posts_screen.dart';
@@ -43,48 +44,66 @@ class MainNavigationScreen extends StatelessWidget {
           index: controller.currentIndex.value,
           children: screens,
         ),
-        bottomNavigationBar: Theme(
-          data: Theme.of(context).copyWith(
-            splashColor: Colors.transparent,
-            highlightColor: Colors.transparent,
-          ),
-          child: BottomNavigationBar(
-            currentIndex: controller.currentIndex.value,
-            onTap: controller.changePage,
-            type: BottomNavigationBarType.fixed,
-            selectedItemColor: Theme.of(context).colorScheme.primary,
-            unselectedItemColor:
-                Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            selectedFontSize: 12,
-            unselectedFontSize: 12,
-            elevation: 8,
-            items: [
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.home_outlined),
-                activeIcon: Icon(Icons.home),
-                label: 'Home',
-              ),
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.article_outlined),
-                activeIcon: Icon(Icons.article),
-                label: 'Posts',
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.calendar_today_outlined),
-                activeIcon: const Icon(Icons.calendar_today),
-                label: isProfessional ? 'Consultations' : 'Bookings',
-              ),
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.inbox_outlined),
-                activeIcon: Icon(Icons.inbox),
-                label: 'Inbox',
-              ),
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.bookmark_outline),
-                activeIcon: Icon(Icons.bookmark),
-                label: 'Bookmarks',
+        extendBody: true,
+        bottomNavigationBar: Container(
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
               ),
             ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(30),
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                splashColor: Colors.transparent,
+                highlightColor: Colors.transparent,
+              ),
+              child: BottomNavigationBar(
+                currentIndex: controller.currentIndex.value,
+                onTap: controller.changePage,
+                type: BottomNavigationBarType.fixed,
+                selectedItemColor: Theme.of(context).colorScheme.primary,
+                unselectedItemColor:
+                    Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                selectedFontSize: 12,
+                unselectedFontSize: 12,
+                elevation: 8,
+                items: [
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.home_outlined),
+                    activeIcon: const Icon(Icons.home),
+                    label: tr('Home'),
+                  ),
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.article_outlined),
+                    activeIcon: const Icon(Icons.article),
+                    label: tr('Posts'),
+                  ),
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.calendar_today_outlined),
+                    activeIcon: const Icon(Icons.calendar_today),
+                    label:
+                        isProfessional ? tr('Consultations') : tr('Bookings'),
+                  ),
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.inbox_outlined),
+                    activeIcon: const Icon(Icons.inbox),
+                    label: tr('Inbox'),
+                  ),
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.bookmark_outline),
+                    activeIcon: const Icon(Icons.bookmark),
+                    label: tr('Bookmarks'),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       );

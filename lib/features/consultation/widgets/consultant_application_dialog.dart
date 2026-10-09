@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../services/consultation_service.dart';
 import '../../../utils/navigation_helper.dart';
@@ -37,7 +38,7 @@ class _ConsultantApplicationDialogState extends State<ConsultantApplicationDialo
   Future<void> _submit() async {
     if (!_termsAccepted) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Terms Required',
+        title: tr('Terms Required'),
         message: 'Please accept the terms and conditions to continue.',
       );
       return;
@@ -45,7 +46,7 @@ class _ConsultantApplicationDialogState extends State<ConsultantApplicationDialo
 
     if (_offersPhysical && _preferredCity.trim().isEmpty) {
       NavigationHelper.showSafeSnackbar(
-        title: 'City Required',
+        title: tr('City Required'),
         message: 'Please enter your preferred city for physical consultations.',
       );
       return;
@@ -65,7 +66,7 @@ class _ConsultantApplicationDialogState extends State<ConsultantApplicationDialo
     if (result.success) {
       Get.back(result: true);
       NavigationHelper.showSafeSnackbar(
-        title: 'Success',
+        title: tr('Success'),
         message: result.message,
         backgroundColor: Colors.green,
         colorText: Colors.white,
@@ -85,7 +86,7 @@ class _ConsultantApplicationDialogState extends State<ConsultantApplicationDialo
     final theme = Theme.of(context);
     
     return AlertDialog(
-      title: Text('Apply as $_roleDisplay'),
+      title: Text(tr('Apply as {_roleDisplay}').replaceAll('{_roleDisplay}', '$_roleDisplay')),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -95,22 +96,22 @@ class _ConsultantApplicationDialogState extends State<ConsultantApplicationDialo
               'By applying to become a consultant, you will be able to offer legal consultations to Pola users.',
               style: theme.textTheme.bodyMedium,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             
             if (widget.canOfferPhysical) ...[
               SwitchListTile(
-                title: const Text('Offer Physical Consultations'),
-                subtitle: const Text('Allow users to book in-person meetings'),
+                title: Text('Offer Physical Consultations'),
+                subtitle: Text('Allow users to book in-person meetings'),
                 value: _offersPhysical,
                 onChanged: (val) => setState(() => _offersPhysical = val),
                 contentPadding: EdgeInsets.zero,
               ),
               if (_offersPhysical) ...[
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 TextField(
-                  decoration: const InputDecoration(
-                    labelText: 'Preferred City',
-                    hintText: 'e.g., Dar es Salaam',
+                  decoration: InputDecoration(
+                    labelText: tr('Preferred City'),
+                    hintText: tr('e.g., Dar es Salaam'),
                     border: OutlineInputBorder(),
                   ),
                   onChanged: (val) => _preferredCity = val,

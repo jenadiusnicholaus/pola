@@ -43,6 +43,10 @@ import '../features/auth/screens/forgot_password_screen.dart';
 import '../features/auth/screens/reset_password_screen.dart';
 import '../features/auth/screens/set_new_password_screen.dart';
 import '../features/auth/controllers/device_verification_controller.dart';
+import '../features/settings/screens/blocked_users_screen.dart';
+import '../features/settings/screens/my_reports_screen.dart';
+import '../features/settings/screens/manage_data_screen.dart';
+import '../features/settings/screens/delete_account_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -89,6 +93,10 @@ class AppRoutes {
   static const String subscriptionPlans = '/subscription-plans';
   static const String notifications = '/notifications';
   static const String deviceVerification = '/device-verification';
+  static const String blockedUsers = '/blocked-users';
+  static const String myReports = '/my-reports';
+  static const String manageData = '/manage-data';
+  static const String deleteAccount = '/delete-account';
 
   static List<GetPage> routes = [
     GetPage(
@@ -292,6 +300,22 @@ class AppRoutes {
           () => DeviceVerificationController(),
         );
       }),
+    ),
+    GetPage(
+      name: blockedUsers,
+      page: () => const BlockedUsersScreen(),
+    ),
+    GetPage(
+      name: myReports,
+      page: () => const MyReportsScreen(),
+    ),
+    GetPage(
+      name: manageData,
+      page: () => const ManageDataScreen(),
+    ),
+    GetPage(
+      name: deleteAccount,
+      page: () => const DeleteAccountScreen(),
     ),
   ];
 

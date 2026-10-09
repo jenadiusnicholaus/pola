@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../controllers/notification_controller.dart';
 import '../widgets/notification_card.dart';
@@ -65,8 +66,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             }
             return TextButton.icon(
               onPressed: () => controller.markAllAsRead(),
-              icon: const Icon(Icons.done_all, size: 18),
-              label: const Text('Read all'),
+              icon: Icon(Icons.done_all, size: 18),
+              label: Text(tr('Read all')),
               style: TextButton.styleFrom(
                 foregroundColor: theme.colorScheme.primary,
               ),
@@ -143,14 +144,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             Text(
               'No notifications yet',
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               "You'll see your notifications here when\nsomeone interacts with you",
               textAlign: TextAlign.center,
@@ -158,11 +159,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             OutlinedButton.icon(
               onPressed: () => controller.refreshNotifications(),
-              icon: const Icon(Icons.refresh),
-              label: const Text('Refresh'),
+              icon: Icon(Icons.refresh),
+              label: Text(tr('Refresh')),
             ),
           ],
         ),
@@ -182,7 +183,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               size: 64,
               color: theme.colorScheme.error,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
               controller.error.value,
               style: theme.textTheme.bodyLarge?.copyWith(
@@ -190,11 +191,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             FilledButton.icon(
               onPressed: () => controller.refreshNotifications(),
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              icon: Icon(Icons.refresh),
+              label: Text(tr('Retry')),
             ),
           ],
         ),

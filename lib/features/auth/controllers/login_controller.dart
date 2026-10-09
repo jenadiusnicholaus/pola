@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -176,7 +177,7 @@ class LoginController extends GetxController {
       debugPrint('📚 Stack trace: ${StackTrace.current}');
 
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Login failed: ${e.toString()}',
         backgroundColor: Colors.red,
       );
@@ -236,7 +237,7 @@ class LoginController extends GetxController {
 
         // Show success message
         NavigationHelper.showSafeSnackbar(
-          title: 'Success',
+          title: tr('Success'),
           message: 'Welcome back! You are now logged in.',
           backgroundColor: Colors.green,
           colorText: Colors.white,
@@ -253,7 +254,7 @@ class LoginController extends GetxController {
     } catch (e) {
       debugPrint('❌ Error processing login response: $e');
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message:
             'Login successful but failed to process response: ${e.toString()}',
         backgroundColor: Colors.orange,
@@ -375,7 +376,7 @@ class LoginController extends GetxController {
   void _showLoginSuccessDialog(Map<String, dynamic>? userData) {
     Get.dialog(
       AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.check_circle, color: Colors.green, size: 32),
             SizedBox(width: 12),
@@ -386,14 +387,16 @@ class LoginController extends GetxController {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('You have successfully logged into your account.'),
+            Text('You have successfully logged into your account.'),
             if (userData != null) ...[
-              const SizedBox(height: 16),
-              Text(
-                  'Welcome back, ${userData['first_name']} ${userData['last_name']}!'),
-              const SizedBox(height: 8),
-              Text('Role: ${userData['user_role'] ?? 'Unknown'}'),
-              Text('Email: ${userData['email'] ?? 'Unknown'}'),
+              SizedBox(height: 16),
+              Text(tr('Welcome back, {name}!').replaceAll('{name}',
+                  '${userData['first_name']} ${userData['last_name']}')),
+              SizedBox(height: 8),
+              Text(tr('Role: {role}').replaceAll(
+                  '{role}', '${userData['user_role'] ?? 'Unknown'}')),
+              Text(tr('Email: {email}')
+                  .replaceAll('{email}', '${userData['email'] ?? 'Unknown'}')),
             ],
           ],
         ),

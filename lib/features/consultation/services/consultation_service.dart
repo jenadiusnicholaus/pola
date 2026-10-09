@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart' as dio;
+import 'package:localization_lite/translate.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../../services/api_service.dart';
@@ -31,7 +32,7 @@ class ConsultationService extends GetxService {
         canApply: false,
         isConsultant: false,
         status: 'error',
-        message: 'Failed to check eligibility',
+        message: tr('Failed to check eligibility'),
       );
     } catch (e) {
       debugPrint('❌ Error checking consultation eligibility: $e');

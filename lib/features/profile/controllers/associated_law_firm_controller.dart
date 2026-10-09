@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../auth/services/lookup_service.dart';
 import '../../../utils/navigation_helper.dart';
@@ -42,13 +43,13 @@ class AssociatedLawFirmController extends GetxController {
       await _profileService.updateAssociatedLawFirm(selectedLawFirm.value);
 
       NavigationHelper.showSafeSnackbar(
-        title: 'Success',
-        message: 'Associated law firm updated',
+        title: tr('Success'),
+        message: tr('Associated law firm updated'),
       );
       return true;
     } catch (e) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: e.toString().replaceFirst('Exception: ', ''),
       );
       return false;

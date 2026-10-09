@@ -411,4 +411,55 @@ class EnvironmentConfig {
       '$baseUrl$subscriptionSubscribeEndpoint';
   static String get subscriptionPaymentStatusUrl =>
       '$baseUrl$subscriptionPaymentStatusEndpoint';
+
+  // Block / Report / Account Deletion endpoints
+  static String get blockUserEndpoint =>
+      dotenv.env['BLOCK_USER_ENDPOINT'] ?? '/api/v1/authentication/block/';
+  static String get blockUserUrl => '$baseUrl$blockUserEndpoint';
+
+  static String get blockedUsersListEndpoint =>
+      dotenv.env['BLOCKED_USERS_LIST_ENDPOINT'] ??
+      '/api/v1/authentication/blocked-users/';
+  static String get blockedUsersListUrl => '$baseUrl$blockedUsersListEndpoint';
+
+  static String getUnblockUserUrl(int userId) =>
+      '$baseUrl${blockUserEndpoint}$userId/unblock/';
+
+  static String getCheckBlockedUrl(int userId) =>
+      '$baseUrl${blockUserEndpoint}$userId/check/';
+
+  static String get reportUserEndpoint =>
+      dotenv.env['REPORT_USER_ENDPOINT'] ?? '/api/v1/authentication/report/';
+  static String get reportUserUrl => '$baseUrl$reportUserEndpoint';
+
+  static String get myReportsEndpoint =>
+      dotenv.env['MY_REPORTS_ENDPOINT'] ?? '/api/v1/authentication/reports/';
+  static String get myReportsUrl => '$baseUrl$myReportsEndpoint';
+
+  static String get deleteAccountEndpoint =>
+      dotenv.env['DELETE_ACCOUNT_ENDPOINT'] ??
+      '/api/v1/authentication/delete-account/';
+  static String get deleteAccountUrl => '$baseUrl$deleteAccountEndpoint';
+
+  static String get deletionRequestsEndpoint =>
+      dotenv.env['DELETION_REQUESTS_ENDPOINT'] ??
+      '/api/v1/authentication/deletion/requests/';
+  static String get deletionRequestsUrl => '$baseUrl$deletionRequestsEndpoint';
+
+  static String getCancelDeletionUrl(int requestId) =>
+      '$baseUrl/api/v1/authentication/deletion/cancel/$requestId/';
+
+  static String get deleteDataEndpoint =>
+      dotenv.env['DELETE_DATA_ENDPOINT'] ??
+      '/api/v1/authentication/delete-data/';
+  static String get deleteDataUrl => '$baseUrl$deleteDataEndpoint';
+
+  static String get publicDeletionInfoUrl =>
+      '$baseUrl/api/v1/authentication/deletion/info/';
+
+  static String get publicDeletionRequestEndpoint =>
+      dotenv.env['PUBLIC_DELETION_REQUEST_ENDPOINT'] ??
+      '/api/v1/authentication/deletion/public-request/';
+  static String get publicDeletionRequestUrl =>
+      '$baseUrl$publicDeletionRequestEndpoint';
 }

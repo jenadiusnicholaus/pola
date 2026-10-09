@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../utils/navigation_helper.dart';
@@ -140,7 +141,7 @@ class ProfileHeader extends StatelessWidget {
                         letterSpacing: 0.3,
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
                     Icon(
                       Icons.edit,
                       size: 14,
@@ -150,7 +151,7 @@ class ProfileHeader extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
 
             // Verification Badge - simple
             if (profile.isVerified)
@@ -175,9 +176,8 @@ class ProfileHeader extends StatelessWidget {
                       color: Colors.green,
                       size: 16,
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Verified',
+                    SizedBox(width: 6),
+                    Text(tr('Verified'),
                       style: TextStyle(
                         color: Colors.green.shade700,
                         fontWeight: FontWeight.w600,
@@ -209,9 +209,8 @@ class ProfileHeader extends StatelessWidget {
                       color: theme.colorScheme.error,
                       size: 16,
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Not Verified',
+                    SizedBox(width: 6),
+                    Text(tr('Not Verified'),
                       style: TextStyle(
                         color: theme.colorScheme.error,
                         fontWeight: FontWeight.w600,
@@ -266,21 +265,21 @@ class ProfileHeader extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Update Profile Picture'),
+          title: Text(tr('Update Profile Picture')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.camera_alt),
-                title: const Text('Take Photo'),
+                leading: Icon(Icons.camera_alt),
+                title: Text(tr('Take Photo')),
                 onTap: () {
                   Navigator.pop(context);
                   _pickImage(ImageSource.camera);
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('Choose from Gallery'),
+                leading: Icon(Icons.photo_library),
+                title: Text(tr('Choose from Gallery')),
                 onTap: () {
                   Navigator.pop(context);
                   _pickImage(ImageSource.gallery);
@@ -326,14 +325,14 @@ class ProfileHeader extends StatelessWidget {
 
         if (success) {
           NavigationHelper.showSafeSnackbar(
-            title: 'Success',
-            message: 'Profile picture updated successfully',
+            title: tr('Success'),
+            message: tr('Profile picture updated successfully'),
             backgroundColor: Colors.green,
             colorText: Colors.white,
           );
         } else {
           NavigationHelper.showSafeSnackbar(
-            title: 'Error',
+            title: tr('Error'),
             message: 'Failed to update profile picture. Please try again.',
             backgroundColor: Colors.red,
             colorText: Colors.white,
@@ -347,7 +346,7 @@ class ProfileHeader extends StatelessWidget {
       }
 
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Failed to select image: ${e.toString()}',
         backgroundColor: Colors.red,
         colorText: Colors.white,

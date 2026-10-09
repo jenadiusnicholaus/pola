@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -89,7 +90,7 @@ class _LawyersMapScreenState extends State<LawyersMapScreen> {
 
     if (userLocation == null) {
       return Scaffold(
-        appBar: AppBar(title: Text('Map View')),
+        appBar: AppBar(title: Text(tr('Map View'))),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -209,8 +210,7 @@ class _LawyersMapScreenState extends State<LawyersMapScreen> {
               onPressed: () => Get.back(),
               icon: Icon(Icons.list,
                   color: theme.colorScheme.onSurface, size: 20),
-              label: Text(
-                'List',
+              label: Text(tr('List'),
                 style: TextStyle(
                   color: theme.colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
@@ -390,7 +390,7 @@ class _LawyersMapScreenState extends State<LawyersMapScreen> {
                           child: OutlinedButton.icon(
                             onPressed: () => _callLawyer(lawyer),
                             icon: Icon(Icons.phone, size: 16),
-                            label: Text('Call', style: TextStyle(fontSize: 14)),
+                            label: Text(tr('Call'), style: TextStyle(fontSize: 14)),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: theme.colorScheme.primary,
                               side:
@@ -410,7 +410,7 @@ class _LawyersMapScreenState extends State<LawyersMapScreen> {
                           child: ElevatedButton.icon(
                             onPressed: () => _bookConsultation(lawyer),
                             icon: Icon(Icons.calendar_today, size: 16),
-                            label: Text('Book', style: TextStyle(fontSize: 14)),
+                            label: Text(tr('Book'), style: TextStyle(fontSize: 14)),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: theme.colorScheme.primary,
                               foregroundColor: theme.colorScheme.onPrimary,

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../utils/navigation_helper.dart';
 import '../models/consultant_models.dart';
 import '../services/credit_service.dart';
 import '../../../constants/payment_constants.dart';
+import '../../../shared/widgets/intl_phone_input.dart';
 import 'dart:async';
 
 class CreditPaymentScreen extends StatefulWidget {
@@ -17,6 +19,8 @@ class CreditPaymentScreen extends StatefulWidget {
 class _CreditPaymentScreenState extends State<CreditPaymentScreen> {
   final CreditService _creditService = CreditService();
   final _phoneController = TextEditingController();
+
+  String _completePhone = '';
 
   CreditBundle? _bundle;
   String _selectedProvider = PaymentProvider.defaultProvider;
@@ -36,7 +40,8 @@ class _CreditPaymentScreenState extends State<CreditPaymentScreen> {
 
     if (_bundle == null) {
       Get.back();
-      NavigationHelper.showSafeSnackbar(title: 'Error', message: 'Invalid bundle selected');
+      NavigationHelper.showSafeSnackbar(
+          title: tr('Error'), message: 'Invalid bundle selected');
     }
   }
 
@@ -59,7 +64,9 @@ class _CreditPaymentScreenState extends State<CreditPaymentScreen> {
   }
 
   Future<void> _initiatePayment() async {
-    final phone = _phoneController.text.trim();
+    final phone = _completePhone.isNotEmpty
+        ? _completePhone
+        : _phoneController.text.trim();
 
     if (phone.isEmpty) {
       _showSnackBar('Please enter your phone number');
@@ -89,7 +96,8 @@ class _CreditPaymentScreenState extends State<CreditPaymentScreen> {
         // Show next steps to user
         final nextSteps = result['nextSteps'] as List<String>? ?? [];
         if (nextSteps.isNotEmpty) {
-          _showSnackBar('Payment Initiated: ${nextSteps.join(', ')}', isError: false);
+          _showSnackBar('Payment Initiated: ${nextSteps.join(', ')}',
+              isError: false);
         }
 
         // Start polling for payment status
@@ -278,7 +286,8 @@ class _CreditPaymentScreenState extends State<CreditPaymentScreen> {
                 },
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? theme.colorScheme.primary.withOpacity(0.08)
@@ -311,7 +320,9 @@ class _CreditPaymentScreenState extends State<CreditPaymentScreen> {
                         child: Text(
                           provider['label'],
                           style: theme.textTheme.bodyLarge?.copyWith(
-                            fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                            fontWeight: isSelected
+                                ? FontWeight.w500
+                                : FontWeight.normal,
                           ),
                         ),
                       ),
@@ -322,7 +333,7 @@ class _CreditPaymentScreenState extends State<CreditPaymentScreen> {
             );
           }),
 
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
 
           // Phone Number Input
           Text(
@@ -332,34 +343,15 @@ class _CreditPaymentScreenState extends State<CreditPaymentScreen> {
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _phoneController,
-            keyboardType: TextInputType.phone,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(12),
-            ],
-            style: theme.textTheme.bodyLarge,
-            decoration: InputDecoration(
-              hintText: '712 345 678',
-              hintStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.4)),
-              prefixText: '+255  ',
-              prefixStyle: theme.textTheme.bodyLarge,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: theme.colorScheme.outline.withOpacity(0.2)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: theme.colorScheme.outline.withOpacity(0.2)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
-              ),
-            ),
+          SizedBox(height: 8),
+          IntlPhoneInput(
+            hintText: tr('712 345 678'),
+            borderRadius: 10,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            invalidNumberMessage:
+                'Enter a valid phone number for the selected country',
+            onChanged: (complete) => _completePhone = complete,
           ),
 
           const SizedBox(height: 32),

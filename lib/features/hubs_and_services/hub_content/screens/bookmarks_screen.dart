@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../../../utils/navigation_helper.dart';
 import '../controllers/hub_content_controller.dart';
@@ -11,7 +12,7 @@ class BookmarksScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bookmarks'),
+        title: Text(tr('Bookmarks')),
         centerTitle: true,
       ),
       body: _BookmarksContent(),
@@ -85,9 +86,9 @@ class _BookmarksContentState extends State<_BookmarksContent> {
     // Show undo snackbar
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Bookmark removed'),
+        content: Text(tr('Bookmark removed')),
         action: SnackBarAction(
-          label: 'UNDO',
+          label: tr('UNDO'),
           onPressed: () {
             // Add the bookmark back
             bookmark.controller.toggleBookmark(bookmark.content);
@@ -136,18 +137,16 @@ class _BookmarksContentState extends State<_BookmarksContent> {
               color: Colors.orange,
               size: 24,
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Your Bookmarks',
+                Text(tr('Your Bookmarks'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                 ),
-                Text(
-                  '$totalBookmarks items saved',
+                Text(tr('{totalBookmarks} items saved').replaceAll('{totalBookmarks}', '$totalBookmarks'),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(context)
                             .colorScheme
@@ -157,11 +156,11 @@ class _BookmarksContentState extends State<_BookmarksContent> {
                 ),
               ],
             ),
-            const Spacer(),
+            Spacer(),
             if (totalBookmarks > 0)
               TextButton(
                 onPressed: () => _fetchAllBookmarks(),
-                child: const Text('Refresh'),
+                child: Text(tr('Refresh')),
               ),
           ],
         ),
@@ -221,15 +220,14 @@ class _BookmarksContentState extends State<_BookmarksContent> {
             size: 64,
             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
           ),
-          const SizedBox(height: 16),
-          Text(
-            'No bookmarks yet',
+          SizedBox(height: 16),
+          Text(tr('No bookmarks yet'),
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             'Start bookmarking content to see it here',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -238,10 +236,10 @@ class _BookmarksContentState extends State<_BookmarksContent> {
                 ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           ElevatedButton(
             onPressed: () => _fetchAllBookmarks(),
-            child: const Text('Refresh Bookmarks'),
+            child: Text(tr('Refresh Bookmarks')),
           ),
         ],
       ),
@@ -330,13 +328,13 @@ class _BookmarkCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const Spacer(),
+                  Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.bookmark, color: Colors.orange),
+                    icon: Icon(Icons.bookmark, color: Colors.orange),
                     onPressed: onRemoveBookmark ??
                         () => bookmark.controller
                             .toggleBookmark(bookmark.content),
-                    tooltip: 'Remove bookmark',
+                    tooltip: tr('Remove bookmark'),
                   ),
                 ],
               ),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../../utils/navigation_helper.dart';
 import '../models/consultant_models.dart';
+import '../../settings/widgets/report_user_dialog.dart';
 
 class ConsultantDetailScreen extends StatelessWidget {
   const ConsultantDetailScreen({super.key});
@@ -14,6 +16,41 @@ class ConsultantDetailScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Consultant Details'),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) async {
+              if (value == 'block') {
+                final blocked = await showBlockUserDialog(
+                  Get.context!,
+                  userId: consultant.userDetails.id,
+                  userName: consultant.userDetails.fullName,
+                );
+                if (blocked) {
+                  ScaffoldMessenger.of(Get.context!).showSnackBar(
+                    SnackBar(
+                        content:
+                            Text('${consultant.userDetails.fullName} blocked')),
+                  );
+                }
+              } else if (value == 'report') {
+                final reported = await showReportUserDialog(
+                  Get.context!,
+                  reportedUserId: consultant.userDetails.id,
+                  reportedUserName: consultant.userDetails.fullName,
+                );
+                if (reported) {
+                  ScaffoldMessenger.of(Get.context!).showSnackBar(
+                    SnackBar(content: Text(tr('Report submitted'))),
+                  );
+                }
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(value: 'block', child: Text(tr('Block User'))),
+              PopupMenuItem(value: 'report', child: Text(tr('Report User'))),
+            ],
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -337,8 +374,8 @@ class ConsultantDetailScreen extends StatelessWidget {
                       Get.toNamed('/call',
                           arguments: {'consultant': consultant});
                     },
-                    icon: const Icon(Icons.phone, size: 18),
-                    label: const Text('Call Now'),
+                    icon: Icon(Icons.phone, size: 18),
+                    label: Text(tr('Call Now')),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
@@ -356,8 +393,8 @@ class ConsultantDetailScreen extends StatelessWidget {
                         message: 'Physical consultation booking coming soon',
                       );
                     },
-                    icon: const Icon(Icons.location_on, size: 18),
-                    label: const Text('Book Visit'),
+                    icon: Icon(Icons.location_on, size: 18),
+                    label: Text(tr('Book Visit')),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),

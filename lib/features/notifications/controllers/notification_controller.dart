@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../models/notification_model.dart';
 import '../services/notification_service.dart';
@@ -274,11 +275,11 @@ class NotificationController extends GetxController {
         title: Row(
           children: [
             Icon(notification.icon, color: notification.typeColor),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Expanded(
               child: Text(
                 notification.title,
-                style: const TextStyle(fontSize: 16),
+                style: TextStyle(fontSize: 16),
               ),
             ),
           ],
@@ -288,7 +289,7 @@ class NotificationController extends GetxController {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(notification.body),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text(
               notification.timeAgo,
               style: TextStyle(
@@ -301,7 +302,7 @@ class NotificationController extends GetxController {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Close'),
+            child: Text(tr('Close')),
           ),
         ],
       ),

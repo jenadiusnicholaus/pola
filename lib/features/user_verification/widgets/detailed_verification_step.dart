@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../controllers/verification_controller.dart';
 import '../models/verification_models.dart';
@@ -154,9 +155,9 @@ class DetailedVerificationStep extends StatelessWidget {
               size: 16,
               color: Colors.green[700]!,
             ),
-            const SizedBox(width: 4),
+            SizedBox(width: 4),
             Text(
-              'Complete',
+              tr('Complete'),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: Colors.green[700]!,
                 fontWeight: FontWeight.w600,
@@ -383,7 +384,7 @@ class DetailedVerificationStep extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
             blurRadius: 4,
           ),
         ],
@@ -411,7 +412,7 @@ class DetailedVerificationStep extends StatelessWidget {
                       color: _getDocumentStatusColor(doc.status, context),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -427,16 +428,16 @@ class DetailedVerificationStep extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   _buildDocumentActionButton(context, doc),
                 ],
               ),
 
               // Status badge row
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Row(
                 children: [
-                  const SizedBox(
+                  SizedBox(
                       width:
                           44), // Align with text above (icon width + spacing)
                   Container(
@@ -463,9 +464,9 @@ class DetailedVerificationStep extends StatelessWidget {
 
           // Additional information
           if (doc.createdAt.isNotEmpty || doc.verificationDate != null) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Divider(color: theme.dividerColor.withOpacity(0.5)),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -478,10 +479,11 @@ class DetailedVerificationStep extends StatelessWidget {
                         color:
                             theme.textTheme.bodySmall?.color?.withOpacity(0.6),
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          'Uploaded: ${_formatDate(doc.createdAt)}',
+                          tr('Uploaded: {date}')
+                              .replaceAll('{date}', _formatDate(doc.createdAt)),
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.textTheme.bodySmall?.color
                                 ?.withOpacity(0.6),
@@ -637,8 +639,8 @@ class DetailedVerificationStep extends StatelessWidget {
       case 'rejected':
         return ElevatedButton.icon(
           onPressed: () => _showReuploadDialog(context, doc),
-          icon: const Icon(Icons.refresh, size: 16),
-          label: const Text('Re-upload'),
+          icon: Icon(Icons.refresh, size: 16),
+          label: Text(tr('Re-upload')),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.red[600],
             foregroundColor: Colors.white,
@@ -673,7 +675,7 @@ class DetailedVerificationStep extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -688,7 +690,8 @@ class DetailedVerificationStep extends StatelessWidget {
                       ),
                       if (doc.createdAt.isNotEmpty) ...[
                         Text(
-                          'Submitted ${_getTimeAgo(doc.createdAt)}',
+                          tr('Submitted {time}')
+                              .replaceAll('{time}', _getTimeAgo(doc.createdAt)),
                           style: TextStyle(
                             color: Colors.orange[600],
                             fontSize: 10,
@@ -769,9 +772,9 @@ class DetailedVerificationStep extends StatelessWidget {
                         doc.fileUrl,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) =>
-                            const Center(child: Icon(Icons.error, size: 50)),
+                            Center(child: Icon(Icons.error, size: 50)),
                       )
-                    : const Center(child: Icon(Icons.image, size: 50)),
+                    : Center(child: Icon(Icons.image, size: 50)),
               ),
             ] else ...[
               Container(
@@ -787,10 +790,10 @@ class DetailedVerificationStep extends StatelessWidget {
                       size: 50,
                       color: Colors.grey[600],
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Text(
                       doc.title,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
+                      style: TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
@@ -801,7 +804,7 @@ class DetailedVerificationStep extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: Text(tr('Close')),
           ),
           if (doc.fileUrl.isNotEmpty) ...[
             ElevatedButton.icon(
@@ -848,7 +851,7 @@ class DetailedVerificationStep extends StatelessWidget {
               color: isUploaded ? Colors.green[700] : Colors.red[700],
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -871,8 +874,8 @@ class DetailedVerificationStep extends StatelessWidget {
           if (!isUploaded) ...[
             ElevatedButton.icon(
               onPressed: () => _showUploadDialog(context, reqDoc),
-              icon: const Icon(Icons.upload, size: 16),
-              label: const Text('Upload'),
+              icon: Icon(Icons.upload, size: 16),
+              label: Text(tr('Upload')),
               style: ElevatedButton.styleFrom(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -888,7 +891,7 @@ class DetailedVerificationStep extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                'Uploaded',
+                tr('Uploaded'),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: Colors.green[700],
                   fontWeight: FontWeight.w500,
@@ -931,7 +934,7 @@ class DetailedVerificationStep extends StatelessWidget {
               color: isProvided ? Colors.green[700] : Colors.red[700],
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -962,7 +965,7 @@ class DetailedVerificationStep extends StatelessWidget {
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: const Text('Edit'),
+              child: Text(tr('Edit')),
             ),
           ],
         ],
@@ -1152,8 +1155,8 @@ class DetailedVerificationStep extends StatelessWidget {
               Navigator.pop(context);
               _showUploadOptions(context, reqDoc);
             },
-            icon: const Icon(Icons.upload),
-            label: const Text('Choose File'),
+            icon: Icon(Icons.upload),
+            label: Text(tr('Choose File')),
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.primaryColor,
               foregroundColor: Colors.white,
@@ -1167,7 +1170,7 @@ class DetailedVerificationStep extends StatelessWidget {
   void _showUploadOptions(BuildContext context, RequiredDocument reqDoc) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (context) => Container(
@@ -1183,15 +1186,15 @@ class DetailedVerificationStep extends StatelessWidget {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             Text(
               'Upload ${reqDoc.documentTypeDisplay}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               'Choose how you want to upload your document',
               style: TextStyle(
@@ -1199,28 +1202,28 @@ class DetailedVerificationStep extends StatelessWidget {
                 fontSize: 14,
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             Row(
               children: [
                 Expanded(
                   child: _buildUploadOptionCard(
                     context,
                     icon: Icons.camera_alt,
-                    title: 'Camera',
-                    subtitle: 'Take a photo',
+                    title: tr('Camera'),
+                    subtitle: tr('Take a photo'),
                     onTap: () {
                       Navigator.pop(context);
                       _uploadFromCamera(context, reqDoc);
                     },
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: _buildUploadOptionCard(
                     context,
                     icon: Icons.photo_library,
-                    title: 'Gallery',
-                    subtitle: 'Choose from photos',
+                    title: tr('Gallery'),
+                    subtitle: tr('Choose from photos'),
                     onTap: () {
                       Navigator.pop(context);
                       _uploadFromGallery(context, reqDoc);
@@ -1229,14 +1232,15 @@ class DetailedVerificationStep extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               child: _buildUploadOptionCard(
                 context,
                 icon: Icons.folder_outlined,
-                title: 'Browse Files',
-                subtitle: 'Choose PDF or image file (with gallery fallback)',
+                title: tr('Browse Files'),
+                subtitle:
+                    tr('Choose PDF or image file (with gallery fallback)'),
                 onTap: () {
                   Navigator.pop(context);
                   _uploadFromFiles(context, reqDoc);
@@ -1393,7 +1397,7 @@ class DetailedVerificationStep extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Edit $field'),
+        title: Text(tr('Edit {field}').replaceAll('{field}', '$field')),
         content:
             const Text('Navigate to your profile to edit this information.'),
         actions: [
@@ -1406,7 +1410,7 @@ class DetailedVerificationStep extends StatelessWidget {
               Navigator.pop(context);
               Get.toNamed('/profile');
             },
-            child: const Text('Go to Profile'),
+            child: Text(tr('Go to Profile')),
           ),
         ],
       ),
@@ -1497,8 +1501,8 @@ class DetailedVerificationStep extends StatelessWidget {
               Navigator.pop(context);
               _showReuploadOptions(context, doc);
             },
-            icon: const Icon(Icons.upload),
-            label: const Text('Upload New'),
+            icon: Icon(Icons.upload),
+            label: Text(tr('Upload New')),
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.primaryColor,
               foregroundColor: Colors.white,
@@ -1512,7 +1516,7 @@ class DetailedVerificationStep extends StatelessWidget {
   void _showReuploadOptions(BuildContext context, VerificationDocument doc) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (context) => Container(
@@ -1528,21 +1532,21 @@ class DetailedVerificationStep extends StatelessWidget {
                   color: Colors.red[600],
                   size: 24,
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Text(
                   'Re-upload ${doc.documentTypeDisplay}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             _buildUploadOptionCard(
               context,
               icon: Icons.camera_alt,
-              title: 'Take Photo',
+              title: tr('Take Photo'),
               subtitle: 'Use camera to capture document',
               onTap: () {
                 Navigator.pop(context);
@@ -1551,12 +1555,12 @@ class DetailedVerificationStep extends StatelessWidget {
               },
               isWide: true,
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _buildUploadOptionCard(
               context,
               icon: Icons.photo_library,
-              title: 'Photo Gallery',
-              subtitle: 'Choose from your photos',
+              title: tr('Photo Gallery'),
+              subtitle: tr('Choose from your photos'),
               onTap: () {
                 Navigator.pop(context);
                 Get.find<VerificationController>(tag: 'verification_screen')
@@ -1564,12 +1568,12 @@ class DetailedVerificationStep extends StatelessWidget {
               },
               isWide: true,
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _buildUploadOptionCard(
               context,
               icon: Icons.folder,
-              title: 'Browse Files',
-              subtitle: 'Choose PDF or image file (with gallery fallback)',
+              title: tr('Browse Files'),
+              subtitle: tr('Choose PDF or image file (with gallery fallback)'),
               onTap: () {
                 Navigator.pop(context);
                 Get.find<VerificationController>(tag: 'verification_screen')

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import '../../../../constants/app_colors.dart';
 
 class CommonSliverAppBar extends StatelessWidget {
@@ -267,7 +268,7 @@ class CommonErrorWidget extends StatelessWidget {
                 size: 48,
                 color: theme.colorScheme.error,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Text(
                 title,
                 style: theme.textTheme.titleMedium?.copyWith(
@@ -275,7 +276,7 @@ class CommonErrorWidget extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 message,
                 style: theme.textTheme.bodyMedium?.copyWith(
@@ -284,11 +285,11 @@ class CommonErrorWidget extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               if (onRetry != null) ...[
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 ElevatedButton.icon(
                   onPressed: onRetry,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Retry'),
+                  icon: Icon(Icons.refresh),
+                  label: Text(tr('Retry')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryAmber,
                     foregroundColor: Colors.black,

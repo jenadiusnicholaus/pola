@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../../services/auth_service.dart';
 import '../../../routes/app_routes.dart';
@@ -48,7 +49,7 @@ class SetNewPasswordController extends GetxController {
     if (!(formKey.currentState?.validate() ?? false)) return;
     if (email.isEmpty || otp.isEmpty) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: 'Missing reset details. Start again from forgot password.',
         backgroundColor: Colors.red,
         colorText: Colors.white,
@@ -67,7 +68,7 @@ class SetNewPasswordController extends GetxController {
 
       if (result['success'] == true) {
         NavigationHelper.showSafeSnackbar(
-          title: 'Success',
+          title: tr('Success'),
           message: result['message']?.toString() ??
               'Password reset successful. Please log in.',
           backgroundColor: Colors.green,
@@ -76,7 +77,7 @@ class SetNewPasswordController extends GetxController {
         Get.offAllNamed(AppRoutes.login);
       } else {
         NavigationHelper.showSafeSnackbar(
-          title: 'Error',
+          title: tr('Error'),
           message: result['error']?.toString() ?? 'Reset failed',
           backgroundColor: Colors.red,
           colorText: Colors.white,

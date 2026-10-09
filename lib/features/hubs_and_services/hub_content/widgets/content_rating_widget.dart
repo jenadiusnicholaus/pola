@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import '../../../../utils/navigation_helper.dart';
 
 class ContentRatingWidget extends StatelessWidget {
@@ -29,18 +30,18 @@ class ContentRatingWidget extends StatelessWidget {
                   Icons.star_rate,
                   color: theme.colorScheme.primary,
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text(
                   'Content Rating',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const Spacer(),
+                Spacer(),
                 if (!showDetailedRatings)
                   TextButton(
                     onPressed: () => _showDetailedRatings(context),
-                    child: const Text('View All'),
+                    child: Text(tr('View All')),
                   ),
               ],
             ),
@@ -143,8 +144,7 @@ class ContentRatingWidget extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 2.0),
       child: Row(
         children: [
-          Text(
-            '$stars',
+          Text(tr('{stars}').replaceAll('{stars}', '$stars'),
             style: theme.textTheme.bodySmall,
           ),
           const SizedBox(width: 4),
@@ -299,7 +299,7 @@ class _RatingDialogState extends State<RatingDialog> {
     // TODO: Submit rating through service
     Navigator.of(context).pop();
     NavigationHelper.showSafeSnackbar(
-      title: 'Success',
+      title: tr('Success'),
       message: 'Thank you for rating this content!',
     );
   }

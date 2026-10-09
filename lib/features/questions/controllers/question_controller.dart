@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../models/question_models.dart';
 import '../services/question_service.dart';
@@ -115,13 +116,13 @@ class QuestionController extends GetxController {
         final message = permissionService
             .getPermissionDeniedMessage(PermissionFeature.askQuestions);
         NavigationHelper.showSafeSnackbar(
-          title: 'Upgrade Required',
+          title: tr('Upgrade Required'),
           message: message,
           backgroundColor: Colors.orange,
-          duration: const Duration(seconds: 4),
+          duration: Duration(seconds: 4),
           mainButton: TextButton(
             onPressed: () => Get.toNamed(AppRoutes.subscriptionPlans),
-            child: const Text('Upgrade', style: TextStyle(color: Colors.white)),
+            child: Text(tr('Upgrade'), style: TextStyle(color: Colors.white)),
           ),
         );
         return false;
@@ -145,7 +146,7 @@ class QuestionController extends GetxController {
 
       Get.back(); // Close the ask question screen
       NavigationHelper.showSafeSnackbar(
-        title: 'Success',
+        title: tr('Success'),
         message: 'Question submitted successfully',
         backgroundColor: Get.theme.colorScheme.primaryContainer,
         colorText: Get.theme.colorScheme.onPrimaryContainer,
@@ -155,7 +156,7 @@ class QuestionController extends GetxController {
     } catch (e) {
       error.value = e.toString();
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
+        title: tr('Error'),
         message: e.toString(),
         backgroundColor: Get.theme.colorScheme.errorContainer,
         colorText: Get.theme.colorScheme.onErrorContainer,
@@ -193,13 +194,13 @@ class QuestionController extends GetxController {
 
       NavigationHelper.showSafeSnackbar(
         title: 'Thank you!',
-        message: 'Marked as helpful',
+        message: tr('Marked as helpful'),
         duration: const Duration(seconds: 2),
       );
     } catch (e) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Error',
-        message: 'Failed to mark as helpful',
+        title: tr('Error'),
+        message: tr('Failed to mark as helpful'),
       );
     }
   }

@@ -1,6 +1,9 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../controllers/chat_room_controller.dart';
 import '../models/message.dart';
 import '../../../utils/phone_formatter.dart';
@@ -9,6 +12,10 @@ import '../../calling_booking/models/consultant_models.dart';
 import '../../calling_booking/screens/call_screen.dart';
 
 class ChatRoomScreen extends StatelessWidget {
+  /// Bubble colour for messages sent by the current user.
+  static const Color _myBubbleColor = Color(0xFF075E54);
+  static const Color _myBubbleTextColor = Colors.white;
+
   final String contactId;
   final String contactName;
   final String? contactAvatar;
@@ -85,6 +92,18 @@ class ChatRoomScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: true,
+        actions: [
+          // IconButton(
+          //   icon: Icon(Icons.videocam),
+          //   tooltip: tr('Video call'),
+          //   onPressed: () => _initiateCall(context, isVideo: true),
+          // ),
+          IconButton(
+            icon: Icon(Icons.call),
+            tooltip: tr('Voice call'),
+            onPressed: () => _initiateCall(context, isVideo: false),
+          ),
+        ],
         title: Row(
           children: [
             CircleAvatar(
@@ -176,17 +195,29 @@ class ChatRoomScreen extends StatelessWidget {
                       Icon(
                         Icons.chat_bubble_outline,
                         size: 64,
-                        color: Colors.grey[400],
+                        color: Get.theme.colorScheme.onSurface.withValues(
+                          alpha: 0.3,
+                        ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       Text(
-                        'No messages yet',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                        tr('No messages yet'),
+                        style: TextStyle(
+                          color: Get.theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
+                          fontSize: 16,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Start a conversation with $contactName',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                        style: TextStyle(
+                          color: Get.theme.colorScheme.onSurface.withValues(
+                            alpha: 0.5,
+                          ),
+                          fontSize: 14,
+                        ),
                       ),
                     ],
                   ),
@@ -222,7 +253,21 @@ class ChatRoomScreen extends StatelessWidget {
                   final isMe = message.isSent ||
                       PhoneFormatter.normalize(message.senderId) ==
                           PhoneFormatter.normalize(controller.myNxId);
-                  return _buildMessageBubble(message, isMe);
+                  final bubble = _buildMessageBubble(message, isMe);
+
+                  final olderMessage =
+                      index + 1 < messages.length ? messages[index + 1] : null;
+                  final isNewDay = olderMessage == null ||
+                      !_isSameDay(olderMessage.timestamp, message.timestamp);
+                  if (!isNewDay) return bubble;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      bubble,
+                      _buildDateSeparator(message.timestamp),
+                    ],
+                  );
                 },
               );
             }),
@@ -244,13 +289,13 @@ class ChatRoomScreen extends StatelessWidget {
                       color: Get.theme.colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _TypingDot(delay: 0),
-                        const SizedBox(width: 4),
+                        SizedBox(width: 4),
                         _TypingDot(delay: 150),
-                        const SizedBox(width: 4),
+                        SizedBox(width: 4),
                         _TypingDot(delay: 300),
                       ],
                     ),
@@ -280,7 +325,7 @@ class ChatRoomScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: isMe
-              ? Get.theme.colorScheme.primary
+              ? _myBubbleColor
               : Get.theme.colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.only(
             topLeft: radius,
@@ -301,15 +346,10 @@ class ChatRoomScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            _buildLinkifiedText(
               message.displayText,
-              style: TextStyle(
-                fontSize: 15,
-                height: 1.3,
-                color: isMe
-                    ? Get.theme.colorScheme.onPrimary
-                    : Get.theme.colorScheme.onSurface,
-              ),
+              baseColor:
+                  isMe ? _myBubbleTextColor : Get.theme.colorScheme.onSurface,
             ),
             const SizedBox(height: 4),
             Row(
@@ -320,7 +360,7 @@ class ChatRoomScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10,
                     color: isMe
-                        ? Get.theme.colorScheme.onPrimary.withValues(alpha: 0.7)
+                        ? _myBubbleTextColor.withValues(alpha: 0.7)
                         : Get.theme.colorScheme.onSurface.withValues(
                             alpha: 0.6,
                           ),
@@ -337,9 +377,7 @@ class ChatRoomScreen extends StatelessWidget {
                     size: 12,
                     color: message.isRead
                         ? Colors.lightBlueAccent
-                        : Get.theme.colorScheme.onPrimary.withValues(
-                            alpha: 0.7,
-                          ),
+                        : _myBubbleTextColor.withValues(alpha: 0.7),
                   ),
                 ],
               ],
@@ -352,11 +390,8 @@ class ChatRoomScreen extends StatelessWidget {
 
   /// Professional card-style bubble for call invite / call-ended events.
   Widget _buildCallBubble(Message message, bool isMe) {
-    final isEnded = message.isCallEndMessage;
-    final icon = isEnded
-        ? Icons.call_end
-        : (message.isVideoCall ? Icons.videocam : Icons.call);
-    final label = isEnded ? 'Call ended' : message.displayText;
+    const icon = Icons.call_end;
+    final label = message.displayText;
 
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -365,7 +400,7 @@ class ChatRoomScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: isMe
-              ? Get.theme.colorScheme.primary
+              ? _myBubbleColor
               : Get.theme.colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
@@ -383,20 +418,15 @@ class ChatRoomScreen extends StatelessWidget {
             Icon(
               icon,
               size: 16,
-              color: isMe
-                  ? Get.theme.colorScheme.onPrimary
-                  : (isEnded
-                      ? Colors.redAccent
-                      : Get.theme.colorScheme.primary),
+              color: isMe ? _myBubbleTextColor : Colors.redAccent,
             ),
             const SizedBox(width: 8),
             Text(
-              isMe ? 'You: $label' : '$contactName: $label',
+              label,
               style: TextStyle(
                 fontSize: 15,
-                color: isMe
-                    ? Get.theme.colorScheme.onPrimary
-                    : Get.theme.colorScheme.onSurface,
+                color:
+                    isMe ? _myBubbleTextColor : Get.theme.colorScheme.onSurface,
               ),
             ),
             const SizedBox(width: 8),
@@ -405,7 +435,7 @@ class ChatRoomScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 color: isMe
-                    ? Get.theme.colorScheme.onPrimary.withValues(alpha: 0.7)
+                    ? _myBubbleTextColor.withValues(alpha: 0.7)
                     : Get.theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
@@ -424,7 +454,7 @@ class ChatRoomScreen extends StatelessWidget {
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
-            offset: const Offset(0, -3),
+            offset: Offset(0, -3),
           ),
         ],
       ),
@@ -432,7 +462,7 @@ class ChatRoomScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           IconButton(
-            icon: const Icon(Icons.attach_file),
+            icon: Icon(Icons.attach_file),
             onPressed: () {
               // TODO: Implement file attachment
             },
@@ -441,7 +471,7 @@ class ChatRoomScreen extends StatelessWidget {
             child: TextField(
               controller: controller.messageController,
               decoration: InputDecoration(
-                hintText: 'Type a message...',
+                hintText: tr('Type a message...'),
                 filled: true,
                 fillColor: Get.theme.colorScheme.surfaceContainerHighest,
                 contentPadding: const EdgeInsets.symmetric(
@@ -509,6 +539,124 @@ class ChatRoomScreen extends StatelessWidget {
     } else {
       return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     }
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  static const _weekdayNames = [
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun',
+  ];
+  static const _monthNames = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+
+  String _formatDateLabel(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final target = DateTime(date.year, date.month, date.day);
+    final diff = today.difference(target).inDays;
+
+    if (diff == 0) return 'Today';
+    if (diff == 1) return 'Yesterday';
+    return '${_weekdayNames[date.weekday - 1]}, ${_monthNames[date.month - 1]} ${date.day}';
+  }
+
+  Widget _buildDateSeparator(DateTime timestamp) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Get.theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            _formatDateLabel(timestamp),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static final RegExp _linkPattern = RegExp(
+    r'((https?:\/\/|www\.)[^\s]+)|([\w.+-]+@[\w-]+\.[\w.-]+)',
+    caseSensitive: false,
+  );
+
+  Future<void> _openLink(String raw) async {
+    final isEmail = raw.contains('@') && !raw.startsWith('http');
+    final uri = isEmail
+        ? Uri(scheme: 'mailto', path: raw)
+        : Uri.parse(raw.startsWith('http') ? raw : 'https://$raw');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  /// Renders message text with any URL/email highlighted as a tappable,
+  /// underlined link, matching the reference chat design.
+  Widget _buildLinkifiedText(String text, {required Color baseColor}) {
+    final matches = _linkPattern.allMatches(text);
+    if (matches.isEmpty) {
+      return Text(
+        text,
+        style: TextStyle(fontSize: 15, height: 1.3, color: baseColor),
+      );
+    }
+
+    final spans = <InlineSpan>[];
+    var lastEnd = 0;
+    for (final match in matches) {
+      if (match.start > lastEnd) {
+        spans.add(TextSpan(text: text.substring(lastEnd, match.start)));
+      }
+      final linkText = match.group(0)!;
+      spans.add(
+        TextSpan(
+          text: linkText,
+          style: const TextStyle(
+            decoration: TextDecoration.underline,
+            fontWeight: FontWeight.w500,
+          ),
+          recognizer: TapGestureRecognizer()..onTap = () => _openLink(linkText),
+        ),
+      );
+      lastEnd = match.end;
+    }
+    if (lastEnd < text.length) {
+      spans.add(TextSpan(text: text.substring(lastEnd)));
+    }
+
+    return Text.rich(
+      TextSpan(
+        style: TextStyle(fontSize: 15, height: 1.3, color: baseColor),
+        children: spans,
+      ),
+    );
   }
 }
 

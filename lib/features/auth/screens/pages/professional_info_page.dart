@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../controllers/registration_controller.dart';
 import '../../models/lookup_models.dart';
@@ -89,7 +90,7 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
             content: Text('Failed to load dropdown options. Please try again.'),
             backgroundColor: Colors.red,
             action: SnackBarAction(
-              label: 'Retry',
+              label: tr('Retry'),
               textColor: Colors.white,
               onPressed: _loadLookupData,
             ),
@@ -193,10 +194,10 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
       // TLS Roll Number
       TextFormField(
         controller: _rollNumberController,
-        decoration: const InputDecoration(
-          labelText: 'TLS Roll Number *',
+        decoration: InputDecoration(
+          labelText: tr('TLS Roll Number *'),
           border: OutlineInputBorder(),
-          helperText: 'e.g., TLS/2015/123456',
+          helperText: tr('e.g., TLS/2015/123456'),
         ),
         validator: (value) {
           if (value == null || value.isEmpty) {
@@ -281,13 +282,13 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
           _saveData();
         },
       ),
-      const SizedBox(height: 16),
+      SizedBox(height: 16),
 
       // Practice Status
       DropdownButtonFormField<String>(
         value: _selectedPracticeStatus,
-        decoration: const InputDecoration(
-          labelText: 'Practice Status *',
+        decoration: InputDecoration(
+          labelText: tr('Practice Status *'),
           border: OutlineInputBorder(),
         ),
         validator: (value) =>
@@ -325,7 +326,7 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
         return DropdownButtonFormField<int>(
           value: _selectedWorkplace,
           decoration: InputDecoration(
-            labelText: 'Place of Work *',
+            labelText: tr('Place of Work *'),
             border: const OutlineInputBorder(),
             helperText: isLoadingWorkplaces
                 ? 'Loading workplaces...'
@@ -407,8 +408,8 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
       // Firm Name
       TextFormField(
         controller: _firmNameController,
-        decoration: const InputDecoration(
-          labelText: 'Firm Name *',
+        decoration: InputDecoration(
+          labelText: tr('Firm Name *'),
           border: OutlineInputBorder(),
         ),
         validator: (value) {
@@ -430,14 +431,14 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
           value: _selectedManagingPartner,
           decoration: InputDecoration(
             labelText: 'Managing Partner *',
-            border: const OutlineInputBorder(),
+            border: OutlineInputBorder(),
             helperText: isLoadingAdvocates
                 ? 'Loading advocates...'
                 : advocates.isEmpty
                     ? 'No advocates available'
                     : 'Select the managing partner advocate',
             suffixIcon: isLoadingAdvocates
-                ? const SizedBox(
+                ? SizedBox(
                     width: 20,
                     height: 20,
                     child: Padding(
@@ -473,13 +474,13 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
                 },
         );
       }),
-      const SizedBox(height: 16),
+      SizedBox(height: 16),
 
       // Number of Lawyers
       DropdownButtonFormField<int>(
         value: _selectedNumberOfLawyers,
-        decoration: const InputDecoration(
-          labelText: 'Number of Lawyers *',
+        decoration: InputDecoration(
+          labelText: tr('Number of Lawyers *'),
           border: OutlineInputBorder(),
         ),
         validator: (value) =>
@@ -490,7 +491,7 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
                     value: num,
                     child: Text(num.toString()),
                   )),
-          const DropdownMenuItem<int>(value: 50, child: Text('20+')),
+          DropdownMenuItem<int>(value: 50, child: Text(tr('20+'))),
         ],
         onChanged: (value) {
           setState(() {
@@ -499,13 +500,13 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
           _saveData();
         },
       ),
-      const SizedBox(height: 16),
+      SizedBox(height: 16),
 
       // Year Established
       DropdownButtonFormField<int>(
         value: _selectedYearEstablished,
-        decoration: const InputDecoration(
-          labelText: 'Year Established *',
+        decoration: InputDecoration(
+          labelText: tr('Year Established *'),
           border: OutlineInputBorder(),
         ),
         validator: (value) =>
@@ -523,13 +524,13 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
           _saveData();
         },
       ),
-      const SizedBox(height: 16),
+      SizedBox(height: 16),
 
       // Practice Status
       DropdownButtonFormField<String>(
         value: _selectedPracticeStatus,
-        decoration: const InputDecoration(
-          labelText: 'Practice Status *',
+        decoration: InputDecoration(
+          labelText: tr('Practice Status *'),
           border: OutlineInputBorder(),
         ),
         validator: (value) =>
@@ -546,15 +547,15 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
           _saveData();
         },
       ),
-      const SizedBox(height: 16),
+      SizedBox(height: 16),
 
       // Website
       TextFormField(
         controller: _websiteController,
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           labelText: 'Website (Optional)',
           border: OutlineInputBorder(),
-          helperText: 'e.g., https://www.yourfirm.com',
+          helperText: tr('e.g., https://www.yourfirm.com'),
         ),
         onChanged: (value) => _saveData(),
       ),
@@ -582,24 +583,24 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
         },
         onChanged: (value) => _saveData(),
       ),
-      const SizedBox(height: 16),
+      SizedBox(height: 16),
 
       // Current Year of Study
       DropdownButtonFormField<String>(
         value: _currentYearController.text.isEmpty
             ? null
             : _currentYearController.text,
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           labelText: 'Current Year of Study *',
           border: OutlineInputBorder(),
         ),
         validator: (value) => value == null ? 'Current year is required' : null,
-        items: const [
-          DropdownMenuItem(value: '1', child: Text('Year 1')),
-          DropdownMenuItem(value: '2', child: Text('Year 2')),
-          DropdownMenuItem(value: '3', child: Text('Year 3')),
-          DropdownMenuItem(value: '4', child: Text('Year 4')),
-          DropdownMenuItem(value: '5', child: Text('Year 5')),
+        items: [
+          DropdownMenuItem(value: '1', child: Text(tr('Year 1'))),
+          DropdownMenuItem(value: '2', child: Text(tr('Year 2'))),
+          DropdownMenuItem(value: '3', child: Text(tr('Year 3'))),
+          DropdownMenuItem(value: '4', child: Text(tr('Year 4'))),
+          DropdownMenuItem(value: '5', child: Text(tr('Year 5'))),
           DropdownMenuItem(value: 'Graduate', child: Text('Graduate Student')),
         ],
         onChanged: (value) {
@@ -669,13 +670,13 @@ class _ProfessionalInfoPageState extends State<ProfessionalInfoPage> {
         },
         onChanged: (value) => _saveData(),
       ),
-      const SizedBox(height: 16),
+      SizedBox(height: 16),
 
       // Area of Law
       TextFormField(
         controller: _areaOfLawController,
-        decoration: const InputDecoration(
-          labelText: 'Area of Law *',
+        decoration: InputDecoration(
+          labelText: tr('Area of Law *'),
           border: OutlineInputBorder(),
           helperText: 'Your area of specialization',
         ),

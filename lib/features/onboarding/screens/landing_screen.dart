@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:localization_lite/translate.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_strings.dart';
 import '../../../constants/app_const_list_obj.dart';
@@ -57,8 +58,8 @@ class LandingScreen extends StatelessWidget {
                     const SizedBox(height: 4),
 
                     // Tagline at bottom
-                    const Text(
-                      'The lawyer you carry',
+                    Text(
+                      tr('The lawyer you carry'),
                       style: TextStyle(
                         color: AppColors.black,
                         fontSize: 12,
@@ -87,7 +88,7 @@ class LandingScreen extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
                     child: Text(
-                      'Welcome to Portable Lawyer App',
+                      tr('Welcome to Portable Lawyer App'),
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
                             fontSize: 18,
@@ -150,7 +151,7 @@ class LandingScreen extends StatelessWidget {
                                   // Feature text
                                   Expanded(
                                     child: Text(
-                                      feature['title'] as String,
+                                      tr(feature['title'] as String),
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w500,
@@ -182,7 +183,7 @@ class LandingScreen extends StatelessWidget {
                     children: [
                       // "All in one Place!" text
                       Text(
-                        'All in One Place!',
+                        tr('All in One Place!'),
                         style:
                             Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w700,
@@ -214,7 +215,7 @@ class LandingScreen extends StatelessWidget {
                             elevation: 1,
                           ),
                           child: Text(
-                            '${AppStrings.signUpBtnText.toUpperCase()} | ${AppStrings.signUpBtnTextSw.toUpperCase()}',
+                            tr('Sign Up').toUpperCase(),
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
@@ -227,8 +228,8 @@ class LandingScreen extends StatelessWidget {
                       const SizedBox(height: 8),
 
                       // "Already have an account" text - compact
-                      const Text(
-                        'Already have an account | Una akaunt tayari?',
+                      Text(
+                        tr('Already have an account?'),
                         style: TextStyle(
                           fontSize: 11,
                           color: AppColors.textSecondary,
@@ -257,7 +258,7 @@ class LandingScreen extends StatelessWidget {
                             elevation: 1,
                           ),
                           child: Text(
-                            '${AppStrings.signInBtnText.toUpperCase()} | ${AppStrings.signInBtnTextSw.toUpperCase()}',
+                            tr('Sign In').toUpperCase(),
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
@@ -276,8 +277,8 @@ class LandingScreen extends StatelessWidget {
                           onPressed: () {
                             Get.offAllNamed('/home');
                           },
-                          child: const Text(
-                            'Skip to Home (Development Only)',
+                          child: Text(
+                            tr('Skip to Home (Development Only)'),
                             style: TextStyle(
                               color: AppColors.textSecondary,
                               fontSize: 8,

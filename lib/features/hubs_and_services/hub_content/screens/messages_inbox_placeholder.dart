@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import '../../../calling_booking/controllers/consultant_controller.dart';
 import '../../../calling_booking/models/consultant_models.dart';
@@ -34,11 +35,11 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Messages'),
+        title: Text(tr('Messages')),
         actions: [
           IconButton(
             onPressed: () => setState(() {}),
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh),
           ),
         ],
       ),
@@ -50,7 +51,7 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search lawyers...',
+                hintText: tr('Search lawyers...'),
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -82,16 +83,14 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen> {
                         size: 64,
                         color: theme.colorScheme.primary,
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No lawyers available',
+                      SizedBox(height: 16),
+                      Text(tr('No lawyers available'),
                         style: theme.textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Check back later for available lawyers.',
+                      SizedBox(height: 8),
+                      Text(tr('Check back later for available lawyers.'),
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurface.withValues(
                             alpha: 0.7,

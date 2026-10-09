@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localization_lite/translate.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:file_picker/file_picker.dart';
@@ -157,7 +158,7 @@ class ContentCreationController extends GetxController {
     // Validate file size (50MB limit)
     if (file.size > 50 * 1024 * 1024) {
       NavigationHelper.showSafeSnackbar(
-        title: 'File Too Large',
+        title: tr('File Too Large'),
         message: 'Please select a file smaller than 50MB',
         backgroundColor: Colors.red,
       );
@@ -168,7 +169,7 @@ class ContentCreationController extends GetxController {
     if (!_isValidFileType(file.name)) {
       NavigationHelper.showSafeSnackbar(
         title: 'Invalid File Type',
-        message: 'Please select a supported file type',
+        message: tr('Please select a supported file type'),
         backgroundColor: Colors.red,
       );
       return;
@@ -214,7 +215,7 @@ class ContentCreationController extends GetxController {
     } catch (e) {
       NavigationHelper.showSafeSnackbar(
         title: 'Image Processing Error',
-        message: 'Failed to process the selected image: $e',
+        message: tr('Failed to process the selected image: {e}').replaceAll('{e}', '$e'),
         backgroundColor: Colors.red,
       );
     }
@@ -269,7 +270,7 @@ class ContentCreationController extends GetxController {
       final createdContent = await _service.createHubContent(jsonData);
 
       NavigationHelper.showSafeSnackbar(
-        title: 'Success',
+        title: tr('Success'),
         message:
             'Your content "${createdContent.title}" has been published successfully',
         backgroundColor: Colors.green,
@@ -279,7 +280,7 @@ class ContentCreationController extends GetxController {
     } catch (e) {
       error.value = e.toString();
       NavigationHelper.showSafeSnackbar(
-        title: 'Error ❌',
+        title: tr('Error ❌'),
         message: 'Failed to create content: ${e.toString()}',
         backgroundColor: Colors.red.shade600,
         duration: const Duration(seconds: 5),
@@ -399,7 +400,7 @@ class ContentCreationController extends GetxController {
       error.value = 'Failed to load topics: $e';
       NavigationHelper.showSafeSnackbar(
         title: 'Error Loading Topics',
-        message: 'Failed to load available topics: $e',
+        message: tr('Failed to load available topics: {e}').replaceAll('{e}', '$e'),
         backgroundColor: Colors.red,
       );
     } finally {
@@ -426,7 +427,7 @@ class ContentCreationController extends GetxController {
   Future<Topic?> createNewTopic() async {
     if (newTopicName.value.isEmpty) {
       NavigationHelper.showSafeSnackbar(
-        title: 'Topic Name Required',
+        title: tr('Topic Name Required'),
         message: 'Please enter a topic name',
         backgroundColor: Colors.red,
       );
@@ -456,7 +457,7 @@ class ContentCreationController extends GetxController {
         newTopicDescription.value = '';
 
         NavigationHelper.showSafeSnackbar(
-          title: 'Topic Created! 🎉',
+          title: tr('Topic Created! 🎉'),
           message: 'New topic "${response.name}" has been created',
           backgroundColor: Colors.green,
         );
