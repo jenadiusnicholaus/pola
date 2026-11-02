@@ -55,9 +55,12 @@ class TokenStorageService extends GetxController {
   /// Read a value by key from flutter_secure_storage, falling back to
   /// SharedPreferences (which is reliable on emulators).
   Future<String?> _read(String key) async {
-    // Try secure storage first
+    // Try secure storage first with a timeout so Android Keystore hangs
+    // (common on some devices / first boot) don't block initialization.
     try {
-      final value = await _secureStorage.read(key: key);
+      final value = await _secureStorage
+          .read(key: key)
+          .timeout(const Duration(seconds: 3));
       if (value != null) {
         debugPrint('🔐 SecureStorage read OK for "$key"');
         return value;
@@ -159,9 +162,12 @@ class TokenStorageService extends GetxController {
     if (_isInitialized) return;
 
     try {
-      await _initCompleter.future.timeout(const Duration(seconds: 5));
+      await _initCompleter.future.timeout(const Duration(seconds: 8));
     } catch (_) {
-      debugPrint('⚠️ TokenStorageService initialization timeout');
+      debugPrint(
+          '⚠️ TokenStorageService initialization timeout — proceeding anyway');
+      // Mark as initialized so subsequent requests don't each wait 8 s.
+      _isInitialized = true;
     }
   }
 

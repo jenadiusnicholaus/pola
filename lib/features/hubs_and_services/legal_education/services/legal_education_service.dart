@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import '../models/legal_education_models.dart';
 import '../../../../services/api_service.dart';
-import '../../../../services/token_storage_service.dart';
 import '../../../../config/environment_config.dart';
 
 class LegalEducationService extends GetxService {
@@ -37,27 +36,6 @@ class LegalEducationService extends GetxService {
 
       print('🔍 TOPICS API: Making request to $endpoint');
       print('🔍 TOPICS API: Query params: $queryParams');
-
-      // Debug token status right before API call
-      try {
-        final tokenService = Get.find<TokenStorageService>();
-        await tokenService.waitForInitialization();
-
-        print(
-            '🔍 TOPICS API: Token service found: ${tokenService.runtimeType}');
-        print('🔍 TOPICS API: Is logged in: ${tokenService.isLoggedIn}');
-        print(
-            '🔍 TOPICS API: Access token length: ${tokenService.accessToken.length}');
-        if (tokenService.accessToken.isNotEmpty) {
-          print(
-              '🔍 TOPICS API: Token starts with: ${tokenService.accessToken.substring(0, 20)}...');
-        }
-
-        // Small delay to ensure token is properly set in interceptor
-        await Future.delayed(const Duration(milliseconds: 100));
-      } catch (e) {
-        print('❌ TOPICS API: Error getting token service: $e');
-      }
 
       final response = await _apiService.get(
         endpoint,

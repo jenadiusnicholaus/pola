@@ -12,6 +12,7 @@ class OnlineStatusService extends GetxService {
   Timer? _heartbeatTimer;
   bool _isRunning = false;
   int _consecutiveFailures = 0;
+  CancelToken? _cancelToken;
 
   static const Duration _heartbeatInterval = Duration(seconds: 30);
   static const int _maxBackoffMultiplier = 8; // max ~4min backoff
@@ -78,6 +79,8 @@ class OnlineStatusService extends GetxService {
     debugPrint('💔 Stopping heartbeat service');
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
+    _cancelToken?.cancel('Heartbeat stopped');
+    _cancelToken = null;
     _isRunning = false;
   }
 
@@ -95,12 +98,17 @@ class OnlineStatusService extends GetxService {
       }
     } catch (_) {}
 
+    // Cancel any in-flight heartbeat before starting a new one.
+    _cancelToken?.cancel('New heartbeat starting');
+    _cancelToken = CancelToken();
+
     try {
       await _dio.post(
         '/api/v1/notification/heartbeat/',
+        cancelToken: _cancelToken,
         options: Options(
-          receiveTimeout: const Duration(seconds: 30),
-          sendTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 8),
+          sendTimeout: const Duration(seconds: 5),
         ),
       );
       debugPrint('💓 Heartbeat sent');

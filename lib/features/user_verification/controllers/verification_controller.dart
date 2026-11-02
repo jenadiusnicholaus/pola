@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'dart:convert';
 import '../models/verification_models.dart';
 import '../services/verification_service.dart';
 import '../../../utils/navigation_helper.dart';
@@ -410,8 +409,16 @@ class VerificationController extends GetxController {
       if (cameraStatus != PermissionStatus.granted) {
         NavigationHelper.showSafeSnackbar(
           title: '⚠️ Permission Required',
-          message: 'Camera permission is needed to take photos',
+          message:
+              'Camera permission is needed. Tap "Open Settings" to enable it.',
           backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 6),
+          mainButton: TextButton(
+            onPressed: () => openAppSettings(),
+            child: const Text('Open Settings',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
         );
         return;
       }
@@ -485,16 +492,25 @@ class VerificationController extends GetxController {
     try {
       _isUploading.value = true;
 
-      // Check photo library permission
-      final photoStatus = await Permission.photos.request();
-      if (photoStatus != PermissionStatus.granted) {
-        // Try media library permission for Android
-        final mediaStatus = await Permission.mediaLibrary.request();
-        if (mediaStatus != PermissionStatus.granted) {
+      // On Android the photo picker (Photo Picker / ACTION_GET_CONTENT via
+      // image_picker) runs out-of-process and grants access to the selected
+      // image only — no READ_MEDIA_IMAGES / storage permission is needed.
+      // iOS still needs photo library authorization.
+      if (Platform.isIOS) {
+        final photoStatus = await Permission.photos.request();
+        if (photoStatus != PermissionStatus.granted) {
           NavigationHelper.showSafeSnackbar(
             title: '⚠️ Permission Required',
-            message: 'Photo library access is needed to select images',
+            message:
+                'Photo library access is needed. Tap "Open Settings" to enable it.',
             backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 6),
+            mainButton: TextButton(
+              onPressed: () => openAppSettings(),
+              child: const Text('Open Settings',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
           );
           return;
         }
@@ -607,23 +623,12 @@ class VerificationController extends GetxController {
     try {
       _isUploading.value = true;
 
-      // Check storage permission for Android
-      if (Platform.isAndroid) {
-        final storageStatus = await Permission.storage.request();
-        if (storageStatus != PermissionStatus.granted) {
-          // Try manage external storage for Android 11+
-          final manageStorageStatus =
-              await Permission.manageExternalStorage.request();
-          if (manageStorageStatus != PermissionStatus.granted) {
-            NavigationHelper.showSafeSnackbar(
-              title: '⚠️ Permission Required',
-              message: 'Storage access is needed to browse files',
-              backgroundColor: Colors.orange,
-            );
-            return;
-          }
-        }
-      }
+      // On Android 10+ the system file picker (SAF / Storage Access
+      // Framework) manages its own access — no READ_EXTERNAL_STORAGE
+      // permission is needed. On Android 13+ that permission was removed
+      // entirely, so requesting it always returns denied. We therefore skip
+      // the permission check and let FilePicker handle access itself.
+      // If the picker throws a SecurityException we surface it below.
 
       // Try file picker first, fallback to gallery if it fails
       try {
@@ -649,7 +654,28 @@ class VerificationController extends GetxController {
         debugPrint(
             '⚠️ File picker failed, trying gallery fallback: $filePickerError');
 
-        // Show fallback message
+        // If it looks like a permission error, show the settings button.
+        final errStr = filePickerError.toString().toLowerCase();
+        if (errStr.contains('permission') ||
+            errStr.contains('security') ||
+            errStr.contains('denied')) {
+          NavigationHelper.showSafeSnackbar(
+            title: '⚠️ Permission Required',
+            message:
+                'Storage access is needed. Tap "Open Settings" to enable it.',
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 6),
+            mainButton: TextButton(
+              onPressed: () => openAppSettings(),
+              child: const Text('Open Settings',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          );
+          return;
+        }
+
+        // Non-permission error — fall back to gallery
         NavigationHelper.showSafeSnackbar(
           title: '📱 Using Gallery Instead',
           message: 'File browser unavailable. Opening photo gallery...',
@@ -797,15 +823,12 @@ class VerificationController extends GetxController {
         barrierDismissible: false,
       );
 
-      // Convert file to base64
-      final bytes = await file.readAsBytes();
-      final base64File = base64Encode(bytes);
-
-      // Upload to server
-      final success = await _verificationService.uploadDocumentBase64(
+      // Upload via multipart (more reliable than base64 for PDFs and
+      // large files; avoids the 33 % base64 size inflation).
+      final success = await _verificationService.uploadDocument(
         documentType: documentType,
-        base64Data: base64File,
-        fileName: _getDocumentDisplayName(documentType),
+        file: file,
+        title: fileName,
         description: 'Uploaded via mobile app',
       );
 

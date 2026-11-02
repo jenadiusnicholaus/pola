@@ -230,18 +230,35 @@ class SubtopicCard extends StatelessWidget {
   }
 
   String _getLocalizedDescription() {
-    // Use language from API parameter only
     final isSwahili = _effectiveLanguage == 'sw';
 
+    String raw;
     if (isSwahili && subtopic.descriptionSw.isNotEmpty) {
-      return subtopic.descriptionSw;
+      raw = subtopic.descriptionSw;
     } else if (subtopic.description.isNotEmpty) {
-      return subtopic.description;
+      raw = subtopic.description;
     } else if (subtopic.descriptionSw.isNotEmpty) {
-      return subtopic.descriptionSw;
+      raw = subtopic.descriptionSw;
+    } else {
+      return tr('No description available');
     }
 
-    return tr('No description available');
+    return _stripHtml(raw);
+  }
+
+  /// Strip HTML tags and decode common HTML entities so the description
+  /// is shown as plain readable text instead of raw markup.
+  String _stripHtml(String html) {
+    return html
+        .replaceAll(RegExp(r'<[^>]*>'), '')
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&#39;', "'")
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 
   IconData _getSubtopicIconData() {

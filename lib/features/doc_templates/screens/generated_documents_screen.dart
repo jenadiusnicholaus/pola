@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import '../controllers/generated_documents_controller.dart';
 import '../models/generated_document_model.dart';
@@ -299,42 +299,20 @@ class _DownloadButtonState extends State<_DownloadButton> {
 
   Future<String> _getDownloadPath() async {
     Directory? directory;
-    
+
     if (Platform.isAndroid) {
-      // Try to use external storage Downloads folder for Android
-      directory = Directory('/storage/emulated/0/Download');
-      if (!await directory.exists()) {
-        // Fallback to app's external storage
-        directory = await getExternalStorageDirectory();
-      }
+      // Scoped storage: download to a temp file, then hand it to the system
+      // "save document" picker so the user chooses where it is stored.
+      directory = await getTemporaryDirectory();
     } else if (Platform.isIOS) {
       // Use documents directory for iOS
       directory = await getApplicationDocumentsDirectory();
     } else {
-      directory = await getDownloadsDirectory() ?? await getApplicationDocumentsDirectory();
+      directory = await getDownloadsDirectory() ??
+          await getApplicationDocumentsDirectory();
     }
-    
-    return directory?.path ?? (await getApplicationDocumentsDirectory()).path;
-  }
 
-  Future<bool> _requestStoragePermission() async {
-    if (Platform.isAndroid) {
-      // Check Android version - Android 10+ has scoped storage
-      final status = await Permission.storage.status;
-      if (status.isGranted) return true;
-      
-      // For Android 13+, we need different permissions
-      if (await Permission.manageExternalStorage.isGranted) return true;
-      
-      // Request permission
-      final result = await Permission.storage.request();
-      if (result.isGranted) return true;
-      
-      // Try manage external storage for Android 11+
-      final manageResult = await Permission.manageExternalStorage.request();
-      return manageResult.isGranted;
-    }
-    return true; // iOS doesn't need explicit permission for app documents
+    return directory.path;
   }
 
   Future<void> _downloadDocument(BuildContext context) async {
@@ -349,13 +327,6 @@ class _DownloadButtonState extends State<_DownloadButton> {
       return;
     }
 
-    // Request permission first
-    final hasPermission = await _requestStoragePermission();
-    if (!hasPermission) {
-      _showError(context, 'Storage permission is required to download files');
-      return;
-    }
-
     setState(() {
       _isDownloading = true;
       _progress = 0;
@@ -364,11 +335,12 @@ class _DownloadButtonState extends State<_DownloadButton> {
     try {
       final dio = DioConfig.instance;
       final downloadPath = await _getDownloadPath();
-      
+
       // Create filename from document title or use a default
-      final fileName = '${widget.document.documentTitle.replaceAll(RegExp(r'[^\w\s-]'), '_')}.pdf';
+      final fileName =
+          '${widget.document.documentTitle.replaceAll(RegExp(r'[^\w\s-]'), '_')}.pdf';
       final filePath = '$downloadPath/$fileName';
-      
+
       debugPrint('📥 Downloading to: $filePath');
       debugPrint('📥 From URL: ${widget.document.downloadUrl}');
 
@@ -388,6 +360,40 @@ class _DownloadButtonState extends State<_DownloadButton> {
         _isDownloading = false;
         _progress = 0;
       });
+
+      if (Platform.isAndroid) {
+        // Scoped storage: hand the downloaded file to the system "save
+        // document" picker (SAF ACTION_CREATE_DOCUMENT). No storage
+        // permission is needed and the user picks where it goes
+        // (Downloads by default).
+        final tempFile = File(filePath);
+        try {
+          final savedPath = await FilePicker.platform.saveFile(
+            dialogTitle: 'Save document',
+            fileName: fileName,
+            type: FileType.custom,
+            allowedExtensions: const ['pdf'],
+            bytes: await tempFile.readAsBytes(),
+          );
+          if (!context.mounted) return;
+          if (savedPath == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Download cancelled')),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Saved: $fileName'),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 5),
+              ),
+            );
+          }
+        } finally {
+          if (await tempFile.exists()) await tempFile.delete();
+        }
+        return;
+      }
 
       if (!context.mounted) return;
 
@@ -453,7 +459,9 @@ class _DownloadButtonState extends State<_DownloadButton> {
           : ElevatedButton.icon(
               onPressed: () => _downloadDocument(context),
               icon: const Icon(Icons.download),
-              label: Text(widget.document.isFree ? 'Download FREE' : 'Download Document'),
+              label: Text(widget.document.isFree
+                  ? 'Download FREE'
+                  : 'Download Document'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,

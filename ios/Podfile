@@ -155,6 +155,23 @@ post_install do |installer|
     end
   end
   
+  # Fix missing gRPC-Core.modulemap. CocoaPods generates -fmodule-map-file
+  # flags pointing at Pods/Headers/Private/grpc/gRPC-Core.modulemap, but that
+  # directory is not a registered sandbox artifact and gets cleaned up.
+  # Rewrite the flag to the modulemap that does exist under Target Support Files.
+  pod_support_dir = File.join(installer.sandbox.root, 'Target Support Files')
+  Dir.glob(File.join(pod_support_dir, '**', '*.xcconfig')).each do |xcconfig_path|
+    contents = File.read(xcconfig_path)
+    patched = contents.gsub(
+      '${PODS_ROOT}/Headers/Private/grpc/gRPC-Core.modulemap',
+      '${PODS_ROOT}/Target Support Files/gRPC-Core/gRPC-Core.modulemap'
+    )
+    if patched != contents
+      File.write(xcconfig_path, patched)
+      puts "🔧 Patched gRPC-Core.modulemap path in #{File.basename(xcconfig_path)}"
+    end
+  end
+
   # Save the modified project
   installer.pods_project.save
   puts "🔧 Privacy bundle fixes applied and project saved"

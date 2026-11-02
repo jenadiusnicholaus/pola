@@ -76,7 +76,9 @@ class _StatutePdfScreenState extends State<StatutePdfScreen> {
       body: PDF(
         enableSwipe: true,
         swipeHorizontal: false,
-        autoSpacing: true,
+        // No spacing between pages — each page fills the viewport
+        // edge-to-edge so text renders at maximum readable size.
+        autoSpacing: false,
         pageFling: true,
         pageSnap: true,
         nightMode: _nightMode,

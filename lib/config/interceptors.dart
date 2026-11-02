@@ -15,6 +15,9 @@ class ApiInterceptors {
   static Completer<bool>? _refreshCompleter;
   static bool _handlingDeviceReplaced = false;
 
+  // Cache device ID after first fetch so every request doesn't hit storage.
+  static String? _cachedDeviceId;
+
   // Add comprehensive interceptors to Dio instance
   static void addInterceptors(Dio dio) {
     final interceptorList = dio.interceptors as List<Interceptor>;
@@ -94,11 +97,12 @@ class ApiInterceptors {
         // to be in storage (e.g. a user registering a new account).
         final isPublicAuthEndpoint = _isPublicAuthEndpoint(options);
 
-        // Attach stable device id for single-device enforcement
+        // Attach stable device id for single-device enforcement.
+        // Cached after first call to avoid per-request storage I/O.
         try {
-          final deviceId = await DeviceInfoService().getDeviceId();
-          if (deviceId.isNotEmpty) {
-            options.headers['X-Device-Id'] = deviceId;
+          _cachedDeviceId ??= await DeviceInfoService().getDeviceId();
+          if (_cachedDeviceId!.isNotEmpty) {
+            options.headers['X-Device-Id'] = _cachedDeviceId!;
           }
         } catch (e) {
           debugPrint('⚠️ Could not attach X-Device-Id: $e');

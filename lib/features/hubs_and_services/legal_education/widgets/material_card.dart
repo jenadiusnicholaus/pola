@@ -74,7 +74,7 @@ class MaterialCard extends StatelessWidget {
                     if (material.description.isNotEmpty) ...[
                       const SizedBox(height: 6),
                       Text(
-                        material.description,
+                        _stripHtml(material.description),
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurface.withOpacity(0.6),
                           fontSize: 13,
@@ -213,6 +213,19 @@ class MaterialCard extends StatelessWidget {
     if (material.isImage) return Icons.image_outlined;
     if (material.isLectureMaterial) return Icons.school_outlined;
     return Icons.article_outlined;
+  }
+
+  String _stripHtml(String html) {
+    return html
+        .replaceAll(RegExp(r'<[^>]*>'), '')
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&#39;', "'")
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 
   bool _isPaidMaterial() {

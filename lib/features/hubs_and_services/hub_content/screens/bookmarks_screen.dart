@@ -138,25 +138,33 @@ class _BookmarksContentState extends State<_BookmarksContent> {
               size: 24,
             ),
             SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(tr('Your Bookmarks'),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                Text(tr('{totalBookmarks} items saved').replaceAll('{totalBookmarks}', '$totalBookmarks'),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.7),
-                      ),
-                ),
-              ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tr('Your Bookmarks'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  Text(
+                    tr('{totalBookmarks} items saved')
+                        .replaceAll('{totalBookmarks}', '$totalBookmarks'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.7),
+                        ),
+                  ),
+                ],
+              ),
             ),
-            Spacer(),
             if (totalBookmarks > 0)
               TextButton(
                 onPressed: () => _fetchAllBookmarks(),
@@ -221,7 +229,8 @@ class _BookmarksContentState extends State<_BookmarksContent> {
             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
           ),
           SizedBox(height: 16),
-          Text(tr('No bookmarks yet'),
+          Text(
+            tr('No bookmarks yet'),
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
