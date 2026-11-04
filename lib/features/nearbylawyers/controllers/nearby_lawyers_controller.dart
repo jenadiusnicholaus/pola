@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import '../models/nearby_lawyer_model.dart';
 import '../services/nearby_lawyers_service.dart';
 import '../../../services/location_service.dart';
+import '../../../services/location_consent.dart';
 
 class NearbyLawyersController extends GetxController {
   final NearbyLawyersService _service = Get.find<NearbyLawyersService>();
@@ -57,11 +58,14 @@ class NearbyLawyersController extends GetxController {
       await Geolocator.openLocationSettings();
     }
 
-    // 2. Check and request permission
+    // 2. Check and request permission (prominent disclosure first — the
+    // user is engaging the nearby-lawyers feature, so this is initiated).
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      debugPrint('📍 Permission result after request: $permission');
+      if (await LocationConsent.ensure(userInitiated: true)) {
+        permission = await Geolocator.requestPermission();
+        debugPrint('📍 Permission result after request: $permission');
+      }
     }
     if (permission == LocationPermission.deniedForever) {
       debugPrint(

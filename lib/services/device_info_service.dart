@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:uuid/uuid.dart';
 import '../models/device_model.dart';
+import 'location_consent.dart';
 
 class DeviceInfoService {
   static final DeviceInfoService _instance = DeviceInfoService._internal();
@@ -83,6 +84,8 @@ class DeviceInfoService {
 
       if (permission == LocationPermission.denied) {
         if (requestPermission) {
+          // Play's prominent-disclosure requirement: disclose before asking.
+          if (!await LocationConsent.ensure()) return null;
           debugPrint('📍 Requesting location permission...');
           permission = await Geolocator.requestPermission();
           debugPrint('📍 Permission after request: $permission');

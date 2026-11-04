@@ -9,10 +9,14 @@ import '../config/environment_config.dart';
 import 'auth_service.dart';
 import 'token_storage_service.dart';
 import 'device_info_service.dart';
+import 'location_consent.dart';
 
 /// Service that periodically sends the user's live GPS coordinates to the
 /// backend so the "Nearby Lawyers" feature can find them.
-class LocationService extends GetxService {
+///
+/// Updates only run while the app is in the foreground — the app does not
+/// request or use ACCESS_BACKGROUND_LOCATION.
+class LocationService extends GetxService with WidgetsBindingObserver {
   final Dio _dio = DioConfig.instance;
   Timer? _updateTimer;
   bool _isRunning = false;
@@ -23,10 +27,13 @@ class LocationService extends GetxService {
 
   Position? _lastSentPosition;
 
+  bool _stoppedForBackground = false;
+
   @override
   void onInit() {
     super.onInit();
     debugPrint('📍 LocationService.onInit() called');
+    WidgetsBinding.instance.addObserver(this);
     _checkAuthAndStart();
 
     // Delayed retry: if tokens weren't ready during onInit, try again
@@ -99,6 +106,23 @@ class LocationService extends GetxService {
     _isRunning = false;
   }
 
+  /// Pause location updates while the app is in the background so that
+  /// location is never collected without the app being in use
+  /// (while-in-use permission only).
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      if (_isRunning) {
+        _stoppedForBackground = true;
+        stopLocationUpdates();
+      }
+    } else if (state == AppLifecycleState.resumed && _stoppedForBackground) {
+      _stoppedForBackground = false;
+      if (_isUserLoggedIn()) startLocationUpdates();
+    }
+  }
+
   /// Get current position and send it to the backend.
   Future<void> _updateLocation({bool force = false}) async {
     try {
@@ -118,6 +142,8 @@ class LocationService extends GetxService {
 
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
+        // Play's prominent-disclosure requirement: disclose before asking.
+        if (!await LocationConsent.ensure()) return;
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) return;
       }
@@ -230,6 +256,7 @@ class LocationService extends GetxService {
 
   @override
   void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
     stopLocationUpdates();
     super.onClose();
   }

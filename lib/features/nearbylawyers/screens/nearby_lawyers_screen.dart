@@ -7,6 +7,7 @@ import '../models/nearby_lawyer_model.dart';
 import '../../calling_booking/models/consultant_models.dart' as calling;
 import '../../../widgets/profile_avatar.dart';
 import '../../../services/permission_service.dart';
+import '../../../services/location_consent.dart';
 import '../../../utils/navigation_helper.dart';
 
 class NearbyLawyersScreen extends StatelessWidget {
@@ -90,10 +91,15 @@ class NearbyLawyersScreen extends StatelessWidget {
                   children: [
                     ElevatedButton.icon(
                       onPressed: () async {
-                        // 1. Request location permission (shows system dialog)
+                        // 1. Request location permission (shows system
+                        // dialog) — prominent disclosure first
                         LocationPermission permission =
                             await Geolocator.checkPermission();
                         if (permission == LocationPermission.denied) {
+                          if (!await LocationConsent.ensure(
+                              userInitiated: true)) {
+                            return;
+                          }
                           permission = await Geolocator.requestPermission();
                         }
                         if (permission == LocationPermission.deniedForever) {

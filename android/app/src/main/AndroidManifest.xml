@@ -45,10 +45,11 @@
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" tools:node="remove" />
     
-    <!-- Location permissions for device registration -->
+    <!-- Location permissions for device registration and "Nearby Lawyers".
+         Location is only used while the app is in use — no
+         ACCESS_BACKGROUND_LOCATION per Google Play's location policy. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     
     <application
         android:label="Pola"
