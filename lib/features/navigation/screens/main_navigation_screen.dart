@@ -10,6 +10,7 @@ import '../../consultation/screens/my_bookings_screen.dart';
 import '../../consultation/screens/my_consultations_screen.dart';
 import '../../../services/permission_service.dart';
 import '../../profile/services/profile_service.dart';
+import '../../../shared/widgets/app_drawer.dart';
 
 class MainNavigationScreen extends StatelessWidget {
   const MainNavigationScreen({super.key});
@@ -40,6 +41,8 @@ class MainNavigationScreen extends StatelessWidget {
       ];
 
       return Scaffold(
+        key: controller.scaffoldKey,
+        drawer: const AppDrawer(),
         body: IndexedStack(
           index: controller.currentIndex.value,
           children: screens,

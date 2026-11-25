@@ -1,13 +1,22 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class MainNavigationController extends GetxController {
   // Observable for current page index
   final RxInt currentIndex = 0.obs;
 
+  // Key for the root Scaffold so drawer can be opened from tab screens
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+
   // Change page
   void changePage(int index) {
-    if (Get.isSnackbarOpen) {
-      Get.closeAllSnackbars();
+    try {
+      if (Get.isSnackbarOpen) {
+        Get.closeAllSnackbars();
+      }
+    } catch (_) {
+      // GetX throws LateInitializationError when the snackbar controller
+      // was never fully initialized — nothing to close anyway.
     }
     currentIndex.value = index;
   }

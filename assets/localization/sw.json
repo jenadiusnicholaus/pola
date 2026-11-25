@@ -549,5 +549,13 @@
   "Signed Out": "Umetoka",
   "You have been signed out successfully": "Umetoka kikamilifu",
   "Your comprehensive legal education platform. Access courses, connect with professionals, and advance your legal career.": "Jukwaa lako kamili la elimu ya kisheria. Fikia kozi, unganisha na wataalamu, na kuendeleza kazi yako ya kisheria.",
-  "Built with ❤️ for the legal community": "Imejengwa kwa ❤️ kwa jamii ya kisheria"
+  "Built with ❤️ for the legal community": "Imejengwa kwa ❤️ kwa jamii ya kisheria",
+  "Pola uses your location": "Pola inatumia mahali ulipo",
+  "Pola collects your device's location data to:": "Pola inakusanya taarifa za mahali kifaa chako kilipo ili:",
+  "• Show lawyers and legal services near you in Nearby Lawyers.": "• Kukuonyesha mawakili na huduma za kisheria zilizo karibu nawe kwenye Mawakili wa Karibu.",
+  "• Save your location with your device registration when you sign in.": "• Kuhifadhi mahali ulipo pamoja na usajili wa kifaa chako unapoingia.",
+  "Your location is sent to Pola's servers and linked to your account. It is collected only while you are using the app, never in the background.": "Mahali ulipo hutumwa kwenye seva za Pola na huunganishwa na akaunti yako. Hukusanywa tu wakati unatumia programu, kamwe si chinichini.",
+  "You can choose \"Not now\" and still use Pola. You can pick a location on the map instead.": "Unaweza kuchagua \"Si sasa\" na bado ukatumia Pola. Unaweza kuchagua mahali kwenye ramani badala yake.",
+  "Not now": "Si sasa",
+  "Allow": "Ruhusu"
 }

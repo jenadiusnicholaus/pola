@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
 import '../widgets/hubs_and_services_list.dart';
 import '../../../constants/app_strings.dart';
-import '../../../shared/widgets/app_drawer.dart';
+import '../../navigation/controllers/main_navigation_controller.dart';
 import '../../profile/services/profile_service.dart';
 import '../../notifications/widgets/notification_badge.dart';
 
@@ -67,7 +67,6 @@ class _HomeScreenState extends State<HomeScreen> {
         _showExitConfirmation(context, controller);
       },
       child: Scaffold(
-        drawer: const AppDrawer(),
         body: CustomScrollView(
           controller: _scrollController,
           slivers: [
@@ -77,6 +76,14 @@ class _HomeScreenState extends State<HomeScreen> {
             // Hubs and Services Content
             const SliverToBoxAdapter(
               child: HubsAndServicesList(),
+            ),
+
+            // Clearance so the last card isn't hidden under the
+            // floating bottom navigation bar (extendBody: true)
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: MediaQuery.of(context).viewPadding.bottom + 88,
+              ),
             ),
           ],
         ),
@@ -111,6 +118,13 @@ class _HomeScreenState extends State<HomeScreen> {
       snap: false,
       expandedHeight: 110.0,
       leadingWidth: 56, // Proper width for icon button
+      leading: IconButton(
+        icon: const Icon(Icons.menu),
+        onPressed: () => Get.find<MainNavigationController>()
+            .scaffoldKey
+            .currentState
+            ?.openDrawer(),
+      ),
       toolbarHeight: 56, // Standard toolbar height
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(

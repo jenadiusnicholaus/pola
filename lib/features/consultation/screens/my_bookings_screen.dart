@@ -3,6 +3,7 @@ import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../services/consultation_service.dart';
+import '../../../services/token_storage_service.dart';
 
 /// Screen for clients to view their consultation bookings and call history
 class MyBookingsScreen extends StatefulWidget {
@@ -33,8 +34,17 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
     super.initState();
     _mainTabController = TabController(length: 2, vsync: this);
     _mainTabController.addListener(_onMainTabChanged);
-    _loadBookings();
-    _loadCallData();
+
+    // These endpoints require auth — don't fire them while logged out,
+    // otherwise they 401 ("credentials were not provided") for nothing.
+    if (Get.isRegistered<TokenStorageService>() &&
+        Get.find<TokenStorageService>().isLoggedIn) {
+      _loadBookings();
+      _loadCallData();
+    } else {
+      _isLoadingBookings = false;
+      _isLoadingCalls = false;
+    }
   }
 
   @override

@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../controllers/nearby_lawyers_controller.dart';
 import '../models/nearby_lawyer_model.dart';
+import 'location_picker_screen.dart';
 import '../../calling_booking/models/consultant_models.dart' as calling;
 
 class LawyersMapScreen extends StatefulWidget {
@@ -100,6 +101,12 @@ class _LawyersMapScreenState extends State<LawyersMapScreen> {
                   color: theme.colorScheme.onSurface.withOpacity(0.3)),
               SizedBox(height: 16),
               Text('Location not available'),
+              SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: _changeLocation,
+                icon: Icon(Icons.edit_location_alt),
+                label: Text('Pick location on map'),
+              ),
             ],
           ),
         ),
@@ -164,6 +171,11 @@ class _LawyersMapScreenState extends State<LawyersMapScreen> {
                         fontSize: 16,
                       ),
                     ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.edit_location_alt, size: 20),
+                    tooltip: 'Change location',
+                    onPressed: _changeLocation,
                   ),
                   Container(
                     margin: EdgeInsets.only(right: 8),
@@ -444,6 +456,31 @@ class _LawyersMapScreenState extends State<LawyersMapScreen> {
         ),
       ),
     );
+  }
+
+  /// Let the user pick a new search location on the map, then refresh.
+  Future<void> _changeLocation() async {
+    final current = controller.userLocation;
+    final LatLng? picked = await LocationPickerScreen.open(
+      initialCenter: current != null
+          ? LatLng(current.latitude, current.longitude)
+          : null,
+    );
+    if (picked == null) return;
+
+    // Only move the map if a FlutterMap is already attached — when this
+    // was called from the "location not available" state, the rebuild
+    // will centre on the new location via initialCenter instead.
+    final mapIsAttached = controller.userLocation != null;
+
+    await controller.applyManualLocation(picked.latitude, picked.longitude);
+    if (!mounted) return;
+    setState(() {
+      _selectedLawyer = null;
+    });
+    if (mapIsAttached) {
+      _mapController.move(picked, 13);
+    }
   }
 
   void _goToUserLocation() {

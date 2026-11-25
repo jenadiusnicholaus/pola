@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PoLa App – Final Testing Feedback: Resolution Report</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1f2933; font-size: 11pt; line-height: 1.45; }
+  h1 { font-size: 20pt; margin: 0 0 4px; color: #0b3d6e; }
+  .subtitle { color: #52606d; margin-bottom: 18px; }
+  h2 { font-size: 13pt; color: #0b3d6e; border-bottom: 2px solid #d9e2ec; padding-bottom: 4px; margin-top: 22px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 10pt; }
+  th, td { border: 1px solid #d9e2ec; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #f0f4f8; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 9pt; font-weight: 600; white-space: nowrap; }
+  .done { background: #e3f9e5; color: #1f7a33; }
+  .config { background: #fff4d6; color: #8a6100; }
+  .later { background: #e8eaf6; color: #3949ab; }
+  .item { page-break-inside: avoid; margin-bottom: 12px; }
+  .item h3 { font-size: 11.5pt; margin: 14px 0 4px; }
+  .item p { margin: 3px 0; }
+  .label { font-weight: 600; color: #334e68; }
+  .note { background: #f0f4f8; border-left: 4px solid #0b3d6e; padding: 8px 12px; margin-top: 16px; font-size: 10pt; }
+  .footer { margin-top: 24px; font-size: 9pt; color: #7b8794; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>PoLa App – Final Testing Feedback</h1>
+<div class="subtitle">Resolution Report &nbsp;·&nbsp; 4 November 2026</div>
+
+<h2>Summary</h2>
+<p>Thank you for the detailed testing feedback. Of the 10 points raised, <strong>8 have been resolved</strong>,
+1 is being finalised through Admin Panel configuration, and 1 (legal templates) is scheduled for a later phase.</p>
+
+<table>
+  <tr><th style="width:5%">#</th><th style="width:45%">Item</th><th style="width:20%">Status</th></tr>
+  <tr><td>1</td><td>Elimu ya Kisheria – "Read More" translation</td><td><span class="badge done">Resolved</span></td></tr>
+  <tr><td>2</td><td>Phone number field – validation &amp; visual feedback</td><td><span class="badge done">Resolved</span></td></tr>
+  <tr><td>3</td><td>Professional specialization list</td><td><span class="badge done">Resolved</span></td></tr>
+  <tr><td>4</td><td>Advocate Hub – role-based access</td><td><span class="badge done">Resolved</span></td></tr>
+  <tr><td>5</td><td>Verification requirements – Admin Panel vs app</td><td><span class="badge config">Admin configuration</span></td></tr>
+  <tr><td>6</td><td>Student Hub – access and fixed TZS 1,500 price</td><td><span class="badge done">Resolved</span></td></tr>
+  <tr><td>7</td><td>Legal Templates – new templates &amp; Swahili versions</td><td><span class="badge later">Next phase</span></td></tr>
+  <tr><td>8</td><td>Lecturer role at sign-up</td><td><span class="badge done">Resolved</span></td></tr>
+  <tr><td>9</td><td>Professional verification – document upload failure</td><td><span class="badge done">Resolved</span></td></tr>
+  <tr><td>10</td><td>Automatic sign-out – session management</td><td><span class="badge done">Resolved</span></td></tr>
+</table>
+
+<h2>Details</h2>
+
+<div class="item">
+  <h3>1. Elimu ya Kisheria Hub – Language Translation <span class="badge done">Resolved</span></h3>
+  <p><span class="label">What we did:</span> The English "Read More" text has been removed from the Elimu ya Kisheria cards and
+  the Swahili translation "Soma Zaidi" is in place throughout the Swahili version of the app.</p>
+</div>
+
+<div class="item">
+  <h3>2. Phone Number Field – Validation and Visual Feedback <span class="badge done">Resolved</span></h3>
+  <p><span class="label">What we did:</span> The phone number field now gives instant feedback while typing:
+  a <strong>green border with a check mark</strong> when the number is valid and complete, and a <strong>red border with a warning icon</strong>
+  when it is incorrect or incomplete. This applies to Sign-up, Subscription and Voucher purchase.</p>
+</div>
+
+<div class="item">
+  <h3>3. Professional Specialization – Sign-Up Process <span class="badge done">Resolved</span></h3>
+  <p><span class="label">What we did:</span> All 10 recommended areas of practice were added, each with a Swahili name:</p>
+  <table>
+    <tr><th>English</th><th>Kiswahili</th></tr>
+    <tr><td>Administrative Law</td><td>Sheria za Utawala</td></tr>
+    <tr><td>Contract Law</td><td>Sheria za Mikataba</td></tr>
+    <tr><td>Civil Litigation</td><td>Mashauri ya Madai</td></tr>
+    <tr><td>Probate Law</td><td>Sheria za Mirathi</td></tr>
+    <tr><td>Labour and Employment Law</td><td>Sheria za Kazi na Ajira</td></tr>
+    <tr><td>Banking and Finance Law</td><td>Sheria za Benki na Fedha</td></tr>
+    <tr><td>Insurance Law</td><td>Sheria za Bima</td></tr>
+    <tr><td>Mining and Natural Resources Law</td><td>Sheria za Madini na Maliasili</td></tr>
+    <tr><td>Cyber Law</td><td>Sheria za Mtandao</td></tr>
+    <tr><td>International Law</td><td>Sheria za Kimataifa</td></tr>
+  </table>
+  <p>The previous "Labor Law" option was renamed to "Labour and Employment Law" so it does not appear twice.</p>
+</div>
+
+<div class="item">
+  <h3>4. Advocate Hub – Role-Based Access <span class="badge done">Resolved</span></h3>
+  <p><span class="label">What we did:</span> Access to the Advocate Hub is now limited to <strong>verified Advocates</strong> (and administrators),
+  both in the app and on the server. Lawyers, Paralegals, Law Firms and other roles can no longer view or post in this section.</p>
+</div>
+
+<div class="item">
+  <h3>5. Professional Account Verification – Requirements Mismatch <span class="badge config">Admin configuration</span></h3>
+  <p><span class="label">What we did:</span> The app now reads the required verification documents <strong>directly from the Admin Panel</strong>,
+  so there is a single source of truth: whatever is configured in the Admin Panel (documents and whether each is mandatory) is exactly what the app asks for.
+  New document types added by the administrator (for example a Practising Certificate) can now also be uploaded.</p>
+  <p><span class="label">Remaining step:</span> The administrator sets the final document list for Lawyers and Paralegals in the Admin Panel.</p>
+</div>
+
+<div class="item">
+  <h3>6. Student Hub – Access and Content Configuration <span class="badge done">Resolved</span></h3>
+  <p><span class="label">A. Access:</span> The "Failed to load content" error was caused by an access rule that did not recognise the Student role.
+  This is fixed – Students and Lecturers can now open the Student Hub. Content posted by students is also now correctly labelled as student content.</p>
+  <p><span class="label">B. Monetized content:</span> The price options have been removed. Every downloadable document now has a
+  <strong>fixed download price of TZS 1,500</strong>, shown on each document, and the server enforces this price. Reading content remains free for
+  users with an active subscription.</p>
+</div>
+
+<div class="item">
+  <h3>7. Legal Templates – Incomplete Content and Swahili Versions <span class="badge later">Next phase</span></h3>
+  <p>The app already supports English and Swahili versions of each template (Employment Contract / Mkataba wa Ajira,
+  Notice of Termination / Notisi ya Kusitisha Ajira, Resignation Letter / Barua ya Kujiuzulu). The remaining templates –
+  Car or Motorbike Rental, Motor Vehicle or Motorcycle Sale, House Rental, Minutes of Family Meeting on Probate, and Will – are scheduled for the next phase.</p>
+</div>
+
+<div class="item">
+  <h3>8. Lecturer Role – Sign-Up Options <span class="badge done">Resolved</span></h3>
+  <p><span class="label">What we did:</span> <strong>Lecturer (Mhadhiri)</strong> is now available as a separate role during registration,
+  with access to the Students and Lecturers Hub.</p>
+</div>
+
+<div class="item">
+  <h3>9. Professional Verification – Document Upload Failure <span class="badge done">Resolved</span></h3>
+  <p><span class="label">Cause:</span> This was a system issue, not the network. The app was not sending a piece of information (the document title)
+  that the server required, so every upload was rejected.</p>
+  <p><span class="label">What we did:</span> Fixed on both the server and the app. If an upload ever fails in future, the app now shows the actual reason
+  (for example "document already submitted" or "check your connection") instead of a general error.</p>
+</div>
+
+<div class="item">
+  <h3>10. Automatic Sign-Out – Session Management <span class="badge done">Resolved</span></h3>
+  <p><span class="label">What we did:</span> Users previously had to sign in again every 12 hours. Users now <strong>stay signed in</strong> as long as they use the app
+  at least once every 90 days, similar to common social media apps. Professionals will no longer appear offline because of an expired session.
+  The existing one-device security rule remains: signing in on another device still signs out the previous device.</p>
+</div>
+
+<div class="note">
+  <strong>Availability:</strong> These fixes will be live after the next server update and the next app release on Google Play / App Store.
+  Users should update to the latest app version to receive all improvements.
+</div>
+
+<div class="footer">PoLa – Final Testing Feedback Resolution Report</div>
+</body>
+</html>

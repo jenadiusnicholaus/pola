@@ -20,7 +20,6 @@ import '../features/consultation/services/consultation_service.dart';
 import '../features/subscription/services/subscription_service.dart';
 import '../features/settings/services/account_safety_service.dart';
 import 'device_registration_service.dart';
-import 'location_service.dart';
 import '../features/nearbylawyers/services/nearby_lawyers_service.dart';
 import '../features/calling_booking/services/fcm_service.dart';
 import '../features/calling_booking/services/nexacon_call_service.dart';
@@ -206,9 +205,10 @@ class AppInitializer {
       Get.put(OnlineStatusService(), permanent: true);
       debugPrint('✅ OnlineStatusService initialized (background)');
 
-      // Live location for nearby lawyers
-      Get.put(LocationService(), permanent: true);
-      debugPrint('✅ LocationService initialized (background)');
+      // NOTE: No live-location service is registered. Location is only
+      // collected when the user explicitly provides it (map picker or the
+      // "Use my current location" button) or once during device
+      // registration — never periodically or in the background.
 
       // Notification service for in-app notifications
       Get.put(NotificationService());

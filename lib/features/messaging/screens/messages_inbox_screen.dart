@@ -172,11 +172,15 @@ class _MessagesInboxScreenState extends State<MessagesInboxScreen>
       setState(() {
         _contacts = contactsMap.values.toList();
         _lastMessages = lastMessagesMap;
-        _isLoadingContacts = false;
       });
 
-      // Resolve phone numbers to user names via the user search API
-      _resolveContactNames();
+      // Resolve names BEFORE dropping the loading state so rows never
+      // flash raw phone numbers — the spinner stays until this finishes.
+      await _resolveContactNames();
+
+      if (mounted) {
+        setState(() => _isLoadingContacts = false);
+      }
     } catch (e) {
       debugPrint('❌ Error loading messages: $e');
       setState(() => _isLoadingContacts = false);

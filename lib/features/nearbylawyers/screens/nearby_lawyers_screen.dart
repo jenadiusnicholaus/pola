@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:localization_lite/translate.dart';
 import 'package:get/get.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 import '../controllers/nearby_lawyers_controller.dart';
 import '../models/nearby_lawyer_model.dart';
+import 'location_picker_screen.dart';
 import '../../calling_booking/models/consultant_models.dart' as calling;
 import '../../../widgets/profile_avatar.dart';
 import '../../../services/permission_service.dart';
-import '../../../services/location_consent.dart';
 import '../../../utils/navigation_helper.dart';
 
 class NearbyLawyersScreen extends StatelessWidget {
@@ -24,6 +24,18 @@ class NearbyLawyersScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(tr('Nearby Lawyers')),
         actions: [
+          // Pick a search location on the map — manual, no GPS
+          IconButton(
+            icon: const Icon(Icons.edit_location_alt),
+            tooltip: 'Choose location on map',
+            onPressed: () => _pickLocationOnMap(controller),
+          ),
+          // Explicit user action: single foreground GPS read
+          IconButton(
+            icon: const Icon(Icons.my_location),
+            tooltip: 'Use my current location',
+            onPressed: controller.useCurrentLocation,
+          ),
           IconButton(
             icon: const Icon(Icons.filter_list),
             onPressed: () => _showFilterDialog(context, controller),
@@ -31,6 +43,12 @@ class NearbyLawyersScreen extends StatelessWidget {
         ],
       ),
       body: Obx(() {
+        // First open with no user-chosen location: ask the user to pick
+        // one. Never auto-request GPS.
+        if (!controller.hasSelectedLocation) {
+          return _buildLocationPrompt(context, controller);
+        }
+
         if (controller.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -79,50 +97,28 @@ class NearbyLawyersScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Current radius: ${controller.radius.toStringAsFixed(0)}km\nTry increasing the search radius or enable GPS',
+                  'Current radius: ${controller.radius.toStringAsFixed(0)}km\nTry increasing the search radius or choosing a different location',
                   style: TextStyle(
                       color:
                           theme.textTheme.bodyMedium?.color?.withOpacity(0.7)),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  alignment: WrapAlignment.center,
                   children: [
                     ElevatedButton.icon(
-                      onPressed: () async {
-                        // 1. Request location permission (shows system
-                        // dialog) — prominent disclosure first
-                        LocationPermission permission =
-                            await Geolocator.checkPermission();
-                        if (permission == LocationPermission.denied) {
-                          if (!await LocationConsent.ensure(
-                              userInitiated: true)) {
-                            return;
-                          }
-                          permission = await Geolocator.requestPermission();
-                        }
-                        if (permission == LocationPermission.deniedForever) {
-                          // Open app settings so user can grant manually
-                          await Geolocator.openAppSettings();
-                          return;
-                        }
-
-                        // 2. Check if GPS hardware is on
-                        final enabled =
-                            await Geolocator.isLocationServiceEnabled();
-                        if (!enabled) {
-                          // Open location settings to turn on GPS
-                          await Geolocator.openLocationSettings();
-                        }
-
-                        // 3. Refresh nearby list
-                        controller.refresh();
-                      },
-                      icon: Icon(Icons.gps_fixed),
-                      label: Text('Enable GPS'),
+                      onPressed: () => _pickLocationOnMap(controller),
+                      icon: Icon(Icons.edit_location_alt),
+                      label: Text('Change location'),
                     ),
-                    SizedBox(width: 12),
+                    OutlinedButton.icon(
+                      onPressed: controller.useCurrentLocation,
+                      icon: Icon(Icons.my_location),
+                      label: Text('Use my current location'),
+                    ),
                     ElevatedButton(
                       onPressed: () => _showFilterDialog(context, controller),
                       child: Text(tr('Adjust Filters')),
@@ -180,6 +176,73 @@ class NearbyLawyersScreen extends StatelessWidget {
           ],
         );
       }),
+    );
+  }
+
+  /// Open the map picker and apply the picked point as the search
+  /// location (posts it to the backend once, then refreshes).
+  Future<void> _pickLocationOnMap(
+      NearbyLawyersController controller) async {
+    final current = controller.userLocation;
+    final LatLng? picked = await LocationPickerScreen.open(
+      initialCenter: current != null
+          ? LatLng(current.latitude, current.longitude)
+          : null,
+    );
+    if (picked != null) {
+      await controller.applyManualLocation(picked.latitude, picked.longitude);
+    }
+  }
+
+  /// Shown when the user has not yet chosen a search location — offers a
+  /// manual map pick or an explicit one-off GPS read. No automatic GPS.
+  Widget _buildLocationPrompt(
+      BuildContext context, NearbyLawyersController controller) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.map_outlined,
+                size: 64,
+                color: theme.colorScheme.onSurface.withOpacity(0.3)),
+            SizedBox(height: 16),
+            Text(
+              'Choose where to search',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Pick a location on the map to find lawyers near it, '
+              'or use your device\'s current location once.',
+              style: TextStyle(
+                  color:
+                      theme.textTheme.bodyMedium?.color?.withOpacity(0.7)),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => _pickLocationOnMap(controller),
+              icon: Icon(Icons.edit_location_alt),
+              label: Text('Pick location on map'),
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+            ),
+            SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: controller.useCurrentLocation,
+              icon: Icon(Icons.my_location),
+              label: Text('Use my current location'),
+              style: OutlinedButton.styleFrom(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

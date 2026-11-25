@@ -267,6 +267,19 @@ class TokenStorageService extends GetxController {
     }
   }
 
+  /// Update only the refresh token (used when the server rotates it)
+  Future<void> updateRefreshToken(String newRefreshToken) async {
+    try {
+      await _write(_refreshTokenKey, newRefreshToken);
+      _currentRefreshToken.value = newRefreshToken;
+
+      debugPrint('🔄 Refresh token updated successfully');
+    } catch (e) {
+      debugPrint('❌ Error updating refresh token: $e');
+      throw Exception('Failed to update refresh token');
+    }
+  }
+
   /// Check if tokens exist and are valid using jwt_decoder
   Future<bool> _areTokensValid() async {
     try {

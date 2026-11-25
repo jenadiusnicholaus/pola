@@ -127,6 +127,14 @@ class AuthService extends GetxController {
 
         if (newAccessToken != null) {
           await _tokenStorage.updateAccessToken(newAccessToken);
+
+          // The server rotates refresh tokens — store the new one so the
+          // session stays valid for its full sliding lifetime
+          final newRefreshToken = response.data['refresh'] as String?;
+          if (newRefreshToken != null && newRefreshToken.isNotEmpty) {
+            await _tokenStorage.updateRefreshToken(newRefreshToken);
+          }
+
           debugPrint('✅ Access token refreshed successfully');
           _refreshLock!.complete(true);
           return true;

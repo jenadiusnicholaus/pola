@@ -12,7 +12,7 @@ import 'package:localization_lite/translate.dart';
 class LocationConsent {
   LocationConsent._();
 
-  static const String _key = 'location_disclosure_choice';
+  static const String _key = 'location_disclosure_choice_v2';
   static final GetStorage _storage = GetStorage();
   static bool _dialogShowing = false;
 
@@ -34,19 +34,33 @@ class LocationConsent {
     try {
       final accepted = await Get.dialog<bool>(
         AlertDialog(
-          title: Text(tr('Location access')),
-          content: Text(tr(
-            'Pola collects your device\'s precise location to show lawyers '
-            'and legal services near you, and keeps your location updated '
-            'on our servers while the app is in use. This data is linked '
-            'to your account.\n\n'
-            'You can decline — the app still works, but nearby results '
-            'will be limited.',
-          )),
+          icon: const Icon(Icons.location_on_outlined, size: 32),
+          title: Text(tr('Pola uses your location')),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(tr('Pola collects your device\'s location data to:')),
+                const SizedBox(height: 8),
+                Text(tr(
+                    '• Show lawyers and legal services near you in Nearby Lawyers.')),
+                const SizedBox(height: 4),
+                Text(tr(
+                    '• Save your location with your device registration when you sign in.')),
+                const SizedBox(height: 12),
+                Text(tr(
+                    'Your location is sent to Pola\'s servers and linked to your account. It is collected only while you are using the app, never in the background.')),
+                const SizedBox(height: 12),
+                Text(tr(
+                    'You can choose "Not now" and still use Pola. You can pick a location on the map instead.')),
+              ],
+            ),
+          ),
           actions: [
             TextButton(
               onPressed: () => Get.back(result: false),
-              child: Text(tr('No thanks')),
+              child: Text(tr('Not now')),
             ),
             FilledButton(
               onPressed: () => Get.back(result: true),

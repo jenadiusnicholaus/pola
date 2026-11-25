@@ -199,25 +199,28 @@ class VerificationService {
   // These maintain backward compatibility with existing controller code
 
   /// Upload document with title (compatibility wrapper)
-  Future<bool> uploadDocument({
+  /// Returns null on success, otherwise a human-readable error message.
+  Future<String?> uploadDocument({
     required String documentType,
     required File file,
     required String title,
     String? description,
   }) async {
-    final result = await _uploadDocumentInternal(
+    return _uploadDocumentInternal(
       file: file,
       documentType: documentType,
+      title: title,
       description: description ??
           title, // Use title as description if no description provided
     );
-    return result != null && result.success;
   }
 
   /// Internal upload method (renamed from original)
-  Future<DocumentUploadResult?> _uploadDocumentInternal({
+  /// Returns null on success, otherwise a human-readable error message.
+  Future<String?> _uploadDocumentInternal({
     required File file,
     required String documentType,
+    String? title,
     String? description,
   }) async {
     try {
@@ -225,6 +228,7 @@ class VerificationService {
 
       final formData = FormData.fromMap({
         'document_type': documentType,
+        if (title != null) 'title': title,
         if (description != null) 'description': description,
         'file': await MultipartFile.fromFile(
           file.path,
@@ -244,18 +248,32 @@ class VerificationService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint('✅ Document uploaded successfully');
-        return DocumentUploadResult.fromJson(response.data!);
+        return null;
       } else {
         debugPrint('⚠️ Unexpected status code: ${response.statusCode}');
-        return null;
+        return 'Upload failed (HTTP ${response.statusCode})';
       }
     } catch (e) {
       debugPrint('❌ Error uploading document: $e');
       if (e is DioException) {
         debugPrint('Response data: ${e.response?.data}');
         debugPrint('Status code: ${e.response?.statusCode}');
+
+        final responseData = e.response?.data;
+        if (responseData is Map && responseData.isNotEmpty) {
+          // e.g. {"document_type": ["You have already submitted ..."]}
+          final first = responseData.values.first;
+          if (first is List && first.isNotEmpty) {
+            return first.first.toString();
+          }
+          return first.toString();
+        }
+        if (e.response == null) {
+          return 'Network error. Check your connection and try again.';
+        }
+        return 'Upload failed (HTTP ${e.response?.statusCode})';
       }
-      return null;
+      return 'Failed to upload document. Please try again.';
     }
   }
 

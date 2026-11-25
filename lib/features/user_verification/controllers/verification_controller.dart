@@ -129,14 +129,14 @@ class VerificationController extends GetxController {
 
       debugPrint('📄 Uploading document: $documentType');
 
-      final success = await _verificationService.uploadDocument(
+      final error = await _verificationService.uploadDocument(
         documentType: documentType,
         file: file,
         title: title,
         description: description,
       );
 
-      if (success) {
+      if (error == null) {
         debugPrint('✅ Document uploaded successfully');
         // Refresh status to get updated documents
         await refreshVerificationStatus();
@@ -148,12 +148,12 @@ class VerificationController extends GetxController {
         );
         return true;
       } else {
-        debugPrint('❌ Failed to upload document');
-        _error.value = 'Failed to upload document';
+        debugPrint('❌ Failed to upload document: $error');
+        _error.value = error;
 
         NavigationHelper.showSafeSnackbar(
           title: tr('Upload Failed'),
-          message: 'Failed to upload document. Please try again.',
+          message: error,
           backgroundColor: Colors.red,
         );
         return false;
@@ -825,7 +825,7 @@ class VerificationController extends GetxController {
 
       // Upload via multipart (more reliable than base64 for PDFs and
       // large files; avoids the 33 % base64 size inflation).
-      final success = await _verificationService.uploadDocument(
+      final error = await _verificationService.uploadDocument(
         documentType: documentType,
         file: file,
         title: fileName,
@@ -835,8 +835,8 @@ class VerificationController extends GetxController {
       // Close loading dialog
       Get.back();
 
-      if (!success) {
-        throw Exception('Server rejected the upload');
+      if (error != null) {
+        throw Exception(error);
       }
 
       // Show success message
@@ -860,7 +860,7 @@ class VerificationController extends GetxController {
 
       NavigationHelper.showSafeSnackbar(
         title: tr('Upload Failed'),
-        message: 'Failed to upload document: $e',
+        message: e.toString().replaceFirst('Exception: ', ''),
         backgroundColor: Colors.red,
       );
     }
